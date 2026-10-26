@@ -78,6 +78,18 @@
 | X | $0 | $0–1 | fxtwitter first |
 | **Total** | **~$10–13** | **~$17–25** | |
 
+### Split: infrastructure vs. AI
+
+**Principle:** keep fixed infra and SaaS spend minimal and avoid subscriptions. AI usage is acceptable and should get cheaper over time.
+
+| Bucket | Items | Monthly |
+|---|---|---|
+| **Infra / SaaS (fixed)** | Hosting (API, worker, Postgres) ~$5–10 · domain ~$1 · Cloudflare email $0 · Apple dev $0 (already have it) | **~$6–11** |
+| **Infra / SaaS (usage-based, small)** | YouTube transcript API or proxy $0–5 · X pay-per-use fallback $0–1 | **~$0–6** |
+| **AI usage** | Transcription ~$2–8 · Claude (processing, primers, Pulse, chat, grading) ~$7–12 · embeddings ~$0 | **~$10–20**, tunable by model choice |
+
+Subscriptions deliberately avoided: Readwise (~$10/mo), Taddy (~$75/mo), Firecrawl (~$16/mo), managed scraping plans, Gmail API verification.
+
 **Biggest levers:**
 1. **Model choice per job.** Opus primers and Sonnet chat make up most of the gap between the two columns.
 2. **Transcription vendor.** Groq costs ~$2. Paying for speaker labels adds ~$5–15.

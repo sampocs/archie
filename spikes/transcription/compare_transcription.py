@@ -10,6 +10,8 @@ Runs every provider whose API key is present in the repo-root .env; a provider t
 Run: uv run spikes/transcription/compare_transcription.py
 """
 
+import enum
+import html
 import os
 import pathlib
 import re
@@ -34,6 +36,9 @@ CHUNK_SECONDS = 600
 CHUNK_BITRATE = "48k"
 REQUEST_TIMEOUT_SECONDS = 300
 MAX_RATE_LIMIT_WAIT_SECONDS = 180
+RICH_HINT_MAX_CHARS = 700
+# Unmatched alignment runs at least this long are ads or skipped passages rather than mishearings
+BLOCK_WORDS = 15
 
 
 @dataclass(frozen=True)
@@ -45,6 +50,8 @@ class Episode:
     # Vocabulary hint, the way production would build one from show and episode metadata
     prompt_hint: str
     use_published_transcript: bool
+    # Correct spellings of jargon known to appear in the clip, counted in every transcript
+    jargon_terms: tuple[str, ...]
 
 
 EPISODES = [
@@ -55,6 +62,7 @@ EPISODES = [
         jargon="crypto news, tokens, protocols",
         prompt_hint="Bankless podcast with Ryan Sean Adams and David Hoffman. Crypto, Ethereum, DeFi, stablecoins.",
         use_published_transcript=True,
+        jargon_terms=("Ripio", "Morpho", "Uniswap"),
     ),
     Episode(
         slug="money-stuff",
@@ -63,6 +71,7 @@ EPISODES = [
         jargon="markets, finance, legal",
         prompt_hint="Money Stuff podcast with Matt Levine and Katie Greifeld. Finance, markets, Wall Street.",
         use_published_transcript=True,
+        jargon_terms=("Tyce", "mNAV"),
     ),
     Episode(
         slug="darknet-diaries",
@@ -71,6 +80,7 @@ EPISODES = [
         jargon="hacking, security",
         prompt_hint="Darknet Diaries with Jack Rhysider. Hacking, cybersecurity, malware.",
         use_published_transcript=True,
+        jargon_terms=("Dyre", "Conti", "Europol"),
     ),
     Episode(
         slug="acquired",
@@ -79,6 +89,7 @@ EPISODES = [
         jargon="company history, business",
         prompt_hint="Acquired podcast with Ben Gilbert and David Rosenthal. Company histories, technology, business.",
         use_published_transcript=True,
+        jargon_terms=("Arthur Blank", "Bernie Marcus", "Handy Dan"),
     ),
     Episode(
         slug="0xresearch",
@@ -87,6 +98,7 @@ EPISODES = [
         jargon="niche crypto research (MEV, L2s, tokens)",
         prompt_hint="0xResearch podcast by Blockworks. Crypto research, MEV, rollups, Solana, Ethereum, Hyperliquid.",
         use_published_transcript=False,
+        jargon_terms=("Citrini", "Aerodrome", "Uniswap", "Hyperliquid"),
     ),
 ]
 
@@ -111,14 +123,6 @@ PROVIDERS = [
         returns_timestamps=True,
     ),
     Provider(
-        name="groq-whisper-large-v3",
-        env_key="GROQ_API_KEY",
-        url="https://api.groq.com/openai/v1/audio/transcriptions",
-        model="whisper-large-v3",
-        usd_per_audio_hour=0.111,
-        returns_timestamps=True,
-    ),
-    Provider(
         name="openai-gpt-4o-mini-transcribe",
         env_key="OPENAI_API_KEY",
         url="https://api.openai.com/v1/audio/transcriptions",
@@ -137,10 +141,16 @@ PROVIDERS = [
 ]
 
 
+class HintStyle(enum.StrEnum):
+    BASIC = "basic"  # Show name and hosts only
+    RICH = "rich"  # Plus the episode title and description from the feed
+
+
 @dataclass
 class PreparedEpisode:
     episode: Episode
     title: str
+    rich_hint: str
     chunks: list[pathlib.Path]
     reference_text: str | None
 
@@ -148,17 +158,23 @@ class PreparedEpisode:
 @dataclass
 class Score:
     word_error_rate: float | None
+    skipped_words: int | None
     name_recall: float | None
 
 
 @dataclass
 class ProviderRun:
     provider: Provider
+    hint_style: HintStyle
     seconds_elapsed: float = 0.0
     audio_seconds: float = 0.0
     error: str | None = None
     transcripts: dict[str, str] = field(default_factory=dict)
     scores: dict[str, Score] = field(default_factory=dict)
+
+    @property
+    def label(self) -> str:
+        return f"{self.provider.name}/{self.hint_style}"
 
 
 def main() -> None:
@@ -169,10 +185,13 @@ def main() -> None:
 
     prepared = [_prepare_episode(episode=episode) for episode in EPISODES]
     runs = [
-        _run_provider(provider=provider, prepared=prepared) for provider in available
+        _run_provider(provider=provider, hint_style=hint_style, prepared=prepared)
+        for provider in available
+        for hint_style in HintStyle
     ]
 
     _print_scores(prepared=prepared, runs=runs)
+    _print_jargon(prepared=prepared, runs=runs)
     _print_disagreements(prepared=prepared, runs=runs)
 
 
@@ -198,8 +217,20 @@ def _prepare_episode(episode: Episode) -> PreparedEpisode:
         f"[{episode.slug}] {title} · {len(chunks)} chunks · reference words: {len((reference_text or '').split())}"
     )
     return PreparedEpisode(
-        episode=episode, title=title, chunks=chunks, reference_text=reference_text
+        episode=episode,
+        title=title,
+        rich_hint=_rich_hint(episode=episode, title=title, item=item),
+        chunks=chunks,
+        reference_text=reference_text,
     )
+
+
+def _rich_hint(episode: Episode, title: str, item: xml.etree.ElementTree.Element) -> str:
+    # Whisper only reads the last ~224 tokens of a prompt, so keep the title and the description's opening
+    description = item.findtext("description", default="")
+    plain_description = html.unescape(re.sub(r"<[^>]+>", " ", description))
+    plain_description = re.sub(r"\s+", " ", plain_description).strip()
+    return f"{episode.prompt_hint} Episode: {title}. {plain_description}"[:RICH_HINT_MAX_CHARS]
 
 
 def _pick_feed_item(episode: Episode) -> xml.etree.ElementTree.Element:
@@ -291,15 +322,19 @@ def _reference_text(item: xml.etree.ElementTree.Element) -> str:
 # --- Providers: transcribe every clip, then score against references ---
 
 
-def _run_provider(provider: Provider, prepared: list[PreparedEpisode]) -> ProviderRun:
-    run = ProviderRun(provider=provider)
-    print(f"\nTranscribing with {provider.name}…")
+def _run_provider(
+    provider: Provider, hint_style: HintStyle, prepared: list[PreparedEpisode]
+) -> ProviderRun:
+    run = ProviderRun(provider=provider, hint_style=hint_style)
+    print(f"\nTranscribing with {run.label}…")
     started = time.monotonic()
     try:
         for item in prepared:
             text = " ".join(
                 _transcribe_chunk(
-                    provider=provider, chunk=chunk, prompt=item.episode.prompt_hint
+                    provider=provider,
+                    chunk=chunk,
+                    prompt=item.rich_hint if hint_style == HintStyle.RICH else item.episode.prompt_hint,
                 )
                 for chunk in item.chunks
             )
@@ -307,7 +342,7 @@ def _run_provider(provider: Provider, prepared: list[PreparedEpisode]) -> Provid
             run.audio_seconds += sum(
                 _duration_seconds(chunk=chunk) for chunk in item.chunks
             )
-            (CACHE_DIR / item.episode.slug / f"{provider.name}.txt").write_text(text)
+            (CACHE_DIR / item.episode.slug / f"{provider.name}.{hint_style}.txt").write_text(text)
             run.scores[item.episode.slug] = _score(
                 reference_text=item.reference_text, hypothesis_text=text
             )
@@ -367,19 +402,21 @@ def _duration_seconds(chunk: pathlib.Path) -> float:
 
 def _score(reference_text: str | None, hypothesis_text: str) -> Score:
     if not reference_text:
-        return Score(word_error_rate=None, name_recall=None)
+        return Score(word_error_rate=None, skipped_words=None, name_recall=None)
 
+    word_error_rate, skipped_words = _word_error_rate_and_skips(
+        reference_text=reference_text, hypothesis_text=hypothesis_text
+    )
     return Score(
-        word_error_rate=_trimmed_word_error_rate(
-            reference_text=reference_text, hypothesis_text=hypothesis_text
-        ),
+        word_error_rate=word_error_rate,
+        skipped_words=skipped_words,
         name_recall=_name_recall(
             reference_text=reference_text, hypothesis_text=hypothesis_text
         ),
     )
 
 
-def _trimmed_word_error_rate(reference_text: str, hypothesis_text: str) -> float:
+def _word_error_rate_and_skips(reference_text: str, hypothesis_text: str) -> tuple[float, int]:
     # The reference window is deliberately longer than the clip, and ads may differ at the edges,
     # so ignore unmatched runs at the start and end of the alignment and score only the overlap
     output = jiwer.process_words(
@@ -391,18 +428,19 @@ def _trimmed_word_error_rate(reference_text: str, hypothesis_text: str) -> float
     while alignment and alignment[-1].type in ("delete", "insert"):
         alignment = alignment[:-1]
 
-    errors = sum(
-        max(
-            chunk.ref_end_idx - chunk.ref_start_idx,
-            chunk.hyp_end_idx - chunk.hyp_start_idx,
-        )
-        for chunk in alignment
-        if chunk.type != "equal"
+    # Long unmatched blocks are ads (inserted) or passages the model skipped (deleted); score them
+    # separately so word-level accuracy isn't swamped by ad reads that the reference omits
+    def block_size(chunk: jiwer.AlignmentChunk) -> int:
+        return max(chunk.ref_end_idx - chunk.ref_start_idx, chunk.hyp_end_idx - chunk.hyp_start_idx)
+
+    word_errors = sum(
+        block_size(chunk) for chunk in alignment if chunk.type != "equal" and block_size(chunk) < BLOCK_WORDS
     )
-    reference_words = sum(
-        chunk.ref_end_idx - chunk.ref_start_idx for chunk in alignment
+    skipped_words = sum(
+        block_size(chunk) for chunk in alignment if chunk.type == "delete" and block_size(chunk) >= BLOCK_WORDS
     )
-    return errors / reference_words if reference_words else 1.0
+    reference_words = sum(chunk.ref_end_idx - chunk.ref_start_idx for chunk in alignment)
+    return (word_errors / reference_words if reference_words else 1.0), skipped_words
 
 
 def _name_recall(reference_text: str, hypothesis_text: str) -> float:
@@ -433,10 +471,10 @@ def _normalize(text: str) -> str:
 
 def _print_scores(prepared: list[PreparedEpisode], runs: list[ProviderRun]) -> None:
     print(
-        "\n=== Scores vs published transcript (WER lower is better · names found higher is better) ==="
+        "\n=== Vs published transcript: word-level error (excl. ads) and words in skipped passages ==="
     )
-    header = f"{'provider':32}" + "".join(
-        f"{item.episode.slug:>22}" for item in prepared if item.reference_text
+    header = f"{'provider/hint':40}" + "".join(
+        f"{item.episode.slug:>24}" for item in prepared if item.reference_text
     )
     print(header + f"{'time':>8}{'cost':>9}")
     for run in runs:
@@ -446,13 +484,13 @@ def _print_scores(prepared: list[PreparedEpisode], runs: list[ProviderRun]) -> N
                 continue
             score = run.scores.get(item.episode.slug)
             cells.append(
-                f"{score.word_error_rate:>6.1%} / {score.name_recall:>5.0%}".rjust(22)
+                f"{score.word_error_rate:>5.1%} skip {score.skipped_words:>3}".rjust(24)
                 if score
-                else "—".rjust(22)
+                else "—".rjust(24)
             )
         cost = run.audio_seconds / 3600 * run.provider.usd_per_audio_hour
         print(
-            f"{run.provider.name:32}"
+            f"{run.label:40}"
             + "".join(cells)
             + f"{run.seconds_elapsed:>7.0f}s{cost:>8.3f}$"
             + (f"  ERROR {run.error}" if run.error else "")
@@ -473,14 +511,34 @@ def _print_disagreements(
     print("\n=== Names the providers disagree on (eyeball which spelling is right) ===")
     for item in prepared:
         names_by_provider = {
-            run.provider.name: _names(text=run.transcripts[item.episode.slug])
+            run.label: _names(text=run.transcripts[item.episode.slug])
             for run in finished
+            if run.hint_style == HintStyle.RICH
         }
         everyone = set.intersection(*names_by_provider.values())
         print(f"\n[{item.episode.slug}] {item.title}  ({item.episode.jargon})")
         for provider_name, names in names_by_provider.items():
             unique = sorted(names - everyone)[:40]
-            print(f"  {provider_name:32} {', '.join(unique) or '-'}")
+            print(f"  {provider_name:40} {', '.join(unique) or '-'}")
+
+
+def _print_jargon(prepared: list[PreparedEpisode], runs: list[ProviderRun]) -> None:
+    # How often each run spelled known jargon correctly, against the published transcript's count
+    print("\n=== Known jargon spelled correctly (count in transcript; ref = published transcript) ===")
+    finished = [run for run in runs if not run.error]
+    for item in prepared:
+        print(f"\n[{item.episode.slug}]")
+        for term in item.episode.jargon_terms:
+            reference_count = _count(term=term, text=item.reference_text) if item.reference_text else None
+            counts = "  ".join(
+                f"{run.label.replace('groq-whisper-large-v3-', '').replace('openai-gpt-4o-', '4o-')}={_count(term=term, text=run.transcripts[item.episode.slug])}"
+                for run in finished
+            )
+            print(f"  {term:14} ref={reference_count if reference_count is not None else '-':<3} {counts}")
+
+
+def _count(term: str, text: str) -> int:
+    return len(re.findall(re.escape(term), text, flags=re.IGNORECASE))
 
 
 if __name__ == "__main__":

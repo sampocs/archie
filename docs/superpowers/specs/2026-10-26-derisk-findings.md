@@ -47,9 +47,43 @@
 6. **Books are capture-by-hand.** Readwise is worth it only if you read on Kindle and highlight.
 7. **Grading = a small LLM, with Jev as a possible add-on**, since Jev can't write explanations. Self-grading is always available.
 
-## Rough running cost
+## Monthly cost model (target: under $20/mo of new spend)
 
-About **$15–40/mo** before LLM processing: transcription ~$6–17, Apple developer account ~$8, X ~$0–5, proxy $0–10. Everything else rounds to zero. LLM processing is still to be estimated.
+**Volume assumptions (to be checked against real usage):**
+- ~10 hrs of podcasts/week, which is ~43 hrs/mo or ~20 episodes, ~12k transcript tokens per hour
+- ~20 articles or threads/mo
+- ~50 newsletters/week
+- ~30 card grades/day
+- ~5 chat questions/day
+
+**Prices used:** Claude list prices as of 2026-10:
+- Haiku 5.5: $0.10 in / $0.50 out per M tokens
+- Sonnet 5.5: $2 / $10
+- Opus 5.5: $4 / $20
+- Batch API: 50% off
+- Transcription prices are from third-party sources and **unverified**
+
+| Line item | Lean | Recommended | Notes |
+|---|---|---|---|
+| Hosting (API, worker, Postgres + pgvector) | $5 | $5 | e.g. Railway hobby, or Supabase free tier for the DB |
+| Domain (for newsletter ingest) | $1 | $1 | ~$10/yr |
+| Apple developer account | $0 | $0 | Already have one |
+| Transcription (~43 hrs) | ~$2 (Groq Whisper, no speaker labels) | ~$2–8 (Groq, or gpt-4o-mini-transcribe) | Speaker labels (AssemblyAI or ElevenLabs) would cost ~$7–17. The LLM can usually infer who's speaking from context |
+| Source processing (summary, tags, cards, links) | ~$0.30 (Haiku) | ~$2–3 (Sonnet, Batch API) | Podcasts aren't urgent, so Batch's 50% discount applies |
+| Primers | ~$1 (Sonnet) | ~$3 (Opus) | Foundations are the most important output, so they get the best model |
+| Pulse (split, group, write the brief) | ~$0.50 (Haiku) | ~$2–3 (Haiku split + Sonnet brief) | |
+| Chat | ~$0.30 (Haiku) | ~$2–3 (Sonnet) | Depends on how much I use it |
+| Grading + embeddings | <$0.20 | <$0.50 | Haiku-class grader |
+| YouTube | $0–3 | $0–5 | Managed transcript API free tier or a pay-per-GB proxy. Spike 4 decides |
+| X | $0 | $0–1 | fxtwitter first |
+| **Total** | **~$10–13** | **~$17–25** | |
+
+**Biggest levers:**
+1. **Model choice per job.** Opus primers and Sonnet chat make up most of the gap between the two columns.
+2. **Transcription vendor.** Groq costs ~$2. Paying for speaker labels adds ~$5–15.
+3. **Listening volume.** Transcription and processing scale linearly with hours.
+
+**Plan:** start at Recommended, with **Sonnet for primers** (not Opus) to land around **$15/mo**. Track the real cost per hour of content (spike 8), and upgrade primers to Opus if their quality falls short.
 
 ## Hands-on spikes (prioritized)
 

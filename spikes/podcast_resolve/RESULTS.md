@@ -15,8 +15,16 @@ The 28 shows I actually listen to were resolved through the iTunes Search API to
 - **Matching by name is brittle.** Taking the top search hit picked a spin-off (*Inside the Bus* instead of *Bussin' With The Boys*), a stale listing with a dead feed (*Invest Like the Best*), and an unrelated show. Preferring an exact title match fixed those, but then picked a *different* show that shares the exact name (*When Shift Happens*).
 - **Design implication:** keep a **show registry**. The first time a show appears, match it using the show name **and** the publisher (both visible on the Spotify page), save the mapping, and let me correct it in the app. My show list is small and stable, so it can be pre-loaded with these 28.
 
+## Episode-level matching (`resolve_episodes.py`)
+
+13 real Spotify episode links shared from my phone (New Heights, Pardon My Take, All-In ×2, Bussin', Dwarkesh ×2, Milk Road ×2, Empire, My First Million ×2, Acquired).
+
+- **No Spotify API needed.** The public episode page embeds `application/ld+json` with the episode title, publish date, and a description starting with "Listen to this episode from {show} on Spotify." That gives us the show name.
+- Approach: show name → iTunes Search (prefer an exact title match) → RSS feed → keep episodes published within ±3 days → pick the closest title (difflib similarity of at least 0.6).
+- **Result: 13/13 matched the correct RSS episode**, with similarity 0.99–1.00. That includes old back-catalog episodes (Acquired from 2022, Dwarkesh from 2024). Dates can differ by a day (All-In), so the date window matters.
+- **Only 1 of 13 had a published RSS transcript** (Bussin'). Transcription is the default path.
+
 ## Still untested
 
-- **Episode-level matching** from a real Spotify episode link: read the episode title and show from the Spotify page, then find the same episode in the RSS feed by title and date. This needs real `open.spotify.com/episode/...` links.
 - Transcript quality and cost on a real episode (needs a transcription API key).
 - Whether shows like Dwarkesh publish transcripts on their own sites (not in RSS), which would avoid transcription for those shows.

@@ -22,6 +22,7 @@ The core problem is **integration, not consumption**. Carl turns what I already 
 - **Foundations over facts.** Background knowledge (primers) matters more than one-off facts from an episode.
 - **Calm.** One notification a day at most. Nothing should feel like homework.
 - **Personal tool.** Built for one user. No growth or onboarding concerns.
+- **One reading voice.** Everything Carl writes (summaries, primers, Pulse, chat, card explanations) uses one style tuned to what I find easiest to read.
 
 ## Getting content in
 
@@ -81,6 +82,7 @@ The same Finished / Queue flow as the share sheet, for pasting links or searchin
 - **Graded on the idea, not the wording**, with three outcomes: *got it / partly / missed*. A fast, typed-output model like Jev looks like the right fit. When it isn't confident, the screen shows the model answer and I grade myself.
 - **I can always override** a grade ("actually I knew that").
 - *Partly* and *missed* show a short explanation of what was missing.
+- **Tell Carl**: after any grade, I can say what I actually care about (e.g. "I mainly want to remember which agency is Soviet and which is British; the secret police part matters less"). That **rewrites the card's accepted answer** and informs future card generation.
 - Swiping a card away as "don't care" removes it and teaches Carl what not to generate.
 - **Spaced repetition** (e.g. FSRS) schedules cards from my answers. Fast, correct answers mean I see the card less often.
 - **Order within a session**: foundation cards from primers first, then mechanisms, then rough numbers. Trivia is avoided.
@@ -103,6 +105,11 @@ The same Finished / Queue flow as the share sheet, for pasting links or searchin
 - Carl generates **3–5 cards per consumed source**, focused on concepts, mechanisms ("why does X cause Y"), and **rough numbers** ("~1 GW," not "1.07 GW").
 - Cards are generated **regardless of what I already know**. Reviews take care of that.
 - **Calibration before launch**: from imported notes, pick ~10 examples, mark what I'd actually want to be quizzed on, and adjust card generation until it matches.
+
+## Reading voice
+
+- Before launch, Carl writes the same primer and summary in a few styles. I pick the easiest to read and refine it, and the result becomes a **style guide** applied to everything Carl writes.
+- One voice in v1. A setting to change it can come later.
 
 ## Pulse (keeping up with the news)
 
@@ -139,6 +146,7 @@ The goal is to know the water-cooler topics in about 2 minutes, without reading 
    - Importing my existing notes (format and source TBD)
    - iOS share sheet: probably requires a native app (or Expo/React Native), because a web app can't easily appear in the iOS share sheet
    - Answer grading quality: Jev (or similar) on real answers to real cards
+   - Story grouping for Pulse: likely text embeddings plus clustering, with an LLM merging borderline cases. The same embeddings would also power Library search, chat retrieval, and related-item links
    - Voice answers: speech-to-text on device vs. through an API
-3. **Finalize the product**: the exact interface, down to styling.
+3. **Finalize the product**: the exact interface, down to styling, plus the reading voice.
 4. **Technical spec and backend**, then build.

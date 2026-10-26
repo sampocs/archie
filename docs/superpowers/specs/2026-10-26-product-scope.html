@@ -228,6 +228,7 @@ html { scroll-behavior: smooth; }
       <div class="principle"><b>Foundations over facts</b><span>Background primers matter more than one-off facts from an episode.</span></div>
       <div class="principle"><b>Calm</b><span>At most one notification a day. Nothing should feel like homework.</span></div>
       <div class="principle"><b>Just for me</b><span>A personal tool, so no onboarding or growth concerns.</span></div>
+      <div class="principle"><b>One reading voice</b><span>Everything Carl writes uses one style tuned to what I find easiest to read. It gets picked before launch by comparing samples.</span></div>
     </div>
   </section>
 
@@ -498,6 +499,7 @@ html { scroll-behavior: smooth; }
           <li><b>Graded on the idea, not the wording:</b> <i>got it / partly / missed</i>. A fast model with fixed answer choices, like Jev, looks like a good fit.</li>
           <li><b>When the grader isn't confident,</b> it shows the model answer and I grade myself. I can always override with "actually, I knew that."</li>
           <li><i>Partly</i> and <i>missed</i> get a short explanation of what was missing.</li>
+          <li><b>Tell Carl:</b> after any grade I can say what I actually care about. That rewrites the card's accepted answer and shapes future cards.</li>
           <li><b>"Don't care"</b> deletes the card and teaches Carl what not to generate.</li>
           <li><b>Spaced repetition</b> (e.g. FSRS): fast, correct answers mean I see the card less often.</li>
           <li><b>Session order:</b> foundation cards from primers first, then mechanisms, then rough numbers. No trivia.</li>
@@ -533,11 +535,11 @@ html { scroll-behavior: smooth; }
               </div>
               <div class="field">Typed: "soviet spy agency, MI6 is the british one"</div>
               <div class="grade"><span class="part">Partly.</span> Right on both. The missing piece: the KGB was also the Soviet <i>secret police</i> at home, while MI6 only works abroad. That difference drives a lot of the book.</div>
-              <div class="chips" style="justify-content:space-between"><span class="chip">Actually I knew that</span><span class="chip">Don't care</span></div>
-              <span class="cta">Next</span>
+              <div class="field" style="border-color:var(--blue)">Tell Carl: "main thing I want is which is Soviet and which is British. The police part matters less to me"</div>
+              <div class="grade"><span class="ok">Updated.</span> This card now accepts "Soviet vs. British spy agency" as a full answer.</div>
             </div>
           </div>
-          <p class="ph-cap"><b>Partly:</b> a short explanation of what was missing.</p>
+          <p class="ph-cap"><b>Partly, then Tell Carl:</b> my feedback rewrites the card's accepted answer.</p>
         </div>
       </div>
     </div>
@@ -612,10 +614,11 @@ html { scroll-behavior: smooth; }
           <span>Importing my existing notes</span>
           <span>iOS share sheet (probably needs a native app)</span>
           <span>Grading quality with Jev on real answers</span>
+          <span>Pulse story grouping with text embeddings, which also power search and related items</span>
           <span>Voice answers: on-device vs. API transcription</span>
         </div>
       </div></li>
-      <li><span class="dot">3</span><div><b>Finalize the product</b><br><span class="muted">Exact interface, down to styling.</span></div></li>
+      <li><span class="dot">3</span><div><b>Finalize the product</b><br><span class="muted">Exact interface, down to styling, plus the reading voice.</span></div></li>
       <li><span class="dot">4</span><div><b>Technical spec and backend</b><br><span class="muted">Then build.</span></div></li>
     </ol>
   </section>

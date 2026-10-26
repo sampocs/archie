@@ -29,6 +29,14 @@
 
 **Not researched yet:** LLM costs for summaries, primers and cards. These are likely the biggest line item, and the next step is to estimate them from real transcripts.
 
+## My setup (answered 2026-10-26)
+
+- **Apple developer account:** already have one, so there's no extra $99.
+- **Always-on Mac:** none. YouTube needs a residential proxy or a managed transcript API, and transcription goes through a paid API.
+- **Domain:** none yet. Plan to buy one (~$10/yr, e.g. via Cloudflare Registrar) for newsletter ingest.
+- **Podcast app:** **Spotify**, so Spotify-to-RSS matching is the most important podcast spike.
+- **Old notes:** **Bear** (native bulk Markdown export) and **Google Docs** (Drive export to Markdown or docx).
+
 ## What this changes in the product
 
 1. **The app is an Expo (React Native) app plus a Python backend.** A PWA is ruled out because it can't receive shares. This also requires a $99/yr Apple developer account (needed for stable signing of a share extension, and for TestFlight).

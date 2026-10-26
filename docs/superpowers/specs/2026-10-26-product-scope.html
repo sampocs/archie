@@ -185,6 +185,13 @@ ul.clean b { color: var(--ink); font-weight: 600; }
 .risks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-top: 10px; }
 .risks span { font-size: 14px; color: var(--ink-2); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
 
+.v { display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 5px; white-space: nowrap; border: 1px solid currentColor; }
+.v.g { color: var(--good); } .v.y { color: var(--warn); } .v.r { color: var(--bad); }
+.findings td:first-child { font-weight: 600; white-space: nowrap; }
+.findings td:nth-child(3) { color: var(--ink-2); }
+.findings td:last-child { font-family: var(--mono); font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.implications { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; color: var(--ink-2); }
+.implications b { color: var(--ink); font-weight: 600; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 html { scroll-behavior: smooth; }
 </style>
@@ -197,7 +204,7 @@ html { scroll-behavior: smooth; }
     <p class="lede prose">A personal mobile app that turns the podcasts, newsletters, threads and books I already consume into knowledge I can actually <mark>talk about at a poker table</mark>.</p>
     <div class="names"><span class="muted" style="font-size:14px">Name still open:</span><span class="name-chip">Carl</span><span class="name-chip">Archie</span><span class="name-chip">Gary</span><span class="name-chip">Ralph</span><span class="muted" style="font-size:13px">(mockups say Carl)</span></div>
     <nav class="toc" aria-label="Sections">
-      <a href="#why">Why</a><a href="#principles">Principles</a><a href="#capture">Getting content in</a><a href="#processing">Processing</a><a href="#today">Today</a><a href="#pulse">Pulse</a><a href="#library">Library</a><a href="#review">Review</a><a href="#chat">Chat</a><a href="#notifications">Notifications</a><a href="#later">Not in v1</a><a href="#roadmap">Roadmap</a>
+      <a href="#why">Why</a><a href="#principles">Principles</a><a href="#capture">Getting content in</a><a href="#processing">Processing</a><a href="#today">Today</a><a href="#pulse">Pulse</a><a href="#library">Library</a><a href="#review">Review</a><a href="#chat">Chat</a><a href="#notifications">Notifications</a><a href="#later">Not in v1</a><a href="#roadmap">Roadmap</a><a href="#findings">Research findings</a>
     </nav>
   </header>
 
@@ -603,8 +610,8 @@ html { scroll-behavior: smooth; }
     <span class="eyebrow">Roadmap</span>
     <h2>What happens next</h2>
     <ol class="roadmap">
-      <li class="now"><span class="dot">1</span><div><b>Product scope</b> <span class="muted">· this page</span><br><span class="muted">Agree on what v1 is.</span></div></li>
-      <li><span class="dot">2</span><div><b>De-risk</b><br><span class="muted">Spike the big unknowns before committing to a design.</span>
+      <li class="done"><span class="dot">✓</span><div><b>Product scope</b> <span class="muted">· this page</span><br><span class="muted">Agree on what v1 is.</span></div></li>
+      <li class="now"><span class="dot">2</span><div><b>De-risk</b> <span class="muted">· desk research done, hands-on spikes next (<a href="#findings">findings</a>)</span><br><span class="muted">Spike the big unknowns before committing to a design.</span>
         <div class="risks">
           <span>Podcast transcripts from Spotify and Apple Podcasts links</span>
           <span>YouTube transcripts</span>
@@ -620,6 +627,58 @@ html { scroll-behavior: smooth; }
       </div></li>
       <li><span class="dot">3</span><div><b>Finalize the product</b><br><span class="muted">Exact interface, down to styling, plus the reading voice.</span></div></li>
       <li><span class="dot">4</span><div><b>Technical spec and backend</b><br><span class="muted">Then build.</span></div></li>
+    </ol>
+  </section>
+
+  <section id="findings">
+    <span class="eyebrow">De-risk · research pass · Oct 26</span>
+    <h2>Research findings</h2>
+    <p class="prose">Desk research only. Many prices come from third-party sources, so verify them before budgeting. The hands-on spikes below are what settle each question.</p>
+    <div class="table-wrap">
+      <table class="findings" style="min-width:760px">
+        <thead><tr><th>Area</th><th>Verdict</th><th>Approach</th><th>Rough cost</th></tr></thead>
+        <tbody>
+          <tr><td>Apple Podcasts</td><td><span class="v g">Solved</span></td><td>iTunes Lookup gives the RSS feed, then the episode audio</td><td>free</td></tr>
+          <tr><td>RSS podcasts</td><td><span class="v g">Solved</span></td><td>Use the published transcript if there is one (~10% of top shows), otherwise transcribe</td><td>free</td></tr>
+          <tr><td>Transcription</td><td><span class="v g">Solved</span></td><td>ElevenLabs Scribe or AssemblyAI (timestamps and speakers), or free local Whisper on a Mac</td><td>~$6–17/mo</td></tr>
+          <tr><td>Spotify</td><td><span class="v y">Caveats</span></td><td>Match the episode title to the show's RSS feed. Spotify-exclusive shows are <b>unsupported</b> (no RSS, DRM)</td><td>free</td></tr>
+          <tr><td>YouTube</td><td><span class="v y">Caveats</span></td><td>Caption libraries, falling back to downloading audio. YouTube blocks cloud server IPs, so run from home or through a proxy</td><td>$0–10/mo</td></tr>
+          <tr><td>X / Twitter</td><td><span class="v y">Caveats</span></td><td>Free fxtwitter API first, then the official pay-per-use API (~$0.005 per post) for full threads</td><td>~$0–5/mo</td></tr>
+          <tr><td>Newsletters</td><td><span class="v g">Solved</span></td><td>A dedicated address on Cloudflare Email Routing. Email carries the full paid text. Skip the Gmail API</td><td>free</td></tr>
+          <tr><td>Paywalled articles</td><td><span class="v y">Caveats</span></td><td>Share from Safari and the extension captures the page you're logged in to. Other apps only pass the link</td><td>free</td></tr>
+          <tr><td>General articles</td><td><span class="v g">Solved</span></td><td>trafilatura on the server, with Jina Reader as a fallback</td><td>free</td></tr>
+          <tr><td>Share sheet</td><td><span class="v y">Caveats</span></td><td><b>A web app can't do it.</b> Expo plus expo-share-extension, with an iOS Shortcut as a stopgap</td><td>$99/yr</td></tr>
+          <tr><td>Notification</td><td><span class="v g">Solved</span></td><td>Local scheduled notification, no server</td><td>free</td></tr>
+          <tr><td>Books</td><td><span class="v y">Caveats</span></td><td>Captured by hand plus Open Library metadata. LLM primers risk spoilers on obscure books. Readwise optional</td><td>$0–10/mo</td></tr>
+          <tr><td>Notes import</td><td><span class="v g">Solved</span></td><td>Convert everything to markdown (Apple Notes on iOS 26, Notion, Obsidian), then one importer</td><td>~1 day</td></tr>
+          <tr><td>Voice answers</td><td><span class="v g">Solved</span></td><td>Record a clip and send it to cloud speech-to-text. On-device iOS 26 as fallback</td><td>&lt;$1/mo</td></tr>
+          <tr><td>Card grading</td><td><span class="v y">Caveats</span></td><td>A small LLM returns verdict, what was missing, and confidence in one call. Jev can't write explanations and has no outside benchmarks yet, so test it as an add-on</td><td>&lt;$1/mo</td></tr>
+          <tr><td>Pulse grouping</td><td><span class="v g">Solved</span></td><td>Embeddings and clustering, then an LLM merges and writes headlines. The same embeddings power search (pgvector)</td><td>pennies</td></tr>
+          <tr><td>LLM processing</td><td><span class="v r">Unknown</span></td><td>Summaries, primers and cards. Probably the biggest cost, not estimated yet</td><td>spike 8</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3 style="margin-top:8px">What this changes</h3>
+    <ul class="implications prose">
+      <li><b>Expo app plus Python backend.</b> A web app can't receive shares. Requires a $99/yr Apple developer account.</li>
+      <li><b>Spotify-exclusive shows aren't supported.</b></li>
+      <li><b>Some work runs from home.</b> YouTube blocks cloud servers, so either a small worker runs on a home Mac (which also makes Whisper transcription free) or we pay ~$5–10/mo for a residential proxy.</li>
+      <li><b>Newsletters move to a new address</b> on your own domain, or a Gmail filter forwards them there.</li>
+      <li><b>Share paywalled articles from Safari.</b> Otherwise Carl shows "text missing, paste it?"</li>
+      <li><b>Books are captured by hand.</b> Readwise is only worth it for Kindle highlights.</li>
+      <li><b>About $15–40/mo before LLM costs.</b></li>
+    </ul>
+    <h3 style="margin-top:8px">Hands-on spikes, in order</h3>
+    <ol class="implications prose">
+      <li><b>Share extension on a real iPhone:</b> what each app sends, plus the custom UI and microphone</li>
+      <li><b>Podcast link to transcript:</b> about 20 real Spotify and Apple links, aiming for ≥90% matched</li>
+      <li><b>Card grading:</b> 30–50 answers you've labeled, across small models and Jev</li>
+      <li><b>YouTube</b> from cloud vs. home vs. proxy</li>
+      <li><b>X threads and articles</b> through fxtwitter</li>
+      <li><b>Newsletter ingest</b> with 3 real newsletters, including a paid one</li>
+      <li><b>Pulse grouping</b> on a real week of newsletters</li>
+      <li><b>LLM processing cost</b> on 5 real transcripts</li>
+      <li><b>Safari paywall capture</b> on WSJ, The Information, Bloomberg and a paid Substack</li>
     </ol>
   </section>
 

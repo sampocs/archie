@@ -1,0 +1,623 @@
+<title>Second Brain v1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column for the spec, with phone mockups breaking wider into wrapping rows. Ink on cool paper, with a highlighter-yellow accent. */
+:root {
+  --paper: #f5f6f3;
+  --card: #ffffff;
+  --sunk: #e9ebe6;
+  --line: #d6d9d1;
+  --ink: #1d2430;
+  --ink-2: #4b5462;
+  --ink-3: #7d8593;
+  --blue: #2f5bd3;
+  --blue-soft: #e3e9fb;
+  --hl: #f6e27a;
+  --hl-ink: #4a3d00;
+  --good: #23824f;
+  --warn: #b5650d;
+  --bad: #b8323a;
+  --display: "Young Serif", Georgia, "Times New Roman", serif;
+  --body: "Public Sans", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14171c; --card: #1c2027; --sunk: #232831; --line: #323843;
+    --ink: #e8eaee; --ink-2: #b2b8c3; --ink-3: #7f8794;
+    --blue: #7d9df2; --blue-soft: #222c45; --hl: #d9c45a; --hl-ink: #2a2300;
+    --good: #5cc28b; --warn: #e2a052; --bad: #ec7a80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14171c; --card: #1c2027; --sunk: #232831; --line: #323843;
+  --ink: #e8eaee; --ink-2: #b2b8c3; --ink-3: #7f8794;
+  --blue: #7d9df2; --blue-soft: #222c45; --hl: #d9c45a; --hl-ink: #2a2300;
+  --good: #5cc28b; --warn: #e2a052; --bad: #ec7a80;
+  color-scheme: dark;
+}
+
+body { background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 48px 96px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.prose { max-width: 680px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); }
+h2 { font-size: clamp(1.6rem, 3.5vw, 2.1rem); }
+h3 { font-size: 1.25rem; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+mark { background: linear-gradient(transparent 55%, var(--hl) 55%); color: inherit; padding: 0 2px; }
+.lede { font-size: 1.15rem; color: var(--ink-2); }
+section { padding-top: 64px; display: flex; flex-direction: column; gap: 18px; }
+section + section { border-top: 1px solid var(--line); margin-top: 64px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+.muted { color: var(--ink-3); }
+code { font-family: var(--mono); font-size: 0.85em; background: var(--sunk); padding: 1px 5px; border-radius: 4px; }
+a { color: var(--blue); }
+
+/* Hero */
+.hero { display: flex; flex-direction: column; gap: 16px; }
+.names { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.name-chip { font-family: var(--display); font-size: 1.1rem; padding: 2px 12px; border: 1px dashed var(--ink-3); border-radius: 999px; }
+.toc { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; margin-top: 8px; }
+.toc a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--line); }
+.toc a:hover, .toc a:focus-visible { color: var(--blue); border-color: var(--blue); outline: none; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 520px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 500; }
+tr.target td { background: var(--blue-soft); }
+.level-name { font-family: var(--display); font-size: 1.05rem; white-space: nowrap; }
+
+/* Principles */
+.principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.principle { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.principle b { font-weight: 600; }
+.principle span { color: var(--ink-2); font-size: 14px; }
+
+/* Pipeline */
+.pipeline { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; counter-reset: step; }
+.pipeline li { counter-increment: step; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--ink-2); display: flex; flex-direction: column; gap: 2px; }
+.pipeline li::before { content: counter(step); font-family: var(--mono); font-size: 12px; color: var(--blue); }
+.pipeline li b { color: var(--ink); font-weight: 600; font-size: 15px; }
+
+/* State chips */
+.state { display: inline-block; font-family: var(--mono); font-size: 12px; padding: 2px 8px; border-radius: 5px; background: var(--sunk); white-space: nowrap; }
+.state.consumed { background: var(--blue-soft); color: var(--blue); }
+
+/* Phones */
+.phones { display: flex; flex-wrap: wrap; gap: 28px 24px; align-items: flex-start; }
+.ph-wrap { width: 260px; max-width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.ph-cap { font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+.ph-cap b { color: var(--ink); font-weight: 600; }
+.phone { width: 260px; max-width: 100%; height: 540px; border: 1px solid var(--line); border-radius: 34px; background: var(--card); font-size: 12px; line-height: 1.45; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 1px 0 var(--line), 0 18px 40px -24px rgba(20, 30, 50, 0.35); }
+.notch { height: 26px; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+.notch div { width: 74px; height: 7px; border-radius: 4px; background: var(--sunk); }
+.ph-head { padding: 2px 16px 10px; font-family: var(--display); font-size: 20px; flex-shrink: 0; }
+.ph-head.small { font-family: var(--body); font-size: 13px; font-weight: 600; }
+.ph-head .sub { font-family: var(--body); font-size: 11px; color: var(--ink-3); font-weight: 400; }
+.ph-body { flex: 1; min-height: 0; overflow: hidden; padding: 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.tabbar { display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--line); padding: 8px 4px 14px; font-size: 10px; color: var(--ink-3); background: var(--card); flex-shrink: 0; }
+.tabbar .on { color: var(--blue); font-weight: 600; }
+.tabbar .plus { width: 30px; height: 30px; border-radius: 50%; background: var(--blue); color: var(--card); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 600; }
+.tile { border: 1px solid var(--line); border-radius: 12px; padding: 10px; background: var(--paper); display: flex; flex-direction: column; gap: 6px; }
+.tile-lbl { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; }
+.tile b { font-weight: 600; }
+.cta { display: block; text-align: center; padding: 8px; border-radius: 10px; background: var(--blue); color: var(--card); font-weight: 600; font-size: 12px; }
+.cta.ghost { background: transparent; color: var(--blue); border: 1px solid var(--blue); }
+.li { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.li:last-child { border-bottom: none; }
+.small-muted { font-size: 10.5px; color: var(--ink-3); }
+.pill { display: inline-block; font-size: 9.5px; padding: 1px 7px; border-radius: 999px; background: var(--sunk); color: var(--ink-2); white-space: nowrap; }
+.pill.blue { background: transparent; color: var(--blue); border: 1px solid var(--blue); }
+.pill.warn { color: var(--warn); }
+.pill.good { color: var(--good); }
+.kind { width: 30px; height: 30px; border-radius: 7px; background: var(--sunk); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 8.5px; font-weight: 500; color: var(--ink-2); flex-shrink: 0; }
+.item { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); align-items: flex-start; }
+.item:last-child { border-bottom: none; }
+.item b { font-weight: 600; }
+.chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.chip { font-size: 10.5px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); }
+.chip.on { border-color: var(--blue); color: var(--blue); background: var(--blue-soft); }
+.field { border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; color: var(--ink-2); background: var(--paper); font-size: 11px; }
+.search { border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; color: var(--ink-3); background: var(--paper); font-size: 11px; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; font-size: 11px; }
+.seg span { flex: 1; text-align: center; padding: 5px; color: var(--ink-2); }
+.seg span.on { background: var(--blue); color: var(--card); font-weight: 600; }
+.sec { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-3); margin-top: 2px; }
+.reader h4 { font-family: var(--display); font-weight: 400; font-size: 16px; margin: 0; line-height: 1.25; }
+.reader p { font-size: 12px; color: var(--ink-2); }
+.callout { background: var(--hl); color: var(--hl-ink); border-radius: 6px; padding: 7px 9px; font-size: 11.5px; }
+.prog { height: 3px; background: var(--sunk); margin: 0 14px 8px; border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+.prog div { height: 100%; width: 40%; background: var(--blue); }
+.askbar { border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; color: var(--ink-3); font-size: 11px; margin: 4px 12px 12px; flex-shrink: 0; }
+.flash { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 8px; text-align: center; border: 1px solid var(--line); border-radius: 16px; padding: 16px; background: var(--paper); }
+.flash b { font-family: var(--display); font-weight: 400; font-size: 15px; line-height: 1.35; }
+.grade { border-radius: 10px; padding: 9px; background: var(--sunk); font-size: 11px; color: var(--ink-2); }
+.grade .ok { color: var(--good); font-weight: 600; }
+.grade .part { color: var(--warn); font-weight: 600; }
+.msg { padding: 7px 10px; border-radius: 12px; font-size: 11.5px; max-width: 88%; }
+.me { align-self: flex-end; background: var(--blue); color: var(--card); border-bottom-right-radius: 4px; }
+.bot { align-self: flex-start; background: var(--sunk); border-bottom-left-radius: 4px; }
+.src { display: block; margin-top: 3px; color: var(--blue); font-size: 10px; }
+.story { padding: 7px 0; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 2px; }
+.story:last-child { border-bottom: none; }
+.story b { font-weight: 600; font-size: 12px; }
+.story .why { font-size: 11px; color: var(--ink-2); }
+.story .meta { display: flex; justify-content: space-between; align-items: center; }
+.dim { position: relative; flex: 1; background: var(--sunk); }
+.dim-bg { padding: 16px; color: var(--ink-3); font-size: 11px; display: flex; flex-direction: column; gap: 8px; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--card); border-radius: 18px 18px 0 0; padding: 12px 14px 18px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 2px; }
+.num { display: flex; justify-content: space-between; border: 1px solid var(--line); border-radius: 8px; padding: 5px 8px; font-size: 11px; background: var(--paper); }
+.num span:last-child { font-family: var(--mono); color: var(--ink-3); font-size: 10px; }
+.dom-group { display: flex; flex-direction: column; gap: 2px; }
+.dom-name { font-weight: 600; font-size: 12px; display: flex; justify-content: space-between; }
+.topic { display: flex; justify-content: space-between; padding: 4px 0 4px 10px; border-left: 2px solid var(--line); font-size: 11.5px; color: var(--ink-2); }
+.notif { width: 300px; max-width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: flex; gap: 10px; align-items: flex-start; box-shadow: 0 14px 30px -22px rgba(20,30,50,0.4); }
+.notif-icon { width: 34px; height: 34px; border-radius: 9px; background: var(--blue); color: var(--card); display: flex; align-items: center; justify-content: center; font-family: var(--display); font-size: 17px; flex-shrink: 0; }
+.notif-text { font-size: 13px; line-height: 1.4; min-width: 0; }
+.notif-text b { display: flex; justify-content: space-between; font-weight: 600; }
+.notif-text b span { font-weight: 400; color: var(--ink-3); font-size: 11px; }
+
+/* Two-column feature blocks */
+.feature { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: start; }
+@media (max-width: 760px) { .feature { grid-template-columns: minmax(0, 1fr); } }
+
+/* Lists */
+ul.clean { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); }
+ul.clean b { color: var(--ink); font-weight: 600; }
+.later { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+.later div { border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--ink-2); display: flex; flex-direction: column; gap: 4px; }
+.later b { color: var(--ink); font-weight: 600; }
+.roadmap { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0; }
+.roadmap li { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.roadmap .dot { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--ink-3); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+.roadmap li.now .dot { background: var(--blue); border-color: var(--blue); color: var(--card); }
+.roadmap li.done .dot { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+.roadmap b { font-weight: 600; }
+.risks { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-top: 10px; }
+.risks span { font-size: 14px; color: var(--ink-2); background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <span class="eyebrow">Product scope · v1 · Oct 26, 2026</span>
+    <h1>Second Brain</h1>
+    <p class="lede prose">A personal mobile app that turns the podcasts, newsletters, threads and books I already consume into knowledge I can actually <mark>talk about at a poker table</mark>.</p>
+    <div class="names"><span class="muted" style="font-size:14px">Name still open:</span><span class="name-chip">Carl</span><span class="name-chip">Archie</span><span class="name-chip">Gary</span><span class="name-chip">Ralph</span><span class="muted" style="font-size:13px">(mockups say Carl)</span></div>
+    <nav class="toc" aria-label="Sections">
+      <a href="#why">Why</a><a href="#principles">Principles</a><a href="#capture">Getting content in</a><a href="#processing">Processing</a><a href="#today">Today</a><a href="#pulse">Pulse</a><a href="#library">Library</a><a href="#review">Review</a><a href="#chat">Chat</a><a href="#notifications">Notifications</a><a href="#later">Not in v1</a><a href="#roadmap">Roadmap</a>
+    </nav>
+  </header>
+
+  <section id="why">
+    <span class="eyebrow">Why</span>
+    <h2>Consuming isn't compounding</h2>
+    <div class="prose stack">
+      <p>Years of podcasts and newsletters haven't added up. Every episode feels new because there's nothing for it to attach to. The problem is <b>integration, not consumption</b>. The target is level 2 across the subjects I choose.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Level</th><th>What it means</th><th>Example: a company</th></tr></thead>
+        <tbody>
+          <tr><td class="level-name">1 · Foreign</td><td>The vocabulary itself is unfamiliar</td><td>"Monitoring software." What does that even mean?</td></tr>
+          <tr class="target"><td class="level-name">2 · Conversational</td><td><b>The target.</b> Vocabulary, how it works, the players, rough numbers, live debates, and a take of my own</td><td>I've seen the product and know what it does and why people buy it</td></tr>
+          <tr><td class="level-name">3 · Expert</td><td>Requires hands-on work and the knowledge that only comes from doing it</td><td>I've integrated it myself and know its quirks</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="principles">
+    <span class="eyebrow">Principles</span>
+    <h2>How it should feel</h2>
+    <div class="principles">
+      <div class="principle"><b>Mobile only</b><span>That's where I consume almost everything.</span></div>
+      <div class="principle"><b>App first, chat inside</b><span>Structured screens for reviewing and browsing, plus chat for questions.</span></div>
+      <div class="principle"><b>Foundations over facts</b><span>Background primers matter more than one-off facts from an episode.</span></div>
+      <div class="principle"><b>Calm</b><span>At most one notification a day. Nothing should feel like homework.</span></div>
+      <div class="principle"><b>Just for me</b><span>A personal tool, so no onboarding or growth concerns.</span></div>
+    </div>
+  </section>
+
+  <section id="capture">
+    <span class="eyebrow">Getting content in</span>
+    <h2>Two taps from any app</h2>
+    <div class="prose stack">
+      <p>Three ways in:</p>
+      <ul class="clean">
+        <li><b>Share sheet</b> from Podcasts, Spotify, YouTube, Safari, Substack or X. Choose <i>Finished</i> or <i>Queue it</i>.</li>
+        <li><b>Notes import</b> brings in years of existing notes, which get the same processing.</li>
+        <li><b>Newsletters</b> arrive automatically for Pulse, through a forwarding address.</li>
+      </ul>
+      <p>The "how'd it go?" answer is optional. It's also the strongest signal Carl has for finding the gaps in my background knowledge.</p>
+    </div>
+    <div class="phones">
+      <div class="ph-wrap">
+        <div class="phone">
+          <div class="notch"><div></div></div>
+          <div class="dim">
+            <div class="dim-bg"><span>Podcasts</span><b style="color:var(--ink-2)">Dwarkesh Podcast</b><span>Elon Musk: Space GPUs, xAI, Optimus</span><span>▶ ─────────── 2:41:07</span></div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div><b>Save to Carl</b> <span class="small-muted">· Elon Musk · Dwarkesh</span></div>
+              <div class="seg"><span class="on">Finished</span><span>Queue it</span></div>
+              <div class="small-muted">How'd it go?</div>
+              <div class="chips"><span class="chip">Easy</span><span class="chip">Mostly followed</span><span class="chip on">Parts lost me</span></div>
+              <div class="field">Voice: "the energy and space datacenter stuff"</div>
+              <span class="cta">Save</span>
+            </div>
+          </div>
+        </div>
+        <p class="ph-cap"><b>Finished.</b> Save it with an optional reaction. Saying "parts lost me" pushes a primer to Today.</p>
+      </div>
+      <div class="ph-wrap">
+        <div class="phone">
+          <div class="notch"><div></div></div>
+          <div class="dim">
+            <div class="dim-bg"><span>Books</span><b style="color:var(--ink-2)">The Spy and the Traitor</b><span>Ben Macintyre</span></div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div><b>Save to Carl</b> <span class="small-muted">· The Spy and the Traitor</span></div>
+              <div class="seg"><span>Finished</span><span class="on">Queue it</span></div>
+              <div class="small-muted">Prep me before I start?</div>
+              <div class="chips"><span class="chip on">Yes, crash course</span><span class="chip">Just queue it</span></div>
+              <div class="chips"><span class="chip on">No spoilers</span><span class="chip on">Assume I know nothing</span></div>
+              <span class="cta">Queue</span>
+            </div>
+          </div>
+        </div>
+        <p class="ph-cap"><b>Queue it.</b> Optionally get a primer before you start, like a spoiler-free Cold War crash course before the book.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="processing">
+    <span class="eyebrow">Processing</span>
+    <h2>What happens to every source</h2>
+    <p class="prose">Every source I consume goes through the same steps, in order. Primers are always built but only pushed to me sometimes (see Today). Cards are generated no matter what I already know, and reviews take care of the rest.</p>
+    <ol class="pipeline">
+      <li><b>Get the text</b>Transcript, article or notes</li>
+      <li><b>Summarize</b>Gist, key ideas, numbers with timestamps</li>
+      <li><b>Categorize</b>Domain → topic, creating the topic if needed</li>
+      <li><b>Tag</b>Topics and key concepts</li>
+      <li><b>Build a primer</b>The background it assumes I have</li>
+      <li><b>Generate cards</b>3–5 cards on concepts, mechanisms and rough numbers</li>
+      <li><b>Link</b>To related items already in the library</li>
+    </ol>
+    <h3 style="margin-top:12px">Content states</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>State</th><th>Meaning</th><th>What Carl does</th></tr></thead>
+        <tbody>
+          <tr><td><span class="state">Queued</span></td><td>I want to consume it</td><td>Primer available through "Prep me"</td></tr>
+          <tr><td><span class="state">Inbox</span></td><td>Arrived automatically (newsletters), not seen yet</td><td>Indexed and searchable in chat, labeled unread. No cards</td></tr>
+          <tr><td><span class="state">Briefed</span></td><td>I saw the headline in Pulse</td><td>Counts as awareness only. No long-term cards</td></tr>
+          <tr><td><span class="state consumed">Consumed</span></td><td>Finished it, or tapped "Go deeper"</td><td>Full processing: summary, primer, cards, links</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="today">
+    <span class="eyebrow">Tab 1 of 5 · Today</span>
+    <h2>What to do right now</h2>
+    <div class="feature">
+      <div class="prose stack">
+        <p>The tab bar is <b>Today · Library · ＋ · Review · Carl</b>. Today shows four things:</p>
+        <ul class="clean">
+          <li><b>Pulse brief:</b> what's happened in the world since I last checked.</li>
+          <li><b>Review:</b> cards due and the estimated time.</li>
+          <li><b>Primers ready:</b> only the ones pushed to me, because I said "parts lost me" or tapped "Prep me." Every other primer stays on its item page.</li>
+          <li><b>Up next:</b> the top of my queue, with "Prep me" on each item.</li>
+        </ul>
+      </div>
+      <div class="ph-wrap">
+        <div class="phone">
+          <div class="notch"><div></div></div>
+          <div class="ph-head">Today <span class="sub">· Mon Oct 26</span></div>
+          <div class="ph-body">
+            <div class="tile">
+              <div class="tile-lbl"><span>Pulse · since Friday</span><span>~2 min</span></div>
+              <b>Fed holds, Nvidia guides up, ETH ETF flows flip</b>
+              <span class="small-muted">6 stories · 23 more collapsed</span>
+            </div>
+            <div class="tile">
+              <div class="tile-lbl"><span>Review · 6 due</span><span>~4 min</span></div>
+              <span class="cta">Start review</span>
+            </div>
+            <div class="tile">
+              <div class="tile-lbl"><span>Primers ready</span></div>
+              <div class="li"><span><b>Power is the new chip shortage</b><br><span class="small-muted">from Elon on Dwarkesh · 5 min</span></span></div>
+              <div class="li"><span><b>Cold War crash course</b><br><span class="small-muted">prep for Spy &amp; the Traitor · 8 min</span></span></div>
+            </div>
+            <div class="tile">
+              <div class="tile-lbl"><span>Up next</span></div>
+              <div class="li"><span>All-In E201</span><span class="pill blue">Prep me</span></div>
+              <div class="li"><span>Spy &amp; the Traitor</span><span class="pill">ch. 4</span></div>
+            </div>
+          </div>
+          <div class="tabbar"><span class="on">Today</span><span>Library</span><span class="plus">+</span><span>Review</span><span>Carl</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="pulse">
+    <span class="eyebrow">Inside Today · Pulse</span>
+    <h2>The two-minute world update</h2>
+    <div class="feature">
+      <div class="prose stack">
+        <p>This replaces my current habit of letting newsletters pile up and then asking Claude for a summary.</p>
+        <ul class="clean">
+          <li><b>Grouped by story, not by newsletter.</b> Five newsletters covering the same story become one item.</li>
+          <li><b>Ranked</b> by importance (how widely covered and how big a deal) and by relevance to my domains. Noise is dropped.</li>
+          <li><b>Top 5–8 stories,</b> each with what happened and why it matters. Everything else collapses under "Also happening."</li>
+          <li><b>Covers everything since I last checked.</b> Skipping three days produces one brief, not three, and it always takes about two minutes.</li>
+          <li><b>Go deeper</b> queues the full piece, or opens it as a consumed library item with full processing.</li>
+          <li><b>Weekly news quiz:</b> a few short cards on the week's stories. They expire instead of entering long-term review.</li>
+          <li><b>No notification.</b> The brief waits in Today until I get to it.</li>
+        </ul>
+      </div>
+      <div class="ph-wrap">
+        <div class="phone">
+          <div class="notch"><div></div></div>
+          <div class="ph-head small">‹ Pulse <span class="sub">· since Fri · 41 pieces from 7 newsletters</span></div>
+          <div class="ph-body">
+            <div class="story">
+              <div class="meta"><span class="pill">Macro</span><span class="small-muted">5 sources</span></div>
+              <b>Fed holds rates, signals one more cut</b>
+              <span class="why">Why it matters: markets had priced in two. Mortgage rates likely stay near 6%.</span>
+            </div>
+            <div class="story">
+              <div class="meta"><span class="pill">AI</span><span class="small-muted">4 sources</span></div>
+              <b>Nvidia raises guidance on datacenter demand</b>
+              <span class="why">Why it matters: a sign hyperscaler capex isn't slowing yet. Ties to your Elon primer.</span>
+              <span class="pill blue" style="align-self:flex-start">Go deeper</span>
+            </div>
+            <div class="story">
+              <div class="meta"><span class="pill">Crypto</span><span class="small-muted">3 sources</span></div>
+              <b>ETH ETF flows turn positive for the first time in 6 weeks</b>
+              <span class="why">Why it matters: institutions coming back after the summer drawdown.</span>
+            </div>
+            <div class="story">
+              <div class="meta"><span class="pill">Startups</span><span class="small-muted">2 sources</span></div>
+              <b>Big AI lab raises at a new record valuation</b>
+              <span class="why">Why it matters: sets the bar for every AI round this quarter.</span>
+            </div>
+            <div class="small-muted" style="text-align:center; padding-top:4px">Also happening · 23 stories ›</div>
+          </div>
+          <div class="tabbar"><span class="on">Today</span><span>Library</span><span class="plus">+</span><span>Review</span><span>Carl</span></div>
+        </div>
+        <p class="ph-cap">Example stories for illustration only, not real headlines.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="library">
+    <span class="eyebrow">Tab 2 of 5 · Library</span>
+    <h2>Carl takes the notes so I don't have to</h2>
+    <div class="prose stack">
+      <p>One list of everything: queued, in progress, consumed, inbox, and the primers Carl wrote. Chat and Library use the same content. Chat is for finding a specific thing. Library is for browsing and going back to things.</p>
+      <p>Organization has two levels: a <b>short list of broad domains</b> (AI, Macro, Crypto, Startups, Finance, History), with <b>unlimited topics</b> underneath each. Carl creates topics automatically, and I can add my own. Knowledge scores are left out of v1.</p>
+    </div>
+    <div class="phones">
+      <div class="ph-wrap">
+        <div class="phone">
+          <div class="notch"><div></div></div>
+          <div class="ph-head">Library</div>
+          <div class="ph-body">
+            <div class="search">Search titles, ideas, numbers…</div>
+            <div class="seg"><span class="on">Items</span><span>Domains</span></div>
+            <div class="chips"><span class="chip on">All</span><span class="chip">Queued</span><span class="chip">Consumed</span><span class="chip">Inbox</span><span class="chip">Primers</span></div>
+            <div class="item"><div class="kind">POD</div><div><b>Elon Musk · Dwarkesh</b><br><span class="small-muted">Oct 19 · AI › Buildouts</span> <span class="pill warn">primer pushed</span></div></div>
+            <div class="item"><div class="kind">BOOK</div><div><b>The Spy and the Traitor</b><br><span class="small-muted">Reading · History › Cold War</span></div></div>
+            <div class="item"><div class="kind">NEWS</div><div><b>Doomberg #212: Grid Queues</b><br><span class="small-muted">Inbox · unread · Energy</span></div></div>
+            <div class="item"><div class="kind">X</div><div><b>Joe McCann thread on ETH</b><br><span class="small-muted">Sep 28 · Crypto › Trading</span></div></div>
+            <div class="item"><div class="kind">PRMR</div><div><b>Power is the new chip shortage</b><br><span class="small-muted">Primer · from Elon episode</span></div></div>
+          </div>
+          <div class="tabbar"><span>Today</span><span class="on">Library</span><span class="plus">+</span><span>Review</span><span>Carl</span></div>
+        </div>
+        <p class="ph-cap"><b>Items:</b> search, plus filters for status, type and domain. The queue is just this list filtered to Queued.</p>
+      </div>
+      <div class="ph-wrap">
+        <div class="phone">
+          <div class="notch"><div></div></div>
+          <div class="ph-head small">‹ Elon Musk · Dwarkesh <span class="sub">· 2h 41m</span></div>
+          <div class="ph-body">
+            <div class="sec">The gist</div>
+            <p style="font-size:11.5px; color:var(--ink-2)">The next AI bottleneck is electricity, not chips. Orbit sidesteps the grid entirely…</p>
+            <div class="sec">Key ideas</div>
+            <ul style="margin:0; padding-left:16px; font-size:11.5px; color:var(--ink-2)"><li>Power, not chips, is the constraint · 31:20</li><li>Space solar has no interconnect queue · 58:05</li><li>Optimus is the long-term bet · 1:44:10</li></ul>
+            <div class="sec">Numbers worth knowing</div>
+            <div class="num"><span>Frontier cluster ≈ 1 GW</span><span>41:52</span></div>
+            <div class="sec">Background you might need</div>
+            <div class="field">Primer: Power is the new chip shortage ›</div>
+            <div class="sec">Your reaction</div>
+            <p style="font-size:11.5px; color:var(--ink-2)">"the energy and space datacenter stuff lost me"</p>
+            <div class="chips"><span class="chip">Doomberg #212</span><span class="chip">4 cards</span></div>
+          </div>
+          <div class="askbar">Ask Carl about this episode…</div>
+        </div>
+        <p class="ph-cap"><b>Item page:</b> the notes I would have taken, with timestamps, the primer and my reaction.</p>
+      </div>
+      <div class="ph-wrap">
+        <div class="phone">
+          <div class="notch"><div></div></div>
+          <div class="ph-head">Library</div>
+          <div class="ph-body">
+            <div class="search">Search titles, ideas, numbers…</div>
+            <div class="seg"><span>Items</span><span class="on">Domains</span></div>
+            <div class="dom-group">
+              <div class="dom-name"><span>AI</span><span class="small-muted">14 items</span></div>
+              <div class="topic"><span>Hyperscaler buildouts</span><span>6</span></div>
+              <div class="topic"><span>Agents</span><span>5</span></div>
+              <div class="topic"><span>+ 3 more topics</span><span></span></div>
+            </div>
+            <div class="dom-group">
+              <div class="dom-name"><span>Macro</span><span class="small-muted">5 items</span></div>
+              <div class="topic"><span>How the Fed works</span><span>3</span></div>
+              <div class="topic"><span>+ 2 more topics</span><span></span></div>
+            </div>
+            <div class="dom-group">
+              <div class="dom-name"><span>Crypto</span><span class="small-muted">21 items</span></div>
+              <div class="topic"><span>ETH</span><span>9</span></div>
+              <div class="topic"><span>+ 5 more topics</span><span></span></div>
+            </div>
+            <div class="dom-group">
+              <div class="dom-name"><span>History</span><span class="small-muted">2 items</span></div>
+              <div class="topic"><span>Cold War</span><span>2</span></div>
+            </div>
+            <div class="small-muted" style="text-align:center">+ Add a topic I want to learn</div>
+          </div>
+          <div class="tabbar"><span>Today</span><span class="on">Library</span><span class="plus">+</span><span>Review</span><span>Carl</span></div>
+        </div>
+        <p class="ph-cap"><b>Domains:</b> a few broad domains with unlimited topics, created automatically or by me. No scores in v1.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="review">
+    <span class="eyebrow">Tab 4 of 5 · Review</span>
+    <h2>Recall it, don't recognize it</h2>
+    <div class="feature">
+      <div class="prose stack">
+        <ul class="clean">
+          <li><b>Open answers only,</b> typed or spoken. Multiple choice gives away the answer.</li>
+          <li><b>Graded on the idea, not the wording:</b> <i>got it / partly / missed</i>. A fast model with fixed answer choices, like Jev, looks like a good fit.</li>
+          <li><b>When the grader isn't confident,</b> it shows the model answer and I grade myself. I can always override with "actually, I knew that."</li>
+          <li><i>Partly</i> and <i>missed</i> get a short explanation of what was missing.</li>
+          <li><b>"Don't care"</b> deletes the card and teaches Carl what not to generate.</li>
+          <li><b>Spaced repetition</b> (e.g. FSRS): fast, correct answers mean I see the card less often.</li>
+          <li><b>Session order:</b> foundation cards from primers first, then mechanisms, then rough numbers. No trivia.</li>
+          <li><b>Calibrate before launch:</b> use ~10 examples from my imported notes, mark what I would actually want quizzed, and tune generation until it matches.</li>
+        </ul>
+      </div>
+      <div class="phones">
+        <div class="ph-wrap">
+          <div class="phone">
+            <div class="notch"><div></div></div>
+            <div class="ph-head small">Review <span class="sub">· 2 of 6</span></div>
+            <div class="ph-body">
+              <div class="flash">
+                <span class="tile-lbl" style="justify-content:center">AI · Buildouts · foundation</span>
+                <b>Why is power, not chips, the bottleneck for new AI datacenters?</b>
+              </div>
+              <div class="field">Voice: "chips are available now but you can't get grid power fast enough, new plants take years"</div>
+              <div class="grade"><span class="ok">Got it.</span> That's the core idea. The formal name for the wait is the "interconnect queue."</div>
+              <div class="chips" style="justify-content:space-between"><span class="chip">Actually I missed it</span><span class="chip">Don't care</span></div>
+              <span class="cta">Next</span>
+            </div>
+          </div>
+          <p class="ph-cap"><b>Got it:</b> graded on the idea, with a bonus detail.</p>
+        </div>
+        <div class="ph-wrap">
+          <div class="phone">
+            <div class="notch"><div></div></div>
+            <div class="ph-head small">Review <span class="sub">· 5 of 6</span></div>
+            <div class="ph-body">
+              <div class="flash">
+                <span class="tile-lbl" style="justify-content:center">History · Cold War · foundation</span>
+                <b>What was the KGB, and how was it different from MI6?</b>
+              </div>
+              <div class="field">Typed: "soviet spy agency, MI6 is the british one"</div>
+              <div class="grade"><span class="part">Partly.</span> Right on both. The missing piece: the KGB was also the Soviet <i>secret police</i> at home, while MI6 only works abroad. That difference drives a lot of the book.</div>
+              <div class="chips" style="justify-content:space-between"><span class="chip">Actually I knew that</span><span class="chip">Don't care</span></div>
+              <span class="cta">Next</span>
+            </div>
+          </div>
+          <p class="ph-cap"><b>Partly:</b> a short explanation of what was missing.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="chat">
+    <span class="eyebrow">Tab 5 of 5 · Carl</span>
+    <h2>Ask about anything I've consumed</h2>
+    <div class="feature">
+      <div class="prose stack">
+        <ul class="clean">
+          <li><b>Answers from my library, with sources,</b> including unread inbox items, which are labeled as unread.</li>
+          <li><b>Explains in plain language and adds context</b> ("is that a lot?").</li>
+          <li><b>Turns any answer into a card.</b></li>
+          <li><b>Opens from any primer or item page</b> already knowing what I'm looking at.</li>
+        </ul>
+        <p class="muted" style="font-size:14px">The ＋ tab (tab 3) is the same Finished / Queue flow as the share sheet, for pasting a link or searching for a book or podcast by hand.</p>
+      </div>
+      <div class="ph-wrap">
+        <div class="phone">
+          <div class="notch"><div></div></div>
+          <div class="ph-head">Carl</div>
+          <div class="ph-body">
+            <div class="msg me">what was that hyperscaler capex number from a newsletter a few weeks ago</div>
+            <div class="msg bot">Big 4 capex is about <b>$400B in 2026</b>.<span class="src">Doomberg #212 · Sep 30 · unread</span></div>
+            <div class="msg me">is that a lot?</div>
+            <div class="msg bot">It's about the cost of the entire US interstate highway system, adjusted for inflation, spent <i>every year</i>.</div>
+            <div class="chips"><span class="chip on">Make a card</span><span class="chip">Open source</span></div>
+          </div>
+          <div class="askbar">Ask about anything you've consumed…</div>
+          <div class="tabbar"><span>Today</span><span>Library</span><span class="plus">+</span><span>Review</span><span class="on">Carl</span></div>
+        </div>
+        <p class="ph-cap">Example figures for illustration only.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="notifications">
+    <span class="eyebrow">Notifications</span>
+    <h2>One a day, for reviews only</h2>
+    <p class="prose">One daily notification at a time I choose, and only for card reviews. There are no notifications for Pulse, primers or reading check-ins. If something takes more than two minutes, I'll get to it when I have time anyway.</p>
+    <div class="notif">
+      <div class="notif-icon">C</div>
+      <div class="notif-text"><b>Carl <span>8:30 AM</span></b>6 cards due · about 4 minutes</div>
+    </div>
+  </section>
+
+  <section id="later">
+    <span class="eyebrow">Not in v1</span>
+    <h2>Deliberately left for later</h2>
+    <div class="later">
+      <div><b>Proactive feed (v2)</b>Carl finds new material, ranked by my gaps, reusing the Pulse and processing pipeline.</div>
+      <div><b>Knowledge scores</b>Foreign / Familiar / Conversational per topic. Concepts are recorded from day one so scoring can be added later.</div>
+      <div><b>Growth vs. interest</b>Pinning a few topics for Carl to actively push foundations on.</div>
+      <div><b>Very large decks</b>Smarter card selection once there are thousands of cards, beyond standard spaced repetition.</div>
+      <div><b>Web or desktop</b>Mobile only for now.</div>
+    </div>
+  </section>
+
+  <section id="roadmap">
+    <span class="eyebrow">Roadmap</span>
+    <h2>What happens next</h2>
+    <ol class="roadmap">
+      <li class="now"><span class="dot">1</span><div><b>Product scope</b> <span class="muted">· this page</span><br><span class="muted">Agree on what v1 is.</span></div></li>
+      <li><span class="dot">2</span><div><b>De-risk</b><br><span class="muted">Spike the big unknowns before committing to a design.</span>
+        <div class="risks">
+          <span>Podcast transcripts from Spotify and Apple Podcasts links</span>
+          <span>YouTube transcripts</span>
+          <span>Reading X without the expensive official API</span>
+          <span>Newsletter ingest and paywalled Substack posts</span>
+          <span>Books, which have no transcript</span>
+          <span>Importing my existing notes</span>
+          <span>iOS share sheet (probably needs a native app)</span>
+          <span>Grading quality with Jev on real answers</span>
+          <span>Voice answers: on-device vs. API transcription</span>
+        </div>
+      </div></li>
+      <li><span class="dot">3</span><div><b>Finalize the product</b><br><span class="muted">Exact interface, down to styling.</span></div></li>
+      <li><span class="dot">4</span><div><b>Technical spec and backend</b><br><span class="muted">Then build.</span></div></li>
+    </ol>
+  </section>
+
+</div>

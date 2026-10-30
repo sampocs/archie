@@ -13,6 +13,7 @@ The app should feel good enough that you'd rather consume everything inside it. 
 - **Where the name appears:** the home-screen label, the notification title, the share-sheet target ("Add to Archie"), the wordmark, and conversation. **It never appears in UI copy.** The chat tab is labeled **Ask**, the bar reads "Ask about this episode," and Review shows "Answer," not "Archie's answer."
 - **Wordmark:** "Archie." in Geist Bold, tracking −0.06em, with a forest period (mint `#79B39E` in dark mode). Used on the launch screen and outside the app.
 - **App icon:** a top-down brain in thick white line art on brand forest `#3F7262`, with a scalloped outline, a center line, and C-shaped curls in each hemisphere. The current art is a programmatic draft. It needs a proper vector pass (hand-drawn or careful Figma work) before shipping, keeping the same composition and stroke weight.
+- **Banked alternate icon:** the same line style in **side view**: a scalloped outline, C-shaped curls and a cerebellum, with no stem, on forest. It's kept in case we switch later. The draft is shown in the reference page's Brand section.
 
 ## Visual system
 

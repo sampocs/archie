@@ -1,46 +1,47 @@
-# Spike: transcription quality on jargon-heavy podcasts (2026-10-26)
+# Spike: transcription quality on jargon-heavy podcasts (2026-10-29)
 
 `uv run spikes/transcription/compare_transcription.py` (needs `GROQ_API_KEY` and/or `OPENAI_API_KEY` in `.env`)
 
-The first 15 minutes of 5 episodes were transcribed by each provider. Four have published VTT transcripts used as the reference: Bankless (crypto), Money Stuff (finance), Darknet Diaries (security), and Acquired (business). 0xResearch (niche crypto) has none. Every provider ran with two hint styles:
-- **basic:** show name and hosts
-- **rich:** also the episode title and description from the feed
+**Decision rule:** pick a model only if it's better beyond random chance; otherwise pick the cheapest of the top group.
 
-## Results: 75 min of audio per run
+## Setup
 
-| Provider / hint | Bankless | Money Stuff | Darknet | Acquired | Time | Cost |
-|---|---|---|---|---|---|---|
-| groq whisper-large-v3-turbo / basic | 5.7% · skip 55† | 8.7% · skip 57† | 9.2% · 0 | 3.4% · **skip 84** | **12 s** | **$0.05** |
-| groq whisper-large-v3-turbo / rich | 13.3% · **skip 383** | 12.8% · 39 | 9.5% · **skip 971** | 6.9% · **skip 145** | 21 s | $0.05 |
-| openai gpt-4o-mini-transcribe / basic | 13.7%‡ · 0 | 9.4% · 68† | 10.2% · 0 | 1.8% · 0 | 127 s | $0.23 |
-| openai gpt-4o-mini-transcribe / rich | 12.4%‡ · 0 | 8.8% · 84† | 9.6% · 0 | 1.7% · 0 | 108 s | $0.23 |
-| openai gpt-4o-transcribe / basic | 6.3% · 0 | 10.2% · 86† | 9.6% · 17 | 1.8% · **skip 353** | 186 s | $0.45 |
-| openai gpt-4o-transcribe / rich | 6.1% · 18 | 9.7% · 54† | 9.8% · 0 | 3.3% · 0 | 171 s | $0.45 |
-| ~~groq whisper-large-v3~~ (first run) | dropped 15–40% of words everywhere | | | | | |
+- **20 episodes**, each scored against its published transcript: 5 Bankless, 5 Money Stuff, 5 Darknet Diaries, 4 Bussin', and 1 Acquired (the only Acquired episode with a transcript).
+- **Audio:** the first 15 minutes of each episode (5 h in total), cut into 10-minute chunks.
+- **Five setups:**
+  - Groq whisper-large-v3-turbo with the basic hint. Rich hints were dropped because they derailed it in the first spike.
+  - gpt-4o-mini-transcribe with the basic hint and with the rich hint.
+  - gpt-4o-transcribe with the basic hint and with the rich hint.
+- **Significance:** a paired sign test for each pair of setups, counting the episodes where each did better. p < 0.05 counts as a real difference.
 
-Each cell is word-level disagreement with the published transcript (ads excluded) · words in skipped passages (runs of 15+ missing words).
-- † Every provider "skips" roughly the same passage here. It's text in the published transcript that isn't in our audio (e.g. a sponsor read), not a model failure.
-- ‡ Mostly insertions of filler speech ("I don't know if", "you don't have to") that the published transcript leaves out. The published transcripts look Whisper-generated themselves, which biases this score toward Whisper.
+## Results
 
-**Known jargon** (count of correct spellings):
-- **No provider got these at all:** *Tyce* (Brown), *Dyre* (malware), *Morpho*, and *Uniswap* in Bankless.
-- **Every provider got about the same share** of *Conti*, *Handy Dan*, *Arthur Blank*, *Bernie Marcus*, *mNAV*, and *Aerodrome*.
-- **Rich hints helped OpenAI a little** with *Citrini* (0 → 1–2 mentions).
-- An earlier note claiming turbo wrote *Aerodrome* as "Eredrum" was wrong. That was large-v3. Turbo spelled it correctly.
+| Setup | Median error | Mean error | Episodes with real skips | Words skipped | Cost per audio hour |
+|---|---|---|---|---|---|
+| **groq turbo / basic** | 5.5% | 6.7% | **5** | **457** | **$0.04** |
+| 4o-mini / basic | 5.2% | 6.2% | 14 | 1728 | $0.18 |
+| 4o-mini / rich | 5.2% | 6.0% | 12 | 1389 | $0.18 |
+| 4o-transcribe / basic | 5.3% | 6.3% | 11 | 1855 | $0.36 |
+| 4o-transcribe / rich | 5.3% | 6.5% | 12 | 2171 | $0.36 |
 
-## Takeaways
+- **Error** is the share of words that disagree with the published transcript, with ads excluded.
+- **Skipped words** count only what a setup missed beyond the episode's baseline. The baseline is the smallest skip any setup had on that episode, because text that every setup misses is reference text that isn't in our audio.
 
-1. **Accuracy is roughly a tie.** All three usable models land at about 2–10% word-level disagreement, and the reference itself is imperfect. None of them reliably gets rare names right.
-2. **Skipped passages are the real difference.** Turbo skipped one real passage (Acquired's 84-word intro) and gpt-4o-transcribe skipped 353 words on Acquired with the basic hint. **gpt-4o-mini-transcribe skipped nothing real** in either hint style.
-3. **Never give Whisper long prompts.** The rich hint made turbo skip hundreds of words and produce garbage ("AeskwakanIROBEZIERCHEK", ALL-CAPS runs). Whisper gets a short hint only. OpenAI models tolerate the rich hint and benefit slightly.
-4. **Hints don't fix names. A cleanup pass has to.** Claude gets the episode title and description, the show's saved vocabulary, and web search when needed, and returns a **list of corrections** ("Ty Sprown" → "Tyce Brown") that code applies. It doesn't rewrite the transcript. This can be folded into the summarization call.
-5. **Cost and speed:** turbo ~$0.04/hr and 10× faster. mini ~$0.18/hr. Both are fine for background jobs. At ~43 hrs/mo that's **~$2 vs ~$8**.
+**No pair is significantly different on accuracy.** The closest is turbo vs 4o-mini/rich: mini did better on 14 of 19 episodes, p = 0.064. **No pair is significantly different on skips either.** Turbo vs 4o-mini/basic is 12/5, p = 0.14.
+
+## Findings
+
+1. **Accuracy is a statistical tie.** OpenAI leans slightly better (5.2% vs 5.5% median), but 20 episodes can't separate them. The published transcripts look Whisper-made, which, if anything, biases the scores toward turbo.
+2. **OpenAI truncates long chunks.** gpt-4o-(mini-)transcribe stops at about 1,600–1,800 words per request. When a 10-minute chunk holds more speech than that (Bussin' at about 185 words/min, some Money Stuff), the end of the chunk is silently dropped: 200–360 words on every Bussin' episode, in all four OpenAI setups. Groq returned the whole chunk every time. If OpenAI is used, chunks must be 5 minutes or shorter.
+3. **The first spike's "mini never skips" was luck.** With 20 episodes, mini skipped as often as the others.
+4. **Rich hints don't measurably help** OpenAI (mini basic vs rich: p = 0.26).
+5. **Names are still a weak point everywhere.** No setup wrote *Dyre*, and *Hyperliquid* was missed. OpenAI got *Morpho* and *Uniswap* once each where turbo got none, but turbo wrote *Rhysider* correctly (6 of 6) where OpenAI never did. The hint helps Whisper with names that are in it. The Claude corrections pass is still needed.
+6. **Correction from the first spike:** the Money Stuff guest is *Tice* Brown (per the episode title). The published transcript's "Tyce" was the error, not the models'.
+7. **A skip detector based on speaking rate only catches catastrophic failures.** Normal chunks run 159+ words/min (10th percentile), and 2 runs collapsed to 7 and 23 words/min. A check for chunks under about 100 words/min catches those collapses. Skips of 30–300 words don't change the rate enough to detect.
+8. **A scoring bug was fixed.** The reference is deliberately longer than the clip. A stray matching word in that extra tail used to make the whole tail count as "skipped". Scoring now trims to the first and last runs of 8+ matching words.
 
 ## Recommendation
 
-**Primary: `gpt-4o-mini-transcribe` with the rich hint**, because it was the most complete (no skips), and **Groq turbo with the basic hint as the cheap fallback**. Both use the same OpenAI-compatible API, so switching is a config change. Names get fixed by a Claude corrections pass.
-
-## Still to test
-
-- The Claude corrections pass: how many known terms (Tyce, Dyre, Citrini, Morpho) does it recover, and does it introduce wrong "fixes"? Needs `ANTHROPIC_API_KEY`.
-- Chunk size versus skips for turbo, if we ever want turbo as primary.
+**Groq whisper-large-v3-turbo with a short hint** (show, hosts, and the show's known vocabulary), at about $0.04 per audio hour, or **about $2/mo** at 43 h. Nothing is significantly better, and it's the cheapest.
+- **Fallback:** if Groq errors, or a chunk comes back under about 100 words/min, rerun that chunk on gpt-4o-mini-transcribe with 5-minute chunks.
+- **Names:** a Claude corrections pass fixes them, using the episode description, the show's vocabulary, and web search.

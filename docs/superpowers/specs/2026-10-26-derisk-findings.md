@@ -9,7 +9,7 @@
 |---|---|---|---|
 | Apple Podcasts links | 🟢 | iTunes Lookup API → RSS feed → episode audio | Free |
 | Generic RSS podcasts | 🟢 | Use `<podcast:transcript>` if present (~10% of top shows), else transcribe | Free when a transcript exists |
-| Transcribing audio | 🟢 | ElevenLabs Scribe v2 or AssemblyAI (long files, timestamps, speaker labels). Local Whisper on a Mac is free | ~$6–17/mo for 10 hrs/week |
+| Transcribing audio | 🟢 | **Tested on 20 episodes:** Groq whisper-large-v3-turbo with a short hint. No model was better beyond chance, and Groq is the cheapest. If it fails, fall back to gpt-4o-mini-transcribe with 5-min chunks. Names get fixed by a Claude corrections pass. See `spikes/transcription/RESULTS.md` | ~$2/mo for 10 hrs/week |
 | Spotify links | 🟡 | Scrape the episode and show title from the public page, then match to the show's RSS via iTunes Search or Podcast Index. Don't depend on the Spotify API (it was cut back in Feb 2026) | Free |
 | Spotify-exclusive shows | 🔴 | No RSS and DRM-protected. **Unsupported** | n/a |
 | YouTube | 🟡 | `youtube-transcript-api`, then `yt-dlp` subtitles, then download audio and transcribe. **YouTube blocks most cloud server IPs.** Run from a home machine or through a residential proxy | Free from home, ~$5–10/mo for a proxy |
@@ -68,7 +68,7 @@
 | Hosting (API, worker, Postgres + pgvector) | $5 | $5 | e.g. Railway hobby, or Supabase free tier for the DB |
 | Domain (for newsletter ingest) | $1 | $1 | ~$10/yr |
 | Apple developer account | $0 | $0 | Already have one |
-| Transcription (~43 hrs) | ~$2 (Groq Whisper, no speaker labels) | ~$2–8 (Groq, or gpt-4o-mini-transcribe) | Speaker labels (AssemblyAI or ElevenLabs) would cost ~$7–17. The LLM can usually infer who's speaking from context |
+| Transcription (~43 hrs) | ~$2 (Groq Whisper, no speaker labels) | ~$2 (Groq, chosen by the 20-episode spike) | Speaker labels (AssemblyAI or ElevenLabs) would cost ~$7–17. The LLM can usually infer who's speaking from context |
 | Source processing (summary, tags, cards, links) | ~$0.30 (Haiku) | ~$2–3 (Sonnet, Batch API) | Podcasts aren't urgent, so Batch's 50% discount applies |
 | Primers | ~$1 (Sonnet) | ~$3 (Opus) | Foundations are the most important output, so they get the best model |
 | Pulse (split, group, write the brief) | ~$0.50 (Haiku) | ~$2–3 (Haiku split + Sonnet brief) | |

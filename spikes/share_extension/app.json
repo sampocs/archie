@@ -1,0 +1,32 @@
+{
+  "expo": {
+    "name": "Carl Share Spike",
+    "slug": "carl-share-spike",
+    "scheme": "carlsharespike",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.sampocs.carlsharespike",
+      "appleTeamId": "3W3H65F89G"
+    },
+    "plugins": [
+      [
+        "expo-share-extension",
+        {
+          "activationRules": [{ "type": "url" }, { "type": "text" }],
+          "height": 560,
+          "backgroundColor": { "red": 255, "green": 255, "blue": 255, "alpha": 1 }
+        }
+      ]
+    ]
+  }
+}

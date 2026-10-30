@@ -49,7 +49,7 @@
   <div>
     <h1>Archie<i>.</i></h1>
     <p>UX &amp; brand reference: the final decisions from the 2026-10-27 to 2026-10-29 design brainstorm. Companion to <code>2026-10-29-ux-and-brand-design.md</code>. Every screen below is the live, interactive mockup.</p>
-    <nav><a href="#brand">Brand</a><a href="#color">Color</a><a href="#type">Type &amp; shape</a><a href="#motion">Motion &amp; haptics</a><a href="#today">Today</a><a href="#review">Review</a><a href="#library">Library</a><a href="#chat">Ask</a><a href="#share">Share sheet</a></nav>
+    <nav><a href="#brand">Brand</a><a href="#color">Color</a><a href="#type">Type &amp; shape</a><a href="#motion">Motion &amp; haptics</a><a href="#today">Today</a><a href="#review">Review</a><a href="#library">Library</a><a href="#ask-tab">Ask tab</a><a href="#chat">Ask in context</a><a href="#share">Share sheet</a></nav>
   </div>
 </header>
 <main>
@@ -1258,7 +1258,358 @@ apply();
 &lt;/script&gt;
 &lt;/body&gt;
 &lt;/html&gt;
-"></iframe></section><section class="screen" id="chat"><h2>Ask (chat)</h2><p class="lede">Document style, [1] markers, older turns collapse their sources, follow-ups under the latest answer.</p><iframe title="Ask (chat)" loading="lazy" style="height:900px" srcdoc="&lt;!DOCTYPE html&gt;
+"></iframe></section><section class="screen" id="ask-tab"><h2>Ask tab</h2><p class="lede">The Ask tab opens to suggested questions (one from today's Pulse). Tap it to stream an answer with a <b>For scale</b> block, [1] citations, source chips with artwork and <b>Make a card</b>, which badges the Review tab.</p><iframe title="Ask tab" loading="lazy" style="height:900px" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;Carl — chat&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Geist:wght@300..700&amp;family=Geist+Mono:wght@400;500&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #1a1a1c; color: #e8e6e1; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; }
+  body { padding: 36px 32px 80px; }
+  .intro { max-width: 1180px; margin: 0 auto 28px; }
+  .intro h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .intro p { color: #a09d96; font-size: 14px; line-height: 1.55; max-width: 900px; margin-bottom: 6px; }
+  .intro p b { color: #e8e6e1; font-weight: 500; }
+  .stage { display: flex; gap: 36px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .phones { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+  .pcol { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .pcol .cap { font-size: 12px; color: #8a877f; letter-spacing: .04em; }
+  .haptic { height: 16px; font: 500 11px/16px &quot;Geist Mono&quot;, monospace; color: #cfcac0; opacity: 0; transition: opacity .15s; }
+  .haptic.on { opacity: 1; }
+  .controls { width: 250px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 24px; }
+  .ctl h3 { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #8a877f; margin-bottom: 8px; }
+  .ctl p.note { font-size: 12px; color: #7d7a74; line-height: 1.45; margin-top: 6px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button { font: 500 12.5px/1 -apple-system, Inter, sans-serif; color: #d8d6d0; background: #262629; border: 1px solid #36363a; padding: 8px 11px; border-radius: 8px; cursor: pointer; }
+  .seg button.on { background: #e8e6e1; color: #1a1a1c; border-color: #e8e6e1; }
+  .replay { font: 500 12.5px/1 -apple-system, Inter, sans-serif; color: #e8e6e1; background: #2a2a2d; border: 1px solid #3a3a3e; padding: 9px 14px; border-radius: 999px; cursor: pointer; }
+
+  .screen {
+    --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+    --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+    --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533; --k-history: #8E5468;
+    --got: #3F7262; --spring: cubic-bezier(.32,.72,0,1);
+  }
+  .phone { width: 360px; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 30px 80px rgba(0,0,0,.5); }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: &quot;Geist&quot;, sans-serif; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, Inter, sans-serif; pointer-events: none; }
+  .statusbar svg { height: 12px; }
+  .press { transition: transform .18s var(--spring), background-color .18s, opacity .2s; cursor: pointer; user-select: none; }
+  .press:active { transform: scale(.96); }
+
+  .topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 40; padding: 54px 16px 10px; display: flex; align-items: center; gap: 10px;
+            background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); }
+  .topbar .title { font-size: 17px; font-weight: 650; letter-spacing: -0.02em; flex: 1; }
+  .topbar .big { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; flex: 1; }
+  .icon-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--press); display: grid; place-items: center; color: var(--chrome); font-size: 15px; }
+  .ctx { display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 5px; border-radius: 10px; background: var(--surface); box-shadow: var(--card-shadow); max-width: 230px; }
+  .ctx .a { width: 26px; height: 26px; border-radius: 6px; flex: none; }
+  .ctx span { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+  .ctx small { display: block; font: 500 10px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 2px; }
+
+  .thread { position: absolute; inset: 0; overflow-y: auto; padding: 110px 18px 120px; scrollbar-width: none; scroll-behavior: smooth; }
+  .thread::-webkit-scrollbar { display: none; }
+
+  /* Empty state */
+  .empty { padding-top: 8px; }
+  .empty .hello { font-size: 15px; color: var(--ink2); line-height: 1.5; margin: 6px 4px 18px; }
+  .sugg { display: flex; flex-direction: column; gap: 8px; }
+  .sugg div { background: var(--surface); box-shadow: var(--card-shadow); border-radius: 14px; padding: 12px 14px; font-size: 14.5px; font-weight: 550; letter-spacing: -0.01em; line-height: 1.35; }
+  .sugg div small { display: block; font: 600 10px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 5px; }
+
+  /* Messages */
+  .msg { margin-bottom: 18px; animation: fadeup .4s var(--spring) both; }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .me { display: flex; justify-content: flex-end; }
+  .me div { max-width: 82%; background: var(--chrome); color: #fff; font-size: 15px; line-height: 1.42; padding: 10px 14px; border-radius: 18px 18px 4px 18px; }
+  .carl { font-size: 15.5px; line-height: 1.58; letter-spacing: -0.005em; }
+  .carl p { margin-bottom: 10px; }
+  .carl b { font-weight: 650; }
+  .bubbles .carl .body { background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; border-radius: 18px 18px 18px 4px; }
+  .cite { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; margin: 0 1px; border-radius: 5px; background: var(--press); color: var(--ink2);
+          font: 600 10.5px/1 &quot;Geist Mono&quot;, monospace; vertical-align: 2px; cursor: pointer; transition: background .15s; margin: 0 0 0 2px; }
+  .cite:hover { background: #E3E0D6; }
+  .cites-off .cite { display: none; }
+  .scale { margin: 6px 0 12px; background: var(--surface); box-shadow: var(--card-shadow); border-radius: 14px; padding: 12px 14px; }
+  .bubbles .scale { box-shadow: 0 0 0 1px var(--line); }
+  .scale .lbl { font: 500 10.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 10px; }
+  .sbar { display: grid; grid-template-columns: 1fr 52px; gap: 4px 10px; align-items: center; margin-bottom: 8px; font-size: 12.5px; color: var(--ink2); }
+  .sbar .track { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--press); overflow: hidden; }
+  .sbar .track i { display: block; height: 100%; border-radius: 3px; background: var(--ink3); width: 0; transition: width .9s var(--spring); }
+  .sbar.hi .track i { background: var(--k-ai); }
+  .sbar b { font: 600 12.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink); text-align: right; }
+  .sources { display: flex; gap: 8px; overflow-x: auto; margin: 4px -18px 0; padding: 2px 18px 4px; scrollbar-width: none; }
+  .sources::-webkit-scrollbar { display: none; }
+  .src { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; border-radius: 11px; background: var(--surface); box-shadow: var(--card-shadow); max-width: 220px; }
+  .src .n { font: 600 10px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); }
+  .src .a { width: 28px; height: 28px; border-radius: 7px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px; }
+  .src .a.person { border-radius: 50%; }
+  .src span { font-size: 12px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+  .src small { display: block; font: 500 10.5px/1.3 &quot;Geist Mono&quot;, monospace; color: var(--ink3); font-weight: 500; }
+  .src.flash { animation: flash .9s var(--spring); }
+  @keyframes flash { 30% { box-shadow: 0 0 0 2px var(--chrome); transform: scale(1.04); } }
+  .acts { display: flex; gap: 6px; margin-top: 10px; }
+  .act { font-size: 12.5px; font-weight: 600; color: var(--ink2); padding: 7px 10px; border-radius: 9px; background: var(--press); display: flex; align-items: center; gap: 5px; }
+  .act.done { color: var(--got); background: color-mix(in srgb, var(--got) 11%, transparent); }
+  .typing-dots { display: inline-flex; gap: 4px; padding: 6px 0; }
+  .typing-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink3); animation: blink 1s infinite; }
+  .typing-dots i:nth-child(2) { animation-delay: .15s; } .typing-dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .w { opacity: 0; transition: opacity .25s; } .w.on { opacity: 1; }
+
+  /* Card-made preview */
+  .made { margin-top: 10px; background: var(--surface); border-radius: 14px; box-shadow: var(--card-shadow), 0 8px 20px rgba(20,20,15,.06); padding: 12px 14px; animation: drop .55s var(--spring) both; }
+  @keyframes drop { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
+  .made small { display: block; font: 600 10px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--k-ai); margin-bottom: 6px; }
+  .made b { font-size: 14.5px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.35; display: block; }
+  .made .row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); }
+  .made .row span:last-child { font-family: &quot;Geist&quot;; font-size: 12.5px; font-weight: 600; color: var(--ink2); }
+
+  /* Composer */
+  .composer { position: absolute; left: 12px; right: 12px; bottom: 96px; z-index: 50; display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 24px;
+              padding: 6px 6px 6px 16px; box-shadow: var(--card-shadow), 0 8px 24px rgba(20,20,15,.07); }
+  .no-tabs .composer { bottom: 28px; }
+  .screen:not(.no-tabs) .thread { padding-bottom: 170px; }
+  .composer input { flex: 1; border: 0; outline: 0; background: transparent; font: 15.5px/1 &quot;Geist&quot;, sans-serif; color: var(--ink); height: 38px; }
+  .composer input::placeholder { color: var(--ink3); }
+  .mic, .send { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .mic { background: var(--press); color: var(--chrome); }
+  .send { background: var(--chrome); color: #fff; font-size: 17px; font-weight: 600; }
+
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 14px 0; display: flex; justify-content: space-around; z-index: 30;
+            background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 56px; position: relative; }
+  .tab svg { width: 24px; height: 24px; }
+  .tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+  .tab.plus .pl { width: 36px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 20px; }
+  .tab .badge { position: absolute; top: -4px; right: 8px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--chrome); color: #fff; font: 600 10px/16px &quot;Geist Mono&quot;, monospace; text-align: center; transform: scale(0); transition: transform .45s var(--spring); }
+  .tab .badge.on { transform: scale(1); }
+
+  /* Source peek */
+  .peek { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 70; background: var(--surface); border-radius: 30px; padding: 10px 18px 22px;
+          box-shadow: 0 -10px 50px rgba(20,20,15,.18); transform: translateY(110%); transition: transform .5s var(--spring); }
+  .peek.on { transform: none; }
+  .peek .grab { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 14px; }
+  .peek .ph { display: flex; gap: 12px; align-items: center; }
+  .peek .ph .a { width: 56px; height: 56px; border-radius: 12px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 20px; }
+  .peek .ph b { display: block; font-size: 16px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.25; }
+  .peek .ph span { font-size: 12.5px; color: var(--ink3); }
+  .peek .quote { margin-top: 14px; font-size: 14.5px; line-height: 1.55; color: var(--ink2); border-left: 2px solid var(--line); padding-left: 12px; }
+  .peek .btns { display: flex; gap: 8px; margin-top: 16px; }
+  .peek .btns div { flex: 1; text-align: center; font-size: 14px; font-weight: 600; padding: 12px; border-radius: 12px; background: var(--press); color: var(--chrome); }
+  .peek .btns div.pri { background: var(--chrome); color: #fff; }
+  .scrim { position: absolute; inset: 0; z-index: 65; background: rgba(20,20,15,.18); opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .scrim.on { opacity: 1; pointer-events: auto; }
+  .toast { position: absolute; left: 50%; top: 104px; transform: translate(-50%, -20px); opacity: 0; z-index: 75; background: var(--chrome); color: #fff; font-size: 13px; font-weight: 500;
+           padding: 9px 14px; border-radius: 999px; white-space: nowrap; transition: all .4s var(--spring); }
+  .toast.on { transform: translate(-50%, 0); opacity: 1; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+
+
+&lt;div class=&quot;stage&quot;&gt;
+  &lt;div class=&quot;phones&quot; id=&quot;phones&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;controls&quot;&gt;&lt;div class=&quot;ctl&quot;&gt;&lt;button class=&quot;replay&quot; id=&quot;replay&quot;&gt;↺ Replay&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;&lt;div style=&quot;display:none&quot;&gt;
+    &lt;div class=&quot;ctl&quot;&gt;&lt;h3&gt;Carl&#x27;s answers&lt;/h3&gt;&lt;div class=&quot;seg&quot; data-key=&quot;style&quot;&gt;&lt;/div&gt;
+      &lt;p class=&quot;note&quot;&gt;Document style is full-width text, like Claude or ChatGPT. Bubbles puts Carl&#x27;s answer in a white card.&lt;/p&gt;&lt;/div&gt;
+    &lt;div class=&quot;ctl&quot;&gt;&lt;h3&gt;Inline citations&lt;/h3&gt;&lt;div class=&quot;seg&quot; data-key=&quot;cites&quot;&gt;&lt;/div&gt;
+      &lt;p class=&quot;note&quot;&gt;With [1] markers you can trace each claim. Without them, sources appear only as chips at the end.&lt;/p&gt;&lt;/div&gt;
+    
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+const ART = {
+  acq: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/a8/e1/de/a8e1deff-9f88-4e55-a541-b0dc793c0cdc/mza_11539673419613154037.jpg/600x600bb.jpg&#x27;) center/cover&quot;,
+  odd: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/f3/99/6a/f3996a52-e4a4-bf0d-b7d6-e376c4058568/mza_15550359494736224565.jpg/600x600bb.jpg&#x27;) center/cover&quot;,
+  st: &quot;url(&#x27;https://i0.wp.com/stratechery.com/wp-content/uploads/2018/03/cropped-android-chrome-512x512-1.png&#x27;) center/cover&quot;,
+  dy: &quot;url(&#x27;https://pbs.twimg.com/profile_images/2113734434633768960/iNH6HMTV_400x400.jpg&#x27;) center/cover&quot;,
+  money: &quot;var(--k-finance)&quot;,
+};
+const SOURCES = {
+  st: { art: ART.st, t: &quot;Stratechery: The power bottleneck&quot;, m: &quot;Article · Oct 21&quot;, q: &quot;“The constraint is no longer how many GPUs you can buy, it&#x27;s how many megawatts you can energize in the next 24 months.”&quot;, open: &quot;Open article&quot; },
+  acq1: { art: ART.acq, t: &quot;Acquired: TSMC, Part II&quot;, m: &quot;Podcast · 1:05:33&quot;, q: &quot;“A leading-edge fab is a twenty-billion-dollar bet, and you have to make it again every two to three years.”&quot;, open: &quot;Play from 1:05:33&quot; },
+  money: { art: ART.money, txt: &quot;M&quot;, t: &quot;Money Stuff: The repo trade is back&quot;, m: &quot;Newsletter · Oct 25 · unread&quot;, q: &quot;“Big tech capex is now big enough to show up in GDP, which is a strange thing to say about server racks.”&quot;, open: &quot;Open newsletter&quot; },
+  acq2: { art: ART.acq, t: &quot;Acquired: TSMC, Part II&quot;, m: &quot;Podcast · 2:31:10&quot;, q: &quot;“CoWoS is where the GPU and its memory get glued together on a silicon interposer. It was a niche product until AI made it the whole ballgame.”&quot;, open: &quot;Play from 2:31:10&quot; },
+  dy: { art: ART.dy, person: true, t: &quot;@dylan522p on CoWoS capacity&quot;, m: &quot;X thread · post 4 of 14&quot;, q: &quot;“TSMC is roughly doubling CoWoS capacity again next year and it still won&#x27;t be enough.”&quot;, open: &quot;Open thread&quot; },
+};
+
+const CONVOS = {
+  tab: {
+    q: &quot;Is $500B of capex actually a lot?&quot;,
+    answer: [
+      { p: &quot;Yes. It&#x27;s large even by the standard of national megaprojects, and it&#x27;s being spent &lt;b&gt;in a single year&lt;/b&gt;, not over decades.&quot; },
+      { scale: [[&quot;2027 hyperscaler capex (1 year)&quot;, 500, &quot;~$500B&quot;, true], [&quot;US interstate highways (35 years)&quot;, 550, &quot;~$550B&quot;], [&quot;Apollo program (13 years)&quot;, 280, &quot;~$280B&quot;]] },
+      { p: &quot;Most of the new money goes to &lt;b&gt;power and cooling&lt;/b&gt; rather than chips, because grid connections now take years to secure&lt;c&gt;1&lt;/c&gt;. Each leading-edge fab behind those chips costs about &lt;b&gt;$20B&lt;/b&gt; on its own&lt;c&gt;2&lt;/c&gt;. It&#x27;s now big enough to show up in GDP figures&lt;c&gt;3&lt;/c&gt;.&quot; },
+    ],
+    sources: [&quot;st&quot;, &quot;acq1&quot;, &quot;money&quot;],
+    card: { d: &quot;AI · Rough number&quot;, q: &quot;Roughly how much will hyperscalers spend on capex in 2027, and what&#x27;s a comparable megaproject?&quot; },
+  },
+  ctx: {
+    q: &quot;Why is packaging harder than making the chip?&quot;,
+    answer: [
+      { p: &quot;Because modern AI chips aren&#x27;t one chip. A GPU sits &lt;b&gt;right next to stacks of high-bandwidth memory&lt;/b&gt;, and they&#x27;re joined on a thin slab of silicon called an interposer. TSMC&#x27;s version is CoWoS&lt;c&gt;1&lt;/c&gt;.&quot; },
+      { p: &quot;That joining has to be precise down to micrometers across a big surface, so yields are hard. And capacity was built for a &lt;b&gt;niche market&lt;/b&gt; until AI demand arrived almost overnight&lt;c&gt;1&lt;/c&gt;. TSMC is roughly doubling capacity every year and still can&#x27;t keep up&lt;c&gt;2&lt;/c&gt;.&quot; },
+      { p: &quot;In short: making the chip is a solved, scaled process. Packaging is the &lt;b&gt;newer, smaller step&lt;/b&gt; that everything now has to squeeze through.&quot; },
+    ],
+    sources: [&quot;acq2&quot;, &quot;dy&quot;],
+    card: { d: &quot;AI · Mechanism&quot;, q: &quot;Why has advanced packaging (CoWoS), rather than chipmaking itself, become the bottleneck for AI chips?&quot; },
+  },
+};
+
+const STATUS_ICONS = `&lt;svg viewBox=&quot;0 0 70 12&quot; fill=&quot;currentColor&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;8&quot; width=&quot;3&quot; height=&quot;4&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;5&quot; y=&quot;5.5&quot; width=&quot;3&quot; height=&quot;6.5&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;10&quot; y=&quot;3&quot; width=&quot;3&quot; height=&quot;9&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;15&quot; y=&quot;0&quot; width=&quot;3&quot; height=&quot;12&quot; rx=&quot;1&quot;/&gt;&lt;path d=&quot;M31 3.2a9 9 0 0 1 12 0l-1.4 1.5a7 7 0 0 0-9.2 0zM33.4 5.8a5.5 5.5 0 0 1 7.2 0L39.2 7.3a3.4 3.4 0 0 0-4.4 0zM37 11.5l-1.6-1.8a2.4 2.4 0 0 1 3.2 0z&quot;/&gt;&lt;rect x=&quot;47&quot; y=&quot;1&quot; width=&quot;20&quot; height=&quot;10.5&quot; rx=&quot;3&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; opacity=&quot;.4&quot;/&gt;&lt;rect x=&quot;48.6&quot; y=&quot;2.6&quot; width=&quot;16.8&quot; height=&quot;7.3&quot; rx=&quot;1.6&quot;/&gt;&lt;rect x=&quot;68&quot; y=&quot;4.3&quot; width=&quot;1.6&quot; height=&quot;4&quot; rx=&quot;.8&quot; opacity=&quot;.4&quot;/&gt;&lt;/svg&gt;`;
+const svg = (d) =&gt; `&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;${d}&lt;/svg&gt;`;
+const ICONS = {
+  today: svg(&#x27;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;4&quot;/&gt;&lt;path d=&quot;M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4&quot;/&gt;&#x27;),
+  library: svg(&#x27;&lt;path d=&quot;M4 4h4v16H4zM10 4h4v16h-4zM16.5 4.5l3.5 1-4 15-3.5-1z&quot;/&gt;&#x27;),
+  review: svg(&#x27;&lt;rect x=&quot;3&quot; y=&quot;6&quot; width=&quot;14&quot; height=&quot;14&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M7 3h12a2 2 0 0 1 2 2v12&quot;/&gt;&#x27;),
+  carl: svg(&#x27;&lt;path d=&quot;M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z&quot;/&gt;&#x27;),
+};
+const MIC = `&lt;svg width=&quot;18&quot; height=&quot;18&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;3&quot; width=&quot;6&quot; height=&quot;11&quot; rx=&quot;3&quot;/&gt;&lt;path d=&quot;M5 11a7 7 0 0 0 14 0M12 18v3&quot;/&gt;&lt;/svg&gt;`;
+
+const tabbar = `
+  &lt;div class=&quot;tabbar&quot;&gt;
+    &lt;div class=&quot;tab press&quot;&gt;${ICONS.today}&lt;span&gt;Today&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab press&quot;&gt;${ICONS.library}&lt;span&gt;Library&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab plus press&quot;&gt;&lt;div class=&quot;pl&quot;&gt;+&lt;/div&gt;&lt;span&gt;Add&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab press&quot;&gt;${ICONS.review}&lt;span&gt;Review&lt;/span&gt;&lt;i class=&quot;badge&quot;&gt;13&lt;/i&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab on press&quot;&gt;${ICONS.carl}&lt;span&gt;Ask&lt;/span&gt;&lt;/div&gt;
+  &lt;/div&gt;`;
+
+const shell = (id, top, extra, cls = &quot;&quot;) =&gt; `
+  &lt;div class=&quot;phone&quot;&gt;&lt;div class=&quot;screen ${cls}&quot; id=&quot;${id}&quot;&gt;&lt;div class=&quot;island&quot;&gt;&lt;/div&gt;&lt;div class=&quot;statusbar&quot;&gt;&lt;span&gt;9:41&lt;/span&gt;${STATUS_ICONS}&lt;/div&gt;
+    ${top}&lt;div class=&quot;thread&quot;&gt;&lt;/div&gt;
+    &lt;div class=&quot;composer&quot;&gt;&lt;input placeholder=&quot;Ask anything…&quot;&gt;&lt;div class=&quot;mic press&quot;&gt;${MIC}&lt;/div&gt;&lt;div class=&quot;send press&quot;&gt;↑&lt;/div&gt;&lt;/div&gt;
+    ${extra}&lt;div class=&quot;scrim&quot;&gt;&lt;/div&gt;&lt;div class=&quot;peek&quot;&gt;&lt;/div&gt;&lt;div class=&quot;toast&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;`;
+
+const phones = document.getElementById(&quot;phones&quot;);
+phones.innerHTML = `
+  &lt;div class=&quot;pcol&quot;&gt;&lt;div class=&quot;cap&quot;&gt;ASK TAB · tap a suggestion&lt;/div&gt;
+    ${shell(&quot;tab&quot;, `&lt;div class=&quot;topbar&quot;&gt;&lt;div class=&quot;big&quot;&gt;Ask&lt;/div&gt;&lt;div class=&quot;icon-btn press&quot;&gt;✎&lt;/div&gt;&lt;/div&gt;`, tabbar)}&lt;div class=&quot;haptic&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+`;
+
+const state = { style: &quot;doc&quot;, cites: &quot;on&quot; };
+const OPTIONS = { style: [{ id: &quot;doc&quot;, label: &quot;Document&quot; }, { id: &quot;bubbles&quot;, label: &quot;Bubbles&quot; }], cites: [{ id: &quot;on&quot;, label: &quot;[1] markers&quot; }, { id: &quot;off&quot;, label: &quot;Chips only&quot; }] };
+
+function mount(id) {
+  const screen = document.getElementById(id);
+  const col = screen.closest(&quot;.pcol&quot;);
+  const thread = screen.querySelector(&quot;.thread&quot;);
+  const readout = col.querySelector(&quot;.haptic&quot;);
+  const peek = screen.querySelector(&quot;.peek&quot;), scrim = screen.querySelector(&quot;.scrim&quot;), toast = screen.querySelector(&quot;.toast&quot;);
+  const convo = CONVOS[id];
+  let timers = [];
+  const later = (fn, ms) =&gt; timers.push(setTimeout(fn, ms));
+  let hTimer;
+  const haptic = (k) =&gt; { readout.textContent = `haptic · ${k}`; readout.classList.add(&quot;on&quot;); clearTimeout(hTimer); hTimer = setTimeout(() =&gt; readout.classList.remove(&quot;on&quot;), 800); };
+  const showToast = (m) =&gt; { toast.textContent = m; toast.classList.add(&quot;on&quot;); later(() =&gt; toast.classList.remove(&quot;on&quot;), 2000); };
+
+  const srcChip = (key, i) =&gt; { const s = SOURCES[key]; return `&lt;div class=&quot;src press&quot; data-src=&quot;${key}&quot;&gt;&lt;span class=&quot;n&quot;&gt;${i + 1}&lt;/span&gt;&lt;div class=&quot;a ${s.person ? &quot;person&quot; : &quot;&quot;}&quot; style=&quot;background:${s.art}&quot;&gt;${s.txt || &quot;&quot;}&lt;/div&gt;&lt;span&gt;${s.t}&lt;small&gt;${s.m}&lt;/small&gt;&lt;/span&gt;&lt;/div&gt;`; };
+
+  // Stream the answer word by word, then reveal sources and actions
+  function answer() {
+    const el = document.createElement(&quot;div&quot;); el.className = &quot;msg carl&quot;;
+    el.innerHTML = `&lt;div class=&quot;body&quot;&gt;&lt;span class=&quot;typing-dots&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;/span&gt;&lt;/div&gt;`;
+    thread.appendChild(el); thread.scrollTop = thread.scrollHeight;
+    later(() =&gt; {
+      const body = el.querySelector(&quot;.body&quot;);
+      body.innerHTML = convo.answer.map((block) =&gt; {
+        if (block.scale) return `&lt;div class=&quot;scale w&quot;&gt;&lt;div class=&quot;lbl&quot;&gt;For scale&lt;/div&gt;${block.scale.map(([l, v, t, hi]) =&gt; `&lt;div class=&quot;sbar ${hi ? &quot;hi&quot; : &quot;&quot;}&quot;&gt;&lt;span&gt;${l}&lt;/span&gt;&lt;b&gt;${t}&lt;/b&gt;&lt;div class=&quot;track&quot;&gt;&lt;i data-w=&quot;${(v / 550) * 100}&quot;&gt;&lt;/i&gt;&lt;/div&gt;&lt;/div&gt;`).join(&quot;&quot;)}&lt;/div&gt;`;
+        const html = block.p.replace(/&lt;c&gt;(\d)&lt;\/c&gt;/g, (_, n) =&gt; `&lt;span class=&quot;cite&quot; data-cite=&quot;${n}&quot;&gt;${n}&lt;/span&gt;`);
+        return `&lt;p&gt;${html.split(/(&lt;[^&gt;]+&gt;[^&lt;]*&lt;\/[^&gt;]+&gt;|\s+)/).filter(Boolean).map((t) =&gt; /^\s+$/.test(t) ? t : `&lt;span class=&quot;w&quot;&gt;${t}&lt;/span&gt;`).join(&quot;&quot;)}&lt;/p&gt;`;
+      }).join(&quot;&quot;) + `&lt;div class=&quot;sources w&quot;&gt;${convo.sources.map(srcChip).join(&quot;&quot;)}&lt;/div&gt;
+        &lt;div class=&quot;acts w&quot;&gt;&lt;div class=&quot;act press&quot; data-act=&quot;card&quot;&gt;＋ Make a card&lt;/div&gt;&lt;div class=&quot;act press&quot; data-act=&quot;copy&quot;&gt;Copy&lt;/div&gt;&lt;/div&gt;`;
+      const words = [...body.querySelectorAll(&quot;.w&quot;)];
+      words.forEach((w, i) =&gt; later(() =&gt; {
+        w.classList.add(&quot;on&quot;);
+        w.querySelectorAll(&quot;.track i&quot;).forEach((bar) =&gt; later(() =&gt; (bar.style.width = bar.dataset.w + &quot;%&quot;), 60));
+        if (i % 6 === 0) thread.scrollTop = thread.scrollHeight;
+      }, i * 28));
+      later(() =&gt; { thread.scrollTop = thread.scrollHeight; haptic(&quot;light · answer done&quot;); }, words.length * 28 + 100);
+    }, 900);
+  }
+
+  function ask(q) {
+    thread.innerHTML = &quot;&quot;;
+    const me = document.createElement(&quot;div&quot;); me.className = &quot;msg me&quot;; me.innerHTML = `&lt;div&gt;${q}&lt;/div&gt;`;
+    thread.appendChild(me); haptic(&quot;light · sent&quot;);
+    later(answer, 350);
+  }
+
+  function emptyState() {
+    thread.innerHTML = `&lt;div class=&quot;empty&quot;&gt;&lt;div class=&quot;hello&quot;&gt;Ask about anything in your library, including unread newsletters. Every answer cites where it comes from.&lt;/div&gt;
+      &lt;div class=&quot;sugg&quot;&gt;
+        &lt;div class=&quot;press&quot; data-q style=&quot;--k: var(--k-ai)&quot;&gt;&lt;small&gt;From today&#x27;s Pulse&lt;/small&gt;${CONVOS.tab.q}&lt;/div&gt;
+        &lt;div class=&quot;press&quot; style=&quot;--k: var(--k-macro)&quot;&gt;&lt;small&gt;Macro&lt;/small&gt;What&#x27;s the difference between QE and lowering rates?&lt;/div&gt;
+        &lt;div class=&quot;press&quot; style=&quot;--k: var(--k-crypto)&quot;&gt;&lt;small&gt;Crypto&lt;/small&gt;Why do stablecoins buy T-bills?&lt;/div&gt;
+      &lt;/div&gt;&lt;/div&gt;`;
+  }
+
+  function openPeek(key) {
+    const s = SOURCES[key];
+    peek.innerHTML = `&lt;div class=&quot;grab&quot;&gt;&lt;/div&gt;&lt;div class=&quot;ph&quot;&gt;&lt;div class=&quot;a&quot; style=&quot;background:${s.art};${s.person ? &quot;border-radius:50%&quot; : &quot;&quot;}&quot;&gt;${s.txt || &quot;&quot;}&lt;/div&gt;&lt;div&gt;&lt;b&gt;${s.t}&lt;/b&gt;&lt;span&gt;${s.m}&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;quote&quot;&gt;${s.q}&lt;/div&gt;&lt;div class=&quot;btns&quot;&gt;&lt;div class=&quot;press&quot; data-close&gt;Close&lt;/div&gt;&lt;div class=&quot;pri press&quot; data-close&gt;${s.open}&lt;/div&gt;&lt;/div&gt;`;
+    peek.classList.add(&quot;on&quot;); scrim.classList.add(&quot;on&quot;); haptic(&quot;light · peek&quot;);
+  }
+  const closePeek = () =&gt; { peek.classList.remove(&quot;on&quot;); scrim.classList.remove(&quot;on&quot;); };
+
+  screen.addEventListener(&quot;click&quot;, (e) =&gt; {
+    const t = e.target;
+    if (t.closest(&quot;[data-q]&quot;)) { ask(CONVOS.tab.q); return; }
+    const cite = t.closest(&quot;[data-cite]&quot;);
+    if (cite) { const key = convo.sources[cite.dataset.cite - 1]; const chip = screen.querySelector(`[data-src=&quot;${key}&quot;]`); chip.classList.remove(&quot;flash&quot;); void chip.offsetWidth; chip.classList.add(&quot;flash&quot;); openPeek(key); return; }
+    const src = t.closest(&quot;[data-src]&quot;); if (src) { openPeek(src.dataset.src); return; }
+    if (t.closest(&quot;[data-close]&quot;) || t.closest(&quot;.scrim&quot;)) { closePeek(); haptic(&quot;light&quot;); return; }
+    const act = t.closest(&quot;[data-act]&quot;)?.dataset.act;
+    if (act === &quot;card&quot;) {
+      const btn = t.closest(&quot;[data-act]&quot;); if (btn.classList.contains(&quot;done&quot;)) return;
+      btn.classList.add(&quot;done&quot;); btn.textContent = &quot;✓ Card added&quot;;
+      const made = document.createElement(&quot;div&quot;); made.className = &quot;made&quot;;
+      made.innerHTML = `&lt;small&gt;${convo.card.d}&lt;/small&gt;&lt;b&gt;${convo.card.q}&lt;/b&gt;&lt;div class=&quot;row&quot;&gt;&lt;span&gt;DUE TOMORROW&lt;/span&gt;&lt;span class=&quot;press&quot;&gt;Edit&lt;/span&gt;&lt;/div&gt;`;
+      btn.closest(&quot;.acts&quot;).after(made); thread.scrollTop = thread.scrollHeight;
+      haptic(&quot;notification · success&quot;);
+      const badge = screen.querySelector(&quot;.badge&quot;); if (badge) { later(() =&gt; badge.classList.add(&quot;on&quot;), 400); }
+      else showToast(&quot;Added to Review · due tomorrow&quot;);
+    }
+    if (act === &quot;copy&quot;) { showToast(&quot;Copied&quot;); haptic(&quot;light&quot;); }
+  });
+
+  return {
+    start() {
+      timers.forEach(clearTimeout); timers = []; closePeek();
+      screen.querySelector(&quot;.badge&quot;)?.classList.remove(&quot;on&quot;);
+      if (id === &quot;tab&quot;) emptyState(); else ask(convo.q);
+    },
+  };
+}
+
+const mounted = [&quot;tab&quot;].map(mount);
+mounted.forEach((m) =&gt; m.start());
+document.getElementById(&quot;replay&quot;).addEventListener(&quot;click&quot;, () =&gt; mounted.forEach((m) =&gt; m.start()));
+
+function apply() {
+  document.querySelectorAll(&quot;.screen&quot;).forEach((s) =&gt; { s.classList.toggle(&quot;bubbles&quot;, state.style === &quot;bubbles&quot;); s.classList.toggle(&quot;cites-off&quot;, state.cites === &quot;off&quot;); });
+}
+document.querySelectorAll(&quot;.seg&quot;).forEach((seg) =&gt; {
+  const key = seg.dataset.key;
+  seg.innerHTML = OPTIONS[key].map((o) =&gt; `&lt;button data-id=&quot;${o.id}&quot; data-choice=&quot;${key}:${o.id}&quot;&gt;${o.label}&lt;/button&gt;`).join(&quot;&quot;);
+  const sync = () =&gt; seg.querySelectorAll(&quot;button&quot;).forEach((b) =&gt; b.classList.toggle(&quot;on&quot;, b.dataset.id === state[key]));
+  seg.addEventListener(&quot;click&quot;, (e) =&gt; { const b = e.target.closest(&quot;button&quot;); if (!b) return; state[key] = b.dataset.id; sync(); apply(); });
+  sync();
+});
+apply();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section class="screen" id="chat"><h2>Ask (chat, in context)</h2><p class="lede">Document style, [1] markers, older turns collapse their sources, follow-ups under the latest answer.</p><iframe title="Ask (chat, in context)" loading="lazy" style="height:900px" srcdoc="&lt;!DOCTYPE html&gt;
 &lt;html lang=&quot;en&quot;&gt;
 &lt;head&gt;
 &lt;meta charset=&quot;utf-8&quot;&gt;

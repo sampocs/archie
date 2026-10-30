@@ -157,6 +157,7 @@ class PreparedEpisode:
     show: Show
     slug: str
     title: str
+    description: str
     rich_hint: str
     chunks: list[pathlib.Path]
     chunk_seconds: list[float]
@@ -198,7 +199,7 @@ def main() -> None:
     available = [provider for provider in PROVIDERS if os.environ.get(provider.env_key)]
     print(f"Providers with keys: {[provider.name for provider in available]}\n")
 
-    prepared = _prepare_all()
+    prepared = prepare_all()
     runs = [
         _run_provider(provider=provider, hint_style=hint_style, prepared=prepared)
         for provider in available
@@ -216,7 +217,7 @@ def main() -> None:
 # --- Inputs: clip each episode's audio and pull the matching slice of its published transcript ---
 
 
-def _prepare_all() -> list[PreparedEpisode]:
+def prepare_all() -> list[PreparedEpisode]:
     feed_items = [
         (show, index, item)
         for show in SHOWS
@@ -277,6 +278,7 @@ def _prepare_episode(
         show=show,
         slug=slug,
         title=title,
+        description=_plain_description(item=item),
         rich_hint=_rich_hint(show=show, title=title, item=item),
         chunks=chunks,
         chunk_seconds=[_duration_seconds(chunk=chunk) for chunk in chunks],
@@ -286,12 +288,12 @@ def _prepare_episode(
 
 def _rich_hint(show: Show, title: str, item: xml.etree.ElementTree.Element) -> str:
     # Whisper only reads the last ~224 tokens of a prompt, so keep the title and the description's opening
-    description = item.findtext("description", default="")
-    plain_description = html.unescape(re.sub(r"<[^>]+>", " ", description))
-    plain_description = re.sub(r"\s+", " ", plain_description).strip()
-    return f"{show.prompt_hint} Episode: {title}. {plain_description}"[
-        :RICH_HINT_MAX_CHARS
-    ]
+    return f"{show.prompt_hint} Episode: {title}. {_plain_description(item=item)}"[:RICH_HINT_MAX_CHARS]
+
+
+def _plain_description(item: xml.etree.ElementTree.Element) -> str:
+    description = html.unescape(re.sub(r"<[^>]+>", " ", item.findtext("description", default="")))
+    return re.sub(r"\s+", " ", description).strip()
 
 
 def _vtt_url(item: xml.etree.ElementTree.Element) -> str | None:
@@ -439,7 +441,7 @@ def _transcribe_episode(
 
     transcript = EpisodeTranscript(chunk_texts=chunk_texts, score=None)
     if item.reference_text:
-        transcript.score = _score(
+        transcript.score = score_transcript(
             reference_text=item.reference_text, hypothesis_text=transcript.text
         )
     print(f"  done {item.slug}")
@@ -471,12 +473,12 @@ def _transcribe_chunk(provider: Provider, chunk: pathlib.Path, prompt: str) -> s
         return re.sub(r"\s+", " ", response.json()["text"]).strip()
 
 
-def _score(reference_text: str, hypothesis_text: str) -> Score:
+def score_transcript(reference_text: str, hypothesis_text: str) -> Score:
     # The reference window is deliberately longer than the clip, and ads may differ at the edges, so
     # score only between the first and last solid matching runs. Trimming at any match isn't enough:
     # a stray common word aligned inside the reference's extra tail would count the whole tail as skipped
     output = jiwer.process_words(
-        _normalize(text=reference_text), _normalize(text=hypothesis_text)
+        normalize(text=reference_text), normalize(text=hypothesis_text)
     )
     alignment = output.alignments[0]
     anchors = [
@@ -513,7 +515,7 @@ def _score(reference_text: str, hypothesis_text: str) -> Score:
     )
 
 
-def _normalize(text: str) -> str:
+def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", re.sub(r"[^a-z0-9' ]", " ", text.lower())).strip()
 
 
@@ -683,21 +685,21 @@ def _print_jargon(prepared: list[PreparedEpisode], runs: list[ProviderRun]) -> N
         items = [item for item in prepared if item.show == show and item.reference_text]
         for term in show.jargon_terms:
             relevant = [
-                item for item in items if _count(term=term, text=item.reference_text)
+                item for item in items if count_term(term=term, text=item.reference_text)
             ]
             if not relevant:
                 continue
             reference_count = sum(
-                _count(term=term, text=item.reference_text) for item in relevant
+                count_term(term=term, text=item.reference_text) for item in relevant
             )
             counts = "  ".join(
-                f"{run.label}={sum(_count(term=term, text=run.episodes[item.slug].text) for item in relevant)}"
+                f"{run.label}={sum(count_term(term=term, text=run.episodes[item.slug].text) for item in relevant)}"
                 for run in finished
             )
             print(f"  {show.slug:16} {term:14} ref={reference_count:<3} {counts}")
 
 
-def _count(term: str, text: str) -> int:
+def count_term(term: str, text: str) -> int:
     return len(re.findall(re.escape(term), text, flags=re.IGNORECASE))
 
 

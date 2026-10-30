@@ -45,3 +45,38 @@
 **Groq whisper-large-v3-turbo with a short hint** (show, hosts, and the show's known vocabulary), at about $0.04 per audio hour, or **about $2/mo** at 43 h. Nothing is significantly better, and it's the cheapest.
 - **Fallback:** if Groq errors, or a chunk comes back under about 100 words/min, rerun that chunk on gpt-4o-mini-transcribe with 5-minute chunks.
 - **Names:** a Claude corrections pass fixes them, using the episode description, the show's vocabulary, and web search.
+
+---
+
+# Spike: Claude name-correction pass (2026-10-29)
+
+`uv run spikes/transcription/correct_names.py` (needs `ANTHROPIC_API_KEY`, and Groq transcripts cached by the run above)
+
+Claude gets each Groq transcript plus the show hint, the episode title and description, and the web search tool (max 5 searches). It returns a list of `{heard, correct, evidence}` corrections as structured JSON, and code applies them as whole-word replacements. Both models ran on the same 20 episodes.
+
+## Results
+
+| | Corrections | Web searches | Cost per 15-min clip | ~Monthly (43 h) |
+|---|---|---|---|---|
+| **Haiku 5.5** | 119 | 5 | $0.005 | **~$0.85** |
+| Sonnet 5.5 | 140 | 0 | $0.030 | ~$5 |
+
+**Grading against the published transcript is misleading.** The published transcripts are machine-made too. Of Haiku's 33 fixes that the reference called "wrong", about 22 were actually right and the reference had the mistake: *Kirsten* Gillibrand, Alsobrooks, Richard Heart, Matt Hougan, Ben Cowen, Noahpinion, ZEC, Alla Witte, Ja'Marr Chase, Jahmyr Gibbs, Zac Taylor, Amon-Ra St. Brown, Kyler Murray, and others. Graded by hand:
+
+- **Clearly right:** most of them. Kalshi (from 6 different misspellings), mNAV, Dyre (0 → 6 of 6), Geoff White, Coalfire, Strowger, Hak5, Bijan Robinson, Tucker Kraft, FanDuel, Olipop, Susquehanna (from "South Dakota"), Handy Dan, CoreWeave, Sam Bankman-Fried, Gensler.
+- **Clearly wrong:** a few per model.
+  - Haiku: "predicted" → Polymarket, and "Gary" → "Gabby" (×3, where Gary was correct).
+  - Sonnet: "Carol Masser" → "Caroline Hyde", "Stella Lefty" → "Stick Season", and "predicted" → PredictIt.
+- **About 8 per model are uncertain**, e.g. "hexagons" → HEX and "alums" → LLMs.
+- Known misses: Morpho and Uniswap were only in an ad read that Groq skipped, so there was nothing to fix.
+
+## Findings
+
+1. **The pass works, and Haiku is enough.** The two models produce mostly the same fixes at about the same quality, and each has a few bad guesses. Using the cheapest-of-a-tie rule, that's Haiku at under $1/mo.
+2. **The danger is replacing common words everywhere.** The bad fixes were common words or names ("Gary", "predicted", "March", "Harry", "Kelsey") replaced at every occurrence. **Fix:** each correction carries a few words of surrounding context, and code replaces only that occurrence. Single common words are never replaced globally.
+3. **Web search is barely used.** Haiku searched 5 times in 20 episodes (one of those found *Dyre*), and Sonnet never did. Episode descriptions and the model's own knowledge carry it. Keep the tool available, since it's cheap when unused.
+4. **Word error barely moves** (6.75% → 6.71%) because names are a small share of words. The win is that names come out right, and names are what summaries, tags, and cards depend on.
+
+## Recommendation
+
+Groq turbo → **Haiku 5.5 corrections pass** (episode description + show vocabulary + web search, with context-anchored replacements) → summarize. Total transcription plus cleanup: **~$3/mo**. Later, correct names that recur across a show's episodes can be saved into that show's vocabulary, which improves Groq's hint over time.

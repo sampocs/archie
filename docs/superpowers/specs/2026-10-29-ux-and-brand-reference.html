@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archie Design Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #1a1a1c; color: #e8e6e1; font: 15px/1.55 "Geist", -apple-system, sans-serif; }
+  header, main { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  header { padding-top: 48px; display: flex; gap: 28px; align-items: center; flex-wrap: wrap; }
+  header .icon { width: 96px; height: 96px; border-radius: 22.5%; overflow: hidden; box-shadow: 0 14px 40px rgba(0,0,0,.4); flex: none; }
+  header h1 { font-size: 44px; font-weight: 700; letter-spacing: -0.05em; margin: 0; line-height: 1; }
+  header h1 i { font-style: normal; color: #79B39E; }
+  header p { margin: 8px 0 0; color: #a09d96; max-width: 640px; }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 18px; }
+  nav a { font-size: 13px; color: #d8d6d0; text-decoration: none; padding: 6px 10px; border-radius: 8px; background: #262629; border: 1px solid #36363a; }
+  h2 { font-size: 22px; letter-spacing: -0.02em; margin: 56px 0 6px; }
+  h3 { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #8a877f; margin: 26px 0 10px; }
+  .lede { color: #a09d96; margin: 0 0 16px; max-width: 820px; } .lede b { color: #e8e6e1; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font: 500 11px/1 "Geist Mono", monospace; color: #8a877f; text-transform: uppercase; padding: 8px 10px; border-bottom: 1px solid #2f2f33; }
+  td { padding: 9px 10px; border-bottom: 1px solid #26262a; vertical-align: middle; }
+  td.note { color: #a09d96; font-size: 13px; }
+  code { font: 500 12.5px "Geist Mono", monospace; color: #cfcac0; }
+  .chip { display: inline-block; width: 18px; height: 18px; border-radius: 5px; vertical-align: -4px; margin-right: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12); }
+  .na { color: #5a5852; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 0 32px; }
+  .brand { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .tile { background: #222225; border: 1px solid #2f2f33; border-radius: 18px; padding: 18px; }
+  .tile .icons { display: flex; gap: 14px; align-items: flex-end; }
+  .tile .icons div { border-radius: 22.5%; overflow: hidden; }
+  .wm { background: #F4F2EC; color: #0E0E0C; border-radius: 12px; padding: 22px; text-align: center; font-weight: 700; font-size: 44px; letter-spacing: -0.06em; line-height: 1; }
+  .wm.dark { background: #151412; color: #F1EFE9; margin-top: 10px; }
+  .wm i { font-style: normal; color: #3F7262; } .wm.dark i { color: #79B39E; }
+  .tile p { color: #a09d96; font-size: 13.5px; margin: 12px 0 0; } .tile p b { color: #e8e6e1; font-weight: 500; }
+  ul.rules { margin: 0; padding-left: 18px; color: #cfcac0; } ul.rules li { margin: 4px 0; }
+  iframe { width: 100%; border: 1px solid #2f2f33; border-radius: 18px; background: #1a1a1c; display: block; }
+  footer { max-width: 1180px; margin: 60px auto 80px; padding: 0 24px; color: #7d7a74; font-size: 13px; }
+  @media (max-width: 600px) { header h1 { font-size: 34px; } iframe { border-radius: 12px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="icon"><svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#3F7262"/><g fill="none" stroke="#F7F5EF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M50 22 L46.2 19.2 A7.7 7.7 0 0 0 34.2 23.5 A7.8 7.8 0 0 0 24.8 32.4 A7.9 7.9 0 0 0 19.7 44.4 A7.9 7.9 0 0 0 19.7 57.6 A7.9 7.9 0 0 0 24.8 69.6 A7.8 7.8 0 0 0 34.2 78.5 A7.7 7.7 0 0 0 46.2 82.8 L50 80 L53.8 82.8 A7.7 7.7 0 0 0 65.8 78.5 A7.8 7.8 0 0 0 75.2 69.6 A7.9 7.9 0 0 0 80.3 57.6 A7.9 7.9 0 0 0 80.3 44.4 A7.9 7.9 0 0 0 75.2 32.4 A7.8 7.8 0 0 0 65.8 23.5 A7.7 7.7 0 0 0 53.8 19.2 Z"/><path d="M50 22 V80"/><path d="M34 30 C40 30 42 36 38 40 M24 46 C30 44 34 48 32 54 M42 46 C36 48 36 56 42 58 M30 66 C34 62 40 64 40 70 M38 28 C40 26 44 28 44 33 M 66.0 30.0 C 60.0 30.0 58.0 36.0 62.0 40.0 M 76.0 46.0 C 70.0 44.0 66.0 48.0 68.0 54.0 M 58.0 46.0 C 64.0 48.0 64.0 56.0 58.0 58.0 M 70.0 66.0 C 66.0 62.0 60.0 64.0 60.0 70.0 M 62.0 28.0 C 60.0 26.0 56.0 28.0 56.0 33.0"/></g></svg></div>
+  <div>
+    <h1>Archie<i>.</i></h1>
+    <p>UX &amp; brand reference: the final decisions from the 2026-10-27 to 2026-10-29 design brainstorm. Companion to <code>2026-10-29-ux-and-brand-design.md</code>. Every screen below is the live, interactive mockup.</p>
+    <nav><a href="#brand">Brand</a><a href="#color">Color</a><a href="#type">Type &amp; shape</a><a href="#motion">Motion &amp; haptics</a><a href="#today">Today</a><a href="#review">Review</a><a href="#library">Library</a><a href="#chat">Ask</a><a href="#share">Share sheet</a></nav>
+  </div>
+</header>
+<main>
+  <section id="brand"><h2>Brand</h2>
+    <div class="brand">
+      <div class="tile"><h3 style="margin-top:0">App icon</h3><div class="icons"><div style="width:120px;height:120px"><svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#3F7262"/><g fill="none" stroke="#F7F5EF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M50 22 L46.2 19.2 A7.7 7.7 0 0 0 34.2 23.5 A7.8 7.8 0 0 0 24.8 32.4 A7.9 7.9 0 0 0 19.7 44.4 A7.9 7.9 0 0 0 19.7 57.6 A7.9 7.9 0 0 0 24.8 69.6 A7.8 7.8 0 0 0 34.2 78.5 A7.7 7.7 0 0 0 46.2 82.8 L50 80 L53.8 82.8 A7.7 7.7 0 0 0 65.8 78.5 A7.8 7.8 0 0 0 75.2 69.6 A7.9 7.9 0 0 0 80.3 57.6 A7.9 7.9 0 0 0 80.3 44.4 A7.9 7.9 0 0 0 75.2 32.4 A7.8 7.8 0 0 0 65.8 23.5 A7.7 7.7 0 0 0 53.8 19.2 Z"/><path d="M50 22 V80"/><path d="M34 30 C40 30 42 36 38 40 M24 46 C30 44 34 48 32 54 M42 46 C36 48 36 56 42 58 M30 66 C34 62 40 64 40 70 M38 28 C40 26 44 28 44 33 M 66.0 30.0 C 60.0 30.0 58.0 36.0 62.0 40.0 M 76.0 46.0 C 70.0 44.0 66.0 48.0 68.0 54.0 M 58.0 46.0 C 64.0 48.0 64.0 56.0 58.0 58.0 M 70.0 66.0 C 66.0 62.0 60.0 64.0 60.0 70.0 M 62.0 28.0 C 60.0 26.0 56.0 28.0 56.0 33.0"/></g></svg></div><div style="width:60px;height:60px"><svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#3F7262"/><g fill="none" stroke="#F7F5EF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M50 22 L46.2 19.2 A7.7 7.7 0 0 0 34.2 23.5 A7.8 7.8 0 0 0 24.8 32.4 A7.9 7.9 0 0 0 19.7 44.4 A7.9 7.9 0 0 0 19.7 57.6 A7.9 7.9 0 0 0 24.8 69.6 A7.8 7.8 0 0 0 34.2 78.5 A7.7 7.7 0 0 0 46.2 82.8 L50 80 L53.8 82.8 A7.7 7.7 0 0 0 65.8 78.5 A7.8 7.8 0 0 0 75.2 69.6 A7.9 7.9 0 0 0 80.3 57.6 A7.9 7.9 0 0 0 80.3 44.4 A7.9 7.9 0 0 0 75.2 32.4 A7.8 7.8 0 0 0 65.8 23.5 A7.7 7.7 0 0 0 53.8 19.2 Z"/><path d="M50 22 V80"/><path d="M34 30 C40 30 42 36 38 40 M24 46 C30 44 34 48 32 54 M42 46 C36 48 36 56 42 58 M30 66 C34 62 40 64 40 70 M38 28 C40 26 44 28 44 33 M 66.0 30.0 C 60.0 30.0 58.0 36.0 62.0 40.0 M 76.0 46.0 C 70.0 44.0 66.0 48.0 68.0 54.0 M 58.0 46.0 C 64.0 48.0 64.0 56.0 58.0 58.0 M 70.0 66.0 C 66.0 62.0 60.0 64.0 60.0 70.0 M 62.0 28.0 C 60.0 26.0 56.0 28.0 56.0 33.0"/></g></svg></div><div style="width:29px;height:29px"><svg viewBox="0 0 100 100"><rect width="100" height="100" fill="#3F7262"/><g fill="none" stroke="#F7F5EF" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round"><path d="M50 22 L46.2 19.2 A7.7 7.7 0 0 0 34.2 23.5 A7.8 7.8 0 0 0 24.8 32.4 A7.9 7.9 0 0 0 19.7 44.4 A7.9 7.9 0 0 0 19.7 57.6 A7.9 7.9 0 0 0 24.8 69.6 A7.8 7.8 0 0 0 34.2 78.5 A7.7 7.7 0 0 0 46.2 82.8 L50 80 L53.8 82.8 A7.7 7.7 0 0 0 65.8 78.5 A7.8 7.8 0 0 0 75.2 69.6 A7.9 7.9 0 0 0 80.3 57.6 A7.9 7.9 0 0 0 80.3 44.4 A7.9 7.9 0 0 0 75.2 32.4 A7.8 7.8 0 0 0 65.8 23.5 A7.7 7.7 0 0 0 53.8 19.2 Z"/><path d="M50 22 V80"/><path d="M34 30 C40 30 42 36 38 40 M24 46 C30 44 34 48 32 54 M42 46 C36 48 36 56 42 58 M30 66 C34 62 40 64 40 70 M38 28 C40 26 44 28 44 33 M 66.0 30.0 C 60.0 30.0 58.0 36.0 62.0 40.0 M 76.0 46.0 C 70.0 44.0 66.0 48.0 68.0 54.0 M 58.0 46.0 C 64.0 48.0 64.0 56.0 58.0 58.0 M 70.0 66.0 C 66.0 62.0 60.0 64.0 60.0 70.0 M 62.0 28.0 C 60.0 26.0 56.0 28.0 56.0 33.0"/></g></svg></div></div>
+        <p><b>Top-view brain in thick white line art on brand forest.</b> Scalloped outline, center line, C-shaped curls. The current art is a programmatic draft; it gets a proper vector pass before shipping.</p></div>
+      <div class="tile"><h3 style="margin-top:0">Wordmark</h3><div class="wm">Archie<i>.</i></div><div class="wm dark">Archie<i>.</i></div>
+        <p><b>Geist Bold, −0.06em tracking, period in forest</b> (mint in dark). Used on the launch screen and outside the app.</p></div>
+      <div class="tile"><h3 style="margin-top:0">Naming rule</h3><ul class="rules">
+        <li>The name appears only on the home screen, notification title, wordmark, and share-sheet target.</li>
+        <li>Never in UI copy: “Ask about this episode,” tab labeled <b>Ask</b>, “Answer” (not “Archie's answer”).</li>
+        <li>Review dismiss button reads <b>Drop</b>; toast: “Dropped. Fewer cards like this · Undo.”</li></ul></div>
+    </div>
+  </section>
+
+  <section id="color"><h2>Color</h2>
+    <p class="lede"><b>Graphite chrome, color as signal.</b> Navigation, back, tabs, primary buttons and the Ask bar are graphite (near-white in dark). Color appears only where it means something: domain labels, verdicts, the review card.</p>
+    <div class="grid2">
+      <div><h3>Core</h3><table><tr><th>Token</th><th>Light</th><th>Dark</th><th></th></tr><tr><td>bg</td><td><span class="chip" style="background:#F4F2EC"></span><code>#F4F2EC</code></td><td><span class="chip" style="background:#151412"></span><code>#151412</code></td><td class="note">Warm off-white / warm charcoal</td></tr><tr><td>surface</td><td><span class="chip" style="background:#FFFFFF"></span><code>#FFFFFF</code></td><td><span class="chip" style="background:#201F1C"></span><code>#201F1C</code></td><td class="note">Cards</td></tr><tr><td>ink</td><td><span class="chip" style="background:#0E0E0C"></span><code>#0E0E0C</code></td><td><span class="chip" style="background:#F1EFE9"></span><code>#F1EFE9</code></td><td class="note">Primary text</td></tr><tr><td>ink-2</td><td><span class="chip" style="background:#55534D"></span><code>#55534D</code></td><td><span class="chip" style="background:#B3AFA5"></span><code>#B3AFA5</code></td><td class="note">Secondary text</td></tr><tr><td>ink-3</td><td><span class="chip" style="background:#9A978F"></span><code>#9A978F</code></td><td><span class="chip" style="background:#7E7A70"></span><code>#7E7A70</code></td><td class="note">Tertiary text, labels</td></tr><tr><td>line</td><td><span class="chip" style="background:#E8E6DF"></span><code>#E8E6DF</code></td><td><span class="chip" style="background:#2D2B27"></span><code>#2D2B27</code></td><td class="note">Hairlines</td></tr><tr><td>press</td><td><span class="chip" style="background:#EFEDE6"></span><code>#EFEDE6</code></td><td><span class="chip" style="background:#2A2824"></span><code>#2A2824</code></td><td class="note">Chips, pressed rows, inputs</td></tr><tr><td>chrome</td><td><span class="chip" style="background:#1C1B18"></span><code>#1C1B18</code></td><td><span class="chip" style="background:#F1EFE9"></span><code>#F1EFE9</code></td><td class="note">Navigation, primary buttons, active tab (inverts in dark)</td></tr></table></div>
+      <div><h3>Domains (muted, per domain)</h3><table><tr><th>Domain</th><th>Light</th><th>Dark</th><th></th></tr><tr><td>Macro</td><td><span class="chip" style="background:#3F7262"></span><code>#3F7262</code></td><td><span class="chip" style="background:#79B39E"></span><code>#79B39E</code></td><td class="note"></td></tr><tr><td>AI</td><td><span class="chip" style="background:#6A5A9C"></span><code>#6A5A9C</code></td><td><span class="chip" style="background:#A898DE"></span><code>#A898DE</code></td><td class="note"></td></tr><tr><td>Crypto</td><td><span class="chip" style="background:#A8613A"></span><code>#A8613A</code></td><td><span class="chip" style="background:#DC9867"></span><code>#DC9867</code></td><td class="note"></td></tr><tr><td>Startups</td><td><span class="chip" style="background:#3D6690"></span><code>#3D6690</code></td><td><span class="chip" style="background:#7FA7D9"></span><code>#7FA7D9</code></td><td class="note"></td></tr><tr><td>Finance</td><td><span class="chip" style="background:#8A7533"></span><code>#8A7533</code></td><td><span class="chip" style="background:#CDB46A"></span><code>#CDB46A</code></td><td class="note"></td></tr><tr><td>History</td><td><span class="chip" style="background:#8E5468"></span><code>#8E5468</code></td><td><span class="chip" style="background:#C98BA0"></span><code>#C98BA0</code></td><td class="note"></td></tr></table>
+        <h3>Signals</h3><table><tr><th>Use</th><th>Light</th><th>Dark</th><th></th></tr><tr><td>Got it</td><td><span class="chip" style="background:#3F7262"></span><code>#3F7262</code></td><td><span class="chip" style="background:#79B39E"></span><code>#79B39E</code></td><td class="note">Verdict</td></tr><tr><td>Partly</td><td><span class="chip" style="background:#A97F22"></span><code>#A97F22</code></td><td><span class="chip" style="background:#D6AC4E"></span><code>#D6AC4E</code></td><td class="note">Verdict</td></tr><tr><td>Missed / Parts lost me</td><td><span class="chip" style="background:#B04A3C"></span><code>#B04A3C</code></td><td><span class="chip" style="background:#E3806F"></span><code>#E3806F</code></td><td class="note">Verdict</td></tr><tr><td>Review card</td><td><span class="chip" style="background:#3F7262"></span><code>#3F7262</code></td><td><span class="chip" style="background:#2F5A4C"></span><code>#2F5A4C</code></td><td class="note">Today's “12 cards” block</td></tr><tr><td>Brand forest</td><td><span class="chip" style="background:#3F7262"></span><code>#3F7262</code></td><td><span class="na">—</span></td><td class="note">App icon background</td></tr></table></div>
+    </div>
+  </section>
+
+  <section id="type"><h2>Type &amp; shape</h2>
+    <p class="lede"><b>Geist</b> everywhere, including long-form reading. <b>Geist Mono</b> for labels, timestamps and numbers. Headings are heavy with tight tracking.</p>
+    <table><tr><th>Role</th><th>Size / weight / tracking</th><th>Face</th><th>Where</th></tr>
+      <tr><td>Large title</td><td><code>32 / 700 / −0.04em</code></td><td>Geist</td><td class='note'>Today, Library</td></tr><tr><td>Article title</td><td><code>28 / 700 / −0.04em</code></td><td>Geist</td><td class='note'>Primer, item page</td></tr><tr><td>Review question</td><td><code>27 → 21 / 650 / −0.03em</code></td><td>Geist</td><td class='note'>Shrinks when the keyboard is up or the grade shows</td></tr><tr><td>Headline</td><td><code>16 / 600 / −0.018em</code></td><td>Geist</td><td class='note'>Pulse stories, row titles</td></tr><tr><td>Reading body</td><td><code>16 / 400 / line-height 1.62</code></td><td>Geist</td><td class='note'>Primers, gists, chat answers (15.5)</td></tr><tr><td>UI body</td><td><code>15 / 400</code></td><td>Geist</td><td class='note'>Inputs, rows</td></tr><tr><td>Secondary</td><td><code>13–13.5 / 400</code></td><td>Geist</td><td class='note'>Snippets, meta</td></tr><tr><td>Kicker</td><td><code>10.5 / 600 / +0.06em / UPPERCASE</code></td><td>Geist</td><td class='note'>Domain labels, in domain color</td></tr><tr><td>Label</td><td><code>11 / 500 / UPPERCASE</code></td><td>Geist Mono</td><td class='note'>Section labels, timestamps, counts, rough numbers</td></tr></table>
+    <h3>Shape &amp; spacing</h3>
+    <table><tr><th>Element</th><th>Value</th></tr>
+      <tr><td>Grouped cards (Pulse, rows)</td><td><code>radius 18 · white surface · 1px hairline shadow in light, hairline border in dark</code></td></tr>
+      <tr><td>Review answer / grade card, text box</td><td><code>radius 22</code></td></tr>
+      <tr><td>Primary button (Next, Save)</td><td><code>height 50–54 · radius 16 · chrome fill</code></td></tr>
+      <tr><td>Chips, ghost buttons</td><td><code>radius 8–12 · press fill</code></td></tr>
+      <tr><td>Screen gutters</td><td><code>16 for card groups · 22–24 for text</code></td></tr>
+      <tr><td>Section gap</td><td><code>22–24</code></td></tr>
+      <tr><td>Tab bar</td><td><code>standard iOS · labels · translucent blur · active = chrome</code></td></tr></table>
+  </section>
+
+  <section id="motion"><h2>Motion &amp; haptics</h2>
+    <div class="grid2">
+      <div><h3>Motion</h3><table><tr><th>Moment</th><th>Spec</th></tr>
+        <tr><td>Standard curve</td><td><code>cubic-bezier(.32,.72,0,1)</code> (iOS spring feel)</td></tr>
+        <tr><td>Push / pop, sheets</td><td><code>~0.5s</code>, previous screen shifts −28% and dims</td></tr>
+        <tr><td>Press</td><td><code>scale .96–.975</code>, 0.18s</td></tr>
+        <tr><td>Keyboard / layout reflow</td><td><code>0.42s</code></td></tr>
+        <tr><td>Grade reveal</td><td>card rises in, verdict chip pops (scale .6 → 1.06 → 1)</td></tr>
+        <tr><td>Next / Drop</td><td>card flicks left with −10° rotation; next question fades up</td></tr>
+        <tr><td>Answer streaming</td><td>word-by-word, ~28ms/word</td></tr>
+        <tr><td>Shake to undo</td><td>native alert: “Undo Drop” / “Undo Answer”</td></tr></table></div>
+      <div><h3>Haptics</h3><table><tr><th>Event</th><th>Feedback</th></tr>
+        <tr><td>Tab switch, segmented toggle, chip select</td><td><code>selection</code></td></tr><tr><td>Push / pop navigation, send, open source peek</td><td><code>light</code></td></tr><tr><td>Start recording, Drop a card</td><td><code>medium</code></td></tr><tr><td>Grade: got it / partly / missed</td><td><code>notification success / warning / error</code></td></tr><tr><td>Saved (share sheet), card added, session done, undo</td><td><code>notification success</code></td></tr><tr><td>Drag past the Drop threshold</td><td><code>selection (once)</code></td></tr><tr><td>Submit with an empty answer</td><td><code>rigid + shake animation</code></td></tr></table></div>
+    </div>
+  </section>
+
+  <section class="screen" id="today"><h2>Today, primer &amp; graded card</h2><p class="lede">Light is the default; flip the Mode switch for warm-charcoal dark.</p><iframe title="Today, primer &amp; graded card" loading="lazy" style="height:900px" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;Carl — dark mode&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Geist:wght@300..700&amp;family=Geist+Mono:wght@400;500&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #2a2a2c; color: #e8e6e1; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; transition: background .4s; }
+  body.lightpage { background: #1a1a1c; }
+  body { padding: 36px 24px 80px; }
+  .intro { max-width: 1180px; margin: 0 auto 22px; }
+  .intro h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .intro p { color: #a09d96; font-size: 14px; line-height: 1.55; max-width: 900px; margin-bottom: 6px; }
+  .intro p b { color: #e8e6e1; font-weight: 500; }
+  .controls { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; margin: 0 auto 26px; }
+  .ctl h3 { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #8a877f; margin-bottom: 8px; text-align: center; }
+  .seg { display: flex; gap: 6px; }
+  .seg button { font: 500 12.5px/1 -apple-system, Inter, sans-serif; color: #d8d6d0; background: #262629; border: 1px solid #36363a; padding: 8px 11px; border-radius: 8px; cursor: pointer; display: flex; gap: 6px; align-items: center; }
+  .seg button.on { background: #e8e6e1; color: #1a1a1c; border-color: #e8e6e1; }
+  .sw { width: 12px; height: 12px; border-radius: 3px; box-shadow: 0 0 0 1px #555; }
+  .row { display: flex; gap: 26px; justify-content: center; flex-wrap: wrap; }
+  .pcol { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .pcol .cap { font-size: 12px; color: #8a877f; letter-spacing: .04em; }
+
+  /* ---------- Tokens: light (settled) ---------- */
+  .screen {
+    --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+    --chrome: #1C1B18; --on-chrome: #FFFFFF; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+    --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533;
+    --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --review: #3F7262; --on-review: #FFFFFF;
+    --spring: cubic-bezier(.32,.72,0,1);
+    transition: background-color .4s, color .4s;
+  }
+  /* ---------- Tokens: dark ---------- */
+  .dark .screen {
+    --ink: #F1EFE9; --ink2: #B3AFA5; --ink3: #7E7A70; --chrome: #F1EFE9; --on-chrome: #141311;
+    --k-macro: #79B39E; --k-ai: #A898DE; --k-crypto: #DC9867; --k-startups: #7FA7D9; --k-finance: #CDB46A;
+    --got: #79B39E; --partly: #D6AC4E; --missed: #E3806F; --review: #2F5A4C; --on-review: #EAF3EF;
+  }
+  .dark.base-warm .screen { --bg: #151412; --surface: #201F1C; --line: #2D2B27; --press: #2A2824; --bar: #151412D9; --card-shadow: 0 0 0 1px rgba(255,250,235,.05); }
+  .dark.base-cool .screen { --bg: #111214; --surface: #1C1D20; --line: #2A2B2F; --press: #26272B; --bar: #111214D9; --card-shadow: 0 0 0 1px rgba(255,255,255,.05); }
+  .dark.base-oled .screen { --bg: #000000; --surface: #141414; --line: #242424; --press: #1E1E1E; --bar: #000000D9; --card-shadow: 0 0 0 1px rgba(255,255,255,.06); }
+
+  .phone { width: 340px; height: 720px; border-radius: 50px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #3a3a3e, 0 30px 80px rgba(0,0,0,.45); }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 41px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: &quot;Geist&quot;, sans-serif; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 100px; height: 29px; border-radius: 20px; background: #000; z-index: 90; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 50px; padding: 17px 28px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14px/1 -apple-system, Inter, sans-serif; pointer-events: none; color: var(--ink); }
+  .statusbar svg { height: 12px; }
+  .scroll { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+
+  /* Today */
+  .today { padding: 56px 0 110px; }
+  .hdr { padding: 6px 22px 6px; }
+  .hdr .date { font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; }
+  .hdr .title { font-size: 31px; font-weight: 700; letter-spacing: -0.04em; margin-top: 6px; }
+  .sec { padding: 0 14px; margin-top: 22px; }
+  .sec-label { display: flex; justify-content: space-between; padding: 0 6px; margin-bottom: 9px; font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; }
+  .sec-label span:last-child { text-transform: none; }
+  .group { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--card-shadow); transition: background-color .4s; }
+  .story { padding: 13px 15px; border-top: 1px solid var(--line); }
+  .story:first-child { border-top: 0; }
+  .kick { font: 600 10.5px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--k); }
+  .story h3 { font-size: 15.5px; font-weight: 600; line-height: 1.28; letter-spacing: -0.018em; margin: 6px 0 4px; }
+  .story p { font-size: 13px; line-height: 1.45; color: var(--ink2); }
+  .review { background: var(--review); color: var(--on-review); border-radius: 18px; padding: 17px; display: flex; justify-content: space-between; align-items: center; }
+  .review .big { font-size: 23px; font-weight: 700; letter-spacing: -0.035em; }
+  .review .small { font-size: 12.5px; opacity: .8; margin-top: 3px; }
+  .review .go { width: 40px; height: 40px; border-radius: 12px; background: var(--on-review); color: var(--review); display: grid; place-items: center; font-weight: 700; }
+  .item { display: flex; gap: 12px; align-items: center; padding: 11px 15px; border-top: 1px solid var(--line); }
+  .item:first-child { border-top: 0; }
+  .art { width: 42px; height: 42px; border-radius: 10px; flex: none; }
+  .item .meta { flex: 1; min-width: 0; }
+  .item .meta b { display: block; font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item .meta span { font-size: 12px; color: var(--ink3); }
+  .chip { font-size: 11.5px; font-weight: 600; color: var(--ink); background: var(--press); padding: 7px 10px; border-radius: 8px; }
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 80px; padding: 8px 12px 0; display: flex; justify-content: space-around; z-index: 30;
+            background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 54px; }
+  .tab svg { width: 23px; height: 23px; }
+  .tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+  .tab .pl { width: 34px; height: 29px; border-radius: 9px; background: var(--chrome); color: var(--on-chrome); display: grid; place-items: center; font-size: 19px; }
+
+  /* Primer */
+  .read { padding: 0 0 100px; }
+  .read-top { position: sticky; top: 0; z-index: 5; padding: 52px 14px 10px; display: flex; justify-content: space-between; align-items: center; background: var(--bar); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+  .read-top .back { font-size: 15.5px; color: var(--chrome); font-weight: 500; }
+  .read-top .time { font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); }
+  .article { padding: 8px 22px 0; }
+  .article h1 { font-size: 27px; line-height: 1.12; font-weight: 700; letter-spacing: -0.04em; margin: 10px 0 10px; }
+  .article .dek { font-size: 15px; line-height: 1.5; color: var(--ink2); margin-bottom: 20px; }
+  .article p.body { font-size: 16px; line-height: 1.62; margin-bottom: 15px; letter-spacing: -0.005em; }
+  .numbers { margin: 20px 0; padding: 13px 15px; border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); }
+  .numbers .lbl { font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); margin-bottom: 8px; text-transform: uppercase; }
+  .numbers .n { display: flex; justify-content: space-between; padding: 7px 0; font-size: 13.5px; border-top: 1px solid var(--line); }
+  .numbers .n:first-of-type { border-top: 0; }
+  .numbers .n b { font-family: &quot;Geist Mono&quot;, monospace; font-weight: 500; }
+  .ask { position: absolute; left: 12px; right: 12px; bottom: 24px; z-index: 25; height: 48px; border-radius: 24px; padding: 0 7px 0 17px; display: flex; align-items: center; font-size: 14.5px; color: var(--ink3);
+         background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 0 0 1px var(--line), 0 8px 30px rgba(0,0,0,.12); }
+  .ask .sp { flex: 1; } .ask .dot { width: 34px; height: 34px; border-radius: 50%; background: var(--chrome); color: var(--on-chrome); display: grid; place-items: center; font-size: 13px; }
+
+  /* Review graded */
+  .rv { padding: 52px 0 0; }
+  .rv-top { padding: 0 16px; display: flex; align-items: center; gap: 12px; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--press); display: grid; place-items: center; color: var(--chrome); font-size: 14px; }
+  .progress { flex: 1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+  .progress i { display: block; height: 100%; width: 40%; background: var(--chrome); border-radius: 2px; }
+  .count { font: 500 11.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); }
+  .rv .qwrap { padding: 22px 24px 0; }
+  .rv .q { font-size: 20px; line-height: 1.22; font-weight: 650; letter-spacing: -0.03em; margin-top: 12px; }
+  .rescard { margin: 18px 12px 0; background: var(--surface); border-radius: 22px; padding: 16px 16px; box-shadow: var(--card-shadow); }
+  .yours { padding: 11px 13px; border-radius: 12px; background: var(--press); font-size: 13.5px; line-height: 1.45; color: var(--ink2); }
+  .yours b { display: block; font: 500 10.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 6px; }
+  .verdict { display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; padding: 7px 12px 7px 9px; border-radius: 999px; font-size: 13px; font-weight: 650; color: var(--partly); background: color-mix(in srgb, var(--partly) 14%, transparent); }
+  .verdict .ic { width: 18px; height: 18px; border-radius: 50%; background: var(--partly); color: var(--on-chrome); display: grid; place-items: center; font-size: 11px; }
+  .missing { margin-top: 11px; font-size: 14px; line-height: 1.5; } .missing b { font-weight: 650; }
+  .model { margin-top: 11px; font-size: 13.5px; line-height: 1.5; color: var(--ink2); border-left: 2px solid var(--line); padding-left: 12px; }
+  .model b { display: block; font: 500 10.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 5px; }
+  .ghosts { display: flex; gap: 8px; margin-top: 14px; }
+  .ghost { font-size: 12.5px; font-weight: 550; color: var(--ink2); padding: 8px 11px; border-radius: 9px; background: var(--press); }
+  .next { position: absolute; left: 14px; right: 14px; bottom: 28px; height: 50px; border-radius: 16px; background: var(--chrome); color: var(--on-chrome); display: grid; place-items: center; font-size: 15.5px; font-weight: 650; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+
+
+&lt;div class=&quot;controls&quot;&gt;
+  &lt;div class=&quot;ctl&quot;&gt;&lt;h3&gt;Mode&lt;/h3&gt;&lt;div class=&quot;seg&quot; data-key=&quot;mode&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+  
+&lt;/div&gt;
+
+&lt;div class=&quot;row&quot; id=&quot;row&quot;&gt;&lt;/div&gt;
+
+&lt;script&gt;
+const OPTIONS = {
+  mode: [{ id: &quot;light&quot;, label: &quot;☀ Light&quot; }, { id: &quot;dark&quot;, label: &quot;☾ Dark&quot; }],
+  base: [{ id: &quot;warm&quot;, label: &quot;Warm charcoal&quot;, c: &quot;#151412&quot; }, { id: &quot;cool&quot;, label: &quot;Cool graphite&quot;, c: &quot;#111214&quot; }, { id: &quot;oled&quot;, label: &quot;OLED black&quot;, c: &quot;#000&quot; }],
+};
+const state = { mode: &quot;light&quot;, base: &quot;warm&quot; };
+const ART = {
+  acq: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/a8/e1/de/a8e1deff-9f88-4e55-a541-b0dc793c0cdc/mza_11539673419613154037.jpg/600x600bb.jpg&#x27;) center/cover&quot;,
+  pb: &quot;url(&#x27;https://covers.openlibrary.org/b/id/253659-L.jpg&#x27;) center/cover&quot;,
+  dw: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/af/6f/48/af6f4828-86a2-d4c3-b998-de2af1fdc8c0/mza_949624848217027907.jpg/600x600bb.jpg&#x27;) center/cover&quot;,
+};
+const STATUS = `&lt;svg viewBox=&quot;0 0 70 12&quot; fill=&quot;currentColor&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;8&quot; width=&quot;3&quot; height=&quot;4&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;5&quot; y=&quot;5.5&quot; width=&quot;3&quot; height=&quot;6.5&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;10&quot; y=&quot;3&quot; width=&quot;3&quot; height=&quot;9&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;15&quot; y=&quot;0&quot; width=&quot;3&quot; height=&quot;12&quot; rx=&quot;1&quot;/&gt;&lt;path d=&quot;M31 3.2a9 9 0 0 1 12 0l-1.4 1.5a7 7 0 0 0-9.2 0zM33.4 5.8a5.5 5.5 0 0 1 7.2 0L39.2 7.3a3.4 3.4 0 0 0-4.4 0zM37 11.5l-1.6-1.8a2.4 2.4 0 0 1 3.2 0z&quot;/&gt;&lt;rect x=&quot;47&quot; y=&quot;1&quot; width=&quot;20&quot; height=&quot;10.5&quot; rx=&quot;3&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; opacity=&quot;.4&quot;/&gt;&lt;rect x=&quot;48.6&quot; y=&quot;2.6&quot; width=&quot;16.8&quot; height=&quot;7.3&quot; rx=&quot;1.6&quot;/&gt;&lt;rect x=&quot;68&quot; y=&quot;4.3&quot; width=&quot;1.6&quot; height=&quot;4&quot; rx=&quot;.8&quot; opacity=&quot;.4&quot;/&gt;&lt;/svg&gt;`;
+const svg = (d) =&gt; `&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;${d}&lt;/svg&gt;`;
+const ICONS = {
+  today: svg(&#x27;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;4&quot;/&gt;&lt;path d=&quot;M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4&quot;/&gt;&#x27;),
+  library: svg(&#x27;&lt;path d=&quot;M4 4h4v16H4zM10 4h4v16h-4zM16.5 4.5l3.5 1-4 15-3.5-1z&quot;/&gt;&#x27;),
+  review: svg(&#x27;&lt;rect x=&quot;3&quot; y=&quot;6&quot; width=&quot;14&quot; height=&quot;14&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M7 3h12a2 2 0 0 1 2 2v12&quot;/&gt;&#x27;),
+  carl: svg(&#x27;&lt;path d=&quot;M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z&quot;/&gt;&#x27;),
+};
+const STORIES = [
+  [&quot;macro&quot;, &quot;Macro&quot;, &quot;Fed holds at 3.75%, signals one more cut before spring&quot;, &quot;Powell framed it as insurance against a softening job market.&quot;],
+  [&quot;ai&quot;, &quot;AI&quot;, &quot;Hyperscalers&#x27; combined capex guidance crosses $500B for 2027&quot;, &quot;Most of the new money goes to power and cooling, not chips.&quot;],
+  [&quot;crypto&quot;, &quot;Crypto&quot;, &quot;Stablecoin market-structure bill clears Senate Banking&quot;, &quot;Treasury-bill demand is the second-order story.&quot;],
+  [&quot;startups&quot;, &quot;Startups&quot;, &quot;Series A medians fall for the third straight quarter&quot;, &quot;AI rounds are the exception, pulling the rest down harder.&quot;],
+];
+const shell = (inner) =&gt; `&lt;div class=&quot;phone&quot;&gt;&lt;div class=&quot;screen&quot;&gt;&lt;div class=&quot;island&quot;&gt;&lt;/div&gt;&lt;div class=&quot;statusbar&quot;&gt;&lt;span&gt;9:41&lt;/span&gt;${STATUS}&lt;/div&gt;${inner}&lt;/div&gt;&lt;/div&gt;`;
+
+const today = `
+  &lt;div class=&quot;scroll today&quot;&gt;
+    &lt;div class=&quot;hdr&quot;&gt;&lt;div class=&quot;date&quot;&gt;Tuesday, October 27&lt;/div&gt;&lt;div class=&quot;title&quot;&gt;Today&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;sec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;Pulse&lt;/span&gt;&lt;span&gt;since yesterday · 2 min&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;group&quot;&gt;${STORIES.map(([k, n, h, p]) =&gt; `&lt;div class=&quot;story&quot; style=&quot;--k: var(--k-${k})&quot;&gt;&lt;div class=&quot;kick&quot;&gt;${n}&lt;/div&gt;&lt;h3&gt;${h}&lt;/h3&gt;&lt;p&gt;${p}&lt;/p&gt;&lt;/div&gt;`).join(&quot;&quot;)}&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;sec&quot;&gt;&lt;div class=&quot;review&quot;&gt;&lt;div&gt;&lt;div class=&quot;big&quot;&gt;12 cards&lt;/div&gt;&lt;div class=&quot;small&quot;&gt;about 4 minutes · 3 foundations first&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;go&quot;&gt;→&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;sec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;Up next&lt;/span&gt;&lt;span&gt;3 queued&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;group&quot;&gt;
+        &lt;div class=&quot;item&quot;&gt;&lt;div class=&quot;art&quot; style=&quot;background:${ART.acq}&quot;&gt;&lt;/div&gt;&lt;div class=&quot;meta&quot;&gt;&lt;b&gt;Acquired: TSMC, Part II&lt;/b&gt;&lt;span&gt;Podcast · 3h 12m&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;chip&quot;&gt;Prep me&lt;/div&gt;&lt;/div&gt;
+        &lt;div class=&quot;item&quot;&gt;&lt;div class=&quot;art&quot; style=&quot;background:${ART.pb};border-radius:3px 6px 6px 3px;width:30px;margin:0 6px&quot;&gt;&lt;/div&gt;&lt;div class=&quot;meta&quot;&gt;&lt;b&gt;The Power Broker&lt;/b&gt;&lt;span&gt;Book · Robert Caro&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;chip&quot;&gt;Prep me&lt;/div&gt;&lt;/div&gt;
+        &lt;div class=&quot;item&quot;&gt;&lt;div class=&quot;art&quot; style=&quot;background:${ART.dw}&quot;&gt;&lt;/div&gt;&lt;div class=&quot;meta&quot;&gt;&lt;b&gt;Dwarkesh: Why compute is the new oil&lt;/b&gt;&lt;span&gt;Podcast · 1h 48m&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;chip&quot;&gt;Prep me&lt;/div&gt;&lt;/div&gt;
+      &lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;tabbar&quot;&gt;
+    &lt;div class=&quot;tab on&quot;&gt;${ICONS.today}&lt;span&gt;Today&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;tab&quot;&gt;${ICONS.library}&lt;span&gt;Library&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab&quot;&gt;&lt;div class=&quot;pl&quot;&gt;+&lt;/div&gt;&lt;span&gt;Add&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;tab&quot;&gt;${ICONS.review}&lt;span&gt;Review&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;tab&quot;&gt;${ICONS.carl}&lt;span&gt;Ask&lt;/span&gt;&lt;/div&gt;
+  &lt;/div&gt;`;
+
+const primer = `
+  &lt;div class=&quot;scroll read&quot;&gt;
+    &lt;div class=&quot;read-top&quot;&gt;&lt;div class=&quot;back&quot;&gt;‹ Today&lt;/div&gt;&lt;div class=&quot;time&quot;&gt;6 MIN READ&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;article&quot;&gt;
+      &lt;div class=&quot;kick&quot; style=&quot;--k: var(--k-macro)&quot;&gt;Primer · Macro&lt;/div&gt;
+      &lt;h1&gt;How the Fed actually sets rates&lt;/h1&gt;
+      &lt;div class=&quot;dek&quot;&gt;The “rate” is a target the Fed hits indirectly. Once you see the levers, every Pulse headline about it gets easier to read.&lt;/div&gt;
+      &lt;p class=&quot;body&quot;&gt;When people say “the Fed raised rates,” they mean the federal funds rate: what banks charge each other to borrow overnight. The Fed doesn&#x27;t set it by decree. It sets a target range, then uses two tools to keep the market rate inside it.&lt;/p&gt;
+      &lt;p class=&quot;body&quot;&gt;The first tool is the rate it pays banks on reserves parked at the Fed. No bank will lend to another for less than it can earn risk-free, so that rate works as a floor.&lt;/p&gt;
+      &lt;div class=&quot;numbers&quot;&gt;&lt;div class=&quot;lbl&quot;&gt;Rough numbers&lt;/div&gt;
+        &lt;div class=&quot;n&quot;&gt;&lt;span&gt;Current target&lt;/span&gt;&lt;b&gt;~3.75%&lt;/b&gt;&lt;/div&gt;&lt;div class=&quot;n&quot;&gt;&lt;span&gt;Bank reserves at the Fed&lt;/span&gt;&lt;b&gt;~$3T&lt;/b&gt;&lt;/div&gt;&lt;div class=&quot;n&quot;&gt;&lt;span&gt;Meetings per year&lt;/span&gt;&lt;b&gt;8&lt;/b&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;p class=&quot;body&quot;&gt;By the time the Fed acts, markets have usually priced it in. What moves them is the guidance: the hints about what the next meeting will bring.&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;ask&quot;&gt;Ask about this&lt;span class=&quot;sp&quot;&gt;&lt;/span&gt;&lt;span class=&quot;dot&quot;&gt;✦&lt;/span&gt;&lt;/div&gt;`;
+
+const review = `
+  &lt;div class=&quot;scroll rv&quot;&gt;
+    &lt;div class=&quot;rv-top&quot;&gt;&lt;div class=&quot;icon-btn&quot;&gt;✕&lt;/div&gt;&lt;div class=&quot;progress&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;count&quot;&gt;2 / 3&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;qwrap&quot;&gt;&lt;div class=&quot;kick&quot; style=&quot;--k: var(--k-ai)&quot;&gt;AI &lt;span style=&quot;color:var(--ink3)&quot;&gt;· Mechanism&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;q&quot;&gt;Why is most new hyperscaler capex going to power and cooling rather than chips?&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;rescard&quot;&gt;
+      &lt;div class=&quot;yours&quot;&gt;&lt;b&gt;You said&lt;/b&gt;Because the new chips use way more power and need more cooling.&lt;/div&gt;
+      &lt;div class=&quot;verdict&quot;&gt;&lt;span class=&quot;ic&quot;&gt;~&lt;/span&gt;Partly&lt;/div&gt;
+      &lt;div class=&quot;missing&quot;&gt;You got the power draw. What&#x27;s missing: &lt;b&gt;grid connection is now the bottleneck&lt;/b&gt;. Data centers wait years for power.&lt;/div&gt;
+      &lt;div class=&quot;model&quot;&gt;&lt;b&gt;Answer&lt;/b&gt;Each GPU generation needs more power per rack, and grid interconnects take 3–5 years.&lt;/div&gt;
+      &lt;div class=&quot;ghosts&quot;&gt;&lt;div class=&quot;ghost&quot;&gt;I actually knew it&lt;/div&gt;&lt;div class=&quot;ghost&quot;&gt;What I care about…&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;next&quot;&gt;Next&lt;/div&gt;`;
+
+const row = document.getElementById(&quot;row&quot;);
+row.innerHTML = [[&quot;TODAY&quot;, today], [&quot;PRIMER&quot;, primer], [&quot;REVIEW · graded&quot;, review]].map(([c, html]) =&gt; `&lt;div class=&quot;pcol&quot;&gt;&lt;div class=&quot;cap&quot;&gt;${c}&lt;/div&gt;${shell(html)}&lt;/div&gt;`).join(&quot;&quot;);
+
+function apply() {
+  row.classList.toggle(&quot;dark&quot;, state.mode === &quot;dark&quot;);
+  [&quot;warm&quot;, &quot;cool&quot;, &quot;oled&quot;].forEach((b) =&gt; row.classList.toggle(`base-${b}`, state.base === b));
+  document.body.classList.toggle(&quot;lightpage&quot;, state.mode === &quot;light&quot;);
+}
+document.querySelectorAll(&quot;.seg&quot;).forEach((seg) =&gt; {
+  const key = seg.dataset.key;
+  seg.innerHTML = OPTIONS[key].map((o) =&gt; `&lt;button data-id=&quot;${o.id}&quot; data-choice=&quot;${key}:${o.id}&quot;&gt;${o.c ? `&lt;span class=&quot;sw&quot; style=&quot;background:${o.c}&quot;&gt;&lt;/span&gt;` : &quot;&quot;}${o.label}&lt;/button&gt;`).join(&quot;&quot;);
+  const sync = () =&gt; seg.querySelectorAll(&quot;button&quot;).forEach((b) =&gt; b.classList.toggle(&quot;on&quot;, b.dataset.id === state[key]));
+  seg.addEventListener(&quot;click&quot;, (e) =&gt; { const b = e.target.closest(&quot;button&quot;); if (!b) return; state[key] = b.dataset.id; sync(); apply(); });
+  sync();
+});
+apply();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section class="screen" id="review"><h2>Review</h2><p class="lede">Answer in the big text box (or mic), grade appears as a card under the question, Next flicks it away. <b>Drop</b> sits bottom-left of the text box. Use <b>demo: shake to undo</b> after a Drop or Next.</p><iframe title="Review" loading="lazy" style="height:960px" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;Carl — Review v3&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Geist:wght@300..700&amp;family=Geist+Mono:wght@400;500&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #1a1a1c; color: #e8e6e1; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; }
+  body { padding: 36px 32px 80px; }
+  .intro { max-width: 1100px; margin: 0 auto 28px; }
+  .intro h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .intro p { color: #a09d96; font-size: 14px; line-height: 1.55; max-width: 860px; margin-bottom: 6px; }
+  .intro p b { color: #e8e6e1; font-weight: 500; }
+  .row { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; }
+  .pcol { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .pcol .name { font-size: 15px; font-weight: 600; color: #e8e6e1; }
+  .pcol .note { font-size: 12.5px; color: #8a877f; max-width: 340px; text-align: center; line-height: 1.45; min-height: 36px; }
+  .haptic { height: 16px; font: 500 11px/16px &quot;Geist Mono&quot;, monospace; color: #7d7a74; opacity: 0; transition: opacity .15s; }
+  .haptic.on { opacity: 1; color: #cfcac0; }
+  .pickbtn { font: 500 13px/1 -apple-system, Inter, sans-serif; color: #e8e6e1; background: #2a2a2d; border: 1px solid #3a3a3e; padding: 9px 16px; border-radius: 999px; cursor: pointer; }
+  .pickbtn.on { background: #e8e6e1; color: #1a1a1c; }
+
+  /* ---------- Tokens (settled so far) ---------- */
+  .screen {
+    --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+    --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+    --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690;
+    --got: #3F7262; --partly: #A97F22; --missed: #B04A3C;
+    --spring: cubic-bezier(.32,.72,0,1);
+  }
+
+  .phone { width: 360px; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 30px 80px rgba(0,0,0,.5); }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: &quot;Geist&quot;, sans-serif; user-select: none; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, Inter, sans-serif; pointer-events: none; }
+  .statusbar svg { height: 12px; }
+  .press { transition: transform .18s var(--spring), background-color .18s, opacity .2s; cursor: pointer; }
+  .press:active { transform: scale(.96); }
+
+  /* Top bar */
+  .rv-top { position: absolute; top: 54px; left: 0; right: 0; padding: 0 18px; display: flex; align-items: center; gap: 12px; z-index: 40; }
+  .icon-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--press); display: grid; place-items: center; color: var(--chrome); font-size: 15px; }
+  .progress { flex: 1; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+  .progress i { display: block; height: 100%; background: var(--chrome); border-radius: 2px; transition: width .6s var(--spring); }
+  .count { font: 500 11.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); min-width: 38px; text-align: right; }
+
+  /* Shared card content */
+  .kick { display: flex; gap: 8px; align-items: center; font: 600 10.5px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .kick .d { color: var(--k); }
+  .kick .t { color: var(--ink3); }
+  .q { font-size: 23px; line-height: 1.22; font-weight: 650; letter-spacing: -0.03em; margin-top: 12px; }
+
+  .result { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .55s var(--spring); }
+  .result &gt; div { overflow: hidden; }
+  .shown .result { grid-template-rows: 1fr; }
+  .yours { margin-top: 16px; padding: 12px 14px; border-radius: 12px; background: var(--press); font-size: 14px; line-height: 1.45; color: var(--ink2); }
+  .yours b { display: block; font: 500 10.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 6px; }
+  .verdict { display: inline-flex; align-items: center; gap: 7px; margin-top: 16px; padding: 7px 12px 7px 9px; border-radius: 999px; font-size: 13.5px; font-weight: 650; letter-spacing: -0.01em;
+             color: var(--v); background: color-mix(in srgb, var(--v) 11%, transparent); transform-origin: left center; }
+  .verdict .ic { width: 18px; height: 18px; border-radius: 50%; background: var(--v); color: #fff; display: grid; place-items: center; font-size: 11px; }
+  .pop { animation: pop .5s var(--spring); }
+  @keyframes pop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); } }
+  .missing { margin-top: 12px; font-size: 14.5px; line-height: 1.5; color: var(--ink); }
+  .missing b { font-weight: 650; }
+  .model { margin-top: 12px; font-size: 14px; line-height: 1.5; color: var(--ink2); border-left: 2px solid var(--line); padding-left: 12px; }
+  .model b { display: block; font: 500 10.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 5px; }
+  .actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+  .ghost { font-size: 13px; font-weight: 550; color: var(--ink2); padding: 8px 12px; border-radius: 9px; background: var(--press); }
+  .tell { margin-top: 12px; display: none; }
+  .tell.on { display: block; animation: fadeup .35s var(--spring); }
+  .tell textarea { width: 100%; height: 64px; border: 0; outline: 0; resize: none; border-radius: 12px; padding: 10px 12px; font: 14px/1.4 &quot;Geist&quot;, sans-serif; background: var(--press); color: var(--ink); }
+  .tell .row2 { display: flex; justify-content: flex-end; margin-top: 6px; }
+  .tell .save { font-size: 13px; font-weight: 600; color: #fff; background: var(--chrome); padding: 8px 12px; border-radius: 9px; }
+  .updated { font-size: 13px; color: var(--got); font-weight: 600; margin-top: 10px; animation: fadeup .35s var(--spring); }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* Composer: a real writing area, not a chat pill */
+  .composer { position: absolute; left: 12px; right: 12px; bottom: 26px; z-index: 50; transition: bottom .42s var(--spring), transform .5s var(--spring), opacity .3s, top .42s var(--spring); }
+  .hidden-composer .composer { transform: translateY(240px); opacity: 0; pointer-events: none; }
+  .field { display: flex; flex-direction: column; background: var(--surface); border-radius: 22px; box-shadow: var(--card-shadow), 0 8px 24px rgba(20,20,15,.06); height: 100%; }
+  .field textarea { flex: 1; border: 0; outline: 0; resize: none; background: transparent; font: 16.5px/1.45 &quot;Geist&quot;, sans-serif; color: var(--ink); padding: 16px 16px 4px; user-select: text; min-height: 0; }
+  .field textarea::placeholder { color: var(--ink3); }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 8px 8px 8px 14px; }
+  .bar .sp { flex: 1; }
+  .sample { font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); padding: 7px 10px; border-radius: 999px; background: var(--press); }
+  .mic, .send { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .mic { background: var(--press); color: var(--chrome); }
+  .send { background: var(--chrome); color: #fff; font-size: 17px; font-weight: 600; }
+  .send.dim { opacity: .25; }
+  .send.grading { animation: breathe .9s ease-in-out infinite; }
+  @keyframes breathe { 50% { transform: scale(.88); opacity: .6; } }
+  .shake { animation: shake .35s; }
+  @keyframes shake { 20%,60% { transform: translateX(-6px); } 40%,80% { transform: translateX(6px); } }
+  .rec { display: none; flex: 1; align-items: center; justify-content: center; gap: 3px; padding: 0 16px; }
+  .recording .rec { display: flex; }
+  .recording textarea { display: none; }
+  .recording .mic { background: var(--missed); color: #fff; }
+  .rec i { width: 3px; border-radius: 2px; background: var(--chrome); animation: wave .9s ease-in-out infinite; }
+  @keyframes wave { 0%,100% { height: 6px; } 50% { height: 28px; } }
+  .rec span { font: 500 12px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); margin-left: 10px; }
+
+  /* iOS keyboard */
+  .kb { position: absolute; left: 0; right: 0; bottom: 0; height: 292px; z-index: 60; background: #D3D5DB; padding: 8px 3px 0; transform: translateY(100%);
+        transition: transform .42s var(--spring); font-family: -apple-system, &quot;SF Pro Text&quot;, sans-serif; }
+  .typing .kb { transform: none; }
+  .kb .kr { display: flex; justify-content: center; gap: 6px; margin-bottom: 11px; padding: 0 3px; }
+  .kb .k { flex: 0 0 calc((100% - 54px) / 10); height: 42px; border-radius: 6px; background: #FDFDFE; box-shadow: 0 1px 0 #898A8D; display: grid; place-items: center;
+           font-size: 22px; color: #000; cursor: pointer; }
+  .kb .k:active { background: #ABB0BA; }
+  .kb .k.fn { background: #ABB0BA; font-size: 15px; flex-basis: 42px; }
+  .kb .k.wide { flex: 1; font-size: 15px; }
+  .kb .k.ret { flex-basis: 88px; font-size: 15px; background: #ABB0BA; }
+  .kb .kr.r2 { padding: 0 20px; }
+  .kb .kr.r3 .k.fn { flex-basis: 44px; margin: 0 4px; }
+
+  /* Labelled &quot;Don&#x27;t care&quot; chip (replaces ···) */
+  .dc-btn { margin-left: auto; font: 550 11.5px/1 &quot;Geist&quot;, sans-serif; color: var(--ink3); padding: 6px 9px; border-radius: 8px; background: var(--press); letter-spacing: 0; text-transform: none; }
+  .shown .dc-btn, .typing .dc-btn { opacity: 0; pointer-events: none; }
+
+  .next { position: absolute; left: 16px; right: 16px; bottom: 30px; z-index: 55; height: 52px; border-radius: 16px; background: var(--chrome); color: #fff;
+          display: grid; place-items: center; font-size: 16px; font-weight: 600; letter-spacing: -0.01em; transform: translateY(120px); transition: transform .5s var(--spring); }
+  .show-next .next { transform: none; }
+
+  .toast { position: absolute; left: 50%; top: 96px; transform: translate(-50%, -20px); opacity: 0; z-index: 70; background: var(--chrome); color: #fff; font-size: 13px; font-weight: 500;
+           padding: 9px 14px; border-radius: 999px; white-space: nowrap; transition: all .4s var(--spring); display: flex; gap: 12px; }
+  .toast.on { transform: translate(-50%, 0); opacity: 1; }
+  .toast u { text-decoration: none; opacity: .65; cursor: pointer; }
+
+  /* ---------- A: Card stack ---------- */
+  .A .deck { position: absolute; top: 100px; left: 14px; right: 14px; bottom: 272px; transition: bottom .42s var(--spring); }
+  .A .composer { height: 220px; }
+  .A.typing .composer { bottom: 300px; height: 150px; }
+  .A.typing .deck { bottom: 458px; }
+  .A .card .q { font-size: 25px; }
+  .A.typing .card.top .q { font-size: 19px; }
+  .A.typing .card.behind, .A.typing .card.behind2 { opacity: 0; }
+  .A .card { position: absolute; inset: 0 0 auto 0; max-height: 100%; overflow-y: auto; scrollbar-width: none; background: var(--surface); border-radius: 24px; padding: 22px 20px 22px;
+             box-shadow: var(--card-shadow), 0 12px 30px rgba(20,20,15,.06); transition: transform .55s var(--spring), opacity .4s; touch-action: none; }
+  .A .card::-webkit-scrollbar { display: none; }
+  .A .card.behind { transform: translateY(14px) scale(.94); opacity: .7; z-index: 1; pointer-events: none; }
+  .A .card.behind2 { transform: translateY(26px) scale(.88); opacity: .35; z-index: 0; pointer-events: none; }
+  .A .card.top { z-index: 2; }
+  .A .card.dragging { transition: none; }
+  .A .card.fly { transform: translateX(-130%) rotate(-12deg); opacity: 0; }
+  .A .card.fly-r { transform: translateX(130%) rotate(12deg); opacity: 0; }
+  .A .card .dc { position: absolute; top: 18px; right: 18px; font: 600 11px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--missed);
+                 border: 1.5px solid var(--missed); padding: 5px 8px; border-radius: 7px; opacity: 0; transform: rotate(8deg); }
+  .A.show-next .deck { bottom: 96px; }
+  .A .card .q { transition: font-size .45s var(--spring); }
+  .A.shown .card.top .q { font-size: 19px; }
+  .A .hint { position: absolute; bottom: 256px; left: 0; right: 0; text-align: center; font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); transition: opacity .3s; z-index: 0; }
+  .A.show-next .hint, .A.typing .hint { opacity: 0; }
+
+  /* ---------- B: Focus + sheet ---------- */
+  .B .composer { top: 330px; transition: top .42s var(--spring), bottom .42s var(--spring), transform .5s var(--spring), opacity .3s; }
+  .B.typing .composer { top: 250px; bottom: 300px; }
+  .B.typing .q { font-size: 21px; }
+  .B .q { transition: font-size .42s var(--spring); }
+  .B .stage { position: absolute; top: 100px; left: 0; right: 0; bottom: 140px; padding: 22px 26px; transition: transform .55s var(--spring), opacity .4s; }
+  .B .stage.out { transform: translateY(-40px); opacity: 0; }
+  .B .stage.in { transform: translateY(40px); opacity: 0; transition: none; }
+  .B .q { font-size: 27px; line-height: 1.18; margin-top: 16px; }
+  .B .result { display: block; }
+  .B .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 52; background: var(--surface); border-radius: 30px 30px 0 0; padding: 12px 22px 100px;
+              box-shadow: 0 -10px 40px rgba(20,20,15,.1); transform: translateY(105%); transition: transform .6s var(--spring); max-height: 70%; overflow-y: auto; scrollbar-width: none; }
+  .B .sheet::-webkit-scrollbar { display: none; }
+  .B .sheet .grab { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 6px; }
+  .B.shown .sheet { transform: none; }
+  .B.shown .stage { transform: translateY(-14px) scale(.97); opacity: .55; }
+  .B .more { margin-left: 0; }
+
+  /* ---------- C: page question → answer card ---------- */
+  .C.shown .stage { transform: none; opacity: 1; }
+  .C.shown .q { font-size: 21px; }
+  .rescard { position: absolute; left: 12px; right: 12px; top: 250px; bottom: 96px; z-index: 51; background: var(--surface); border-radius: 22px; padding: 4px 18px 18px;
+             box-shadow: var(--card-shadow), 0 12px 30px rgba(20,20,15,.06); overflow-y: auto; scrollbar-width: none;
+             opacity: 0; transform: translateY(40px) scale(.98); pointer-events: none; transition: transform .55s var(--spring), opacity .35s; }
+  .rescard::-webkit-scrollbar { display: none; }
+  .C.shown .rescard { opacity: 1; transform: none; pointer-events: auto; }
+  .rescard.fly { opacity: 0 !important; transform: translateX(-130%) rotate(-10deg) !important; }
+  .rescard.reset { transition: none; }
+  .dc-tool { font: 550 13px/1 &quot;Geist&quot;, sans-serif; color: var(--ink2); padding: 9px 12px; border-radius: 10px; background: var(--press); }
+  .demo { font: 500 12px/1 &quot;Geist Mono&quot;, monospace; color: #cfcac0; background: #2a2a2d; border: 1px solid #3a3a3e; padding: 8px 12px; border-radius: 999px; cursor: pointer; }
+
+  /* Shake-to-undo alert (native style) */
+  .alert-scrim { position: absolute; inset: 0; z-index: 85; background: rgba(0,0,0,.28); display: grid; place-items: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .alert-scrim.on { opacity: 1; pointer-events: auto; }
+  .alert { width: 250px; border-radius: 14px; background: rgba(242,242,247,.96); text-align: center; font-family: -apple-system, Inter, sans-serif; transform: scale(1.1); transition: transform .25s var(--spring); overflow: hidden; }
+  .alert-scrim.on .alert { transform: none; }
+  .alert b { display: block; padding: 18px 16px 2px; font-size: 16px; } .alert p { padding: 0 16px 16px; font-size: 13px; color: #3c3c43; }
+  .alert .ab { display: flex; border-top: 1px solid #d1d1d6; } .alert .ab div { flex: 1; padding: 11px; font-size: 16px; color: #007AFF; cursor: pointer; } .alert .ab div + div { border-left: 1px solid #d1d1d6; font-weight: 600; }
+
+  /* Done */
+  .done { position: absolute; inset: 0; z-index: 75; background: var(--bg); padding: 120px 26px 0; opacity: 0; pointer-events: none; transition: opacity .5s; }
+  .done.on { opacity: 1; pointer-events: auto; }
+  .done .big { font-size: 44px; font-weight: 700; letter-spacing: -0.05em; }
+  .done .sub { font-size: 15px; color: var(--ink2); margin-top: 6px; line-height: 1.45; }
+  .done .stats { margin-top: 28px; background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); }
+  .done .stat { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-top: 1px solid var(--line); font-size: 15px; }
+  .done .stat:first-child { border-top: 0; }
+  .done .stat b { font: 500 15px/1 &quot;Geist Mono&quot;, monospace; }
+  .done .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 10px; }
+  .done .stat.on-done { animation: fadeup .5s var(--spring) both; }
+  .done .again { margin-top: 18px; text-align: center; font-size: 14px; color: var(--ink3); }
+  .done .home { position: absolute; left: 16px; right: 16px; bottom: 30px; height: 52px; border-radius: 16px; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 16px; font-weight: 600; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+
+
+&lt;div class=&quot;row&quot; id=&quot;row&quot;&gt;&lt;/div&gt;
+
+&lt;script&gt;
+const CARDS = [
+  { domain: &quot;macro&quot;, label: &quot;Macro&quot;, kind: &quot;Foundation&quot;,
+    q: &quot;What two rates does the Fed use to keep the fed funds rate inside its target?&quot;,
+    sample: &quot;Interest it pays on bank reserves, and the overnight reverse repo rate. Both act as floors.&quot;,
+    voice: &quot;um the rate it pays on reserves and the reverse repo one, they&#x27;re like floors&quot;,
+    verdict: &quot;got&quot;, missing: null,
+    model: &quot;Interest on reserve balances (IORB) and the overnight reverse repo rate (ON RRP). Together they put a floor under the market rate.&quot; },
+  { domain: &quot;ai&quot;, label: &quot;AI&quot;, kind: &quot;Mechanism&quot;,
+    q: &quot;Why is most new hyperscaler capex going to power and cooling rather than chips?&quot;,
+    sample: &quot;Because the new chips use way more power and need more cooling.&quot;,
+    voice: &quot;because the new GPUs draw a lot more power so you need more cooling&quot;,
+    verdict: &quot;partly&quot;, missing: &quot;You got the power draw. What&#x27;s missing: &lt;b&gt;grid connection is now the bottleneck&lt;/b&gt;. Data centers wait years for power, so companies spend to secure it first.&quot;,
+    model: &quot;Each new GPU generation needs more power per rack, and grid interconnects take 3–5 years. Power, not chips, limits how fast capacity can grow.&quot; },
+  { domain: &quot;crypto&quot;, label: &quot;Crypto&quot;, kind: &quot;Rough number&quot;,
+    q: &quot;Roughly how big is the stablecoin market today?&quot;,
+    sample: &quot;Maybe around $50 billion?&quot;,
+    voice: &quot;I think like fifty billion&quot;,
+    verdict: &quot;missed&quot;, missing: &quot;It&#x27;s about &lt;b&gt;6× bigger&lt;/b&gt; than that. Think &lt;b&gt;~$300B&lt;/b&gt;, which is why stablecoin issuers are now meaningful buyers of T-bills.&quot;,
+    model: &quot;~$300B, mostly USDT and USDC.&quot; },
+];
+const VERDICTS = {
+  got: { label: &quot;Got it&quot;, ic: &quot;✓&quot;, haptic: &quot;success&quot; },
+  partly: { label: &quot;Partly&quot;, ic: &quot;~&quot;, haptic: &quot;warning&quot; },
+  missed: { label: &quot;Missed&quot;, ic: &quot;✕&quot;, haptic: &quot;error&quot; },
+};
+const STATUS_ICONS = `&lt;svg viewBox=&quot;0 0 70 12&quot; fill=&quot;currentColor&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;8&quot; width=&quot;3&quot; height=&quot;4&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;5&quot; y=&quot;5.5&quot; width=&quot;3&quot; height=&quot;6.5&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;10&quot; y=&quot;3&quot; width=&quot;3&quot; height=&quot;9&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;15&quot; y=&quot;0&quot; width=&quot;3&quot; height=&quot;12&quot; rx=&quot;1&quot;/&gt;&lt;path d=&quot;M31 3.2a9 9 0 0 1 12 0l-1.4 1.5a7 7 0 0 0-9.2 0zM33.4 5.8a5.5 5.5 0 0 1 7.2 0L39.2 7.3a3.4 3.4 0 0 0-4.4 0zM37 11.5l-1.6-1.8a2.4 2.4 0 0 1 3.2 0z&quot;/&gt;&lt;rect x=&quot;47&quot; y=&quot;1&quot; width=&quot;20&quot; height=&quot;10.5&quot; rx=&quot;3&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; opacity=&quot;.4&quot;/&gt;&lt;rect x=&quot;48.6&quot; y=&quot;2.6&quot; width=&quot;16.8&quot; height=&quot;7.3&quot; rx=&quot;1.6&quot;/&gt;&lt;rect x=&quot;68&quot; y=&quot;4.3&quot; width=&quot;1.6&quot; height=&quot;4&quot; rx=&quot;.8&quot; opacity=&quot;.4&quot;/&gt;&lt;/svg&gt;`;
+const MIC = `&lt;svg width=&quot;18&quot; height=&quot;18&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;3&quot; width=&quot;6&quot; height=&quot;11&quot; rx=&quot;3&quot;/&gt;&lt;path d=&quot;M5 11a7 7 0 0 0 14 0M12 18v3&quot;/&gt;&lt;/svg&gt;`;
+
+const KEY_ROWS = [&quot;qwertyuiop&quot;, &quot;asdfghjkl&quot;, &quot;zxcvbnm&quot;];
+const KEYBOARD = `
+  &lt;div class=&quot;kr&quot;&gt;${[...KEY_ROWS[0]].map((c) =&gt; `&lt;div class=&quot;k&quot; data-key=&quot;${c}&quot;&gt;${c}&lt;/div&gt;`).join(&quot;&quot;)}&lt;/div&gt;
+  &lt;div class=&quot;kr r2&quot;&gt;${[...KEY_ROWS[1]].map((c) =&gt; `&lt;div class=&quot;k&quot; data-key=&quot;${c}&quot;&gt;${c}&lt;/div&gt;`).join(&quot;&quot;)}&lt;/div&gt;
+  &lt;div class=&quot;kr r3&quot;&gt;&lt;div class=&quot;k fn&quot;&gt;⇧&lt;/div&gt;${[...KEY_ROWS[2]].map((c) =&gt; `&lt;div class=&quot;k&quot; data-key=&quot;${c}&quot;&gt;${c}&lt;/div&gt;`).join(&quot;&quot;)}&lt;div class=&quot;k fn&quot; data-key=&quot;⌫&quot;&gt;⌫&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;kr&quot;&gt;&lt;div class=&quot;k fn&quot;&gt;123&lt;/div&gt;&lt;div class=&quot;k fn&quot;&gt;☺&lt;/div&gt;&lt;div class=&quot;k wide&quot; data-key=&quot; &quot;&gt;space&lt;/div&gt;&lt;div class=&quot;k ret&quot; data-key=&quot;⏎&quot;&gt;return&lt;/div&gt;&lt;/div&gt;`;
+
+const VARIANTS = [
+  { key: &quot;C&quot;, name: &quot;Hybrid · page question → answer card&quot;, note: &quot;You answer in B&#x27;s layout. On submit, the text box becomes a card holding your answer and the grade, under the question. Next flicks it away.&quot; }
+];
+
+const kick = (c, top = true) =&gt; `&lt;div class=&quot;kick&quot; style=&quot;--k: var(--k-${c.domain})&quot;&gt;&lt;span class=&quot;d&quot;&gt;${c.label}&lt;/span&gt;&lt;span class=&quot;t&quot;&gt;· ${c.kind}&lt;/span&gt;${top ? `&lt;span class=&quot;dc-btn press&quot; data-act=&quot;dontcare&quot;&gt;Drop&lt;/span&gt;` : &quot;&quot;}&lt;/div&gt;`;
+
+const resultHTML = (c, answer) =&gt; `
+  &lt;div class=&quot;yours&quot;&gt;&lt;b&gt;You said&lt;/b&gt;${answer}&lt;/div&gt;
+  &lt;div class=&quot;verdict pop&quot; style=&quot;--v: var(--${c.verdict})&quot;&gt;&lt;span class=&quot;ic&quot;&gt;${VERDICTS[c.verdict].ic}&lt;/span&gt;${VERDICTS[c.verdict].label}&lt;/div&gt;
+  ${c.missing ? `&lt;div class=&quot;missing&quot;&gt;${c.missing}&lt;/div&gt;` : &quot;&quot;}
+  &lt;div class=&quot;model&quot;&gt;&lt;b&gt;Answer&lt;/b&gt;${c.model}&lt;/div&gt;
+  &lt;div class=&quot;actions&quot;&gt;
+    ${c.verdict !== &quot;got&quot; ? `&lt;div class=&quot;ghost press&quot; data-act=&quot;override&quot;&gt;I actually knew it&lt;/div&gt;` : &quot;&quot;}
+    &lt;div class=&quot;ghost press&quot; data-act=&quot;tell&quot;&gt;What I care about…&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;tell&quot;&gt;&lt;textarea placeholder=&quot;What do you actually care about here? e.g. “I only need the rough size, not which coins.”&quot;&gt;&lt;/textarea&gt;
+    &lt;div class=&quot;row2&quot;&gt;&lt;div class=&quot;save press&quot; data-act=&quot;save&quot;&gt;Update card&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;`;
+
+function phoneHTML(v) {
+  const chrome = `
+    &lt;div class=&quot;rv-top&quot;&gt;&lt;div class=&quot;icon-btn press&quot; data-act=&quot;close&quot;&gt;✕&lt;/div&gt;&lt;div class=&quot;progress&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;count&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;`;
+  const body = v.key === &quot;C&quot;
+    ? `&lt;div class=&quot;stage&quot;&gt;&lt;/div&gt;&lt;div class=&quot;rescard&quot;&gt;&lt;div class=&quot;res&quot;&gt;&lt;/div&gt;&lt;/div&gt;`
+    : v.key === &quot;A&quot;
+    ? `&lt;div class=&quot;deck&quot;&gt;&lt;/div&gt;&lt;div class=&quot;hint&quot;&gt;← drag sideways: don&#x27;t care →&lt;/div&gt;`
+    : `&lt;div class=&quot;stage&quot;&gt;&lt;/div&gt;&lt;div class=&quot;sheet&quot;&gt;&lt;div class=&quot;grab&quot;&gt;&lt;/div&gt;&lt;div class=&quot;sheet-body&quot;&gt;&lt;/div&gt;&lt;/div&gt;`;
+  return `
+  &lt;div class=&quot;pcol&quot;&gt;
+    &lt;div class=&quot;name&quot;&gt;${v.name}&lt;/div&gt;&lt;div class=&quot;note&quot;&gt;${v.note}&lt;/div&gt;
+    &lt;div class=&quot;phone&quot;&gt;&lt;div class=&quot;screen ${v.key === &quot;C&quot; ? &quot;B C&quot; : v.key}&quot;&gt;
+      &lt;div class=&quot;island&quot;&gt;&lt;/div&gt;&lt;div class=&quot;statusbar&quot;&gt;&lt;span&gt;9:41&lt;/span&gt;${STATUS_ICONS}&lt;/div&gt;
+      ${chrome}${body}
+      &lt;div class=&quot;composer&quot;&gt;&lt;div class=&quot;field&quot;&gt;
+          &lt;textarea placeholder=&quot;Type your answer… or tap the mic&quot;&gt;&lt;/textarea&gt;
+          &lt;div class=&quot;rec&quot;&gt;${Array.from({ length: 26 }, (_, i) =&gt; `&lt;i style=&quot;animation-delay:${(i * 0.07) % 0.9}s&quot;&gt;&lt;/i&gt;`).join(&quot;&quot;)}&lt;span&gt;0:02&lt;/span&gt;&lt;/div&gt;
+          &lt;div class=&quot;bar&quot;&gt;${v.key === &quot;C&quot; ? `&lt;div class=&quot;dc-tool press&quot; data-act=&quot;dontcare&quot;&gt;Drop&lt;/div&gt;` : `&lt;div class=&quot;sample press&quot; data-act=&quot;sample&quot;&gt;use sample answer&lt;/div&gt;`}&lt;div class=&quot;sp&quot;&gt;&lt;/div&gt;
+            &lt;div class=&quot;mic press&quot; data-act=&quot;mic&quot;&gt;${MIC}&lt;/div&gt;&lt;div class=&quot;send press dim&quot; data-act=&quot;send&quot;&gt;↑&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;kb&quot;&gt;${KEYBOARD}&lt;/div&gt;
+      &lt;div class=&quot;next press&quot; data-act=&quot;next&quot;&gt;Next&lt;/div&gt;
+      &lt;div class=&quot;toast&quot;&gt;&lt;span&gt;Dropped. Fewer cards like this.&lt;/span&gt;&lt;u data-act=&quot;undo&quot;&gt;Undo&lt;/u&gt;&lt;/div&gt;
+      &lt;div class=&quot;done&quot;&gt;&lt;/div&gt;
+      &lt;div class=&quot;alert-scrim&quot;&gt;&lt;div class=&quot;alert&quot;&gt;&lt;b class=&quot;at&quot;&gt;Undo Drop&lt;/b&gt;&lt;p class=&quot;ap&quot;&gt;Bring back the last card?&lt;/p&gt;&lt;div class=&quot;ab&quot;&gt;&lt;div data-act=&quot;undo-cancel&quot;&gt;Cancel&lt;/div&gt;&lt;div data-act=&quot;undo-confirm&quot;&gt;Undo&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;haptic&quot;&gt;&lt;/div&gt;
+    &lt;div style=&quot;display:flex;gap:8px&quot;&gt;&lt;button class=&quot;demo&quot; data-demo&gt;demo: fill a sample answer&lt;/button&gt;&lt;button class=&quot;demo&quot; data-shake&gt;demo: shake to undo&lt;/button&gt;&lt;/div&gt;
+  &lt;/div&gt;`;
+}
+
+const row = document.getElementById(&quot;row&quot;);
+row.innerHTML = VARIANTS.map(phoneHTML).join(&quot;&quot;);
+row.querySelectorAll(&quot;.pcol&quot;).forEach((col) =&gt; mountReview(col));
+
+function mountReview(col) {
+  const screen = col.querySelector(&quot;.screen&quot;);
+  const isA = screen.classList.contains(&quot;A&quot;);
+  const isC = screen.classList.contains(&quot;C&quot;);
+  col.querySelector(&quot;[data-shake]&quot;)?.addEventListener(&quot;click&quot;, () =&gt; {
+    const last = history[history.length - 1];
+    haptic(&quot;shake detected&quot;);
+    if (!last) return;
+    screen.querySelector(&quot;.at&quot;).textContent = last.kind === &quot;drop&quot; ? &quot;Undo Drop&quot; : &quot;Undo Answer&quot;;
+    screen.querySelector(&quot;.ap&quot;).textContent = last.kind === &quot;drop&quot; ? &quot;Bring back the card you dropped?&quot; : &quot;Go back to the last card?&quot;;
+    screen.querySelector(&quot;.alert-scrim&quot;).classList.add(&quot;on&quot;);
+  });
+  col.querySelector(&quot;[data-demo]&quot;)?.addEventListener(&quot;click&quot;, () =&gt; { if (phase !== &quot;answer&quot;) return; input.value = card().sample; send.classList.remove(&quot;dim&quot;); haptic(&quot;light&quot;); });
+  const readout = col.querySelector(&quot;.haptic&quot;);
+  const input = screen.querySelector(&quot;.field textarea&quot;);
+  const send = screen.querySelector(&quot;.send&quot;);
+  const field = screen.querySelector(&quot;.field&quot;);
+  let index = 0, phase = &quot;answer&quot;, tally = { got: 0, partly: 0, missed: 0, skipped: 0 }, timer, recTimer, lastSkipped = null, verdictNow = null;
+  const history = [];
+
+  const haptic = (kind) =&gt; { readout.textContent = `haptic · ${kind}`; readout.classList.add(&quot;on&quot;); clearTimeout(timer); timer = setTimeout(() =&gt; readout.classList.remove(&quot;on&quot;), 900); };
+  const card = () =&gt; CARDS[index];
+
+  function setProgress() {
+    screen.querySelector(&quot;.progress i&quot;).style.width = `${(index / CARDS.length) * 100}%`;
+    screen.querySelector(&quot;.count&quot;).textContent = `${Math.min(index + 1, CARDS.length)} / ${CARDS.length}`;
+  }
+
+  // Render the current question (and, for A, the cards waiting behind it)
+  function render() {
+    phase = &quot;answer&quot;;
+    screen.classList.remove(&quot;shown&quot;, &quot;show-next&quot;, &quot;hidden-composer&quot;);
+    input.value = &quot;&quot;; send.classList.add(&quot;dim&quot;);
+    setProgress();
+    if (isA) {
+      const deck = screen.querySelector(&quot;.deck&quot;);
+      deck.innerHTML = CARDS.slice(index, index + 3).map((c, i) =&gt; `
+        &lt;div class=&quot;card ${[&quot;top&quot;, &quot;behind&quot;, &quot;behind2&quot;][i]}&quot;&gt;&lt;div class=&quot;dc&quot;&gt;Drop&lt;/div&gt;${kick(c, i === 0)}&lt;div class=&quot;q&quot;&gt;${c.q}&lt;/div&gt;&lt;div class=&quot;result&quot;&gt;&lt;div class=&quot;res&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;`).reverse().join(&quot;&quot;);
+      bindDrag(deck.querySelector(&quot;.card.top&quot;));
+    } else {
+      const stage = screen.querySelector(&quot;.stage&quot;);
+      stage.innerHTML = `${kick(card(), !isC)}&lt;div class=&quot;q&quot;&gt;${card().q}&lt;/div&gt;`;
+      if (isC) { const rc = screen.querySelector(&quot;.rescard&quot;); rc.classList.add(&quot;reset&quot;); rc.classList.remove(&quot;fly&quot;); rc.scrollTop = 0; requestAnimationFrame(() =&gt; rc.classList.remove(&quot;reset&quot;)); }
+      stage.classList.add(&quot;in&quot;); requestAnimationFrame(() =&gt; requestAnimationFrame(() =&gt; stage.classList.remove(&quot;in&quot;)));
+    }
+  }
+
+  function submit() {
+    const answer = input.value.trim();
+    if (!answer) { field.classList.remove(&quot;shake&quot;); void field.offsetWidth; field.classList.add(&quot;shake&quot;); haptic(&quot;rigid · nothing to send&quot;); return; }
+    input.blur(); screen.classList.remove(&quot;typing&quot;);
+    haptic(&quot;light · sent&quot;); phase = &quot;grading&quot;; send.classList.add(&quot;grading&quot;);
+    setTimeout(() =&gt; {
+      send.classList.remove(&quot;grading&quot;);
+      const target = isA ? screen.querySelector(&quot;.card.top .res&quot;) : isC ? screen.querySelector(&quot;.rescard .res&quot;) : screen.querySelector(&quot;.sheet-body&quot;);
+      target.innerHTML = resultHTML(card(), answer);
+      screen.classList.add(&quot;shown&quot;, &quot;show-next&quot;, &quot;hidden-composer&quot;);
+      phase = &quot;result&quot;; tally[card().verdict]++; verdictNow = card().verdict;
+      haptic(`notification · ${VERDICTS[card().verdict].haptic}`);
+      if (isA) setTimeout(() =&gt; { const top = screen.querySelector(&quot;.card.top&quot;); top.scrollTo({ top: top.scrollHeight, behavior: &quot;smooth&quot; }); }, 450);
+    }, 850);
+  }
+
+  function advance(direction = &quot;left&quot;) {
+    index++;
+    if (isA) { const top = screen.querySelector(&quot;.card.top&quot;); top.classList.add(direction === &quot;left&quot; ? &quot;fly&quot; : &quot;fly-r&quot;); }
+    else if (isC) { screen.querySelector(&quot;.rescard&quot;).classList.add(&quot;fly&quot;); screen.querySelector(&quot;.stage&quot;).classList.add(&quot;out&quot;); setTimeout(() =&gt; screen.classList.remove(&quot;shown&quot;), 300); }
+    else { screen.classList.remove(&quot;shown&quot;); screen.querySelector(&quot;.stage&quot;).classList.add(&quot;out&quot;); }
+    if (index &gt;= CARDS.length) { setTimeout(finish, 380); return; }
+    setTimeout(() =&gt; { if (!isA) screen.querySelector(&quot;.stage&quot;).classList.remove(&quot;out&quot;); render(); }, isA ? 260 : isC ? 420 : 380);
+  }
+
+  function dontCare(direction) {
+    lastSkipped = index; tally.skipped++; history.push({ index, kind: &quot;drop&quot; });
+    const toast = screen.querySelector(&quot;.toast&quot;); toast.classList.add(&quot;on&quot;); setTimeout(() =&gt; toast.classList.remove(&quot;on&quot;), 2600);
+    haptic(&quot;medium · dismissed&quot;);
+    advance(direction);
+  }
+
+  function finish() {
+    setProgress(); screen.querySelector(&quot;.progress i&quot;).style.width = &quot;100%&quot;;
+    const done = screen.querySelector(&quot;.done&quot;);
+    const rows = [[&quot;got&quot;, &quot;Got it&quot;, tally.got], [&quot;partly&quot;, &quot;Partly&quot;, tally.partly], [&quot;missed&quot;, &quot;Missed&quot;, tally.missed]];
+    done.innerHTML = `&lt;div class=&quot;big&quot;&gt;Done.&lt;/div&gt;&lt;div class=&quot;sub&quot;&gt;${CARDS.length} cards in about a minute. The ones you missed come back tomorrow, and the rest in a few days.&lt;/div&gt;
+      &lt;div class=&quot;stats&quot;&gt;${rows.map(([k, l, n], i) =&gt; `&lt;div class=&quot;stat on-done&quot; style=&quot;animation-delay:${0.15 + i * 0.08}s&quot;&gt;&lt;span&gt;&lt;span class=&quot;dot&quot; style=&quot;background:var(--${k})&quot;&gt;&lt;/span&gt;${l}&lt;/span&gt;&lt;b&gt;${n}&lt;/b&gt;&lt;/div&gt;`).join(&quot;&quot;)}
+      ${tally.skipped ? `&lt;div class=&quot;stat on-done&quot; style=&quot;animation-delay:.4s&quot;&gt;&lt;span&gt;&lt;span class=&quot;dot&quot; style=&quot;background:var(--ink3)&quot;&gt;&lt;/span&gt;Drop&lt;/span&gt;&lt;b&gt;${tally.skipped}&lt;/b&gt;&lt;/div&gt;` : &quot;&quot;}&lt;/div&gt;
+      &lt;div class=&quot;again press&quot; data-act=&quot;restart&quot;&gt;Run it again ↺&lt;/div&gt;&lt;div class=&quot;home press&quot; data-act=&quot;restart&quot;&gt;Back to Today&lt;/div&gt;`;
+    done.classList.add(&quot;on&quot;); screen.classList.remove(&quot;show-next&quot;); screen.classList.add(&quot;hidden-composer&quot;);
+    haptic(&quot;notification · success&quot;);
+  }
+
+  function restart() {
+    index = 0; tally = { got: 0, partly: 0, missed: 0, skipped: 0 };
+    screen.querySelector(&quot;.done&quot;).classList.remove(&quot;on&quot;); render(); haptic(&quot;light&quot;);
+  }
+
+  // Simulated voice: record → stop → transcription types itself in
+  function toggleMic() {
+    if (field.classList.contains(&quot;recording&quot;)) {
+      field.classList.remove(&quot;recording&quot;); clearInterval(recTimer); haptic(&quot;light · stop&quot;);
+      const text = card().voice; let i = 0; input.value = &quot;&quot;;
+      const type = setInterval(() =&gt; { input.value = text.slice(0, ++i); send.classList.remove(&quot;dim&quot;); if (i &gt;= text.length) clearInterval(type); }, 18);
+      return;
+    }
+    field.classList.add(&quot;recording&quot;); haptic(&quot;medium · recording&quot;); let secs = 0;
+    const label = field.querySelector(&quot;.rec span&quot;); label.textContent = &quot;0:00&quot;;
+    recTimer = setInterval(() =&gt; { secs++; label.textContent = `0:0${Math.min(secs, 9)}`; }, 1000);
+  }
+
+  // A: drag the top card sideways for &quot;don&#x27;t care&quot;
+  function bindDrag(el) {
+    if (!el) return;
+    let startX = null, dx = 0;
+    el.addEventListener(&quot;pointerdown&quot;, (e) =&gt; { if (phase !== &quot;answer&quot; || e.target.closest(&quot;[data-act]&quot;)) return; startX = e.clientX; dx = 0; el.classList.add(&quot;dragging&quot;); el.setPointerCapture(e.pointerId); });
+    el.addEventListener(&quot;pointermove&quot;, (e) =&gt; {
+      if (startX === null) return;
+      dx = e.clientX - startX;
+      el.style.transform = `translateX(${dx}px) rotate(${dx / 22}deg)`;
+      el.querySelector(&quot;.dc&quot;).style.opacity = Math.min(Math.abs(dx) / 110, 1);
+      if (Math.abs(dx) &gt; 110 &amp;&amp; !el.dataset.armed) { el.dataset.armed = &quot;1&quot;; haptic(&quot;selection · threshold&quot;); }
+      if (Math.abs(dx) &lt;= 110) delete el.dataset.armed;
+    });
+    el.addEventListener(&quot;pointerup&quot;, () =&gt; {
+      if (startX === null) return;
+      startX = null; el.classList.remove(&quot;dragging&quot;); el.style.transform = &quot;&quot;;
+      if (Math.abs(dx) &gt; 110) dontCare(dx &lt; 0 ? &quot;left&quot; : &quot;right&quot;);
+      else el.querySelector(&quot;.dc&quot;).style.opacity = 0;
+    });
+  }
+
+  input.addEventListener(&quot;input&quot;, () =&gt; send.classList.toggle(&quot;dim&quot;, !input.value.trim()));
+  input.addEventListener(&quot;focus&quot;, () =&gt; { if (phase === &quot;answer&quot;) { screen.classList.add(&quot;typing&quot;); haptic(&quot;keyboard up&quot;); } });
+  input.addEventListener(&quot;blur&quot;, () =&gt; screen.classList.remove(&quot;typing&quot;));
+
+  // On-screen keys type into the field without stealing focus
+  screen.querySelector(&quot;.kb&quot;).addEventListener(&quot;pointerdown&quot;, (e) =&gt; {
+    e.preventDefault();
+    const key = e.target.closest(&quot;[data-key]&quot;)?.dataset.key;
+    if (!key) return;
+    if (key === &quot;⌫&quot;) input.value = input.value.slice(0, -1);
+    else if (key === &quot;⏎&quot;) { input.blur(); submit(); return; }
+    else input.value += key;
+    send.classList.toggle(&quot;dim&quot;, !input.value.trim());
+    haptic(&quot;keyboard tick&quot;);
+  });
+  screen.querySelectorAll(&quot;.bar&quot;).forEach((bar) =&gt; bar.addEventListener(&quot;pointerdown&quot;, (e) =&gt; { if (document.activeElement === input) e.preventDefault(); }));
+  input.addEventListener(&quot;keydown&quot;, (e) =&gt; { if (e.key === &quot;Enter&quot; &amp;&amp; !e.shiftKey) { e.preventDefault(); submit(); } });
+
+  screen.addEventListener(&quot;click&quot;, (e) =&gt; {
+    const act = e.target.closest(&quot;[data-act]&quot;)?.dataset.act;
+    if (!act) return;
+    if (act === &quot;sample&quot;) { input.value = card().sample; send.classList.remove(&quot;dim&quot;); haptic(&quot;light&quot;); }
+    if (act === &quot;send&quot; &amp;&amp; phase === &quot;answer&quot;) { input.blur(); submit(); }
+    if (act === &quot;mic&quot; &amp;&amp; phase === &quot;answer&quot;) toggleMic();
+    if (act === &quot;next&quot; &amp;&amp; phase === &quot;result&quot;) { history.push({ index, kind: &quot;next&quot;, verdict: verdictNow }); haptic(&quot;light · next&quot;); advance(&quot;left&quot;); }
+    if (act === &quot;dontcare&quot; &amp;&amp; phase === &quot;answer&quot;) { input.blur(); dontCare(&quot;left&quot;); }
+    if (act === &quot;restart&quot;) { history.length = 0; restart(); }
+    if (act === &quot;undo-cancel&quot;) { screen.querySelector(&quot;.alert-scrim&quot;).classList.remove(&quot;on&quot;); }
+    if (act === &quot;undo-confirm&quot;) {
+      screen.querySelector(&quot;.alert-scrim&quot;).classList.remove(&quot;on&quot;);
+      const last = history.pop(); if (!last) return;
+      if (last.kind === &quot;drop&quot;) tally.skipped--; else tally[last.verdict]--;
+      index = last.index; screen.querySelector(&quot;.done&quot;).classList.remove(&quot;on&quot;);
+      render(); haptic(&quot;notification · success&quot;);
+    }
+    if (act === &quot;close&quot;) haptic(&quot;light · close (back to Today)&quot;);
+    if (act === &quot;undo&quot;) { screen.querySelector(&quot;.toast&quot;).classList.remove(&quot;on&quot;); haptic(&quot;light · undo&quot;); }
+    if (act === &quot;override&quot;) {
+      const root = e.target.closest(&quot;.res, .sheet-body&quot;);
+      const chip = root.querySelector(&quot;.verdict&quot;);
+      tally[card().verdict]--; tally.got++; verdictNow = &quot;got&quot;;
+      chip.style.setProperty(&quot;--v&quot;, &quot;var(--got)&quot;); chip.innerHTML = `&lt;span class=&quot;ic&quot;&gt;✓&lt;/span&gt;Got it · you overrode`;
+      chip.classList.remove(&quot;pop&quot;); void chip.offsetWidth; chip.classList.add(&quot;pop&quot;);
+      e.target.closest(&quot;[data-act]&quot;).remove(); haptic(&quot;notification · success&quot;);
+    }
+    if (act === &quot;tell&quot;) { e.target.closest(&quot;.res, .sheet-body&quot;).querySelector(&quot;.tell&quot;).classList.add(&quot;on&quot;); haptic(&quot;light&quot;); }
+    if (act === &quot;save&quot;) {
+      const tell = e.target.closest(&quot;.tell&quot;);
+      tell.outerHTML = `&lt;div class=&quot;updated&quot;&gt;✓ Card updated. Future cards will focus on that.&lt;/div&gt;`;
+      haptic(&quot;notification · success&quot;);
+    }
+  });
+
+  // Keep focus/scrollIntoView from shifting the fixed phone layout
+  screen.addEventListener(&quot;scroll&quot;, () =&gt; { screen.scrollTop = 0; screen.scrollLeft = 0; });
+  render();
+}
+
+document.querySelectorAll(&quot;.pickbtn&quot;).forEach((b) =&gt; b.addEventListener(&quot;click&quot;, () =&gt; {
+  document.querySelectorAll(&quot;.pickbtn&quot;).forEach((x) =&gt; x.classList.remove(&quot;on&quot;)); b.classList.add(&quot;on&quot;);
+}));
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section class="screen" id="library"><h2>Library &amp; item page</h2><p class="lede">Rows with artwork, List / Domains toggle. Tap any row for the item page with the cover beside the title.</p><iframe title="Library &amp; item page" loading="lazy" style="height:900px" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;Carl — Library + item page&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Geist:wght@300..700&amp;family=Geist+Mono:wght@400;500&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #1a1a1c; color: #e8e6e1; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; }
+  body { padding: 36px 32px 80px; }
+  .intro { max-width: 1180px; margin: 0 auto 28px; }
+  .intro h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .intro p { color: #a09d96; font-size: 14px; line-height: 1.55; max-width: 880px; margin-bottom: 6px; }
+  .intro p b { color: #e8e6e1; font-weight: 500; }
+  .stage { display: flex; gap: 36px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .phones { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+  .pcol { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .pcol .cap { font-size: 12px; color: #8a877f; letter-spacing: .04em; }
+  .haptic { height: 16px; font: 500 11px/16px &quot;Geist Mono&quot;, monospace; color: #cfcac0; opacity: 0; transition: opacity .15s; }
+  .haptic.on { opacity: 1; }
+  .controls { width: 250px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 24px; }
+  .ctl h3 { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #8a877f; margin-bottom: 8px; }
+  .ctl p.note { font-size: 12px; color: #7d7a74; line-height: 1.45; margin-top: 6px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button { font: 500 12.5px/1 -apple-system, Inter, sans-serif; color: #d8d6d0; background: #262629; border: 1px solid #36363a; padding: 8px 11px; border-radius: 8px; cursor: pointer; }
+  .seg button.on { background: #e8e6e1; color: #1a1a1c; border-color: #e8e6e1; }
+
+  /* ---------- Tokens ---------- */
+  .screen {
+    --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+    --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+    --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533; --k-history: #8E5468;
+    --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --spring: cubic-bezier(.32,.72,0,1);
+  }
+  .phone { width: 360px; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 30px 80px rgba(0,0,0,.5); }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: &quot;Geist&quot;, sans-serif; user-select: none; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, Inter, sans-serif; pointer-events: none; color: var(--ink); transition: color .3s; }
+  .statusbar svg { height: 12px; }
+  .press { transition: transform .18s var(--spring), background-color .18s; cursor: pointer; }
+  .press:active { transform: scale(.975); }
+  .view { position: absolute; inset: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; transition: transform .5s var(--spring), opacity .5s var(--spring); }
+  .view::-webkit-scrollbar { display: none; }
+  .lib { padding: 58px 0 110px; }
+  .item { background: var(--bg); transform: translateX(100%); z-index: 20; padding: 0 0 130px; box-shadow: -20px 0 40px rgba(0,0,0,.08); }
+  .screen.open .lib { transform: translateX(-28%); opacity: .6; }
+  .screen.open .item { transform: none; }
+
+  /* ---------- Library ---------- */
+  .hdr { padding: 6px 22px 0; display: flex; align-items: flex-end; justify-content: space-between; }
+  .hdr .title { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; }
+  .toggle { display: flex; background: var(--press); border-radius: 9px; padding: 2px; margin-bottom: 4px; }
+  .toggle div { font-size: 12.5px; font-weight: 600; padding: 6px 10px; border-radius: 7px; color: var(--ink3); transition: all .25s var(--spring); }
+  .toggle div.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .search { margin: 14px 16px 0; height: 40px; border-radius: 12px; background: var(--press); display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--ink3); font-size: 15px; }
+  .chips { display: flex; gap: 6px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips div { flex: none; font-size: 13px; font-weight: 550; padding: 7px 12px; border-radius: 999px; background: var(--surface); color: var(--ink2); box-shadow: var(--card-shadow); }
+  .chips div.on { background: var(--chrome); color: #fff; box-shadow: none; }
+  .chips div .n { opacity: .55; margin-left: 3px; font-weight: 500; }
+  .sec { padding: 0 16px; margin-top: 20px; }
+  .sec-label { padding: 0 6px; margin-bottom: 9px; font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; letter-spacing: .02em; display: flex; justify-content: space-between; }
+  .group { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--card-shadow); }
+  .row { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+  .row:first-child { border-top: 0; }
+  .row:active { background: var(--press); transform: none; }
+  .art { width: 46px; height: 46px; border-radius: 10px; flex: none; position: relative; }
+  .art.book { width: 34px; height: 48px; border-radius: 3px 6px 6px 3px; margin: 0 6px; box-shadow: inset 3px 0 0 rgba(0,0,0,.18); }
+  .art.person { border-radius: 50%; }
+  .art { box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); }
+  .art.text { display: grid; place-items: center; font: 700 18px/1 &quot;Geist&quot;, sans-serif; color: rgba(255,255,255,.92); }
+  .meta { flex: 1; min-width: 0; }
+  .meta .k { font: 600 10px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 4px; }
+  .meta b { display: block; font-size: 14.5px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .meta span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+  .status { flex: none; font-size: 11px; font-weight: 600; padding: 4px 7px; border-radius: 6px; color: var(--ink2); background: var(--press); }
+  .status.unread { background: color-mix(in srgb, var(--k-startups) 12%, transparent); color: var(--k-startups); }
+  .unread-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--k-startups); box-shadow: 0 0 0 2px var(--surface); }
+  /* compact rows */
+  .compact .art { display: none; }
+  .compact .row { padding: 11px 16px; }
+  .compact .meta b { -webkit-line-clamp: 1; }
+
+  /* Domains view */
+  .domains { display: none; }
+  .show-domains .domains { display: block; }
+  .show-domains .listview { display: none; }
+  .dom { padding: 14px 16px; border-top: 1px solid var(--line); }
+  .dom:first-child { border-top: 0; }
+  .dom .top { display: flex; align-items: center; gap: 10px; }
+  .dom .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--k); }
+  .dom .name { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; flex: 1; }
+  .dom .cnt { font: 500 12px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); }
+  .dom .bar { height: 4px; border-radius: 2px; background: var(--press); margin: 10px 0 8px 20px; display: flex; overflow: hidden; gap: 2px; }
+  .dom .bar i { display: block; height: 100%; background: var(--k); opacity: .85; }
+  .dom .bar i:nth-child(2) { opacity: .55; } .dom .bar i:nth-child(3) { opacity: .3; }
+  .topics { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 20px; }
+  .topics div { font-size: 12.5px; font-weight: 500; padding: 5px 9px; border-radius: 7px; color: var(--ink2); background: var(--press); }
+  .topics div .n { color: var(--ink3); margin-left: 4px; font-family: &quot;Geist Mono&quot;, monospace; font-size: 11px; }
+  .topics div.mine { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+  .add-topic { font-size: 14px; color: var(--ink2); padding: 13px 16px; border-top: 1px solid var(--line); }
+
+  /* Tab bar */
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 14px 0; display: flex; justify-content: space-around; z-index: 30;
+            background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); transition: transform .5s var(--spring); }
+  .screen.open .tabbar { transform: translateY(100%); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 56px; }
+  .tab svg { width: 24px; height: 24px; }
+  .tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+  .tab.plus .pl { width: 36px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 20px; }
+
+  /* ---------- Item page ---------- */
+  .navbar { position: sticky; top: 0; z-index: 10; height: 96px; padding: 54px 12px 0; display: flex; justify-content: space-between; align-items: flex-start; }
+  .navbtn { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 550; color: var(--chrome);
+            background: rgba(255,255,255,.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: 0 0 0 1px rgba(0,0,0,.04); }
+  .hero { margin-top: -96px; }
+  /* artwork hero */
+  .hero-art { display: none; height: 300px; position: relative; padding: 102px 22px 0; text-align: center; color: #fff;
+              background: #0A3834; overflow: hidden; }
+  .hero-art .wash { position: absolute; inset: -40px; filter: blur(40px) saturate(1.5) brightness(.85); transform: scale(1.3); }
+  .hero-art .cover { position: relative; z-index: 3; }
+  .hero-art::after { z-index: 2; content: &quot;&quot;; position: absolute; left: 0; right: 0; bottom: 0; height: 190px;
+                      background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 0%, transparent) 0%, color-mix(in srgb, var(--bg) 4%, transparent) 15%,
+                      color-mix(in srgb, var(--bg) 14%, transparent) 30%, color-mix(in srgb, var(--bg) 32%, transparent) 45%, color-mix(in srgb, var(--bg) 55%, transparent) 60%,
+                      color-mix(in srgb, var(--bg) 78%, transparent) 75%, color-mix(in srgb, var(--bg) 93%, transparent) 88%, var(--bg) 100%); }
+  .hero-art .cover { width: 112px; height: 112px; border-radius: 15px; margin: 0 auto; background: linear-gradient(135deg, #3A6B8C, #142B3D);
+                     box-shadow: 0 20px 40px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.15); display: grid; place-items: center; font: 700 15px/1.1 &quot;Geist&quot;, sans-serif; letter-spacing: -0.02em; }
+  .art-hero .hero-art { display: block; }
+  .art-hero .navbtn { background: rgba(255,255,255,.2); color: #fff; box-shadow: none; }
+  .art-hero.open.at-top .statusbar { color: #fff; }
+  .navbar { transition: background-color .25s; }
+  .scrolled .navbar { background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); box-shadow: 0 1px 0 var(--line); }
+  .scrolled .navbtn { background: rgba(255,255,255,.75) !important; color: var(--chrome) !important; }
+  .head { padding: 112px 22px 0; }
+  .art-hero .head { padding-top: 0; position: relative; z-index: 2; margin-top: -34px; }
+  .head .k { font: 600 10.5px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--k-ai); }
+  .head h1 { font-size: 28px; line-height: 1.1; font-weight: 700; letter-spacing: -0.04em; margin: 9px 0 8px; }
+  .head .by { font-size: 13.5px; color: var(--ink2); display: flex; align-items: center; gap: 8px; }
+  .head .by .mini { width: 22px; height: 22px; border-radius: 6px; background: url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/a8/e1/de/a8e1deff-9f88-4e55-a541-b0dc793c0cdc/mza_11539673419613154037.jpg/600x600bb.jpg&#x27;) center/cover; }
+  .art-hero .head .by .mini, .side-hero .head .by .mini { display: none; }
+  .head { display: flex; flex-direction: column; align-items: flex-start; }
+  .headrow, .headmeta { display: contents; }
+  .head .k { order: 1; } .head h1 { order: 2; } .head .by { order: 3; } .head .reaction { order: 4; }
+  .side-cover { display: none; }
+  .side-hero .headrow { display: flex; order: 1; gap: 14px; align-items: center; width: 100%; }
+  .side-hero .headmeta { display: flex; flex-direction: column; align-items: flex-start; gap: 7px; }
+  .side-hero .side-cover { display: block; flex: none; width: 92px; height: 92px; border-radius: 14px; background: url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/a8/e1/de/a8e1deff-9f88-4e55-a541-b0dc793c0cdc/mza_11539673419613154037.jpg/600x600bb.jpg&#x27;) center/cover;
+                            box-shadow: 0 10px 24px rgba(10,56,52,.28), inset 0 0 0 1px rgba(255,255,255,.08); }
+  .side-hero .head h1 { margin-top: 16px; margin-bottom: 0; }
+  .side-hero .head .reaction { margin-top: 0; }
+  .reaction { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: var(--partly); background: color-mix(in srgb, var(--partly) 11%, transparent); padding: 6px 10px; border-radius: 8px; }
+  .isec { padding: 0 16px; margin-top: 22px; }
+  .isec &gt; .sec-label { padding: 0 6px; }
+  .gist { font-size: 16.5px; line-height: 1.55; letter-spacing: -0.008em; padding: 0 6px; }
+  .ideas { counter-reset: idea; }
+  .idea { display: flex; gap: 12px; padding: 13px 16px; border-top: 1px solid var(--line); font-size: 15px; line-height: 1.45; }
+  .idea:first-child { border-top: 0; }
+  .idea::before { counter-increment: idea; content: counter(idea); flex: none; width: 20px; height: 20px; border-radius: 6px; background: var(--press); color: var(--ink2);
+                  font: 600 11px/20px &quot;Geist Mono&quot;, monospace; text-align: center; margin-top: 1px; }
+  .idea b { font-weight: 650; }
+  .num { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--line); }
+  .num:first-child { border-top: 0; }
+  .num .v { font: 600 17px/1 &quot;Geist Mono&quot;, monospace; letter-spacing: -0.03em; min-width: 66px; }
+  .num .d { flex: 1; font-size: 14px; line-height: 1.35; color: var(--ink2); }
+  .ts { flex: none; font: 500 11.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--chrome); padding: 6px 8px; border-radius: 7px; background: var(--press); display: flex; align-items: center; gap: 4px; }
+  .primer .ph { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+  .primer .ph .ic { width: 36px; height: 36px; border-radius: 10px; background: color-mix(in srgb, var(--k-ai) 12%, transparent); color: var(--k-ai); display: grid; place-items: center; font-size: 17px; }
+  .primer .ph .t { flex: 1; } .primer .ph .t b { display: block; font-size: 15px; font-weight: 650; letter-spacing: -0.015em; } .primer .ph .t span { font-size: 12.5px; color: var(--ink3); }
+  .primer .chev { color: var(--ink3); transition: transform .45s var(--spring); }
+  .primer.expanded .chev { transform: rotate(90deg); }
+  .primer .pbody { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--spring); }
+  .primer .pbody &gt; div { overflow: hidden; }
+  .primer.expanded .pbody { grid-template-rows: 1fr; }
+  .primer .pbody p { padding: 0 16px 14px; font-size: 15px; line-height: 1.6; color: var(--ink); }
+  .primer .pbody .more { margin: 0 16px 16px; font-size: 13.5px; font-weight: 600; color: var(--chrome); }
+  .note { padding: 14px 16px; font-size: 14.5px; line-height: 1.5; color: var(--ink2); font-style: italic; }
+  .note b { font-style: normal; display: block; font: 500 10.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 7px; }
+  .cardrow { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-top: 1px solid var(--line); font-size: 14px; line-height: 1.4; }
+  .cardrow:first-child { border-top: 0; }
+  .cardrow .s { flex: none; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: var(--s); }
+  .cardrow .q { flex: 1; } .cardrow .w { flex: none; font: 500 11px/1.4 &quot;Geist Mono&quot;, monospace; color: var(--ink3); }
+  .related { display: flex; gap: 10px; overflow-x: auto; padding: 0 16px; scrollbar-width: none; }
+  .related::-webkit-scrollbar { display: none; }
+  .rel { flex: none; width: 150px; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); padding: 10px; }
+  .rel .ra { height: 80px; border-radius: 10px; margin-bottom: 9px; }
+  .rel b { display: block; font-size: 13px; font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; }
+  .rel span { font-size: 11.5px; color: var(--ink3); }
+  .ask { position: absolute; left: 14px; right: 14px; bottom: 26px; z-index: 25; height: 50px; border-radius: 25px; padding: 0 8px 0 18px; display: flex; align-items: center; gap: 10px;
+         font-size: 15px; color: var(--ink3); background: rgba(255,255,255,.82); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6);
+         box-shadow: 0 0 0 1px var(--line), 0 8px 30px rgba(0,0,0,.08); transform: translateY(120px); transition: transform .55s var(--spring) .08s; }
+  .ask .sp { flex: 1; }
+  .ask .dot { width: 34px; height: 34px; border-radius: 50%; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 13px; }
+  .screen.open .ask { transform: none; }
+  .toast { position: absolute; left: 50%; top: 100px; transform: translate(-50%, -20px); opacity: 0; z-index: 70; background: var(--chrome); color: #fff; font-size: 13px; font-weight: 500;
+           padding: 9px 14px; border-radius: 999px; white-space: nowrap; transition: all .4s var(--spring); }
+  .toast.on { transform: translate(-50%, 0); opacity: 1; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+
+
+&lt;div class=&quot;stage&quot;&gt;
+  &lt;div class=&quot;phones&quot; id=&quot;phones&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;controls&quot; style=&quot;display:none&quot;&gt;
+    &lt;div class=&quot;ctl&quot;&gt;&lt;h3&gt;Item header&lt;/h3&gt;&lt;div class=&quot;seg&quot; data-key=&quot;header&quot;&gt;&lt;/div&gt;
+      &lt;p class=&quot;note&quot;&gt;Artwork hero: the cover over a blurred wash with an eased fade. Cover beside title: the same cover with no wash, which is simpler to build and quieter. Text-first: title only.&lt;/p&gt;&lt;/div&gt;
+    &lt;div class=&quot;ctl&quot;&gt;&lt;h3&gt;Library rows&lt;/h3&gt;&lt;div class=&quot;seg&quot; data-key=&quot;rows&quot;&gt;&lt;/div&gt;
+      &lt;p class=&quot;note&quot;&gt;Compact drops the artwork and fits about 40% more items on screen.&lt;/p&gt;&lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+const OPTIONS = {
+  header: [{ id: &quot;art&quot;, label: &quot;Artwork hero&quot; }, { id: &quot;side&quot;, label: &quot;Cover beside title&quot; }, { id: &quot;text&quot;, label: &quot;Text-first&quot; }],
+  rows: [{ id: &quot;art&quot;, label: &quot;With artwork&quot; }, { id: &quot;compact&quot;, label: &quot;Compact&quot; }],
+};
+const state = { header: &quot;side&quot;, rows: &quot;art&quot; };
+
+const STATUS_ICONS = `&lt;svg viewBox=&quot;0 0 70 12&quot; fill=&quot;currentColor&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;8&quot; width=&quot;3&quot; height=&quot;4&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;5&quot; y=&quot;5.5&quot; width=&quot;3&quot; height=&quot;6.5&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;10&quot; y=&quot;3&quot; width=&quot;3&quot; height=&quot;9&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;15&quot; y=&quot;0&quot; width=&quot;3&quot; height=&quot;12&quot; rx=&quot;1&quot;/&gt;&lt;path d=&quot;M31 3.2a9 9 0 0 1 12 0l-1.4 1.5a7 7 0 0 0-9.2 0zM33.4 5.8a5.5 5.5 0 0 1 7.2 0L39.2 7.3a3.4 3.4 0 0 0-4.4 0zM37 11.5l-1.6-1.8a2.4 2.4 0 0 1 3.2 0z&quot;/&gt;&lt;rect x=&quot;47&quot; y=&quot;1&quot; width=&quot;20&quot; height=&quot;10.5&quot; rx=&quot;3&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; opacity=&quot;.4&quot;/&gt;&lt;rect x=&quot;48.6&quot; y=&quot;2.6&quot; width=&quot;16.8&quot; height=&quot;7.3&quot; rx=&quot;1.6&quot;/&gt;&lt;rect x=&quot;68&quot; y=&quot;4.3&quot; width=&quot;1.6&quot; height=&quot;4&quot; rx=&quot;.8&quot; opacity=&quot;.4&quot;/&gt;&lt;/svg&gt;`;
+const svg = (d) =&gt; `&lt;svg viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;1.7&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;${d}&lt;/svg&gt;`;
+const ICONS = {
+  today: svg(&#x27;&lt;circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;4&quot;/&gt;&lt;path d=&quot;M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4&quot;/&gt;&#x27;),
+  library: svg(&#x27;&lt;path d=&quot;M4 4h4v16H4zM10 4h4v16h-4zM16.5 4.5l3.5 1-4 15-3.5-1z&quot;/&gt;&#x27;),
+  review: svg(&#x27;&lt;rect x=&quot;3&quot; y=&quot;6&quot; width=&quot;14&quot; height=&quot;14&quot; rx=&quot;2&quot;/&gt;&lt;path d=&quot;M7 3h12a2 2 0 0 1 2 2v12&quot;/&gt;&#x27;),
+  carl: svg(&#x27;&lt;path d=&quot;M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z&quot;/&gt;&#x27;),
+};
+const PLAY = `&lt;svg width=&quot;9&quot; height=&quot;9&quot; viewBox=&quot;0 0 10 10&quot; fill=&quot;currentColor&quot;&gt;&lt;path d=&quot;M2 1l7 4-7 4z&quot;/&gt;&lt;/svg&gt;`;
+
+const ITEMS = {
+  week: [
+    { d: &quot;ai&quot;, dn: &quot;AI&quot;, t: &quot;Acquired: TSMC, Part II&quot;, m: &quot;Podcast · 3h 12m · Mostly followed&quot;, s: &quot;Done&quot;, art: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/a8/e1/de/a8e1deff-9f88-4e55-a541-b0dc793c0cdc/mza_11539673419613154037.jpg/600x600bb.jpg&#x27;) center/cover&quot; },
+    { d: &quot;finance&quot;, dn: &quot;Finance&quot;, t: &quot;Money Stuff: The repo trade is back&quot;, m: &quot;Newsletter · Matt Levine · 6 min&quot;, s: &quot;Unread&quot;, unread: true, art: &quot;var(--k-finance)&quot;, txt: &quot;M&quot; },
+    { d: &quot;macro&quot;, dn: &quot;Macro&quot;, t: &quot;How the Fed actually sets rates&quot;, m: &quot;Primer · 6 min · from Odd Lots&quot;, s: &quot;Primer&quot;, art: &quot;var(--k-macro)&quot;, txt: &quot;◆&quot; },
+    { d: &quot;ai&quot;, dn: &quot;AI&quot;, t: &quot;@dylan522p on CoWoS packaging capacity&quot;, m: &quot;X thread · 14 posts&quot;, s: &quot;Done&quot;, art: &quot;url(&#x27;https://pbs.twimg.com/profile_images/2113734434633768960/iNH6HMTV_400x400.jpg&#x27;) center/cover&quot;, person: true },
+  ],
+  earlier: [
+    { d: &quot;history&quot;, dn: &quot;History&quot;, t: &quot;The Power Broker&quot;, m: &quot;Book · Robert Caro · Prep me ready&quot;, s: &quot;Queued&quot;, book: true, art: &quot;url(&#x27;https://covers.openlibrary.org/b/id/253659-L.jpg&#x27;) center/cover&quot; },
+    { d: &quot;macro&quot;, dn: &quot;Macro&quot;, t: &quot;Odd Lots: Why the repo market matters&quot;, m: &quot;Podcast · 52m · Easy&quot;, s: &quot;Done&quot;, art: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/f3/99/6a/f3996a52-e4a4-bf0d-b7d6-e376c4058568/mza_15550359494736224565.jpg/600x600bb.jpg&#x27;) center/cover&quot; },
+    { d: &quot;crypto&quot;, dn: &quot;Crypto&quot;, t: &quot;Bankless: Stablecoins are T-bill buyers now&quot;, m: &quot;Podcast · 1h 10m&quot;, s: &quot;Queued&quot;, art: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts125/v4/7d/89/b1/7d89b1bf-d4dc-c8aa-894c-d2bc002c42be/mza_5764066019463168929.png/600x600bb.jpg&#x27;) center/cover&quot; },
+    { d: &quot;ai&quot;, dn: &quot;AI&quot;, t: &quot;Stratechery: The power bottleneck&quot;, m: &quot;Article · 12 min · Parts lost me&quot;, s: &quot;Done&quot;, art: &quot;url(&#x27;https://i0.wp.com/stratechery.com/wp-content/uploads/2018/03/cropped-android-chrome-512x512-1.png&#x27;) center/cover&quot; },
+    { d: &quot;startups&quot;, dn: &quot;Startups&quot;, t: &quot;20VC: Why Series A got harder&quot;, m: &quot;Podcast · 58m · Easy&quot;, s: &quot;Done&quot;, art: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts221/v4/cb/4a/f9/cb4af9a2-5857-c3f1-30d4-14395af9a14f/mza_11350890235230424535.jpeg/600x600bb.jpg&#x27;) center/cover&quot; },
+  ],
+};
+const DOMAINS = [
+  { k: &quot;ai&quot;, n: &quot;AI&quot;, c: 31, bar: [60, 25, 15], topics: [[&quot;Chips &amp; fabs&quot;, 9], [&quot;Power &amp; data centers&quot;, 7], [&quot;Frontier models&quot;, 6], [&quot;AI economics&quot;, 4]] },
+  { k: &quot;macro&quot;, n: &quot;Macro&quot;, c: 22, bar: [55, 15, 30], topics: [[&quot;Fed &amp; rates&quot;, 8], [&quot;Repo &amp; plumbing&quot;, 4], [&quot;Inflation&quot;, 5], [&quot;How the Fed works&quot;, 2, true]] },
+  { k: &quot;crypto&quot;, n: &quot;Crypto&quot;, c: 12, bar: [40, 40, 20], topics: [[&quot;Stablecoins&quot;, 6], [&quot;Market structure&quot;, 4], [&quot;ETFs&quot;, 2]] },
+  { k: &quot;finance&quot;, n: &quot;Finance&quot;, c: 18, bar: [35, 10, 55], topics: [[&quot;Markets&quot;, 9], [&quot;Private credit&quot;, 5], [&quot;Money Stuff&quot;, 4]] },
+  { k: &quot;startups&quot;, n: &quot;Startups&quot;, c: 9, bar: [70, 30, 0], topics: [[&quot;Venture funding&quot;, 5], [&quot;Company building&quot;, 4]] },
+  { k: &quot;history&quot;, n: &quot;History&quot;, c: 4, bar: [25, 75, 0], topics: [[&quot;Robert Moses&quot;, 1], [&quot;Cold War&quot;, 3]] },
+];
+
+const rowHTML = (it) =&gt; `
+  &lt;div class=&quot;row press&quot; data-open style=&quot;--k: var(--k-${it.d})&quot;&gt;
+    &lt;div class=&quot;art ${it.book ? &quot;book&quot; : &quot;&quot;} ${it.txt ? &quot;text&quot; : &quot;&quot;} ${it.person ? &quot;person&quot; : &quot;&quot;}&quot; style=&quot;background:${it.art}&quot;&gt;${it.txt || &quot;&quot;}${it.unread ? `&lt;i class=&quot;unread-dot&quot;&gt;&lt;/i&gt;` : &quot;&quot;}&lt;/div&gt;
+    &lt;div class=&quot;meta&quot;&gt;&lt;div class=&quot;k&quot;&gt;${it.dn}&lt;/div&gt;&lt;b&gt;${it.t}&lt;/b&gt;&lt;span&gt;${it.m}&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;status ${it.unread ? &quot;unread&quot; : &quot;&quot;}&quot;&gt;${it.s}&lt;/div&gt;
+  &lt;/div&gt;`;
+
+const libraryView = () =&gt; `
+  &lt;div class=&quot;view lib&quot;&gt;
+    &lt;div class=&quot;hdr&quot;&gt;&lt;div class=&quot;title&quot;&gt;Library&lt;/div&gt;&lt;div class=&quot;toggle&quot;&gt;&lt;div class=&quot;on press&quot; data-mode=&quot;list&quot;&gt;List&lt;/div&gt;&lt;div class=&quot;press&quot; data-mode=&quot;domains&quot;&gt;Domains&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;search&quot;&gt;${svg(&#x27;&lt;circle cx=&quot;11&quot; cy=&quot;11&quot; r=&quot;7&quot;/&gt;&lt;path d=&quot;M20 20l-3.5-3.5&quot;/&gt;&#x27;).replace(&quot;&lt;svg&quot;, &#x27;&lt;svg width=&quot;17&quot; height=&quot;17&quot;&#x27;)}Search everything, or ask…&lt;/div&gt;
+    &lt;div class=&quot;listview&quot;&gt;
+      &lt;div class=&quot;chips&quot;&gt;&lt;div class=&quot;on press&quot;&gt;All&lt;/div&gt;&lt;div class=&quot;press&quot;&gt;Queued&lt;span class=&quot;n&quot;&gt;6&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;press&quot;&gt;Done&lt;span class=&quot;n&quot;&gt;84&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;press&quot;&gt;Inbox&lt;span class=&quot;n&quot;&gt;12&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;press&quot;&gt;Primers&lt;span class=&quot;n&quot;&gt;31&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;press&quot;&gt;Books&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;sec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;This week&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;group&quot;&gt;${ITEMS.week.map(rowHTML).join(&quot;&quot;)}&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;sec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;Earlier&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;group&quot;&gt;${ITEMS.earlier.map(rowHTML).join(&quot;&quot;)}&lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class=&quot;domains&quot;&gt;
+      &lt;div class=&quot;sec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;6 domains · 96 items&lt;/span&gt;&lt;span&gt;done · queued · inbox&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;group&quot;&gt;${DOMAINS.map((d) =&gt; `
+          &lt;div class=&quot;dom press&quot; style=&quot;--k: var(--k-${d.k})&quot;&gt;
+            &lt;div class=&quot;top&quot;&gt;&lt;span class=&quot;dot&quot;&gt;&lt;/span&gt;&lt;span class=&quot;name&quot;&gt;${d.n}&lt;/span&gt;&lt;span class=&quot;cnt&quot;&gt;${d.c}&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&quot;bar&quot;&gt;${d.bar.map((w) =&gt; `&lt;i style=&quot;width:${w}%&quot;&gt;&lt;/i&gt;`).join(&quot;&quot;)}&lt;/div&gt;
+            &lt;div class=&quot;topics&quot;&gt;${d.topics.map(([t, n, mine]) =&gt; `&lt;div class=&quot;${mine ? &quot;mine&quot; : &quot;&quot;}&quot;&gt;${t}&lt;span class=&quot;n&quot;&gt;${n}&lt;/span&gt;&lt;/div&gt;`).join(&quot;&quot;)}&lt;/div&gt;
+          &lt;/div&gt;`).join(&quot;&quot;)}
+          &lt;div class=&quot;add-topic press&quot;&gt;＋ Add a topic you want to understand&lt;/div&gt;
+        &lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;`;
+
+const itemView = () =&gt; `
+  &lt;div class=&quot;view item&quot;&gt;
+    &lt;div class=&quot;navbar&quot;&gt;&lt;div class=&quot;navbtn press&quot; data-back&gt;‹ Library&lt;/div&gt;&lt;div class=&quot;navbtn press&quot; data-h=&quot;light&quot;&gt;···&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;hero&quot;&gt;
+      &lt;div class=&quot;hero-art&quot;&gt;&lt;div class=&quot;wash&quot; style=&quot;background:url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/a8/e1/de/a8e1deff-9f88-4e55-a541-b0dc793c0cdc/mza_11539673419613154037.jpg/600x600bb.jpg&#x27;) center/cover&quot;&gt;&lt;/div&gt;&lt;div class=&quot;cover&quot; style=&quot;background:url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/a8/e1/de/a8e1deff-9f88-4e55-a541-b0dc793c0cdc/mza_11539673419613154037.jpg/600x600bb.jpg&#x27;) center/cover&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;head&quot;&gt;
+        &lt;div class=&quot;headrow&quot;&gt;&lt;div class=&quot;side-cover&quot;&gt;&lt;/div&gt;&lt;div class=&quot;headmeta&quot;&gt;
+          &lt;div class=&quot;k&quot;&gt;AI · Chips &amp;amp; fabs&lt;/div&gt;
+          &lt;div class=&quot;by&quot;&gt;&lt;span class=&quot;mini&quot;&gt;&lt;/span&gt;Acquired · 3h 12m · Oct 24&lt;/div&gt;
+          &lt;div class=&quot;reaction&quot;&gt;◐ Mostly followed&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;h1&gt;TSMC, Part II: How a contract manufacturer became the world&#x27;s chokepoint&lt;/h1&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class=&quot;isec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;The gist&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;gist&quot;&gt;TSMC won by never competing with its customers. That neutrality let Apple, Nvidia and AMD trust it with their designs, and the volume paid for each new generation of fabs, which compounded into a lead nobody can afford to close.&lt;/div&gt;&lt;/div&gt;
+
+    &lt;div class=&quot;isec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;Key ideas&lt;/span&gt;&lt;span&gt;4&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;group ideas&quot;&gt;
+        &lt;div class=&quot;idea&quot;&gt;&lt;span&gt;&lt;b&gt;Pure-play foundry.&lt;/b&gt; TSMC only manufactures and never designs its own chips, so customers aren&#x27;t handing secrets to a competitor.&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;idea&quot;&gt;&lt;span&gt;&lt;b&gt;Apple was the turning point.&lt;/b&gt; Winning the iPhone chips around 2014 funded the jump to leading-edge processes.&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;idea&quot;&gt;&lt;span&gt;&lt;b&gt;Packaging is the new bottleneck.&lt;/b&gt; Advanced packaging (CoWoS) now limits AI chip supply more than wafers do.&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;idea&quot;&gt;&lt;span&gt;&lt;b&gt;Geopolitics is the discount.&lt;/b&gt; The stock trades cheaper than peers because most production sits in Taiwan.&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;&lt;/div&gt;
+
+    &lt;div class=&quot;isec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;Rough numbers&lt;/span&gt;&lt;span&gt;tap to listen&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;group&quot;&gt;
+        &lt;div class=&quot;num&quot;&gt;&lt;span class=&quot;v&quot;&gt;~90%&lt;/span&gt;&lt;span class=&quot;d&quot;&gt;of the most advanced chips are made by TSMC&lt;/span&gt;&lt;span class=&quot;ts press&quot; data-ts=&quot;42:10&quot;&gt;${PLAY}42:10&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;num&quot;&gt;&lt;span class=&quot;v&quot;&gt;~$20B&lt;/span&gt;&lt;span class=&quot;d&quot;&gt;to build one leading-edge fab&lt;/span&gt;&lt;span class=&quot;ts press&quot; data-ts=&quot;1:05:33&quot;&gt;${PLAY}1:05:33&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;num&quot;&gt;&lt;span class=&quot;v&quot;&gt;~60%&lt;/span&gt;&lt;span class=&quot;d&quot;&gt;gross margin, unusually high for manufacturing&lt;/span&gt;&lt;span class=&quot;ts press&quot; data-ts=&quot;2:10:02&quot;&gt;${PLAY}2:10:02&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;&lt;/div&gt;
+
+    &lt;div class=&quot;isec&quot;&gt;&lt;div class=&quot;group primer&quot;&gt;
+      &lt;div class=&quot;ph press&quot; data-primer&gt;&lt;div class=&quot;ic&quot;&gt;◆&lt;/div&gt;&lt;div class=&quot;t&quot;&gt;&lt;b&gt;Background you might need&lt;/b&gt;&lt;span&gt;What “3nm” actually means · 5 min primer&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;chev&quot;&gt;›&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;pbody&quot;&gt;&lt;div&gt;
+        &lt;p&gt;“3 nanometers” used to describe a real feature on the chip. Today it&#x27;s closer to a brand name for a generation. What matters is that each step packs more transistors into the same space, which makes chips faster and more power-efficient.&lt;/p&gt;
+        &lt;p&gt;Each new generation costs more to reach, which is why only TSMC, Samsung and Intel still try. TSMC is the only one reliably ahead.&lt;/p&gt;
+        &lt;div class=&quot;more press&quot; data-h=&quot;light&quot;&gt;Read the full primer →&lt;/div&gt;
+      &lt;/div&gt;&lt;/div&gt;
+    &lt;/div&gt;&lt;/div&gt;
+
+    &lt;div class=&quot;isec&quot;&gt;&lt;div class=&quot;group&quot;&gt;&lt;div class=&quot;note&quot;&gt;&lt;b&gt;Your note&lt;/b&gt;Lost me on the CoWoS packaging part. Why is packaging harder than making the chip?&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+
+    &lt;div class=&quot;isec&quot;&gt;&lt;div class=&quot;sec-label&quot;&gt;&lt;span&gt;Cards from this&lt;/span&gt;&lt;span&gt;4&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;group&quot;&gt;
+        &lt;div class=&quot;cardrow&quot; style=&quot;--s: var(--got)&quot;&gt;&lt;span class=&quot;s&quot;&gt;&lt;/span&gt;&lt;span class=&quot;q&quot;&gt;Why does being a pure-play foundry matter to TSMC&#x27;s customers?&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;in 6d&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;cardrow&quot; style=&quot;--s: var(--partly)&quot;&gt;&lt;span class=&quot;s&quot;&gt;&lt;/span&gt;&lt;span class=&quot;q&quot;&gt;What&#x27;s the bottleneck in AI chip supply right now?&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;tomorrow&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;cardrow&quot; style=&quot;--s: var(--ink3)&quot;&gt;&lt;span class=&quot;s&quot;&gt;&lt;/span&gt;&lt;span class=&quot;q&quot;&gt;Roughly what share of the most advanced chips does TSMC make?&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;new&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;cardrow&quot; style=&quot;--s: var(--ink3)&quot;&gt;&lt;span class=&quot;s&quot;&gt;&lt;/span&gt;&lt;span class=&quot;q&quot;&gt;Roughly what does a leading-edge fab cost?&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;new&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;&lt;/div&gt;
+
+    &lt;div class=&quot;isec&quot; style=&quot;padding:0&quot;&gt;&lt;div class=&quot;sec-label&quot; style=&quot;padding: 0 22px&quot;&gt;&lt;span&gt;Related&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;related&quot;&gt;
+        &lt;div class=&quot;rel press&quot; data-h=&quot;light&quot;&gt;&lt;div class=&quot;ra&quot; style=&quot;background:url(&#x27;https://pbs.twimg.com/profile_images/2113734434633768960/iNH6HMTV_400x400.jpg&#x27;) center/cover&quot;&gt;&lt;/div&gt;&lt;b&gt;@dylan522p on CoWoS capacity&lt;/b&gt;&lt;span&gt;X thread&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;rel press&quot; data-h=&quot;light&quot;&gt;&lt;div class=&quot;ra&quot; style=&quot;background:url(&#x27;https://covers.openlibrary.org/b/id/12968901-L.jpg&#x27;) center 20%/cover&quot;&gt;&lt;/div&gt;&lt;b&gt;Chip War&lt;/b&gt;&lt;span&gt;Book · queued&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;rel press&quot; data-h=&quot;light&quot;&gt;&lt;div class=&quot;ra&quot; style=&quot;background:url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/af/6f/48/af6f4828-86a2-d4c3-b998-de2af1fdc8c0/mza_949624848217027907.jpg/600x600bb.jpg&#x27;) center/cover&quot;&gt;&lt;/div&gt;&lt;b&gt;Dwarkesh: Why compute is the new oil&lt;/b&gt;&lt;span&gt;Podcast&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;&lt;/div&gt;
+  &lt;/div&gt;`;
+
+const tabbar = () =&gt; `
+  &lt;div class=&quot;tabbar&quot;&gt;
+    &lt;div class=&quot;tab press&quot; data-h=&quot;selection&quot;&gt;${ICONS.today}&lt;span&gt;Today&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab on press&quot; data-h=&quot;selection&quot;&gt;${ICONS.library}&lt;span&gt;Library&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab plus press&quot; data-h=&quot;medium&quot;&gt;&lt;div class=&quot;pl&quot;&gt;+&lt;/div&gt;&lt;span&gt;Add&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab press&quot; data-h=&quot;selection&quot;&gt;${ICONS.review}&lt;span&gt;Review&lt;/span&gt;&lt;/div&gt;
+    &lt;div class=&quot;tab press&quot; data-h=&quot;selection&quot;&gt;${ICONS.carl}&lt;span&gt;Ask&lt;/span&gt;&lt;/div&gt;
+  &lt;/div&gt;`;
+
+const phones = document.getElementById(&quot;phones&quot;);
+phones.innerHTML = `
+  &lt;div class=&quot;pcol&quot;&gt;&lt;div class=&quot;cap&quot;&gt;LIBRARY · tap a row&lt;/div&gt;
+    &lt;div class=&quot;phone&quot;&gt;&lt;div class=&quot;screen&quot; id=&quot;s1&quot;&gt;&lt;div class=&quot;island&quot;&gt;&lt;/div&gt;&lt;div class=&quot;statusbar&quot;&gt;&lt;span&gt;9:41&lt;/span&gt;${STATUS_ICONS}&lt;/div&gt;
+      ${libraryView()}${itemView()}
+      &lt;div class=&quot;ask press&quot; data-h=&quot;light&quot;&gt;Ask about this episode&lt;span class=&quot;sp&quot;&gt;&lt;/span&gt;&lt;span class=&quot;dot&quot;&gt;✦&lt;/span&gt;&lt;/div&gt;
+      ${tabbar()}&lt;div class=&quot;toast&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;haptic&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+  &lt;div class=&quot;pcol&quot;&gt;&lt;div class=&quot;cap&quot;&gt;ITEM PAGE · scroll it&lt;/div&gt;
+    &lt;div class=&quot;phone&quot;&gt;&lt;div class=&quot;screen open&quot; id=&quot;s2&quot;&gt;&lt;div class=&quot;island&quot;&gt;&lt;/div&gt;&lt;div class=&quot;statusbar&quot;&gt;&lt;span&gt;9:41&lt;/span&gt;${STATUS_ICONS}&lt;/div&gt;
+      ${itemView()}
+      &lt;div class=&quot;ask press&quot; data-h=&quot;light&quot;&gt;Ask about this episode&lt;span class=&quot;sp&quot;&gt;&lt;/span&gt;&lt;span class=&quot;dot&quot;&gt;✦&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;toast&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;haptic&quot;&gt;&lt;/div&gt;&lt;/div&gt;`;
+
+phones.querySelectorAll(&quot;.pcol&quot;).forEach((col) =&gt; {
+  const screen = col.querySelector(&quot;.screen&quot;);
+  const readout = col.querySelector(&quot;.haptic&quot;);
+  const toast = screen.querySelector(&quot;.toast&quot;);
+  const item = screen.querySelector(&quot;.item&quot;);
+  let timer, toastTimer;
+  const haptic = (kind) =&gt; { readout.textContent = `haptic · ${kind}`; readout.classList.add(&quot;on&quot;); clearTimeout(timer); timer = setTimeout(() =&gt; readout.classList.remove(&quot;on&quot;), 800); };
+  const showToast = (msg) =&gt; { toast.textContent = msg; toast.classList.add(&quot;on&quot;); clearTimeout(toastTimer); toastTimer = setTimeout(() =&gt; toast.classList.remove(&quot;on&quot;), 1800); };
+
+  // Light status bar while the artwork hero is under it
+  const syncTop = () =&gt; { screen.classList.toggle(&quot;at-top&quot;, item.scrollTop &lt; 190); screen.classList.toggle(&quot;scrolled&quot;, item.scrollTop &gt; (screen.classList.contains(&quot;art-hero&quot;) ? 190 : 20)); };
+  item.addEventListener(&quot;scroll&quot;, syncTop); syncTop();
+
+  screen.addEventListener(&quot;click&quot;, (e) =&gt; {
+    const t = e.target;
+    if (t.closest(&quot;[data-open]&quot;)) { item.scrollTop = 0; syncTop(); screen.classList.add(&quot;open&quot;); haptic(&quot;light · push&quot;); return; }
+    if (t.closest(&quot;[data-back]&quot;)) { if (screen.id === &quot;s1&quot;) { screen.classList.remove(&quot;open&quot;); haptic(&quot;light · pop&quot;); } return; }
+    const mode = t.closest(&quot;[data-mode]&quot;);
+    if (mode) {
+      mode.parentElement.querySelectorAll(&quot;div&quot;).forEach((d) =&gt; d.classList.toggle(&quot;on&quot;, d === mode));
+      screen.classList.toggle(&quot;show-domains&quot;, mode.dataset.mode === &quot;domains&quot;); haptic(&quot;selection&quot;); return;
+    }
+    if (t.closest(&quot;[data-primer]&quot;)) { t.closest(&quot;.primer&quot;).classList.toggle(&quot;expanded&quot;); haptic(&quot;light&quot;); return; }
+    const ts = t.closest(&quot;[data-ts]&quot;);
+    if (ts) { showToast(`Opening Spotify at ${ts.dataset.ts}…`); haptic(&quot;medium&quot;); return; }
+    if (t.closest(&quot;.chips div&quot;)) { t.closest(&quot;.chips&quot;).querySelectorAll(&quot;div&quot;).forEach((d) =&gt; d.classList.toggle(&quot;on&quot;, d === t.closest(&quot;.chips div&quot;))); haptic(&quot;selection&quot;); return; }
+    const h = t.closest(&quot;[data-h]&quot;);
+    if (h) haptic(h.dataset.h);
+  });
+});
+
+function apply() {
+  document.querySelectorAll(&quot;.screen&quot;).forEach((s) =&gt; {
+    s.classList.toggle(&quot;art-hero&quot;, state.header === &quot;art&quot;);
+    s.classList.toggle(&quot;side-hero&quot;, state.header === &quot;side&quot;);
+    s.querySelector(&quot;.lib&quot;)?.classList.toggle(&quot;compact&quot;, state.rows === &quot;compact&quot;);
+  });
+}
+document.querySelectorAll(&quot;.seg&quot;).forEach((seg) =&gt; {
+  const key = seg.dataset.key;
+  seg.innerHTML = OPTIONS[key].map((o) =&gt; `&lt;button data-id=&quot;${o.id}&quot; data-choice=&quot;${key}:${o.id}&quot;&gt;${o.label}&lt;/button&gt;`).join(&quot;&quot;);
+  const sync = () =&gt; seg.querySelectorAll(&quot;button&quot;).forEach((b) =&gt; b.classList.toggle(&quot;on&quot;, b.dataset.id === state[key]));
+  seg.addEventListener(&quot;click&quot;, (e) =&gt; { const b = e.target.closest(&quot;button&quot;); if (!b) return; state[key] = b.dataset.id; sync(); apply(); });
+  sync();
+});
+apply();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section class="screen" id="chat"><h2>Ask (chat)</h2><p class="lede">Document style, [1] markers, older turns collapse their sources, follow-ups under the latest answer.</p><iframe title="Ask (chat)" loading="lazy" style="height:900px" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;Carl — chat, multi-turn&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Geist:wght@300..700&amp;family=Geist+Mono:wght@400;500&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #1a1a1c; color: #e8e6e1; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; }
+  body { padding: 36px 32px 80px; }
+  .intro { max-width: 1180px; margin: 0 auto 28px; }
+  .intro h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .intro p { color: #a09d96; font-size: 14px; line-height: 1.55; max-width: 900px; margin-bottom: 6px; }
+  .intro p b { color: #e8e6e1; font-weight: 500; }
+  .stage { display: flex; gap: 36px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .phones { display: flex; gap: 28px; flex-wrap: wrap; justify-content: center; }
+  .pcol { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .pcol .cap { font-size: 12px; color: #8a877f; letter-spacing: .04em; }
+  .haptic { height: 16px; font: 500 11px/16px &quot;Geist Mono&quot;, monospace; color: #cfcac0; opacity: 0; transition: opacity .15s; }
+  .haptic.on { opacity: 1; }
+  .controls { width: 250px; display: flex; flex-direction: column; gap: 22px; position: sticky; top: 24px; }
+  .ctl h3 { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #8a877f; margin-bottom: 8px; }
+  .ctl p.note { font-size: 12px; color: #7d7a74; line-height: 1.45; margin-top: 6px; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  .seg button { font: 500 12.5px/1 -apple-system, Inter, sans-serif; color: #d8d6d0; background: #262629; border: 1px solid #36363a; padding: 8px 11px; border-radius: 8px; cursor: pointer; }
+  .seg button.on { background: #e8e6e1; color: #1a1a1c; border-color: #e8e6e1; }
+  .replay { font: 500 12.5px/1 -apple-system, Inter, sans-serif; color: #e8e6e1; background: #2a2a2d; border: 1px solid #3a3a3e; padding: 9px 14px; border-radius: 999px; cursor: pointer; }
+
+  .screen {
+    --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+    --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+    --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533; --k-history: #8E5468;
+    --got: #3F7262; --spring: cubic-bezier(.32,.72,0,1);
+  }
+  .phone { width: 360px; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 30px 80px rgba(0,0,0,.5); }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: &quot;Geist&quot;, sans-serif; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, Inter, sans-serif; pointer-events: none; }
+  .statusbar svg { height: 12px; }
+  .press { transition: transform .18s var(--spring), background-color .18s, opacity .2s; cursor: pointer; user-select: none; }
+  .press:active { transform: scale(.96); }
+
+  .topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 40; padding: 54px 16px 10px; display: flex; align-items: center; gap: 10px;
+            background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); }
+  .topbar .title { font-size: 17px; font-weight: 650; letter-spacing: -0.02em; flex: 1; }
+  .topbar .big { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; flex: 1; }
+  .icon-btn { width: 34px; height: 34px; border-radius: 50%; background: var(--press); display: grid; place-items: center; color: var(--chrome); font-size: 15px; }
+  .ctx { display: flex; align-items: center; gap: 8px; padding: 5px 10px 5px 5px; border-radius: 10px; background: var(--surface); box-shadow: var(--card-shadow); max-width: 230px; }
+  .ctx .a { width: 26px; height: 26px; border-radius: 6px; flex: none; }
+  .ctx span { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: -0.01em; }
+  .ctx small { display: block; font: 500 10px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 2px; }
+
+  .thread { position: absolute; inset: 0; overflow-y: auto; padding: 110px 18px 120px; scrollbar-width: none; scroll-behavior: smooth; }
+  .thread::-webkit-scrollbar { display: none; }
+
+  /* Empty state */
+  .empty { padding-top: 8px; }
+  .empty .hello { font-size: 15px; color: var(--ink2); line-height: 1.5; margin: 6px 4px 18px; }
+  .sugg { display: flex; flex-direction: column; gap: 8px; }
+  .sugg div { background: var(--surface); box-shadow: var(--card-shadow); border-radius: 14px; padding: 12px 14px; font-size: 14.5px; font-weight: 550; letter-spacing: -0.01em; line-height: 1.35; }
+  .sugg div small { display: block; font: 600 10px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 5px; }
+
+  /* Messages */
+  .msg { margin-bottom: 18px; animation: fadeup .4s var(--spring) both; }
+  @keyframes fadeup { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .me { display: flex; justify-content: flex-end; }
+  .me div { max-width: 82%; background: var(--chrome); color: #fff; font-size: 15px; line-height: 1.42; padding: 10px 14px; border-radius: 18px 18px 4px 18px; }
+  .carl { font-size: 15.5px; line-height: 1.58; letter-spacing: -0.005em; }
+  .carl p { margin-bottom: 10px; }
+  .carl b { font-weight: 650; }
+  .bubbles .carl .body { background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; border-radius: 18px 18px 18px 4px; }
+  .cite { display: inline-grid; place-items: center; min-width: 17px; height: 17px; padding: 0 4px; margin: 0 1px; border-radius: 5px; background: var(--press); color: var(--ink2);
+          font: 600 10.5px/1 &quot;Geist Mono&quot;, monospace; vertical-align: 2px; cursor: pointer; transition: background .15s; margin: 0 0 0 2px; }
+  .cite:hover { background: #E3E0D6; }
+  .cites-off .cite { display: none; }
+  .scale { margin: 6px 0 12px; background: var(--surface); box-shadow: var(--card-shadow); border-radius: 14px; padding: 12px 14px; }
+  .bubbles .scale { box-shadow: 0 0 0 1px var(--line); }
+  .scale .lbl { font: 500 10.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin-bottom: 10px; }
+  .sbar { display: grid; grid-template-columns: 1fr 52px; gap: 4px 10px; align-items: center; margin-bottom: 8px; font-size: 12.5px; color: var(--ink2); }
+  .sbar .track { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--press); overflow: hidden; }
+  .sbar .track i { display: block; height: 100%; border-radius: 3px; background: var(--ink3); width: 0; transition: width .9s var(--spring); }
+  .sbar.hi .track i { background: var(--k-ai); }
+  .sbar b { font: 600 12.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink); text-align: right; }
+  .sources { display: flex; gap: 8px; overflow-x: auto; margin: 4px -18px 0; padding: 2px 18px 4px; scrollbar-width: none; }
+  .sources::-webkit-scrollbar { display: none; }
+  .src { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 10px 6px 6px; border-radius: 11px; background: var(--surface); box-shadow: var(--card-shadow); max-width: 220px; }
+  .src .n { font: 600 10px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); }
+  .src .a { width: 28px; height: 28px; border-radius: 7px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 13px; }
+  .src .a.person { border-radius: 50%; }
+  .src span { font-size: 12px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; }
+  .src small { display: block; font: 500 10.5px/1.3 &quot;Geist Mono&quot;, monospace; color: var(--ink3); font-weight: 500; }
+  .src.flash { animation: flash .9s var(--spring); }
+  @keyframes flash { 30% { box-shadow: 0 0 0 2px var(--chrome); transform: scale(1.04); } }
+  .acts { display: flex; gap: 6px; margin-top: 10px; }
+  .act { font-size: 12.5px; font-weight: 600; color: var(--ink2); padding: 7px 10px; border-radius: 9px; background: var(--press); display: flex; align-items: center; gap: 5px; }
+  .act.done { color: var(--got); background: color-mix(in srgb, var(--got) 11%, transparent); }
+  .typing-dots { display: inline-flex; gap: 4px; padding: 6px 0; }
+  .typing-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink3); animation: blink 1s infinite; }
+  .typing-dots i:nth-child(2) { animation-delay: .15s; } .typing-dots i:nth-child(3) { animation-delay: .3s; }
+  @keyframes blink { 50% { opacity: .25; } }
+  .w { opacity: 0; transition: opacity .25s; } .w.on { opacity: 1; }
+
+  /* Card-made preview */
+  .made { margin-top: 10px; background: var(--surface); border-radius: 14px; box-shadow: var(--card-shadow), 0 8px 20px rgba(20,20,15,.06); padding: 12px 14px; animation: drop .55s var(--spring) both; }
+  @keyframes drop { from { opacity: 0; transform: translateY(-8px) scale(.96); } to { opacity: 1; transform: none; } }
+  .made small { display: block; font: 600 10px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--k-ai); margin-bottom: 6px; }
+  .made b { font-size: 14.5px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.35; display: block; }
+  .made .row { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); }
+  .made .row span:last-child { font-family: &quot;Geist&quot;; font-size: 12.5px; font-weight: 600; color: var(--ink2); }
+
+  /* Composer */
+  .composer { position: absolute; left: 12px; right: 12px; bottom: 96px; z-index: 50; display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 24px;
+              padding: 6px 6px 6px 16px; box-shadow: var(--card-shadow), 0 8px 24px rgba(20,20,15,.07); }
+  .no-tabs .composer { bottom: 28px; }
+  .screen:not(.no-tabs) .thread { padding-bottom: 170px; }
+  .composer input { flex: 1; border: 0; outline: 0; background: transparent; font: 15.5px/1 &quot;Geist&quot;, sans-serif; color: var(--ink); height: 38px; }
+  .composer input::placeholder { color: var(--ink3); }
+  .mic, .send { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+  .mic { background: var(--press); color: var(--chrome); }
+  .send { background: var(--chrome); color: #fff; font-size: 17px; font-weight: 600; }
+
+  .tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 14px 0; display: flex; justify-content: space-around; z-index: 30;
+            background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 56px; position: relative; }
+  .tab svg { width: 24px; height: 24px; }
+  .tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+  .tab.plus .pl { width: 36px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 20px; }
+  .tab .badge { position: absolute; top: -4px; right: 8px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--chrome); color: #fff; font: 600 10px/16px &quot;Geist Mono&quot;, monospace; text-align: center; transform: scale(0); transition: transform .45s var(--spring); }
+  .tab .badge.on { transform: scale(1); }
+
+  /* Source peek */
+  .peek { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 70; background: var(--surface); border-radius: 30px; padding: 10px 18px 22px;
+          box-shadow: 0 -10px 50px rgba(20,20,15,.18); transform: translateY(110%); transition: transform .5s var(--spring); }
+  .peek.on { transform: none; }
+  .peek .grab { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 14px; }
+  .peek .ph { display: flex; gap: 12px; align-items: center; }
+  .peek .ph .a { width: 56px; height: 56px; border-radius: 12px; flex: none; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 20px; }
+  .peek .ph b { display: block; font-size: 16px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.25; }
+  .peek .ph span { font-size: 12.5px; color: var(--ink3); }
+  .peek .quote { margin-top: 14px; font-size: 14.5px; line-height: 1.55; color: var(--ink2); border-left: 2px solid var(--line); padding-left: 12px; }
+  .peek .btns { display: flex; gap: 8px; margin-top: 16px; }
+  .peek .btns div { flex: 1; text-align: center; font-size: 14px; font-weight: 600; padding: 12px; border-radius: 12px; background: var(--press); color: var(--chrome); }
+  .peek .btns div.pri { background: var(--chrome); color: #fff; }
+  .scrim { position: absolute; inset: 0; z-index: 65; background: rgba(20,20,15,.18); opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .scrim.on { opacity: 1; pointer-events: auto; }
+  .toast { position: absolute; left: 50%; top: 104px; transform: translate(-50%, -20px); opacity: 0; z-index: 75; background: var(--chrome); color: #fff; font-size: 13px; font-weight: 500;
+           padding: 9px 14px; border-radius: 999px; white-space: nowrap; transition: all .4s var(--spring); }
+  .toast.on { transform: translate(-50%, 0); opacity: 1; }
+
+  /* Multi-turn */
+  .turn + .turn { margin-top: 26px; }
+  .srcs-min { display: inline-flex; align-items: center; gap: 6px; margin-top: 2px; padding: 5px 9px 5px 5px; border-radius: 9px; background: var(--surface); box-shadow: var(--card-shadow); font-size: 12px; font-weight: 600; color: var(--ink2); }
+  .srcs-min .stack { display: flex; } .srcs-min .stack i { width: 20px; height: 20px; border-radius: 5px; box-shadow: 0 0 0 2px var(--surface); margin-left: -6px; display: block; }
+  .srcs-min .stack i:first-child { margin-left: 0; } .srcs-min .stack i.person { border-radius: 50%; }
+  .follow { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-top: 14px; }
+  .follow div { font-size: 13.5px; font-weight: 550; color: var(--chrome); padding: 8px 12px; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line); background: transparent; }
+  .follow div::before { content: &quot;↳ &quot;; color: var(--ink3); }
+  .divider { text-align: center; font: 500 10.5px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin: 4px 0 18px; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+
+
+&lt;div class=&quot;stage&quot;&gt;
+  &lt;div class=&quot;phones&quot; id=&quot;phones&quot;&gt;&lt;/div&gt;
+  &lt;div class=&quot;controls&quot;&gt;&lt;div class=&quot;ctl&quot;&gt;&lt;button class=&quot;replay&quot; id=&quot;replay&quot;&gt;↺ Replay&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+const ART = {
+  acq: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/a8/e1/de/a8e1deff-9f88-4e55-a541-b0dc793c0cdc/mza_11539673419613154037.jpg/600x600bb.jpg&#x27;) center/cover&quot;,
+  dy: &quot;url(&#x27;https://pbs.twimg.com/profile_images/2113734434633768960/iNH6HMTV_400x400.jpg&#x27;) center/cover&quot;,
+  st: &quot;url(&#x27;https://i0.wp.com/stratechery.com/wp-content/uploads/2018/03/cropped-android-chrome-512x512-1.png&#x27;) center/cover&quot;,
+  dw: &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/af/6f/48/af6f4828-86a2-d4c3-b998-de2af1fdc8c0/mza_949624848217027907.jpg/600x600bb.jpg&#x27;) center/cover&quot;,
+};
+const SOURCES = {
+  acq2: { art: ART.acq, t: &quot;Acquired: TSMC, Part II&quot;, m: &quot;Podcast · 2:31:10&quot;, q: &quot;“CoWoS is where the GPU and its memory get glued together on a silicon interposer. It was a niche product until AI made it the whole ballgame.”&quot;, open: &quot;Play from 2:31:10&quot; },
+  acq3: { art: ART.acq, t: &quot;Acquired: TSMC, Part II&quot;, m: &quot;Podcast · 2:38:45&quot;, q: &quot;“Nvidia basically pre-bought the capacity. If you&#x27;re anyone else, you&#x27;re in line behind them.”&quot;, open: &quot;Play from 2:38:45&quot; },
+  dy: { art: ART.dy, person: true, t: &quot;@dylan522p on CoWoS capacity&quot;, m: &quot;X thread · post 4 of 14&quot;, q: &quot;“TSMC is roughly doubling CoWoS capacity again next year and it still won&#x27;t be enough.”&quot;, open: &quot;Open thread&quot; },
+  dy2: { art: ART.dy, person: true, t: &quot;@dylan522p on CoWoS capacity&quot;, m: &quot;X thread · post 9 of 14&quot;, q: &quot;“Intel and Samsung have the tech on paper. The question is yield at volume, and nobody&#x27;s proven that but TSMC.”&quot;, open: &quot;Open thread&quot; },
+  st: { art: ART.st, t: &quot;Stratechery: The power bottleneck&quot;, m: &quot;Article · Oct 21&quot;, q: &quot;“Even if packaging loosens, the next wall is power. The constraint just moves.”&quot;, open: &quot;Open article&quot; },
+  dw: { art: ART.dw, t: &quot;Dwarkesh: Why compute is the new oil&quot;, m: &quot;Podcast · 48:12&quot;, q: &quot;“HBM is the part people forget. Each GPU needs a tower of memory dies, and only three companies make them.”&quot;, open: &quot;Play from 48:12&quot; },
+};
+
+// Each turn: question, answer blocks (&lt;c&gt;n&lt;/c&gt; = citation into that turn&#x27;s sources), sources, a card Carl would write
+const TURNS = [
+  { q: &quot;Why is packaging harder than making the chip?&quot;,
+    answer: [&quot;Because modern AI chips aren&#x27;t one chip. A GPU sits &lt;b&gt;right next to stacks of high-bandwidth memory&lt;/b&gt;, and they&#x27;re joined on a thin slab of silicon called an interposer. TSMC&#x27;s version is CoWoS&lt;c&gt;1&lt;/c&gt;.&quot;,
+             &quot;Capacity was built for a &lt;b&gt;niche market&lt;/b&gt; until AI demand arrived almost overnight. TSMC is roughly doubling it every year and still can&#x27;t keep up&lt;c&gt;2&lt;/c&gt;.&quot;],
+    sources: [&quot;acq2&quot;, &quot;dy&quot;] },
+  { q: &quot;Can&#x27;t Intel or Samsung just do it?&quot;,
+    answer: [&quot;They have comparable technology &lt;b&gt;on paper&lt;/b&gt;: Intel&#x27;s Foveros and Samsung&#x27;s I-Cube. What nobody besides TSMC has shown is &lt;b&gt;good yields at high volume&lt;/b&gt;&lt;c&gt;1&lt;/c&gt;.&quot;,
+             &quot;A failed package also wastes the expensive GPU and memory inside it, so customers stick with the proven option.&quot;],
+    sources: [&quot;dy2&quot;] },
+  { q: &quot;So is that why Nvidia is supply-constrained?&quot;,
+    answer: [&quot;Mostly, yes. For the last two years, &lt;b&gt;packaging, not chipmaking&lt;/b&gt;, set how many top GPUs could ship. Nvidia reserved most of TSMC&#x27;s CoWoS capacity early, which also left rivals waiting in line&lt;c&gt;1&lt;/c&gt;.&quot;,
+             &quot;The other squeeze is &lt;b&gt;memory&lt;/b&gt;: each GPU needs stacks of HBM, and only three companies make it&lt;c&gt;2&lt;/c&gt;. Even as both loosen, the next limit is &lt;b&gt;power&lt;/b&gt; for the data centers&lt;c&gt;3&lt;/c&gt;.&quot;],
+    sources: [&quot;acq3&quot;, &quot;dw&quot;, &quot;st&quot;],
+    card: { d: &quot;AI · Mechanism&quot;, q: &quot;What two components, besides the GPU itself, have limited how many top AI chips Nvidia can ship?&quot; },
+    follow: [&quot;What&#x27;s HBM, and who makes it?&quot;, &quot;How long until packaging stops being the bottleneck?&quot;] },
+];
+const FOLLOW_UP = {
+  q: &quot;What&#x27;s HBM, and who makes it?&quot;,
+  answer: [&quot;HBM is &lt;b&gt;high-bandwidth memory&lt;/b&gt;: memory chips stacked vertically, like a tower, sitting right beside the GPU so data has almost no distance to travel&lt;c&gt;1&lt;/c&gt;.&quot;,
+           &quot;Only three companies make it: &lt;b&gt;SK Hynix&lt;/b&gt; (the leader), &lt;b&gt;Samsung&lt;/b&gt; and &lt;b&gt;Micron&lt;/b&gt;. That&#x27;s why memory-maker stocks have started trading like AI stocks.&quot;],
+  sources: [&quot;dw&quot;],
+  card: { d: &quot;AI · Foundation&quot;, q: &quot;What is HBM, and why does it sit right next to the GPU?&quot; },
+  follow: [&quot;Why is SK Hynix ahead?&quot;, &quot;Is HBM a commodity or a moat?&quot;],
+};
+
+const STATUS_ICONS = `&lt;svg viewBox=&quot;0 0 70 12&quot; fill=&quot;currentColor&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;8&quot; width=&quot;3&quot; height=&quot;4&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;5&quot; y=&quot;5.5&quot; width=&quot;3&quot; height=&quot;6.5&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;10&quot; y=&quot;3&quot; width=&quot;3&quot; height=&quot;9&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;15&quot; y=&quot;0&quot; width=&quot;3&quot; height=&quot;12&quot; rx=&quot;1&quot;/&gt;&lt;path d=&quot;M31 3.2a9 9 0 0 1 12 0l-1.4 1.5a7 7 0 0 0-9.2 0zM33.4 5.8a5.5 5.5 0 0 1 7.2 0L39.2 7.3a3.4 3.4 0 0 0-4.4 0zM37 11.5l-1.6-1.8a2.4 2.4 0 0 1 3.2 0z&quot;/&gt;&lt;rect x=&quot;47&quot; y=&quot;1&quot; width=&quot;20&quot; height=&quot;10.5&quot; rx=&quot;3&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; opacity=&quot;.4&quot;/&gt;&lt;rect x=&quot;48.6&quot; y=&quot;2.6&quot; width=&quot;16.8&quot; height=&quot;7.3&quot; rx=&quot;1.6&quot;/&gt;&lt;rect x=&quot;68&quot; y=&quot;4.3&quot; width=&quot;1.6&quot; height=&quot;4&quot; rx=&quot;.8&quot; opacity=&quot;.4&quot;/&gt;&lt;/svg&gt;`;
+const MIC = `&lt;svg width=&quot;18&quot; height=&quot;18&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;3&quot; width=&quot;6&quot; height=&quot;11&quot; rx=&quot;3&quot;/&gt;&lt;path d=&quot;M5 11a7 7 0 0 0 14 0M12 18v3&quot;/&gt;&lt;/svg&gt;`;
+
+document.getElementById(&quot;phones&quot;).innerHTML = `
+  &lt;div class=&quot;pcol&quot;&gt;&lt;div class=&quot;cap&quot;&gt;FROM THE TSMC ITEM PAGE&lt;/div&gt;
+    &lt;div class=&quot;phone&quot;&gt;&lt;div class=&quot;screen no-tabs&quot; id=&quot;ctx&quot;&gt;&lt;div class=&quot;island&quot;&gt;&lt;/div&gt;&lt;div class=&quot;statusbar&quot;&gt;&lt;span&gt;9:41&lt;/span&gt;${STATUS_ICONS}&lt;/div&gt;
+      &lt;div class=&quot;topbar&quot;&gt;&lt;div class=&quot;icon-btn press&quot;&gt;‹&lt;/div&gt;&lt;div class=&quot;ctx&quot;&gt;&lt;div class=&quot;a&quot; style=&quot;background:${ART.acq}&quot;&gt;&lt;/div&gt;&lt;div&gt;&lt;small&gt;Looking at&lt;/small&gt;&lt;span&gt;TSMC, Part II&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;div style=&quot;flex:1&quot;&gt;&lt;/div&gt;&lt;div class=&quot;icon-btn press&quot;&gt;✎&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;thread&quot;&gt;&lt;/div&gt;
+      &lt;div class=&quot;composer&quot;&gt;&lt;input placeholder=&quot;Ask a follow-up…&quot;&gt;&lt;div class=&quot;mic press&quot;&gt;${MIC}&lt;/div&gt;&lt;div class=&quot;send press&quot; data-send&gt;↑&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;scrim&quot;&gt;&lt;/div&gt;&lt;div class=&quot;peek&quot;&gt;&lt;/div&gt;&lt;div class=&quot;toast&quot;&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;haptic&quot;&gt;&lt;/div&gt;&lt;/div&gt;`;
+
+const screen = document.getElementById(&quot;ctx&quot;);
+const thread = screen.querySelector(&quot;.thread&quot;);
+const readout = document.querySelector(&quot;.haptic&quot;);
+const peek = screen.querySelector(&quot;.peek&quot;), scrim = screen.querySelector(&quot;.scrim&quot;), toast = screen.querySelector(&quot;.toast&quot;);
+const input = screen.querySelector(&quot;.composer input&quot;);
+let timers = [], turns = [], hTimer;
+const later = (fn, ms) =&gt; timers.push(setTimeout(fn, ms));
+const haptic = (k) =&gt; { readout.textContent = `haptic · ${k}`; readout.classList.add(&quot;on&quot;); clearTimeout(hTimer); hTimer = setTimeout(() =&gt; readout.classList.remove(&quot;on&quot;), 800); };
+const showToast = (m) =&gt; { toast.textContent = m; toast.classList.add(&quot;on&quot;); later(() =&gt; toast.classList.remove(&quot;on&quot;), 1800); };
+
+const srcChip = (key, i) =&gt; { const s = SOURCES[key]; return `&lt;div class=&quot;src press&quot; data-src=&quot;${key}&quot;&gt;&lt;span class=&quot;n&quot;&gt;${i + 1}&lt;/span&gt;&lt;div class=&quot;a ${s.person ? &quot;person&quot; : &quot;&quot;}&quot; style=&quot;background:${s.art}&quot;&gt;&lt;/div&gt;&lt;span&gt;${s.t}&lt;small&gt;${s.m}&lt;/small&gt;&lt;/span&gt;&lt;/div&gt;`; };
+const srcMin = (keys) =&gt; `&lt;div class=&quot;srcs-min press&quot; data-expand&gt;&lt;span class=&quot;stack&quot;&gt;${keys.map((k) =&gt; `&lt;i class=&quot;${SOURCES[k].person ? &quot;person&quot; : &quot;&quot;}&quot; style=&quot;background:${SOURCES[k].art}&quot;&gt;&lt;/i&gt;`).join(&quot;&quot;)}&lt;/span&gt;${keys.length} source${keys.length &gt; 1 ? &quot;s&quot; : &quot;&quot;}&lt;/div&gt;`;
+const para = (p) =&gt; `&lt;p&gt;${p.replace(/&lt;c&gt;(\d)&lt;\/c&gt;/g, (_, n) =&gt; `&lt;span class=&quot;cite&quot; data-cite=&quot;${n}&quot;&gt;${n}&lt;/span&gt;`)}&lt;/p&gt;`;
+const wordify = (html) =&gt; html.split(/(&lt;span class=&quot;cite&quot;[^&gt;]*&gt;\d&lt;\/span&gt;|&lt;b&gt;[^&lt;]*&lt;\/b&gt;|\s+)/).filter(Boolean).map((t) =&gt; /^\s+$/.test(t) ? t : `&lt;span class=&quot;w&quot;&gt;${t}&lt;/span&gt;`).join(&quot;&quot;);
+
+// Earlier turns: static, sources collapsed. Latest turn: full chips, actions, follow-ups.
+function turnHTML(turn, latest) {
+  return `
+    &lt;div class=&quot;msg me&quot;&gt;&lt;div&gt;${turn.q}&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;msg carl&quot; data-turn&gt;&lt;div class=&quot;body&quot;&gt;${turn.answer.map(para).join(&quot;&quot;)}
+      ${latest ? `&lt;div class=&quot;sources&quot;&gt;${turn.sources.map(srcChip).join(&quot;&quot;)}&lt;/div&gt;
+        &lt;div class=&quot;acts&quot;&gt;&lt;div class=&quot;act press&quot; data-act=&quot;card&quot;&gt;＋ Make a card&lt;/div&gt;&lt;div class=&quot;act press&quot; data-act=&quot;copy&quot;&gt;Copy&lt;/div&gt;&lt;/div&gt;
+        ${turn.follow ? `&lt;div class=&quot;follow&quot;&gt;${turn.follow.map((f) =&gt; `&lt;div class=&quot;press&quot; data-follow=&quot;${f}&quot;&gt;${f}&lt;/div&gt;`).join(&quot;&quot;)}&lt;/div&gt;` : &quot;&quot;}`
+      : srcMin(turn.sources)}&lt;/div&gt;&lt;/div&gt;`;
+}
+
+function collapsePrevious() {
+  thread.querySelectorAll(&quot;.turn&quot;).forEach((el) =&gt; {
+    const turn = turns[+el.dataset.i];
+    el.querySelector(&quot;.sources&quot;)?.replaceWith(Object.assign(document.createElement(&quot;div&quot;), { innerHTML: srcMin(turn.sources) }).firstElementChild);
+    el.querySelector(&quot;.acts&quot;)?.remove(); el.querySelector(&quot;.follow&quot;)?.remove(); el.querySelector(&quot;.made&quot;)?.remove();
+  });
+}
+
+function addTurn(turn, { stream }) {
+  collapsePrevious();
+  const i = turns.push(turn) - 1;
+  const el = document.createElement(&quot;div&quot;); el.className = &quot;turn&quot;; el.dataset.i = i;
+  if (!stream) { el.innerHTML = turnHTML(turn, true); thread.appendChild(el); return; }
+
+  el.innerHTML = `&lt;div class=&quot;msg me&quot;&gt;&lt;div&gt;${turn.q}&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;msg carl&quot;&gt;&lt;div class=&quot;body&quot;&gt;&lt;span class=&quot;typing-dots&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;`;
+  thread.appendChild(el); thread.scrollTop = thread.scrollHeight; haptic(&quot;light · sent&quot;);
+  later(() =&gt; {
+    const full = document.createElement(&quot;div&quot;); full.innerHTML = turnHTML(turn, true);
+    const body = full.querySelector(&quot;.body&quot;);
+    body.querySelectorAll(&quot;p&quot;).forEach((p) =&gt; (p.innerHTML = wordify(p.innerHTML)));
+    body.querySelectorAll(&quot;.sources, .acts, .follow&quot;).forEach((x) =&gt; x.classList.add(&quot;w&quot;));
+    el.querySelector(&quot;.carl .body&quot;).replaceWith(body);
+    const words = [...body.querySelectorAll(&quot;.w&quot;)];
+    words.forEach((w, n) =&gt; later(() =&gt; { w.classList.add(&quot;on&quot;); if (n % 6 === 0) thread.scrollTop = thread.scrollHeight; }, n * 28));
+    later(() =&gt; { thread.scrollTop = thread.scrollHeight; haptic(&quot;light · answer done&quot;); }, words.length * 28 + 120);
+  }, 900);
+}
+
+function openPeek(key) {
+  const s = SOURCES[key];
+  peek.innerHTML = `&lt;div class=&quot;grab&quot;&gt;&lt;/div&gt;&lt;div class=&quot;ph&quot;&gt;&lt;div class=&quot;a&quot; style=&quot;background:${s.art};${s.person ? &quot;border-radius:50%&quot; : &quot;&quot;}&quot;&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;${s.t}&lt;/b&gt;&lt;span&gt;${s.m}&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;quote&quot;&gt;${s.q}&lt;/div&gt;&lt;div class=&quot;btns&quot;&gt;&lt;div class=&quot;press&quot; data-close&gt;Close&lt;/div&gt;&lt;div class=&quot;pri press&quot; data-close&gt;${s.open}&lt;/div&gt;&lt;/div&gt;`;
+  peek.classList.add(&quot;on&quot;); scrim.classList.add(&quot;on&quot;); haptic(&quot;light · peek&quot;);
+}
+const closePeek = () =&gt; { peek.classList.remove(&quot;on&quot;); scrim.classList.remove(&quot;on&quot;); };
+
+screen.addEventListener(&quot;click&quot;, (e) =&gt; {
+  const t = e.target;
+  const turnEl = t.closest(&quot;.turn&quot;); const turn = turnEl ? turns[+turnEl.dataset.i] : null;
+  const cite = t.closest(&quot;[data-cite]&quot;);
+  if (cite &amp;&amp; turn) { openPeek(turn.sources[cite.dataset.cite - 1]); return; }
+  const src = t.closest(&quot;[data-src]&quot;); if (src) { openPeek(src.dataset.src); return; }
+  if (t.closest(&quot;[data-expand]&quot;) &amp;&amp; turn) { t.closest(&quot;[data-expand]&quot;).outerHTML = `&lt;div class=&quot;sources&quot;&gt;${turn.sources.map(srcChip).join(&quot;&quot;)}&lt;/div&gt;`; haptic(&quot;light&quot;); return; }
+  if (t.closest(&quot;[data-close]&quot;) || t.closest(&quot;.scrim&quot;)) { closePeek(); haptic(&quot;light&quot;); return; }
+  const follow = t.closest(&quot;[data-follow]&quot;);
+  if (follow) { addTurn(follow.dataset.follow === FOLLOW_UP.q ? FOLLOW_UP : { ...FOLLOW_UP, q: follow.dataset.follow, follow: null, card: FOLLOW_UP.card }, { stream: true }); return; }
+  if (t.closest(&quot;[data-send]&quot;)) {
+    const q = input.value.trim(); if (!q) return; input.value = &quot;&quot;;
+    addTurn({ ...FOLLOW_UP, q, follow: null }, { stream: true }); return;
+  }
+  const act = t.closest(&quot;[data-act]&quot;)?.dataset.act;
+  if (act === &quot;card&quot; &amp;&amp; turn?.card) {
+    const btn = t.closest(&quot;[data-act]&quot;); if (btn.classList.contains(&quot;done&quot;)) return;
+    btn.classList.add(&quot;done&quot;); btn.textContent = &quot;✓ Card added&quot;;
+    const made = document.createElement(&quot;div&quot;); made.className = &quot;made&quot;;
+    made.innerHTML = `&lt;small&gt;${turn.card.d}&lt;/small&gt;&lt;b&gt;${turn.card.q}&lt;/b&gt;&lt;div class=&quot;row&quot;&gt;&lt;span&gt;DUE TOMORROW&lt;/span&gt;&lt;span class=&quot;press&quot;&gt;Edit&lt;/span&gt;&lt;/div&gt;`;
+    btn.closest(&quot;.acts&quot;).after(made); thread.scrollTop = thread.scrollHeight;
+    haptic(&quot;notification · success&quot;); showToast(&quot;Added to Review · due tomorrow&quot;);
+  }
+  if (act === &quot;copy&quot;) { showToast(&quot;Copied&quot;); haptic(&quot;light&quot;); }
+});
+input.addEventListener(&quot;keydown&quot;, (e) =&gt; { if (e.key === &quot;Enter&quot;) screen.querySelector(&quot;[data-send]&quot;).click(); });
+
+function start() {
+  timers.forEach(clearTimeout); timers = []; turns = []; thread.innerHTML = &quot;&quot;; closePeek();
+  addTurn(TURNS[0], { stream: false });
+  addTurn(TURNS[1], { stream: false });
+  addTurn(TURNS[2], { stream: true });
+}
+screen.addEventListener(&quot;scroll&quot;, () =&gt; { screen.scrollTop = 0; });
+start();
+document.getElementById(&quot;replay&quot;).addEventListener(&quot;click&quot;, start);
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section><section class="screen" id="share"><h2>Share sheet</h2><p class="lede">Share from a podcast app → Archie → Finished / Queue it → Save.</p><iframe title="Share sheet" loading="lazy" style="height:940px" srcdoc="&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;title&gt;Carl — share sheet&lt;/title&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot;&gt;
+&lt;link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin&gt;
+&lt;link href=&quot;https://fonts.googleapis.com/css2?family=Geist:wght@300..700&amp;family=Geist+Mono:wght@400;500&amp;display=swap&quot; rel=&quot;stylesheet&quot;&gt;
+&lt;style&gt;
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #1a1a1c; color: #e8e6e1; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; }
+  body { padding: 36px 32px 80px; }
+  .intro { max-width: 1100px; margin: 0 auto 28px; }
+  .intro h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .intro p { color: #a09d96; font-size: 14px; line-height: 1.55; max-width: 880px; margin-bottom: 6px; }
+  .intro p b { color: #e8e6e1; font-weight: 500; }
+  .stage { display: flex; gap: 36px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+  .pcol { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .haptic { height: 16px; font: 500 11px/16px &quot;Geist Mono&quot;, monospace; color: #cfcac0; opacity: 0; transition: opacity .15s; }
+  .haptic.on { opacity: 1; }
+  .side { width: 260px; display: flex; flex-direction: column; gap: 14px; position: sticky; top: 24px; }
+  .side h3 { font-size: 11px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #8a877f; }
+  .side ol { font-size: 13px; color: #a09d96; line-height: 1.6; padding-left: 18px; }
+  .side ol li.cur { color: #e8e6e1; font-weight: 500; }
+  .replay { font: 500 12.5px/1 -apple-system, Inter, sans-serif; color: #e8e6e1; background: #2a2a2d; border: 1px solid #3a3a3e; padding: 9px 14px; border-radius: 999px; cursor: pointer; align-self: flex-start; }
+
+  .screen {
+    --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+    --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+    --k-macro: #3F7262; --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --spring: cubic-bezier(.32,.72,0,1);
+  }
+  .phone { width: 360px; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 30px 80px rgba(0,0,0,.5); }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: #121212; font-family: &quot;Geist&quot;, sans-serif; user-select: none; }
+  .island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 99; }
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 98; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, Inter, sans-serif; pointer-events: none; color: #fff; }
+  .statusbar svg { height: 12px; }
+  .press { transition: transform .18s var(--spring), background-color .18s, opacity .2s; cursor: pointer; }
+  .press:active { transform: scale(.96); }
+
+  /* Host: a generic dark podcast player */
+  .host { position: absolute; inset: 0; padding: 70px 24px 0; color: #fff; transition: transform .5s var(--spring), border-radius .5s, filter .5s; transform-origin: 50% 100%;
+          background: linear-gradient(180deg, #7A3A14 0%, #2A160C 45%, #121212 75%); }
+  .ext-open .host { transform: scale(.92) translateY(-10px); border-radius: 30px; filter: brightness(.6); }
+  .host .down { font-size: 20px; opacity: .8; }
+  .host .art { width: 280px; height: 280px; border-radius: 10px; margin: 26px auto 26px; box-shadow: 0 20px 50px rgba(0,0,0,.5); }
+  .host h2 { font: 700 20px/1.25 -apple-system, Inter, sans-serif; letter-spacing: -0.01em; }
+  .host .show { font: 500 15px/1.4 -apple-system, Inter, sans-serif; opacity: .65; margin-top: 4px; }
+  .host .scrub { height: 4px; border-radius: 2px; background: rgba(255,255,255,.25); margin-top: 22px; }
+  .host .scrub i { display: block; width: 100%; height: 100%; border-radius: 2px; background: #fff; }
+  .host .times { display: flex; justify-content: space-between; font: 500 11.5px/1 -apple-system, Inter, sans-serif; opacity: .6; margin-top: 8px; }
+  .host .ctrls { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; font-size: 26px; }
+  .host .play { width: 62px; height: 62px; border-radius: 50%; background: #fff; color: #121212; display: grid; place-items: center; font-size: 22px; }
+  .host .share { position: absolute; right: 24px; bottom: 54px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.12); }
+  .host .share.pulse { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgba(255,255,255,.12); } }
+  .host .hint { position: absolute; right: 70px; bottom: 64px; font: 500 12px/1 &quot;Geist Mono&quot;, monospace; opacity: .7; }
+
+  /* iOS share sheet */
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 60; background: #F2F2F7; border-radius: 30px 30px 0 0; padding: 10px 0 34px; color: #000;
+           transform: translateY(105%); transition: transform .5s var(--spring); font-family: -apple-system, Inter, sans-serif; }
+  .sheet.on { transform: none; }
+  .sheet .grab { width: 36px; height: 5px; border-radius: 3px; background: #C7C7CC; margin: 0 auto 12px; }
+  .sheet .prev { display: flex; gap: 10px; align-items: center; padding: 0 18px 14px; border-bottom: 1px solid #E0E0E5; }
+  .sheet .prev .a { width: 44px; height: 44px; border-radius: 8px; }
+  .sheet .prev b { font-size: 14px; display: block; } .sheet .prev span { font-size: 12.5px; color: #8E8E93; }
+  .apps { display: flex; gap: 14px; padding: 16px 18px; overflow-x: hidden; }
+  .app { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 62px; font-size: 11px; color: #3C3C43; flex: none; }
+  .app .i { width: 60px; height: 60px; border-radius: 14px; display: grid; place-items: center; font-size: 26px; color: #fff; }
+  .app.carl .i { overflow: hidden; background: #3F7262; font: 700 28px/1 &quot;Geist&quot;, sans-serif; letter-spacing: -0.05em; color: #F4F2EC; box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+  .app.carl.pulse .i { animation: ipulse 1.4s ease-in-out infinite; }
+  @keyframes ipulse { 50% { box-shadow: 0 0 0 5px rgba(28,27,24,.18); } }
+  .acts { margin: 4px 16px 0; background: #fff; border-radius: 12px; }
+  .acts div { padding: 13px 16px; font-size: 15px; border-top: 1px solid #E5E5EA; display: flex; justify-content: space-between; }
+  .acts div:first-child { border-top: 0; }
+
+  /* Carl share extension */
+  .ext { position: absolute; left: 0; right: 0; bottom: 0; top: 58px; z-index: 70; background: var(--bg); color: var(--ink); border-radius: 30px 30px 0 0;
+         transform: translateY(105%); transition: transform .55s var(--spring); display: flex; flex-direction: column; }
+  .ext-open .ext { transform: none; }
+  .ext .bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px 6px; }
+  .ext .bar .cancel { font-size: 15.5px; color: var(--ink2); font-weight: 500; }
+  .ext .bar .ttl { font-size: 15.5px; font-weight: 650; letter-spacing: -0.02em; }
+  .ext .body { flex: 1; overflow-y: auto; padding: 8px 16px 0; scrollbar-width: none; }
+  .ext .body::-webkit-scrollbar { display: none; }
+  .item { display: flex; gap: 12px; align-items: center; background: var(--surface); border-radius: 18px; padding: 12px; box-shadow: var(--card-shadow); }
+  .item .a { width: 58px; height: 58px; border-radius: 11px; flex: none; position: relative; overflow: hidden; background: var(--press); }
+  .item .a .img { position: absolute; inset: 0; opacity: 0; transition: opacity .5s; }
+  .resolved .item .a .img { opacity: 1; }
+  .item .k { font: 600 10px/1 &quot;Geist&quot;, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--k-macro); margin-bottom: 5px; opacity: 0; transition: opacity .4s; }
+  .resolved .item .k { opacity: 1; }
+  .item b { display: block; font-size: 15px; font-weight: 650; letter-spacing: -0.015em; line-height: 1.3; }
+  .item span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+  .shimmer { display: inline-block; width: 130px; height: 11px; border-radius: 4px; background: linear-gradient(90deg, var(--press), #E2DFD6, var(--press)); background-size: 200% 100%; animation: sh 1.1s linear infinite; }
+  @keyframes sh { to { background-position: -200% 0; } }
+
+  .choose { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .choice { background: var(--surface); border-radius: 18px; padding: 16px 14px; box-shadow: var(--card-shadow); transition: all .3s var(--spring); }
+  .choice .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--press); display: grid; place-items: center; font-size: 16px; margin-bottom: 12px; transition: all .3s; }
+  .choice b { display: block; font-size: 16px; font-weight: 650; letter-spacing: -0.02em; }
+  .choice span { font-size: 12.5px; color: var(--ink3); line-height: 1.35; display: block; margin-top: 3px; }
+  .choice.on { background: var(--chrome); color: #fff; box-shadow: none; }
+  .choice.on span { color: rgba(255,255,255,.6); }
+  .choice.on .ic { background: rgba(255,255,255,.14); }
+  .chosen .choice:not(.on) { opacity: .55; }
+
+  .more { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .5s var(--spring); }
+  .more &gt; div { overflow: hidden; }
+  .more.on { grid-template-rows: 1fr; }
+  .lbl { font: 500 11px/1 &quot;Geist Mono&quot;, monospace; color: var(--ink3); text-transform: uppercase; margin: 20px 4px 9px; display: flex; justify-content: space-between; }
+  .lbl em { font-style: normal; text-transform: none; }
+  .react { display: flex; gap: 6px; }
+  .react div { flex: 1; text-align: center; font-size: 13px; font-weight: 600; padding: 11px 4px; border-radius: 12px; background: var(--surface); box-shadow: var(--card-shadow); color: var(--ink2); transition: all .25s var(--spring); }
+  .react div.on { color: #fff; background: var(--c); box-shadow: none; }
+  .note { display: flex; align-items: flex-start; gap: 8px; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); padding: 6px 6px 6px 14px; }
+  .note textarea { flex: 1; border: 0; outline: 0; resize: none; background: transparent; font: 15px/1.4 &quot;Geist&quot;, sans-serif; color: var(--ink); height: 64px; padding: 8px 0; user-select: text; }
+  .note textarea::placeholder { color: var(--ink3); }
+  .mic { width: 36px; height: 36px; border-radius: 50%; background: var(--press); display: grid; place-items: center; color: var(--chrome); flex: none; }
+  .toggle { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); padding: 14px; }
+  .toggle .t { flex: 1; } .toggle .t b { display: block; font-size: 15px; font-weight: 650; letter-spacing: -0.015em; } .toggle .t span { font-size: 12.5px; color: var(--ink3); line-height: 1.35; display: block; margin-top: 2px; }
+  .sw { width: 50px; height: 30px; border-radius: 15px; background: #E3E1DA; position: relative; transition: background .25s; flex: none; }
+  .sw::after { content: &quot;&quot;; position: absolute; top: 2px; left: 2px; width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,.15); transition: transform .3s var(--spring); }
+  .sw.on { background: var(--got); } .sw.on::after { transform: translateX(20px); }
+
+  .save { margin: 12px 16px 30px; height: 54px; border-radius: 16px; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 16.5px; font-weight: 650; letter-spacing: -0.01em;
+          opacity: .25; pointer-events: none; transition: opacity .3s; }
+  .save.ready { opacity: 1; pointer-events: auto; }
+
+  .done { position: absolute; inset: 0; z-index: 5; background: var(--bg); border-radius: 30px 30px 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+          opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .done.on { opacity: 1; }
+  .done .ring { width: 74px; height: 74px; border-radius: 50%; background: var(--chrome); color: #fff; display: grid; place-items: center; transform: scale(.4); transition: transform .55s var(--spring); }
+  .done.on .ring { transform: scale(1); }
+  .done svg path { stroke-dasharray: 40; stroke-dashoffset: 40; transition: stroke-dashoffset .45s ease .2s; }
+  .done.on svg path { stroke-dashoffset: 0; }
+  .done b { font-size: 19px; font-weight: 700; letter-spacing: -0.03em; }
+  .done span { font-size: 14px; color: var(--ink2); text-align: center; line-height: 1.45; max-width: 250px; }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+
+
+&lt;div class=&quot;stage&quot;&gt;
+  &lt;div class=&quot;pcol&quot;&gt;
+    &lt;div class=&quot;phone&quot;&gt;&lt;div class=&quot;screen&quot; id=&quot;s&quot;&gt;
+      &lt;div class=&quot;island&quot;&gt;&lt;/div&gt;&lt;div class=&quot;statusbar&quot;&gt;&lt;span&gt;9:41&lt;/span&gt;&lt;svg viewBox=&quot;0 0 70 12&quot; fill=&quot;currentColor&quot;&gt;&lt;rect x=&quot;0&quot; y=&quot;8&quot; width=&quot;3&quot; height=&quot;4&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;5&quot; y=&quot;5.5&quot; width=&quot;3&quot; height=&quot;6.5&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;10&quot; y=&quot;3&quot; width=&quot;3&quot; height=&quot;9&quot; rx=&quot;1&quot;/&gt;&lt;rect x=&quot;15&quot; y=&quot;0&quot; width=&quot;3&quot; height=&quot;12&quot; rx=&quot;1&quot;/&gt;&lt;path d=&quot;M31 3.2a9 9 0 0 1 12 0l-1.4 1.5a7 7 0 0 0-9.2 0zM33.4 5.8a5.5 5.5 0 0 1 7.2 0L39.2 7.3a3.4 3.4 0 0 0-4.4 0zM37 11.5l-1.6-1.8a2.4 2.4 0 0 1 3.2 0z&quot;/&gt;&lt;rect x=&quot;47&quot; y=&quot;1&quot; width=&quot;20&quot; height=&quot;10.5&quot; rx=&quot;3&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; opacity=&quot;.4&quot;/&gt;&lt;rect x=&quot;48.6&quot; y=&quot;2.6&quot; width=&quot;16.8&quot; height=&quot;7.3&quot; rx=&quot;1.6&quot;/&gt;&lt;rect x=&quot;68&quot; y=&quot;4.3&quot; width=&quot;1.6&quot; height=&quot;4&quot; rx=&quot;.8&quot; opacity=&quot;.4&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;
+
+      &lt;div class=&quot;host&quot;&gt;
+        &lt;div class=&quot;down&quot;&gt;⌄&lt;/div&gt;
+        &lt;div class=&quot;art&quot; style=&quot;background: var(--odd)&quot;&gt;&lt;/div&gt;
+        &lt;h2&gt;Why the Repo Market Is the Plumbing of Everything&lt;/h2&gt;
+        &lt;div class=&quot;show&quot;&gt;Odd Lots · Bloomberg&lt;/div&gt;
+        &lt;div class=&quot;scrub&quot;&gt;&lt;i&gt;&lt;/i&gt;&lt;/div&gt;&lt;div class=&quot;times&quot;&gt;&lt;span&gt;52:14&lt;/span&gt;&lt;span&gt;-0:00&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;ctrls&quot;&gt;&lt;span&gt;⇄&lt;/span&gt;&lt;span&gt;⏮&lt;/span&gt;&lt;div class=&quot;play&quot;&gt;▶&lt;/div&gt;&lt;span&gt;⏭&lt;/span&gt;&lt;span&gt;↻&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;hint&quot;&gt;tap share →&lt;/div&gt;
+        &lt;div class=&quot;share press pulse&quot; data-act=&quot;share&quot;&gt;&lt;svg width=&quot;18&quot; height=&quot;18&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#fff&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M12 3v13M7 8l5-5 5 5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;sheet&quot;&gt;
+        &lt;div class=&quot;grab&quot;&gt;&lt;/div&gt;
+        &lt;div class=&quot;prev&quot;&gt;&lt;div class=&quot;a&quot; style=&quot;background: var(--odd)&quot;&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;Why the Repo Market Is the Plumbing…&lt;/b&gt;&lt;span&gt;open.spotify.com&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;div class=&quot;apps&quot;&gt;
+          &lt;div class=&quot;app&quot;&gt;&lt;div class=&quot;i&quot; style=&quot;background:#34C759&quot;&gt;✉&lt;/div&gt;Messages&lt;/div&gt;
+          &lt;div class=&quot;app carl press pulse&quot; data-act=&quot;carl&quot;&gt;&lt;div class=&quot;i&quot;&gt;&lt;svg viewBox=&quot;0 0 100 100&quot;&gt;&lt;rect width=&quot;100&quot; height=&quot;100&quot; fill=&quot;#3F7262&quot;/&gt;&lt;g fill=&quot;none&quot; stroke=&quot;#F7F5EF&quot; stroke-width=&quot;4.6&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M50 22 L46.2 19.2 A7.7 7.7 0 0 0 34.2 23.5 A7.8 7.8 0 0 0 24.8 32.4 A7.9 7.9 0 0 0 19.7 44.4 A7.9 7.9 0 0 0 19.7 57.6 A7.9 7.9 0 0 0 24.8 69.6 A7.8 7.8 0 0 0 34.2 78.5 A7.7 7.7 0 0 0 46.2 82.8 L50 80 L53.8 82.8 A7.7 7.7 0 0 0 65.8 78.5 A7.8 7.8 0 0 0 75.2 69.6 A7.9 7.9 0 0 0 80.3 57.6 A7.9 7.9 0 0 0 80.3 44.4 A7.9 7.9 0 0 0 75.2 32.4 A7.8 7.8 0 0 0 65.8 23.5 A7.7 7.7 0 0 0 53.8 19.2 Z&quot;/&gt;&lt;path d=&quot;M50 22 V80&quot;/&gt;&lt;path d=&quot;M34 30 C40 30 42 36 38 40 M24 46 C30 44 34 48 32 54 M42 46 C36 48 36 56 42 58 M30 66 C34 62 40 64 40 70 M38 28 C40 26 44 28 44 33 M 66.0 30.0 C 60.0 30.0 58.0 36.0 62.0 40.0 M 76.0 46.0 C 70.0 44.0 66.0 48.0 68.0 54.0 M 58.0 46.0 C 64.0 48.0 64.0 56.0 58.0 58.0 M 70.0 66.0 C 66.0 62.0 60.0 64.0 60.0 70.0 M 62.0 28.0 C 60.0 26.0 56.0 28.0 56.0 33.0&quot;/&gt;&lt;/g&gt;&lt;/svg&gt;&lt;/div&gt;Archie&lt;/div&gt;
+          &lt;div class=&quot;app&quot;&gt;&lt;div class=&quot;i&quot; style=&quot;background:#FFCC00&quot;&gt;✎&lt;/div&gt;Notes&lt;/div&gt;
+          &lt;div class=&quot;app&quot;&gt;&lt;div class=&quot;i&quot; style=&quot;background:#007AFF&quot;&gt;@&lt;/div&gt;Mail&lt;/div&gt;
+          &lt;div class=&quot;app&quot;&gt;&lt;div class=&quot;i&quot; style=&quot;background:#8E8E93&quot;&gt;⋯&lt;/div&gt;More&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;acts&quot;&gt;&lt;div&gt;Copy Link &lt;span&gt;⧉&lt;/span&gt;&lt;/div&gt;&lt;div&gt;Add to Reading List &lt;span&gt;∞&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div class=&quot;ext&quot;&gt;
+        &lt;div class=&quot;bar&quot;&gt;&lt;div class=&quot;cancel press&quot; data-act=&quot;cancel&quot;&gt;Cancel&lt;/div&gt;&lt;div class=&quot;ttl&quot;&gt;Add to Archie&lt;/div&gt;&lt;div style=&quot;width:48px&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;div class=&quot;body&quot;&gt;
+          &lt;div class=&quot;item&quot;&gt;&lt;div class=&quot;a&quot;&gt;&lt;div class=&quot;img&quot; style=&quot;background: var(--odd)&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+            &lt;div&gt;&lt;div class=&quot;k&quot;&gt;Macro · Repo &amp;amp; plumbing&lt;/div&gt;&lt;b class=&quot;t&quot;&gt;&lt;span class=&quot;shimmer&quot;&gt;&lt;/span&gt;&lt;/b&gt;&lt;span class=&quot;m&quot;&gt;Matching episode…&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+
+          &lt;div class=&quot;choose&quot;&gt;
+            &lt;div class=&quot;choice press&quot; data-choice=&quot;finished&quot;&gt;&lt;div class=&quot;ic&quot;&gt;✓&lt;/div&gt;&lt;b&gt;Finished&lt;/b&gt;&lt;span&gt;Summarize it and make cards&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&quot;choice press&quot; data-choice=&quot;queue&quot;&gt;&lt;div class=&quot;ic&quot;&gt;＋&lt;/div&gt;&lt;b&gt;Queue it&lt;/b&gt;&lt;span&gt;Save it for later&lt;/span&gt;&lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div class=&quot;more&quot; data-for=&quot;finished&quot;&gt;&lt;div&gt;
+            &lt;div class=&quot;lbl&quot;&gt;&lt;span&gt;How&#x27;d it go?&lt;/span&gt;&lt;em&gt;optional&lt;/em&gt;&lt;/div&gt;
+            &lt;div class=&quot;react&quot;&gt;
+              &lt;div class=&quot;press&quot; data-react style=&quot;--c: var(--got)&quot;&gt;Easy&lt;/div&gt;
+              &lt;div class=&quot;press&quot; data-react style=&quot;--c: var(--partly)&quot;&gt;Mostly followed&lt;/div&gt;
+              &lt;div class=&quot;press&quot; data-react style=&quot;--c: var(--missed)&quot;&gt;Parts lost me&lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class=&quot;lbl&quot;&gt;&lt;span&gt;Anything confusing?&lt;/span&gt;&lt;em&gt;optional&lt;/em&gt;&lt;/div&gt;
+            &lt;div class=&quot;note&quot;&gt;&lt;textarea placeholder=&quot;e.g. lost me on why the Fed cares about repo&quot;&gt;&lt;/textarea&gt;&lt;div class=&quot;mic press&quot;&gt;&lt;svg width=&quot;17&quot; height=&quot;17&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot;&gt;&lt;rect x=&quot;9&quot; y=&quot;3&quot; width=&quot;6&quot; height=&quot;11&quot; rx=&quot;3&quot;/&gt;&lt;path d=&quot;M5 11a7 7 0 0 0 14 0M12 18v3&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;/div&gt;&lt;/div&gt;
+
+          &lt;div class=&quot;more&quot; data-for=&quot;queue&quot;&gt;&lt;div&gt;
+            &lt;div class=&quot;lbl&quot;&gt;&lt;span&gt;Before you start&lt;/span&gt;&lt;/div&gt;
+            &lt;div class=&quot;toggle press&quot; data-act=&quot;prep&quot;&gt;&lt;div class=&quot;t&quot;&gt;&lt;b&gt;Prep me&lt;/b&gt;&lt;span&gt;A short, spoiler-free primer on what this episode assumes you know. It appears on Today.&lt;/span&gt;&lt;/div&gt;&lt;div class=&quot;sw&quot;&gt;&lt;/div&gt;&lt;/div&gt;
+          &lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div class=&quot;save press&quot; data-act=&quot;save&quot;&gt;Save&lt;/div&gt;
+        &lt;div class=&quot;done&quot;&gt;&lt;div class=&quot;ring&quot;&gt;&lt;svg width=&quot;34&quot; height=&quot;34&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;#fff&quot; stroke-width=&quot;2.6&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot;&gt;&lt;path d=&quot;M5 12.5l4.5 4.5L19 7.5&quot;/&gt;&lt;/svg&gt;&lt;/div&gt;&lt;b&gt;Saved&lt;/b&gt;&lt;span class=&quot;msg&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;&lt;/div&gt;
+    &lt;div class=&quot;haptic&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;side&quot;&gt;
+    &lt;h3&gt;Flow&lt;/h3&gt;
+    &lt;ol id=&quot;steps&quot;&gt;&lt;li&gt;Tap share in the podcast app&lt;/li&gt;&lt;li&gt;Tap Archie&lt;/li&gt;&lt;li&gt;Archie matches the episode&lt;/li&gt;&lt;li&gt;Finished or Queue it&lt;/li&gt;&lt;li&gt;Optional: reaction / note / Prep me&lt;/li&gt;&lt;li&gt;Save → check → auto-dismiss&lt;/li&gt;&lt;/ol&gt;
+    &lt;button class=&quot;replay&quot; id=&quot;replay&quot;&gt;↺ Start over&lt;/button&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;script&gt;
+const screen = document.getElementById(&quot;s&quot;);
+screen.style.setProperty(&quot;--odd&quot;, &quot;url(&#x27;https://is1-ssl.mzstatic.com/image/thumb/Podcasts211/v4/f3/99/6a/f3996a52-e4a4-bf0d-b7d6-e376c4058568/mza_15550359494736224565.jpg/600x600bb.jpg&#x27;) center/cover&quot;);
+const readout = document.querySelector(&quot;.haptic&quot;);
+const steps = [...document.querySelectorAll(&quot;#steps li&quot;)];
+let timers = [], hTimer, choice = null;
+const later = (fn, ms) =&gt; timers.push(setTimeout(fn, ms));
+const haptic = (k) =&gt; { readout.textContent = `haptic · ${k}`; readout.classList.add(&quot;on&quot;); clearTimeout(hTimer); hTimer = setTimeout(() =&gt; readout.classList.remove(&quot;on&quot;), 900); };
+const step = (n) =&gt; steps.forEach((s, i) =&gt; s.classList.toggle(&quot;cur&quot;, i === n));
+const $ = (sel) =&gt; screen.querySelector(sel);
+
+function reset() {
+  timers.forEach(clearTimeout); timers = []; choice = null;
+  screen.classList.remove(&quot;ext-open&quot;, &quot;resolved&quot;, &quot;chosen&quot;);
+  $(&quot;.sheet&quot;).classList.remove(&quot;on&quot;);
+  $(&quot;.done&quot;).classList.remove(&quot;on&quot;);
+  $(&quot;.save&quot;).classList.remove(&quot;ready&quot;);
+  screen.querySelectorAll(&quot;.choice, [data-react], .sw, .more&quot;).forEach((x) =&gt; x.classList.remove(&quot;on&quot;));
+  $(&quot;.note textarea&quot;).value = &quot;&quot;;
+  $(&quot;.item .t&quot;).innerHTML = `&lt;span class=&quot;shimmer&quot;&gt;&lt;/span&gt;`; $(&quot;.item .m&quot;).textContent = &quot;Matching episode…&quot;;
+  step(0);
+}
+
+// Matching takes a beat; the artwork and domain fade in when it resolves
+function openExtension() {
+  $(&quot;.sheet&quot;).classList.remove(&quot;on&quot;);
+  later(() =&gt; { screen.classList.add(&quot;ext-open&quot;); haptic(&quot;light&quot;); step(2); }, 180);
+  later(() =&gt; {
+    screen.classList.add(&quot;resolved&quot;);
+    $(&quot;.item .t&quot;).textContent = &quot;Why the Repo Market Is the Plumbing of Everything&quot;;
+    $(&quot;.item .m&quot;).textContent = &quot;Odd Lots · 52 min · matched from Spotify&quot;;
+    haptic(&quot;soft · matched&quot;); step(3);
+  }, 1300);
+}
+
+function pick(kind) {
+  choice = kind; screen.classList.add(&quot;chosen&quot;);
+  screen.querySelectorAll(&quot;.choice&quot;).forEach((c) =&gt; c.classList.toggle(&quot;on&quot;, c.dataset.choice === kind));
+  screen.querySelectorAll(&quot;.more&quot;).forEach((m) =&gt; m.classList.toggle(&quot;on&quot;, m.dataset.for === kind));
+  $(&quot;.save&quot;).classList.add(&quot;ready&quot;); haptic(&quot;selection&quot;); step(4);
+}
+
+function save() {
+  const done = $(&quot;.done&quot;);
+  const reacted = screen.querySelector(&quot;[data-react].on&quot;)?.textContent;
+  const prep = $(&quot;.sw&quot;).classList.contains(&quot;on&quot;);
+  done.querySelector(&quot;.msg&quot;).textContent = choice === &quot;finished&quot;
+    ? (reacted === &quot;Parts lost me&quot; ? &quot;Writing a summary, cards, and a primer for the parts that lost you.&quot; : &quot;Writing a summary and a few cards. They&#x27;ll be in Review tomorrow.&quot;)
+    : (prep ? &quot;Queued. Your primer will be on Today in a couple of minutes.&quot; : &quot;Queued. It&#x27;s at the top of Up next.&quot;);
+  done.classList.add(&quot;on&quot;); haptic(&quot;notification · success&quot;); step(5);
+  later(() =&gt; { screen.classList.remove(&quot;ext-open&quot;); haptic(&quot;—&quot;); }, 1700);
+  later(reset, 2400);
+}
+
+screen.addEventListener(&quot;click&quot;, (e) =&gt; {
+  const t = e.target;
+  const act = t.closest(&quot;[data-act]&quot;)?.dataset.act;
+  if (act === &quot;share&quot;) { $(&quot;.sheet&quot;).classList.add(&quot;on&quot;); haptic(&quot;light&quot;); step(1); return; }
+  if (act === &quot;carl&quot;) { openExtension(); return; }
+  if (act === &quot;cancel&quot;) { screen.classList.remove(&quot;ext-open&quot;); haptic(&quot;light&quot;); later(reset, 500); return; }
+  if (act === &quot;save&quot;) { save(); return; }
+  if (act === &quot;prep&quot;) { $(&quot;.sw&quot;).classList.toggle(&quot;on&quot;); haptic(&quot;selection&quot;); return; }
+  const c = t.closest(&quot;[data-choice]&quot;); if (c &amp;&amp; screen.classList.contains(&quot;resolved&quot;)) { pick(c.dataset.choice); return; }
+  const r = t.closest(&quot;[data-react]&quot;);
+  if (r) { const was = r.classList.contains(&quot;on&quot;); screen.querySelectorAll(&quot;[data-react]&quot;).forEach((x) =&gt; x.classList.remove(&quot;on&quot;)); if (!was) r.classList.add(&quot;on&quot;); haptic(&quot;selection&quot;); return; }
+  if (t.closest(&quot;.mic&quot;)) { $(&quot;.note textarea&quot;).value = &quot;why does the fed care about repo at all&quot;; haptic(&quot;medium · dictated&quot;); }
+});
+screen.addEventListener(&quot;scroll&quot;, () =&gt; { screen.scrollTop = 0; });
+document.getElementById(&quot;replay&quot;).addEventListener(&quot;click&quot;, reset);
+reset();
+&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe></section>
+</main>
+<footer>Artwork in the mockups is fetched live from the iTunes, Open Library and X image CDNs, the same sources the app uses. Items without art fall back to a monogram tile in their domain color.</footer>
+</body>
+</html>

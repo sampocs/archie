@@ -1,0 +1,10 @@
+name = "archie-youtube-spike"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[triggers]
+crons = ["0 */6 * * *"]
+
+[[kv_namespaces]]
+binding = "RESULTS"
+id = "f464afb5c3c0421289d12ccc1aaf81a1"

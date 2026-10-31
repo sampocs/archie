@@ -107,7 +107,7 @@ Subscriptions deliberately avoided: Readwise (~$10/mo), Taddy (~$75/mo), Firecra
 | 4 | **YouTube from the intended host** (cloud vs. home vs. proxy), over a few days | A reliable path is identified |
 | 5 | **X threads and articles via fxtwitter**, plus the cost of the official pay-per-use API for a 20-post thread | Full thread text for real examples |
 | 6 | **Newsletter ingest**: subscribe 3 real newsletters (one paid) to a Cloudflare address | Full text arrives and parses cleanly |
-| 7 | **Pulse grouping** on one real week of newsletters, hand-labeled | Same-story groups match your labels |
+| 7 | **Pulse grouping** on one real week of newsletters, hand-labeled. **Deferred (2026-10-31)** to the build, once more newsletters are flowing | Same-story groups match your labels |
 | 8 | **LLM processing cost**: run summary, primer and cards on 5 real transcripts | A cost per hour of content |
 | 9 | **Safari paywall capture** on logged-in WSJ, The Information, Bloomberg and a paid Substack | Full article text captured |
 

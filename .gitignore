@@ -3,3 +3,4 @@
 .env.*
 spikes/**/.cache/
 __pycache__/
+spikes/**/.wrangler/

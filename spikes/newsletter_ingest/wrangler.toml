@@ -1,0 +1,7 @@
+name = "archie-newsletter-spike"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[[kv_namespaces]]
+binding = "INBOX"
+id = "d2c869adf0b542d4b0cc5d0aaeec9c2f"

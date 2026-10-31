@@ -43,6 +43,11 @@ export default function App() {
             <Text style={styles.source}>{item.payload.source}</Text>
             <Text style={styles.mono} selectable>url: {item.payload.rawUrl ?? "—"}</Text>
             <Text style={styles.mono} selectable>text: {item.payload.rawText ?? "—"}</Text>
+            {item.payload.page && (
+              <Text style={styles.mono} selectable>
+                page: {item.payload.page.words} words · {item.payload.page.title}{"\n"}…{item.payload.page.excerpt}…
+              </Text>
+            )}
             <Text style={styles.mono}>
               fetch: {item.probe ? `${item.probe.status ?? "failed"} · ${item.probe.millis} ms · ${item.probe.title ?? item.probe.error ?? "no title"}` : "—"}
             </Text>

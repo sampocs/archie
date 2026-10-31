@@ -6,7 +6,18 @@ export type Payload = {
   // Some apps share only text with the link buried inside it, so pull the first URL out of either field
   url?: string;
   source: string;
+  // Only Safari shares carry this: the page text as the logged-in user sees it, past paywalls and bot-blocking
+  page?: PageCapture;
 };
+
+export type PageCapture = {
+  title: string;
+  words: number;
+  // Taken from the middle so it shows real article body, not the teaser a paywall leaves visible
+  excerpt: string;
+};
+
+type PreprocessingResults = { url?: string; title?: string; text?: string };
 
 export type ProbeResult = {
   status?: number;
@@ -24,6 +35,7 @@ export type SharedRecord = {
 const URL_PATTERN = /https?:\/\/[^\s]+/;
 const TRAILING_PUNCTUATION = /[).,!?"'\]]+$/;
 const PROBE_TIMEOUT_MS = 10_000;
+const EXCERPT_CHARS = 240;
 const SOURCES: [RegExp, string][] = [
   [/open\.spotify\.com|spotify\.link/, "spotify"],
   [/podcasts\.apple\.com/, "apple podcasts"],
@@ -32,10 +44,19 @@ const SOURCES: [RegExp, string][] = [
 ];
 
 export function describePayload(props: InitialProps): Payload {
-  const url = props.url ?? props.text?.match(URL_PATTERN)?.[0]?.replace(TRAILING_PUNCTUATION, "");
+  const preprocessed = props.preprocessingResults as PreprocessingResults | undefined;
+  const url =
+    props.url ?? preprocessed?.url ?? props.text?.match(URL_PATTERN)?.[0]?.replace(TRAILING_PUNCTUATION, "");
   const host = url ? safeHost(url) : undefined;
   const source = host ? (SOURCES.find(([pattern]) => pattern.test(host))?.[1] ?? `web (${host})`) : "text only";
-  return { rawUrl: props.url, rawText: props.text, url, source };
+  const page = preprocessed?.text ? capturePage(preprocessed.title ?? "", preprocessed.text) : undefined;
+  return { rawUrl: props.url, rawText: props.text, url, source, page };
+}
+
+function capturePage(title: string, text: string): PageCapture {
+  const flat = text.replace(/\s+/g, " ").trim();
+  const middle = Math.max(0, Math.floor(flat.length / 2) - EXCERPT_CHARS / 2);
+  return { title, words: flat.split(" ").length, excerpt: flat.slice(middle, middle + EXCERPT_CHARS) };
 }
 
 // Fetch the shared page and pull out its title, the way the real app would resolve an episode or article

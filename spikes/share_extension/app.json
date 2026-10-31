@@ -24,7 +24,8 @@
         {
           "activationRules": [{ "type": "url" }, { "type": "text" }],
           "height": 560,
-          "backgroundColor": { "red": 255, "green": 255, "blue": 255, "alpha": 1 }
+          "backgroundColor": { "red": 255, "green": 255, "blue": 255, "alpha": 1 },
+          "preprocessingFile": "./preprocessing.js"
         }
       ]
     ]

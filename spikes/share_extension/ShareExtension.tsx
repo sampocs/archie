@@ -32,6 +32,10 @@ export default function ShareExtension(props: InitialProps) {
         <Field label="detected url" value={payload.url} />
         <Field label="source" value={payload.source} />
         <Field
+          label="safari page"
+          value={payload.page ? `${payload.page.words} words · ${payload.page.title}\n…${payload.page.excerpt}…` : undefined}
+        />
+        <Field
           label="network check"
           value={
             payload.url

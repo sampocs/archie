@@ -28,10 +28,13 @@ Running `expo prebuild --clean` regenerates `ios/` and re-adds the App Group ent
 | Safari article | proper `url` | 200, 259 ms, correct title | |
 | Safari selected text | not in the screenshot | | Retest |
 | Apple Podcasts | didn't work | | Not investigated, because it's not a source we use |
-| Paywalled article | not tested | | |
+| Paywalled article (NYT gift link, from Safari) | proper `url` | **403 after 150 ms** | NYT blocks non-browser fetches outright, even with an unlocked link. The backend would be blocked too. |
 
 - **URL extraction is required:** Spotify and YouTube share text, not a URL. Pulling the first URL out of the text worked for both.
 - **Fetching:** the extension can reach the network (3 of 4 fetches succeeded; X blocks plain fetches), so it can call our backend directly. The extension should just send the URL and let the backend resolve it.
 - **Handoff:** "Save to app" opens the main app with the record intact.
 - **Finding it in the share sheet is slow.** It sat at the bottom of the "More" list. iOS doesn't let an app pin itself, so the fix is a one-time setup step: More → Edit → add it to Favorites, which puts it at the front of the row. iOS also moves frequently used targets forward on its own.
-- **Paywalls:** the extension receives only the URL, not the page. A backend fetch won't have the user's Safari login, so subscriber articles need the extension to capture the page itself, using a JavaScript preprocessing file that runs inside Safari's page. That's the separate "Safari paywall capture" spike.
+- **Paywalls:** the extension receives only the URL, not the page. A backend fetch won't have the user's Safari login, so subscriber articles need the extension to capture the page itself, using a JavaScript preprocessing file that runs inside Safari's page. **Tabled (2026-10-31):** the user rarely reads paywalled articles.
+  - **The fix if we need it:** expo-share-extension's `preprocessingFile` option runs a small JS file inside the Safari page and passes its result as `preprocessingResults`. That would hand over the logged-in article text, and it would also get past bot-blocking like NYT's 403.
+  - **Catch:** the option swaps the URL activation rule for a web-page rule, and the two are mutually exclusive. Apps that share a bare URL (like X) would then need retesting.
+  - It only helps shares from Safari, not from in-app browsers.

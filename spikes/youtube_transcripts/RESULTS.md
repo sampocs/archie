@@ -111,3 +111,6 @@ Before building, worth doing: (a) pick the host, then run the same no-proxy test
 - The old `get_transcript` function no longer exists in `youtube-transcript-api` 1.x.
 - yt-dlp and the library returned identical word counts for every normal video.
 - A second back-to-back local run of `fetch_local.py` hit `HTTP 429 Too Many Requests` on yt-dlp's subtitle download, even from the residential IP. YouTube rate-limits the timedtext endpoint per IP, so a few repeated fetches in a minute can trip it. This matters for a proxy or backend design: cache transcripts and don't re-fetch.
+
+
+**2026-10-31:** the cloud test Worker and its KV namespace were deleted at the user's request after the first run. 0/7 was conclusive enough.

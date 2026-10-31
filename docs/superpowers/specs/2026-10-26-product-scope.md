@@ -104,6 +104,7 @@ The same Finished / Queue flow as the share sheet, for pasting links or searchin
 
 - Carl generates **3–5 cards per consumed source**, focused on concepts, mechanisms ("why does X cause Y"), and **rough numbers** ("~1 GW," not "1.07 GW").
 - Cards are generated **regardless of what I already know**. Reviews take care of that.
+- **Educational content only (decided 2026-10-31).** Entertainment, like a sports interview or banter, gets a summary and no cards. Educational parts of any show still get cards, e.g. NFL play schemes or how NFL contracts work. Carl decides per source, and per section within long episodes.
 - **Calibration before launch**: from imported notes, pick ~10 examples, mark what I'd actually want to be quizzed on, and adjust card generation until it matches.
 
 ## Reading voice

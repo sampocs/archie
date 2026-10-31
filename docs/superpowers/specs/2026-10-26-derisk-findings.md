@@ -27,7 +27,7 @@
 | Pulse story grouping | 🟢 | Use an LLM to split each newsletter into stories, embed them (`text-embedding-3-small`, ~$0.02 per 1M tokens), cluster by cosine similarity, then use an LLM to merge borderline groups and write headlines. At this volume, a single LLM grouping call is a valid fallback | Pennies |
 | Library search / vector store | 🟢 | Reuse the same embeddings in pgvector on Postgres, which also gives hybrid keyword search, or sqlite-vec for a single file | Free |
 
-**Not researched yet:** LLM costs for summaries, primers and cards. These are likely the biggest line item, and the next step is to estimate them from real transcripts.
+**LLM processing cost (measured 2026-10-31, spike 8):** analyze on Haiku plus primers on Sonnet costs about $0.07 per audio hour, about $6/mo at 43 h including transcription. That's far under the estimate, so the cost tables below overstate source processing.
 
 ## My setup (answered 2026-10-26)
 
@@ -101,14 +101,14 @@ Subscriptions deliberately avoided: Readwise (~$10/mo), Taddy (~$75/mo), Firecra
 
 | # | Spike | Pass looks like |
 |---|---|---|
-| 1 | **Share extension on a real iPhone**: log what Spotify, Apple Podcasts, YouTube, X, Safari and Substack actually send; build a custom UI with chips, a text field and voice; check memory use and microphone permission inside the extension | All six apps give at least a URL. The custom UI works within memory limits |
+| 1 | ✅ **Done 2026-10-31** (`spikes/share_extension/`): all used apps give a URL (Spotify/YouTube inside text). Custom UI deferred to the build. **Share extension on a real iPhone**: log what Spotify, Apple Podcasts, YouTube, X, Safari and Substack actually send; build a custom UI with chips, a text field and voice; check memory use and microphone permission inside the extension | All six apps give at least a URL. The custom UI works within memory limits |
 | 2 | **Podcast link → transcript**: about 20 real Spotify and Apple links → match to RSS → transcript (published or Scribe/AssemblyAI) | ≥90% matched, transcript quality good enough to summarize |
 | 3 | **Card grading**: 30–50 real answers you've labeled, graded by Haiku, GPT-mini and Flash class models (plus Jev if access comes through) | Matches your labels, especially on "partly". High-confidence grades really are more accurate. A rubric edit flips the grade |
-| 4 | **YouTube from the intended host** (cloud vs. home vs. proxy), over a few days | A reliable path is identified |
-| 5 | **X threads and articles via fxtwitter**, plus the cost of the official pay-per-use API for a 20-post thread | Full thread text for real examples |
+| 4 | ✅ **Done 2026-10-31** (`spikes/youtube_transcripts/`): cloud IPs blocked 0/7, local 6/6. Plan: Supadata free tier → Webshare residential proxy (~$3.50/mo) → audio + Groq. **YouTube from the intended host** (cloud vs. home vs. proxy), over a few days | A reliable path is identified |
+| 5 | ✅ **Done 2026-10-31** (`spikes/x_fxtwitter/`): fxtwitter `/2/thread/{id}` returns full threads, long posts, quotes and Articles for free. **X threads and articles via fxtwitter**, plus the cost of the official pay-per-use API for a 20-post thread | Full thread text for real examples |
 | 6 | **Newsletter ingest**: subscribe 3 real newsletters (one paid) to a Cloudflare address | Full text arrives and parses cleanly |
 | 7 | **Pulse grouping** on one real week of newsletters, hand-labeled. **Deferred (2026-10-31)** to the build, once more newsletters are flowing | Same-story groups match your labels |
-| 8 | **LLM processing cost**: run summary, primer and cards on 5 real transcripts | A cost per hour of content |
-| 9 | **Safari paywall capture** on logged-in WSJ, The Information, Bloomberg and a paid Substack | Full article text captured |
+| 8 | ✅ **Done 2026-10-31** (`spikes/llm_processing/`): Haiku analyze + Sonnet primer ≈ $6/mo at 43 h including transcription ($4 with Batch). **LLM processing cost**: run summary, primer and cards on 5 real transcripts | A cost per hour of content |
+| 9 | ✅ **NYT tested 2026-10-31**: full article captured via the preprocessing script. **Safari paywall capture** on logged-in WSJ, The Information, Bloomberg and a paid Substack | Full article text captured |
 
 Later, during the build: notes import quality, primer quality for books, voice latency.

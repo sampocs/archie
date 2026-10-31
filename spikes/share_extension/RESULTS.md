@@ -18,21 +18,19 @@ xcodebuild -workspace CarlShareSpike.xcworkspace -scheme CarlShareSpike -configu
 
 Running `expo prebuild --clean` regenerates `ios/` and re-adds the App Group entitlement. I removed it by hand because Apple's side doesn't have the group enabled for the extension's App ID, and links and text don't need it. The real app will need the App Group turned on once in Xcode, under the extension target's Signing & Capabilities.
 
-## Test checklist
+## Results (2026-10-30, iPhone 15 Pro, iOS 26)
 
-Share each of these with **Carl Share Spike** (it may be under "More" in the share sheet the first time), note what the sheet shows, then tap **Save to app**:
+| Source | Result |
+|---|---|
+| Spotify | Works |
+| X | Works |
+| YouTube | Works |
+| Safari article | Works |
+| Safari selected text | Works |
+| Apple Podcasts | Didn't work. Not investigated, because it's not a source we use. |
+| Paywalled article | Not yet tested |
 
-| Source | What to share | url / text received | Network check | Notes |
-|---|---|---|---|---|
-| Spotify | a podcast episode | | | |
-| Apple Podcasts | an episode | | | |
-| X | a post | | | |
-| YouTube | a video | | | |
-| Safari | an article | | | |
-| Safari | selected text | | | |
-| A paywalled article (e.g. Bloomberg) | | | | |
-
-Questions this answers:
-- Does each app give us a URL, or only text with the link inside it?
-- Can the extension fetch pages? This decides whether it can call our backend directly.
-- Does "Save to app" open the main app with the record intact?
+- **Fetching:** the extension can reach the network, so it can call our backend directly.
+- **Handoff:** "Save to app" opens the main app with the record intact.
+- **Finding it in the share sheet is slow.** It sat at the bottom of the "More" list. iOS doesn't let an app pin itself, so the fix is a one-time setup step: More → Edit → add it to Favorites, which puts it at the front of the row. iOS also moves frequently used targets forward on its own.
+- **Paywalls:** the extension receives only the URL, not the page. A backend fetch won't have the user's Safari login, so subscriber articles need the extension to capture the page itself, using a JavaScript preprocessing file that runs inside Safari's page. That's the separate "Safari paywall capture" spike.

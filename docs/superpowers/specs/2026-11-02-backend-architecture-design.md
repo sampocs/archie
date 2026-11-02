@@ -3,7 +3,7 @@
 This is the reference document for decisions that span the whole backend. The building happens in milestones (see the Roadmap at the end), and each milestone gets its own spec, plan and build. If this doc and a milestone spec disagree, the milestone spec wins for that milestone and this doc gets updated.
 
 It builds on:
-- `2026-10-26-product-scope.md` (what Archie does)
+- `2026-10-26-product-scope.md` (what Archie does; the single source of truth for product behavior. This doc only covers how it is built)
 - `2026-10-26-derisk-findings.md` (spike results)
 - `2026-10-29-ux-and-brand-design.md` (screens and brand)
 
@@ -152,14 +152,6 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - deleting your account in the app, which removes all of that user's data
   - a privacy policy page on archiesecondbrain.com
   - a test login for Apple's reviewers, through a whitelisted reviewer account
-
-## Product scope changes
-
-These were decided in this discussion and change `2026-10-26-product-scope.md`:
-
-- **Review:** after the due cards are done, the user can keep going by reviewing ahead or practicing a topic or source.
-- **Chat:** includes web search.
-- **Users:** Archie is built for many users and published on the App Store. The owner is the primary user.
 
 ## Testing
 

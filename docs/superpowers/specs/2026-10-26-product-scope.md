@@ -21,7 +21,7 @@ The core problem is **integration, not consumption**. Carl turns what I already 
 - **App-first, with chat inside it.** Structured screens for reviewing and browsing, plus chat for questions.
 - **Foundations over facts.** Background knowledge (primers) matters more than one-off facts from an episode.
 - **Calm.** One notification a day at most. Nothing should feel like homework.
-- **Personal tool.** Built for one user. No growth or onboarding concerns.
+- **Built for me, publishable to others.** I'm the main user. It ships on the App Store because TestFlight builds expire. Other people can sign in with Google or Apple, but only whitelisted emails use my API keys, and everyone else brings their own. Onboarding friction for other users is acceptable. (Decided 2026-11-02.)
 - **One reading voice.** Everything Carl writes (summaries, primers, Pulse, chat, card explanations) uses one style tuned to what I find easiest to read.
 
 ## Getting content in
@@ -86,10 +86,14 @@ The same Finished / Queue flow as the share sheet, for pasting links or searchin
 - Swiping a card away as "don't care" removes it and teaches Carl what not to generate.
 - **Spaced repetition** (e.g. FSRS) schedules cards from my answers. Fast, correct answers mean I see the card less often.
 - **Order within a session**: foundation cards from primers first, then mechanisms, then rough numbers. Trivia is avoided.
+- **Keep going past today**: once the due cards are done, I can review ahead or practice a topic or source.
+- **Works offline**: reviews, reading and capture all work without signal, for example on a plane, and sync when I'm back online.
 
 ### Carl (chat)
 - Ask about anything in the library, including unread inbox items. Answers cite sources.
 - Explains things in plain language and adds context ("is $400B a lot?").
+- **Library first, then background, then the web.** Answers come from my library where possible, fill gaps from general knowledge, and search the web when needed (recent events, fast-changing facts) or when I ask ("look it up," or a toggle). Each part is labeled: *your library* / *background* / *web*, with links.
+- **Edit through chat**: e.g. "remove this bullet from the summary." Edits create a new version, so the original is always kept and can be restored.
 - Turns any answer into a card.
 - Can be opened from any primer or item page, already knowing what I'm looking at.
 
@@ -133,7 +137,7 @@ The goal is to know the water-cooler topics in about 2 minutes, without reading 
 - **Knowledge scores and tier labels** (Foreign / Familiar / Conversational per topic). Concepts are captured now so scoring can be added later.
 - **Growth vs. interest focus pins.**
 - **Card selection for very large decks** (thousands of cards) beyond standard spaced repetition.
-- Web or desktop clients.
+- Web or desktop clients, and Obsidian. A one-way markdown export could come later if I want a desktop view.
 
 ## Roadmap
 

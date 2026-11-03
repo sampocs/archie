@@ -177,7 +177,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.40" },
+    { name = "anthropic", specifier = ">=2.4" },
     { name = "archie-db", editable = "packages/archie-db" },
     { name = "archie-shared", editable = "packages/archie-shared" },
     { name = "httpx", specifier = ">=0.28.1" },

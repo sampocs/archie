@@ -7,7 +7,7 @@ dependencies = [
   "archie-shared",
   "archie-db",
   "httpx>=0.28.1",
-  "anthropic>=0.40",
+  "anthropic>=2.4",
 ]
 
 [project.scripts]

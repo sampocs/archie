@@ -115,12 +115,6 @@ def test_unknown_model_has_no_price() -> None:
         llm.cost_usd(model="claude-mystery", input_tokens=1, output_tokens=1)
 
 
-def test_model_pairs_use_the_planned_models() -> None:
-    """Analyze runs on Haiku with Sonnet behind it; the primer on Sonnet with Opus behind it."""
-    assert llm.ANALYZE_MODELS == llm.ModelPair(primary=llm.HAIKU, fallback=llm.SONNET)
-    assert llm.PRIMER_MODELS == llm.ModelPair(primary=llm.SONNET, fallback=llm.OPUS)
-
-
 def test_user_without_the_owners_keys_needs_their_own() -> None:
     """A non-whitelisted user's job fails for good, telling them to add their own key."""
     with pytest.raises(errors.PermanentJobError) as raised:

@@ -214,6 +214,38 @@ def test_x_falls_back_to_vxtwitter_when_fxtwitter_fails(
     assert _job(engine, models.JobKind.FETCH_CONTENT).status == models.JobStatus.DONE
 
 
+def test_x_falls_back_to_vxtwitter_when_fxtwitter_answers_something_that_is_not_json(
+    engine: sqlalchemy.Engine, replay: Replay, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A recorded 200 HTML body from fxtwitter is not a thread, so vxtwitter's post is stored instead."""
+    monkeypatch.setattr(x, "FXTWITTER_THREAD_URL", "https://httpbin.org/html?post={post_id}")
+    source_id = _add_source(engine, url=SAMA_THREAD_URL, kind=models.SourceKind.X)
+
+    with replay("x_fxtwitter_not_json") as cassette:
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert cassette.play_count == 2
+    text = _only_artifact(engine, source_id).content["text"]
+    assert text.startswith("looking up at the stars with extra awe tonight.")
+    assert _job(engine, models.JobKind.FETCH_CONTENT).status == models.JobStatus.DONE
+
+
+def test_x_falls_back_to_vxtwitter_when_fxtwitter_json_has_the_wrong_shape(
+    engine: sqlalchemy.Engine, replay: Replay, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A recorded 200 JSON body without a `status` post is not a thread, so vxtwitter's post is stored instead."""
+    monkeypatch.setattr(x, "FXTWITTER_THREAD_URL", "https://httpbin.org/json?post={post_id}")
+    source_id = _add_source(engine, url=SAMA_THREAD_URL, kind=models.SourceKind.X)
+
+    with replay("x_fxtwitter_wrong_shape") as cassette:
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert cassette.play_count == 2
+    text = _only_artifact(engine, source_id).content["text"]
+    assert text.startswith("looking up at the stars with extra awe tonight.")
+    assert _job(engine, models.JobKind.FETCH_CONTENT).status == models.JobStatus.DONE
+
+
 def test_an_x_source_with_an_unparseable_url_fails_for_good(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """No post id means nothing to fetch (and no request): the job fails once with the text-missing reason."""
     source_id = _add_source(engine, url="https://x.com/sama", kind=models.SourceKind.X)
@@ -235,6 +267,21 @@ def test_a_server_error_from_the_page_is_retried(engine: sqlalchemy.Engine, repl
     job = _job(engine, models.JobKind.FETCH_CONTENT)
     assert (job.attempts, job.status) == (1, models.JobStatus.QUEUED)
     assert _source(engine, source_id).processing == models.ProcessingStatus.PROCESSING
+
+
+@pytest.mark.parametrize("status", [401, 403, 404, 410, 451])
+def test_a_blocked_or_missing_page_fails_for_good_without_a_retry(
+    engine: sqlalchemy.Engine, replay: Replay, status: int
+) -> None:
+    """A paywall, block or missing page is not retried: one attempt, then the source fails as text-missing."""
+    source_id = _add_source(engine, url=f"https://httpbin.org/status/{status}", kind=models.SourceKind.ARTICLE)
+
+    with replay(f"page_status_{status}"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    job = _job(engine, models.JobKind.FETCH_CONTENT)
+    assert (job.attempts, job.status) == (1, models.JobStatus.FAILED)
+    assert _source(engine, source_id).processing_error == errors.FailureReason.TEXT_MISSING
 
 
 def test_a_source_deleted_before_the_job_runs_is_left_alone(engine: sqlalchemy.Engine, replay: Replay) -> None:

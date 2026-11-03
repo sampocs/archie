@@ -1,8 +1,9 @@
 """`fetch_content`: get a source's readable text, store it as a `text` artifact, and queue analyze and primer.
 
 The text comes from the Safari capture when the phone sent one, else from the X thread (for X posts) or
-the fetched page (for articles). Too little text fails the job at once as `TEXT_MISSING`, since fetching
-the same page again will not help; the user is told to share it from Safari instead. Following the loop's
+the fetched page (for articles). Too little text, or a page that answers 401, 403, 404, 410 or 451 (a
+paywall, block or missing page), fails the job at once as `TEXT_MISSING`, since fetching the same page
+again will not help; the user is told to share it from Safari instead. Other failures are retried. Following the loop's
 handler contract, the source is read and marked `processing` in a committed transaction before any
 outside call, and the result is written under the user's lock afterwards.
 """
@@ -12,6 +13,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
+import httpx
 import sqlalchemy.orm
 from archie_db import changes, models, pipeline
 from archie_shared import logging, urls
@@ -25,6 +27,8 @@ _PAGE_MAX_BYTES = 5_000_000
 _MIN_ARTICLE_WORDS = 50
 _MIN_X_WORDS = 1
 _MAX_TITLE_LENGTH = 500
+# Page statuses that mean "paywalled, blocked or gone"; a retry cannot fix them, sharing from Safari can.
+_PERMANENT_PAGE_STATUSES = frozenset({401, 403, 404, 410, 451})
 # Postgres text columns reject NUL, so a page containing one would fail the job forever.
 _NUL = "\x00"
 
@@ -116,9 +120,16 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
             raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING)
         return x.fetch_thread(post_id=post_id)
 
-    page = fetch_title.fetch_page(
-        url=source_input.url, timeout_seconds=_PAGE_TIMEOUT_SECONDS, max_bytes=_PAGE_MAX_BYTES
-    )
+    try:
+        page = fetch_title.fetch_page(
+            url=source_input.url, timeout_seconds=_PAGE_TIMEOUT_SECONDS, max_bytes=_PAGE_MAX_BYTES
+        )
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code not in _PERMANENT_PAGE_STATUSES:
+            raise
+        _logger.info("Source %s page answered %d", source_input.source_id, error.response.status_code)
+        raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING) from error
+
     return article.extract(html=page, url=source_input.url) or content.ExtractedText(title=None, text="")
 
 

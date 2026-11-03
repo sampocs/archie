@@ -2,6 +2,7 @@
 
 import threading
 import uuid
+from typing import Any
 
 import httpx
 import pytest
@@ -16,7 +17,7 @@ PAGE_SIZE = 500
 BATCH_SIZE = 50
 
 
-def _add_source(url: str, *, action_id: uuid.UUID | None = None, intent: str = "queue") -> dict[str, object]:
+def _add_source(url: str, *, action_id: uuid.UUID | None = None, intent: str = "queue") -> dict[str, Any]:
     return {
         "id": str(action_id or uuid.uuid4()),
         "type": "add_source",
@@ -31,8 +32,8 @@ def _push_sources(authed: httpx.Client, *, count: int) -> None:
         authed.post("/sync/push", json={"actions": actions}).raise_for_status()
 
 
-def _pull_all_pages(authed: httpx.Client) -> list[dict[str, object]]:
-    pages: list[dict[str, object]] = []
+def _pull_all_pages(authed: httpx.Client) -> list[dict[str, Any]]:
+    pages: list[dict[str, Any]] = []
     position, more = 0, True
     while more:
         page = authed.get("/sync/pull", params={"since": position}).json()

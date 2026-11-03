@@ -17,6 +17,7 @@ class ActionType(StrEnum):
     """The actions a phone can push."""
 
     ADD_SOURCE = "add_source"
+    RETRY_SOURCE = "retry_source"
 
 
 class ActionIn(pydantic.BaseModel):
@@ -58,8 +59,44 @@ class SourceOut(pydantic.BaseModel):
     kind: str
     state: str
     intent: str
+    processing: str
+    processing_error: str | None
+    reaction: str | None
+    note: str | None
+    prep_me: bool
+    merged_into_id: uuid.UUID | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
+    deleted_at: datetime.datetime | None
+    change_seq: int
+
+
+class ArtifactOut(pydantic.BaseModel):
+    """A generated summary or primer version as the phone stores it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    source_id: uuid.UUID
+    kind: str
+    version: int
+    content: dict[str, Any]
+    is_current: bool
+    created_at: datetime.datetime
+    change_seq: int
+
+
+class CardOut(pydantic.BaseModel):
+    """A spaced-repetition card as the phone stores it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    source_id: uuid.UUID
+    kind: str
+    question: str
+    answer: str
+    created_at: datetime.datetime
     deleted_at: datetime.datetime | None
     change_seq: int
 
@@ -68,6 +105,8 @@ class PulledRows(pydantic.BaseModel):
     """Changed rows by table."""
 
     sources: list[SourceOut]
+    artifacts: list[ArtifactOut]
+    cards: list[CardOut]
 
 
 class PullResponse(pydantic.BaseModel):

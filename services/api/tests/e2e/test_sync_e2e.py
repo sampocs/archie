@@ -17,12 +17,46 @@ PAGE_SIZE = 500
 BATCH_SIZE = 50
 
 
-def _add_source(url: str, *, action_id: uuid.UUID | None = None, intent: str = "queue") -> dict[str, Any]:
+def _add_source(url: str, *, action_id: uuid.UUID | None = None, intent: str = "queue", **extra: Any) -> dict[str, Any]:
     return {
         "id": str(action_id or uuid.uuid4()),
         "type": "add_source",
-        "payload": {"id": str(uuid.uuid4()), "url": url, "intent": intent},
+        "payload": {"id": str(uuid.uuid4()), "url": url, "intent": intent, **extra},
     }
+
+
+def _retry_source(source_id: str) -> dict[str, Any]:
+    return {"id": str(uuid.uuid4()), "type": "retry_source", "payload": {"id": source_id}}
+
+
+def _push(authed: httpx.Client, *actions: dict[str, Any]) -> list[dict[str, Any]]:
+    response = authed.post("/sync/push", json={"actions": list(actions)})
+    response.raise_for_status()
+    return response.json()["results"]
+
+
+def _pull_sources(authed: httpx.Client) -> dict[str, dict[str, Any]]:
+    """Every source the caller can pull, by id."""
+    rows = authed.get("/sync/pull", params={"since": 0}).json()["rows"]["sources"]
+    return {row["id"]: row for row in rows}
+
+
+def _queued_jobs(live_stack: LiveStack) -> list[tuple[str, dict[str, Any]]]:
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        return [(job.kind, job.payload) for job in db.scalars(sqlalchemy.select(models.Job).order_by(models.Job.id))]
+
+
+def _set_processing(live_stack: LiveStack, *, source_id: str, processing: str, deleted: bool = False) -> None:
+    """Put a source in a pipeline state the API alone can't reach (the worker would normally do this)."""
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        source = db.get(models.Source, uuid.UUID(source_id))
+        assert source is not None
+        source.processing = processing
+        if deleted:
+            source.deleted_at = sqlalchemy.func.now()
+        db.commit()
 
 
 def _push_sources(authed: httpx.Client, *, count: int) -> None:
@@ -56,19 +90,340 @@ def test_added_source_comes_back_in_a_pull(live_stack: LiveStack) -> None:
     assert pulled["position"] > 0
 
 
-def test_an_added_source_gets_a_title_job_and_a_finished_one_is_consumed(live_stack: LiveStack) -> None:
-    """Each applied add_source enqueues fetch_title in the same transaction; intent finished starts consumed."""
+def test_an_article_url_starts_pending_with_a_fetch_content_job(live_stack: LiveStack) -> None:
+    """An article or X link is classified, left pending, and queued for fetch_content (not fetch_title)."""
+    authed = live_stack.authed(live_stack.sign_in())
+    article = _add_source("https://example.com/a")
+    post = _add_source("https://twitter.com/naval/status/123")
+
+    _push(authed, article, post)
+    sources = _pull_sources(authed)
+
+    article_row, post_row = sources[article["payload"]["id"]], sources[post["payload"]["id"]]
+    assert (article_row["kind"], article_row["processing"], article_row["state"]) == ("article", "pending", "queued")
+    assert (post_row["kind"], post_row["processing"]) == ("x", "pending")
+    assert _queued_jobs(live_stack) == [
+        ("fetch_content", {"source_id": article["payload"]["id"]}),
+        ("fetch_content", {"source_id": post["payload"]["id"]}),
+    ]
+
+
+@pytest.mark.parametrize(
+    ("url", "kind"),
+    [("https://www.youtube.com/watch?v=abc", "youtube"), ("https://open.spotify.com/episode/abc", "podcast")],
+)
+def test_a_youtube_or_podcast_url_is_unsupported_and_only_gets_a_title(
+    live_stack: LiveStack, url: str, kind: str
+) -> None:
+    """Video and audio links aren't processed yet: they're marked unsupported and just fetch their title."""
+    authed = live_stack.authed(live_stack.sign_in())
+    action = _add_source(url)
+
+    _push(authed, action)
+    row = _pull_sources(authed)[action["payload"]["id"]]
+
+    assert (row["kind"], row["processing"]) == (kind, "unsupported")
+    assert _queued_jobs(live_stack) == [("fetch_title", {"source_id": action["payload"]["id"]})]
+
+
+def test_a_finished_source_starts_consumed(live_stack: LiveStack) -> None:
+    """Intent finished starts the source consumed."""
     authed = live_stack.authed(live_stack.sign_in())
     action = _add_source("https://example.com/a", intent="finished")
 
-    authed.post("/sync/push", json={"actions": [action]})
-    pulled = authed.get("/sync/pull", params={"since": 0}).json()
+    _push(authed, action)
+
+    assert _pull_sources(authed)[action["payload"]["id"]]["state"] == "consumed"
+
+
+def test_reaction_note_and_prep_me_are_stored_and_synced(live_stack: LiveStack) -> None:
+    """Optional fields reach the row and the pull: reaction on a finished capture, prep_me on a queued one."""
+    authed = live_stack.authed(live_stack.sign_in())
+    finished = _add_source("https://example.com/a", intent="finished", reaction="mostly", note="good")
+    queued = _add_source("https://example.com/b", prep_me=True)
+
+    _push(authed, finished, queued)
+    sources = _pull_sources(authed)
+
+    finished_row, queued_row = sources[finished["payload"]["id"]], sources[queued["payload"]["id"]]
+    assert (finished_row["reaction"], finished_row["note"], finished_row["prep_me"]) == ("mostly", "good", False)
+    assert (queued_row["reaction"], queued_row["prep_me"]) == (None, True)
+    assert (finished_row["processing_error"], finished_row["merged_into_id"]) == (None, None)
+
+
+def test_a_capture_is_stored_for_the_pipeline(live_stack: LiveStack) -> None:
+    """A Safari capture lands in source_captures and is never part of the pull."""
+    authed = live_stack.authed(live_stack.sign_in())
+    action = _add_source("https://example.com/a", capture={"title": "T", "text": "body text"})
+
+    _push(authed, action)
 
     engine = session.engine_for(live_stack.database_url)
     with sqlalchemy.orm.Session(engine) as db:
-        job_payloads = [(job.kind, job.payload) for job in db.scalars(sqlalchemy.select(models.Job))]
-    assert job_payloads == [("fetch_title", {"source_id": action["payload"]["id"]})]
-    assert pulled["rows"]["sources"][0]["state"] == "consumed"
+        capture = db.get(models.SourceCapture, uuid.UUID(action["payload"]["id"]))
+        assert capture is not None
+        assert (capture.title, capture.text) == ("T", "body text")
+    assert "capture" not in _pull_sources(authed)[action["payload"]["id"]]
+
+
+def test_a_capture_without_a_title_is_stored(live_stack: LiveStack) -> None:
+    """The capture title is optional."""
+    authed = live_stack.authed(live_stack.sign_in())
+    action = _add_source("https://example.com/a", capture={"text": "body text"})
+
+    assert _push(authed, action)[0]["result"] == "applied"
+
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        capture = db.get(models.SourceCapture, uuid.UUID(action["payload"]["id"]))
+        assert capture is not None and capture.title is None
+
+
+@pytest.mark.parametrize(
+    ("extra", "intent", "reason"),
+    [
+        ({"reaction": "great"}, "finished", "reaction must be easy, mostly or lost"),
+        ({"reaction": "easy"}, "queue", "reaction needs intent finished"),
+        ({"prep_me": True}, "finished", "prep_me needs intent queue"),
+        ({"note": "x" * 2001}, "queue", "note is longer than 2000 characters"),
+        ({"capture": {"text": ""}}, "queue", "capture text is empty"),
+        ({"capture": {"text": "  \n"}}, "queue", "capture text is empty"),
+        ({"capture": {"text": "x" * 400_001}}, "queue", "capture text is longer than 400000 characters"),
+        ({"capture": {"text": "ok", "title": "x" * 501}}, "queue", "capture title is longer than 500 characters"),
+        ({"capture": {"title": "no text"}}, "queue", "payload needs id, url and intent"),
+        ({"note": 5}, "queue", "payload needs id, url and intent"),
+    ],
+)
+def test_each_invalid_capture_field_is_rejected_with_its_reason(
+    live_stack: LiveStack, extra: dict[str, Any], intent: str, reason: str
+) -> None:
+    """Every validation rule rejects with a specific reason and leaves nothing behind."""
+    authed = live_stack.authed(live_stack.sign_in())
+
+    result = _push(authed, _add_source("https://example.com/a", intent=intent, **extra))[0]
+
+    assert (result["result"], result["reason"]) == ("rejected", reason)
+    assert _pull_sources(authed) == {}
+    assert _queued_jobs(live_stack) == []
+
+
+def test_boundary_values_are_accepted(live_stack: LiveStack) -> None:
+    """A 2,000-character note, a 400,000-character capture and a 500-character title are all allowed."""
+    authed = live_stack.authed(live_stack.sign_in())
+    action = _add_source("https://example.com/a", note="x" * 2000, capture={"text": "x" * 400_000, "title": "x" * 500})
+
+    assert _push(authed, action)[0]["result"] == "applied"
+
+
+def test_a_duplicate_url_merges_into_the_existing_source(live_stack: LiveStack) -> None:
+    """The same page shared again (tracking noise aside) is stored deleted and folded into the original."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    before = _pull_sources(authed)[original["payload"]["id"]]
+
+    duplicate = _add_source("https://example.com/a/?utm_source=x", intent="finished", reaction="lost", note="n")
+    result = _push(authed, duplicate)[0]
+    sources = _pull_sources(authed)
+
+    merged_row, kept = sources[duplicate["payload"]["id"]], sources[original["payload"]["id"]]
+    assert result["result"] == "applied"
+    assert merged_row["deleted_at"] is not None
+    assert merged_row["merged_into_id"] == original["payload"]["id"]
+    assert (kept["state"], kept["intent"]) == ("consumed", "finished")
+    assert (kept["reaction"], kept["note"]) == ("lost", "n")
+    assert kept["deleted_at"] is None and kept["merged_into_id"] is None
+    assert kept["change_seq"] > before["change_seq"]
+    assert len({kept["change_seq"], merged_row["change_seq"], before["change_seq"]}) == 3
+    # The duplicate starts no second pipeline run.
+    assert _queued_jobs(live_stack) == [("fetch_content", {"source_id": original["payload"]["id"]})]
+
+
+def test_a_duplicate_never_moves_a_source_backwards(live_stack: LiveStack) -> None:
+    """Re-sharing a finished source as queue leaves it consumed and finished; absent fields don't overwrite."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a", intent="finished", reaction="easy", note="keep", prep_me=False)
+    _push(authed, original)
+
+    _push(authed, _add_source("https://example.com/a", intent="queue", prep_me=True))
+    kept = _pull_sources(authed)[original["payload"]["id"]]
+
+    assert (kept["state"], kept["intent"]) == ("consumed", "finished")
+    assert (kept["reaction"], kept["note"], kept["prep_me"]) == ("easy", "keep", True)
+
+
+def test_a_duplicate_does_not_advance_a_source_the_user_is_already_reading(live_stack: LiveStack) -> None:
+    """Only queued moves to consumed; an inbox source keeps its state when re-shared as finished."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        source = db.get(models.Source, uuid.UUID(original["payload"]["id"]))
+        assert source is not None
+        source.state = "inbox"
+        db.commit()
+
+    _push(authed, _add_source("https://example.com/a", intent="finished"))
+
+    assert _pull_sources(authed)[original["payload"]["id"]]["state"] == "inbox"
+
+
+def test_a_duplicate_stores_a_capture_only_when_the_source_has_none(live_stack: LiveStack) -> None:
+    """The first capture wins; a later duplicate's capture is dropped."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    source_id = uuid.UUID(original["payload"]["id"])
+    engine = session.engine_for(live_stack.database_url)
+
+    _push(authed, _add_source("https://example.com/a?utm_medium=y", capture={"text": "first"}))
+    _push(authed, _add_source("https://example.com/a?utm_medium=z", capture={"text": "second"}))
+
+    with sqlalchemy.orm.Session(engine) as db:
+        capture = db.get(models.SourceCapture, source_id)
+        assert capture is not None and capture.text == "first"
+
+
+def test_a_duplicate_of_a_failed_source_restarts_it(live_stack: LiveStack) -> None:
+    """Sharing a failed article again is a retry: processing restarts and the steps are queued once more."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing="failed")
+
+    _push(authed, _add_source("https://example.com/a?utm_source=x"))
+
+    assert _pull_sources(authed)[original["payload"]["id"]]["processing"] == "processing"
+    assert _queued_jobs(live_stack) == [("fetch_content", {"source_id": original["payload"]["id"]})] * 2
+
+
+def test_a_duplicate_of_a_ready_source_does_not_reprocess_it(live_stack: LiveStack) -> None:
+    """Only failed sources restart; a ready one keeps its processing status and gets no jobs."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing="ready")
+
+    _push(authed, _add_source("https://example.com/a?utm_source=x"))
+
+    assert _pull_sources(authed)[original["payload"]["id"]]["processing"] == "ready"
+    assert len(_queued_jobs(live_stack)) == 1
+
+
+def test_a_deleted_source_is_not_a_duplicate_target(live_stack: LiveStack) -> None:
+    """Sharing a URL whose earlier source was deleted creates a fresh source."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing="ready", deleted=True)
+
+    fresh = _add_source("https://example.com/a")
+    _push(authed, fresh)
+
+    row = _pull_sources(authed)[fresh["payload"]["id"]]
+    assert (row["deleted_at"], row["merged_into_id"]) == (None, None)
+
+
+def test_another_users_source_is_not_a_duplicate_target(live_stack: LiveStack) -> None:
+    """Duplicate detection is per user."""
+    first = live_stack.authed(live_stack.sign_in(apple_sub="user-a"))
+    second = live_stack.authed(live_stack.sign_in(apple_sub="user-b"))
+    _push(first, _add_source("https://example.com/a"))
+
+    mine = _add_source("https://example.com/a")
+    _push(second, mine)
+
+    assert _pull_sources(second)[mine["payload"]["id"]]["merged_into_id"] is None
+
+
+def test_retry_source_restarts_a_failed_source_from_fetching(live_stack: LiveStack) -> None:
+    """A failed source with no text goes back to processing and queues fetch_content."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing="failed")
+    before = _pull_sources(authed)[original["payload"]["id"]]
+
+    result = _push(authed, _retry_source(original["payload"]["id"]))[0]
+    row = _pull_sources(authed)[original["payload"]["id"]]
+
+    assert result["result"] == "applied"
+    assert (row["processing"], row["processing_error"]) == ("processing", None)
+    assert row["change_seq"] > before["change_seq"]
+    assert _queued_jobs(live_stack)[1:] == [("fetch_content", {"source_id": original["payload"]["id"]})]
+
+
+def test_retry_source_skips_fetching_when_the_text_exists(live_stack: LiveStack) -> None:
+    """With the text already stored, a retry queues only the generation steps that have no output."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    source_id = uuid.UUID(original["payload"]["id"])
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing="failed")
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, authed.get("/me").json()["user_id"])
+        db.add(_artifact(db, source_id=source_id, kind="text", version=1))
+        db.commit()
+
+    _push(authed, _retry_source(original["payload"]["id"]))
+
+    assert _queued_jobs(live_stack)[1:] == [
+        ("analyze", {"source_id": original["payload"]["id"]}),
+        ("primer", {"source_id": original["payload"]["id"]}),
+    ]
+
+
+@pytest.mark.parametrize("processing", ["ready", "pending", "processing", "unsupported"])
+def test_retry_source_is_rejected_unless_the_source_failed(live_stack: LiveStack, processing: str) -> None:
+    """Only a failed source can be retried; any other status is rejected and queues nothing."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing=processing)
+
+    result = _push(authed, _retry_source(original["payload"]["id"]))[0]
+
+    assert (result["result"], result["reason"]) == ("rejected", "source is not failed")
+    assert len(_queued_jobs(live_stack)) == 1
+
+
+def test_retry_source_is_rejected_for_a_deleted_source(live_stack: LiveStack) -> None:
+    """A deleted source can't be retried even if its processing failed."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing="failed", deleted=True)
+
+    result = _push(authed, _retry_source(original["payload"]["id"]))[0]
+
+    assert (result["result"], result["reason"]) == ("rejected", "source is not failed")
+
+
+def test_retry_source_is_rejected_for_another_users_source_and_unknown_ids(live_stack: LiveStack) -> None:
+    """Retrying someone else's failed source, or an id that doesn't exist, changes nothing."""
+    owner = live_stack.authed(live_stack.sign_in(apple_sub="user-a"))
+    intruder = live_stack.authed(live_stack.sign_in(apple_sub="user-b"))
+    original = _add_source("https://example.com/a")
+    _push(owner, original)
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing="failed")
+
+    results = _push(intruder, _retry_source(original["payload"]["id"]), _retry_source(str(uuid.uuid4())))
+
+    assert [(result["result"], result["reason"]) for result in results] == [("rejected", "source is not failed")] * 2
+    assert _pull_sources(owner)[original["payload"]["id"]]["processing"] == "failed"
+    assert len(_queued_jobs(live_stack)) == 1
+
+
+def test_retry_source_with_a_malformed_payload_is_rejected(live_stack: LiveStack) -> None:
+    """A retry without a valid id is rejected with a reason, not a 500."""
+    authed = live_stack.authed(live_stack.sign_in())
+    action = {"id": str(uuid.uuid4()), "type": "retry_source", "payload": {"id": "not-a-uuid"}}
+
+    result = _push(authed, action)[0]
+
+    assert (result["result"], result["reason"]) == ("rejected", "payload needs id")
 
 
 def test_a_retried_action_is_applied_once(live_stack: LiveStack) -> None:
@@ -348,3 +703,99 @@ def test_a_pull_of_exactly_one_page_ends_with_an_empty_page(live_stack: LiveStac
 
     assert [(len(page["rows"]["sources"]), page["more"]) for page in pages] == [(PAGE_SIZE, True), (0, False)]
     assert pages[1]["position"] == pages[0]["position"]
+
+
+def _artifact(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID, kind: str, version: int) -> models.SourceArtifact:
+    source = db.get(models.Source, source_id)
+    assert source is not None
+    return models.SourceArtifact(
+        id=uuid.uuid4(),
+        user_id=source.user_id,
+        source_id=source_id,
+        kind=kind,
+        version=version,
+        content={"text": "t"},
+        is_current=version == 1,
+        change_seq=db.execute(sqlalchemy.select(changes.next_change_seq())).scalar_one(),
+    )
+
+
+def test_pull_pages_across_sources_artifacts_and_cards(live_stack: LiveStack) -> None:
+    """With changed rows in all three tables, pages hold 500 rows in total and every row appears exactly once."""
+    authed = live_stack.authed(live_stack.sign_in())
+    user_id = authed.get("/me").json()["user_id"]
+    engine = session.engine_for(live_stack.database_url)
+    expected: set[str] = set()
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+
+        def next_seq() -> int:
+            return db.execute(sqlalchemy.select(changes.next_change_seq())).scalar_one()
+
+        # Interleaved so every page boundary cuts through all three tables.
+        for index in range(220):
+            source = models.Source(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                url=f"https://example.com/{index}",
+                normalized_url=f"https://example.com/{index}",
+                kind="article",
+                state="queued",
+                intent="queue",
+                change_seq=next_seq(),
+            )
+            artifact = models.SourceArtifact(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                source_id=source.id,
+                kind="summary",
+                version=1,
+                content={"headline": str(index)},
+                is_current=True,
+                change_seq=next_seq(),
+            )
+            card = models.Card(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                source_id=source.id,
+                artifact_id=artifact.id,
+                kind="concept",
+                question="q",
+                answer="a",
+                change_seq=next_seq(),
+            )
+            db.add(source)
+            db.flush()
+            db.add(artifact)
+            db.flush()
+            db.add(card)
+            expected |= {str(source.id), str(artifact.id), str(card.id)}
+        # Text artifacts are server-only: they take a position but must never be pulled.
+        db.flush()
+        text_source = db.scalars(sqlalchemy.select(models.Source)).first()
+        assert text_source is not None
+        db.add(_artifact(db, source_id=text_source.id, kind="text", version=1))
+        db.commit()
+
+    pages = _pull_all_pages(authed)
+
+    row_ids = [
+        row["id"] for page in pages for table in ("sources", "artifacts", "cards") for row in page["rows"][table]
+    ]
+    page_sizes = [sum(len(rows) for rows in page["rows"].values()) for page in pages]
+    positions = [page["position"] for page in pages]
+    assert page_sizes == [PAGE_SIZE, 160]
+    assert len(row_ids) == 660 and set(row_ids) == expected
+    assert positions == sorted(positions)
+    assert [page["more"] for page in pages] == [True, False]
+    first_artifact = next(row for page in pages for row in page["rows"]["artifacts"])
+    assert set(first_artifact) == {
+        "id",
+        "source_id",
+        "kind",
+        "version",
+        "content",
+        "is_current",
+        "created_at",
+        "change_seq",
+    }

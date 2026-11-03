@@ -1,0 +1,26 @@
+appId: com.sampocs.archie
+---
+# example.com/ (not a made-up path: example.com now 404s those) so the worker can read a real title later.
+- tapOn:
+    id: "tab-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://example.com/"
+- tapOn:
+    id: "add-queue"
+# The backend is down, so the push fails and the change is held locally.
+- extendedWaitUntil:
+    visible: ".*1 change waiting.*"
+    timeout: 30000

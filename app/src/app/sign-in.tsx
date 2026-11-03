@@ -31,6 +31,7 @@ export default function SignIn() {
         buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
         cornerRadius={theme.radii.button}
         style={styles.button}
+        testID="apple-sign-in"
         onPress={onPress}
       />
       {error ? <Text tone="ink2">{error}</Text> : null}

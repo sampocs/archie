@@ -25,9 +25,14 @@ def _commit_count_after_auth(migrated_database_url: str, *, stale: bool, monkeyp
             db.execute(sqlalchemy.update(models.Session).values(last_used_at=stale_at))
         db.commit()
 
-        commits: list[None] = []
+        commits: list[bool] = []
         real_commit = db.commit
-        monkeypatch.setattr(db, "commit", lambda: (commits.append(None), real_commit())[1])
+
+        def counting_commit() -> None:
+            commits.append(True)
+            real_commit()
+
+        monkeypatch.setattr(db, "commit", counting_commit)
 
         assert deps.current_user(db=db, raw_key=raw_key).apple_sub == "commits"
         if stale:

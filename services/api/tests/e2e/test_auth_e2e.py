@@ -17,6 +17,15 @@ def test_a_valid_session_key_is_accepted(live_stack: LiveStack) -> None:
     assert second.json() == first.json()
 
 
+def test_the_bearer_scheme_is_case_insensitive(live_stack: LiveStack) -> None:
+    """RFC 7235 auth schemes are case-insensitive, so `bearer <key>` signs in too."""
+    session_key = live_stack.sign_in()
+
+    response = live_stack.client.get("/me", headers={"Authorization": f"bearer {session_key}"})
+
+    assert response.status_code == 200
+
+
 def test_requests_without_a_session_key_are_rejected(live_stack: LiveStack) -> None:
     """A protected route returns 401 with no header, a non-Bearer scheme, a token-less Bearer, and an unknown key."""
     session_key = live_stack.sign_in()

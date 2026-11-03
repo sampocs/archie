@@ -23,7 +23,7 @@ class ConfigError(RuntimeError):
 
 
 class ArchieEnv(StrEnum):
-    """Which deployment this process runs as; test-only routes exist everywhere but `PROD`."""
+    """Which deployment this process runs as; test-only routes need `DEV` or `TEST` set explicitly."""
 
     PROD = "prod"
     DEV = "dev"

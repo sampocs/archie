@@ -14,7 +14,7 @@ from sqlalchemy import orm
 
 from archie_api.auth import sessions
 
-_BEARER_PREFIX = "Bearer "
+_BEARER_SCHEME = "bearer"
 
 # Built on first use, not at import, so tests can point each live stack at its own database.
 _engine: sqlalchemy.Engine | None = None
@@ -47,13 +47,14 @@ def get_db() -> Iterator[orm.Session]:
 
 def current_session_key(authorization: Annotated[str | None, fastapi.Header()] = None) -> str:
     """The raw session key from `Authorization: Bearer <key>`, or 401."""
-    if authorization is None or not authorization.startswith(_BEARER_PREFIX):
+    if authorization is None:
         raise _unauthorized()
 
-    raw_key = authorization.removeprefix(_BEARER_PREFIX).strip()
-    if not raw_key:
+    # Auth schemes are case-insensitive (RFC 7235), so `bearer` is as valid as `Bearer`.
+    scheme, _, raw_key = authorization.strip().partition(" ")
+    if scheme.lower() != _BEARER_SCHEME or not raw_key.strip():
         raise _unauthorized()
-    return raw_key
+    return raw_key.strip()
 
 
 def current_user(
@@ -65,8 +66,10 @@ def current_user(
     if user is None:
         raise _unauthorized()
 
-    # Resolving may refresh `last_used_at`; commit here so that write lands even on a read-only route.
-    db.commit()
+    # Resolving may refresh `last_used_at`; commit only then, so that write lands even on a read-only route
+    # without every request paying a commit and the reload of the expired `user` that follows.
+    if db.dirty:
+        db.commit()
     return user
 
 

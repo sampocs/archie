@@ -23,6 +23,7 @@ import pytest
 import sqlalchemy
 from archie_db import migrate, session
 from archie_shared import config
+from archie_testing import harness
 
 # Every env var carrying a credential, endpoint, or deployment switch. Cleared so a shell-exported
 # value can't leak in.
@@ -41,11 +42,13 @@ NETWORK_REFUSED_MESSAGE = "Tests must not open network connections; replay a rec
 # Tests that need Postgres read this (never DATABASE_URL, which may point at a real database).
 TEST_DATABASE_URL_ENV = "TEST_DATABASE_URL"
 POSTGRES_MARKER = "postgres"
+WORKER_MARKER = "worker"
 
 
 def pytest_configure(config: pytest.Config) -> None:
     """Register the marker for tests that talk to the local test Postgres."""
     config.addinivalue_line("markers", f"{POSTGRES_MARKER}: needs {TEST_DATABASE_URL_ENV} (make db-up)")
+    config.addinivalue_line("markers", f"{WORKER_MARKER}: the live stack also runs the worker loop")
 
 
 @pytest.fixture(autouse=True)
@@ -96,6 +99,20 @@ def migrated_database_url(test_database_url: str) -> Iterator[str]:
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text(f"TRUNCATE {', '.join(_TRUNCATE_TABLES)} RESTART IDENTITY CASCADE"))
     engine.dispose()
+
+
+@pytest.fixture
+def live_stack(
+    request: pytest.FixtureRequest, migrated_database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> Iterator[harness.LiveStack]:
+    """The real API (plus the worker when marked `@pytest.mark.worker`) serving the migrated test database."""
+    # Set before the app builds its lazy engine so it connects to the test database.
+    monkeypatch.setenv(config.DATABASE_URL_ENV, migrated_database_url)
+    monkeypatch.setenv(config.ARCHIE_ENV_ENV, "test")
+
+    start_worker = request.node.get_closest_marker(WORKER_MARKER) is not None
+    with harness.running_stack(database_url=migrated_database_url, start_worker=start_worker) as stack:
+        yield stack
 
 
 def _refuse_network(*args: object, **kwargs: object) -> NoReturn:

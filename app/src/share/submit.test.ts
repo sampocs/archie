@@ -48,6 +48,14 @@ describe("buildShareAction", () => {
 
     expect((payload as { capture: { title: string } }).capture.title).toHaveLength(500);
   });
+
+  it("truncates by code point so an emoji at the boundary is not split", () => {
+    const title = "t".repeat(499) + "😀😀";
+    const { payload } = buildShareAction({ url: "u", choice: queued, capture: { title, text: "x" } });
+
+    expect((payload as { capture: { title: string } }).capture.title).toBe(Array.from(title).slice(0, 500).join(""));
+    expect((payload as { capture: { title: string } }).capture.title).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+  });
 });
 
 describe("submitShare", () => {
@@ -57,6 +65,10 @@ describe("submitShare", () => {
   beforeEach(() => {
     fetchMock.mockReset();
     global.fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
   });
 
   function respond(status: number, body: unknown = {}): void {
@@ -108,7 +120,6 @@ describe("submitShare", () => {
     await jest.advanceTimersByTimeAsync(15_000);
 
     await expect(outcome).resolves.toBe("offline");
-    jest.useRealTimers();
   });
 });
 

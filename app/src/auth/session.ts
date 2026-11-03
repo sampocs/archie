@@ -27,11 +27,16 @@ function subscribe(listener: () => void): () => void {
 
 // Moves an M1 key (stored in the app's own group) into the shared group so the share extension can read it and
 // the owner doesn't sign in again. The legacy item is addressed by its explicit group, not "no group": an
-// ungrouped query also matches the shared item, and deleting that would wipe the copy just made.
+// ungrouped query also matches the shared item, and deleting that would wipe the copy just made. A key already in
+// the shared group is never overwritten; any legacy item left beside it is stale (e.g. a delete that failed earlier)
+// and is removed so it can't be copied back after a sign-out.
 export async function migrateSessionKeyToSharedGroup(): Promise<void> {
-  if (await SecureStore.getItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS)) return;
-
   const legacyKey = await SecureStore.getItemAsync(KEYCHAIN_KEY, LEGACY_OPTIONS);
+  if (await SecureStore.getItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS)) {
+    if (legacyKey) await SecureStore.deleteItemAsync(KEYCHAIN_KEY, LEGACY_OPTIONS);
+    return;
+  }
+
   if (!legacyKey) return;
 
   await SecureStore.setItemAsync(KEYCHAIN_KEY, legacyKey, SHARED_OPTIONS);
@@ -68,6 +73,8 @@ export async function clearSession(): Promise<void> {
   await revokeServerSession(state.sessionKey);
   try {
     await SecureStore.deleteItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS);
+    // A leftover legacy item would otherwise be migrated back into the shared group on the next launch.
+    await SecureStore.deleteItemAsync(KEYCHAIN_KEY, LEGACY_OPTIONS);
     db.transaction((tx) => {
       tx.delete(schema.sources).run();
       tx.delete(schema.outbox).run();

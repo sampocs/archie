@@ -95,7 +95,18 @@ describe("shared Keychain group", () => {
     await migrateSessionKeyToSharedGroup();
 
     expect(mockKeychain.get(SHARED_SLOT)).toBe("new-key");
-    expect(mockKeychain.get(LEGACY_SLOT)).toBe("stale-m1-key");
+    expect(mockKeychain.has(LEGACY_SLOT)).toBe(false);
+  });
+
+  it("a stale legacy key is not migrated back after sign-out", async () => {
+    mockKeychain.set(SHARED_SLOT, "key-1");
+    mockKeychain.set(LEGACY_SLOT, "stale-m1-key");
+
+    await clearSession();
+    await migrateSessionKeyToSharedGroup();
+
+    expect(mockKeychain.has(SHARED_SLOT)).toBe(false);
+    expect(mockKeychain.has(LEGACY_SLOT)).toBe(false);
   });
 
   it("migration does nothing when there is no key anywhere", async () => {
@@ -119,7 +130,7 @@ describe("clearSession", () => {
     await clearSession();
 
     expect(getSessionEpoch()).toBe(before + 1);
-    expect(mockCalls).toEqual(["/auth/logout:key-1", "keychain-delete"]);
+    expect(mockCalls).toEqual(["/auth/logout:key-1", "keychain-delete", "keychain-delete"]);
     expect(mockKeychain.has(SHARED_SLOT)).toBe(false);
     expect(db.select().from(schema.sources).all()).toEqual([]);
     expect(db.select().from(schema.syncState).get()).toMatchObject({ position: 0 });

@@ -19,7 +19,9 @@ appId: com.sampocs.archie
     id: "add-url"
 - inputText: "https://example.com/"
 - tapOn:
-    id: "add-queue"
+    id: "intent-queue"
+- tapOn:
+    id: "add-save"
 # The backend is down, so the push fails and the change is held locally.
 - extendedWaitUntil:
     visible: ".*1 change waiting.*"

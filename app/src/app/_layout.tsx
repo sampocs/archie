@@ -48,6 +48,8 @@ export default function RootLayout() {
           <Stack.Protected guard={session.status === "signedIn"}>
             <Stack.Screen name="index" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="source/[id]" />
+            <Stack.Screen name="share" />
           </Stack.Protected>
         </Stack>
       </SignOutContext.Provider>

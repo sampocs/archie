@@ -1,6 +1,7 @@
 import { desc, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useState } from "react";
+import { useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 
 import { db } from "@/db/client";
@@ -8,6 +9,7 @@ import * as schema from "@/db/schema";
 import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
+import { ProcessingLine } from "@/ui/ProcessingLine";
 import { useTheme } from "@/theme/useTheme";
 
 type SourceRow = typeof schema.sources.$inferSelect;
@@ -30,9 +32,11 @@ export default function LibraryScreen() {
 
 function SourceItem({ source }: { source: SourceRow }) {
   const theme = useTheme();
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
 
   return (
+    <Pressable onPress={() => router.push({ pathname: "/source/[id]", params: { id: source.id } })}>
     <Card testID={`source-${source.id}`} style={{ gap: theme.spacing.sm }}>
       <Text variant="headline" tone={source.title ? "ink" : "ink3"} numberOfLines={2}>
         {source.title ?? source.url}
@@ -66,6 +70,8 @@ function SourceItem({ source }: { source: SourceRow }) {
           {source.syncError}
         </Text>
       ) : null}
+      <ProcessingLine source={source} />
     </Card>
+    </Pressable>
   );
 }

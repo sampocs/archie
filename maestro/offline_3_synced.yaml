@@ -1,0 +1,10 @@
+appId: com.sampocs.archie
+---
+# Recovery: the app notices the backend (network listener or the 60 s poll), pushes, and the worker's title arrives via
+# the follow-up pulls that a push schedules (+2 s, +5 s, +10 s).
+# One wait on the title, then the banner check: Maestro shares one time budget across back-to-back extendedWaitUntil
+# commands, so a slow first wait (up to ~60 s for the poll) left the second one only the remainder of its timeout.
+- extendedWaitUntil:
+    visible: ".*Example Domain.*"
+    timeout: 120000
+- assertNotVisible: ".*changes? waiting.*"

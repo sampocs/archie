@@ -1,6 +1,15 @@
 .superpowers/
 .env
 .env.*
+!.env.example
 spikes/**/.cache/
 __pycache__/
 spikes/**/.wrangler/
+.venv/
+.data/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Railway IaC SDK (root package.json)
+/node_modules/

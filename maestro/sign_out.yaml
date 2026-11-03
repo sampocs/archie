@@ -1,0 +1,23 @@
+appId: com.sampocs.archie
+---
+- runFlow: login.yaml
+- tapOn:
+    id: "tab-today"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "account-button"
+    commands:
+      - tapOn:
+          id: "tab-today"
+- extendedWaitUntil:
+    visible:
+      id: "account-button"
+    timeout: 5000
+- tapOn:
+    id: "account-button"
+- tapOn:
+    id: "sign-out"
+- assertVisible:
+    id: "apple-sign-in"

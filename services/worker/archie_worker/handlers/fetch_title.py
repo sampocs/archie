@@ -22,6 +22,8 @@ _FETCH_TIMEOUT_SECONDS = 10
 _MAX_BODY_BYTES = 1_000_000
 _MAX_TITLE_LENGTH = 500
 _OG_TITLE_PROPERTY = "og:title"
+# Postgres text columns reject NUL, so a page containing one would fail the job forever.
+_NUL = "\x00"
 
 _logger = logging.get_logger(logging.LoggerName.WORKER, "fetch_title")
 
@@ -84,7 +86,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
 
 
 def extract_title(*, page: str) -> str | None:
-    """The page's `og:title`, else its `<title>`: whitespace collapsed, capped at 500 characters.
+    """The page's `og:title`, else its `<title>`: NUL stripped, whitespace collapsed, capped at 500 characters.
 
     A blank candidate is skipped, so it never hides the next one; None when neither has text.
     """
@@ -92,7 +94,8 @@ def extract_title(*, page: str) -> str | None:
     parser.feed(page)
     parser.close()
 
-    candidates = (" ".join(raw_title.split()) for raw_title in (parser.og_title or "", parser.title_text))
+    raw_titles = (parser.og_title or "", parser.title_text)
+    candidates = (" ".join(raw_title.replace(_NUL, "").split()) for raw_title in raw_titles)
     title = next((candidate for candidate in candidates if candidate), None)
     return title[:_MAX_TITLE_LENGTH] if title else None
 

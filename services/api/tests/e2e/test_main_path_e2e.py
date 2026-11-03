@@ -14,7 +14,8 @@ import pytest
 import vcr as vcr_module
 from archie_testing.harness import LiveStack
 
-pytestmark = [pytest.mark.postgres, pytest.mark.worker]
+# No `worker` marker: the test starts the worker itself, after taking its untitled baseline.
+pytestmark = pytest.mark.postgres
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 
@@ -29,7 +30,7 @@ POLL_TIMEOUT_SECONDS = 10.0
 def test_a_pushed_link_comes_back_titled_at_a_newer_position(
     live_stack: LiveStack, request: pytest.FixtureRequest
 ) -> None:
-    """add_source is applied, the worker fetches the title, and a later pull shows it at a newer position."""
+    """add_source is applied, the worker (started after the push) titles it, and a later pull shows a newer position."""
     recorder = vcr_module.VCR(
         cassette_library_dir=str(CASSETTE_DIR),
         record_mode=request.config.getoption("--record-mode") or "none",
@@ -49,13 +50,11 @@ def test_a_pushed_link_comes_back_titled_at_a_newer_position(
     with recorder.use_cassette("main_path.yaml", allow_playback_repeats=True):
         authed.post("/sync/push", json={"actions": [action]}).raise_for_status()
 
-        # Pulled right after the push, while the worker is still idle (it polls every IDLE_POLL_SECONDS): the
-        # source must be there untitled, and this position is the baseline the titled row has to beat.
+        # The worker is not running yet, so the source is certainly untitled here and this position is the
+        # baseline the titled row has to beat, whatever the worker's poll timing.
         untitled_pull = _pull(authed, since=0)
-        assert _source(untitled_pull, source_id)["title"] is None, (
-            f"source {source_id} was already titled at the first pull; the worker beat the test, so the "
-            "position assertion below would prove nothing"
-        )
+        assert _source(untitled_pull, source_id)["title"] is None
+        live_stack.start_worker()
         titled_pull = _poll_until_titled(authed, source_id=source_id, since=untitled_pull["position"])
 
     titled_source = _source(titled_pull, source_id)

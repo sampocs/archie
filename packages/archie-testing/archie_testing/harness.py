@@ -1,7 +1,8 @@
 """A live Archie stack for e2e tests: the real API served by uvicorn on a free local port.
 
 Tests talk to it over real HTTP with `httpx`, exactly as the phone app does. The worker loop runs
-in a background thread only when a test asks for it, so API-only tests never import worker code.
+in a background thread only when a test asks for it (marker or `start_worker`), so API-only tests never
+import worker code.
 """
 
 from __future__ import annotations
@@ -33,6 +34,8 @@ class LiveStack:
     database_url: str
     client: httpx.Client
     _authed_clients: list[httpx.Client] = field(default_factory=list)
+    _stop_worker: threading.Event = field(default_factory=threading.Event)
+    _worker_thread: threading.Thread | None = None
 
     def sign_in(self, *, apple_sub: str = "test-user") -> str:
         """Create (or reuse) a user and return a fresh session key, via the test-only route."""
@@ -45,6 +48,18 @@ class LiveStack:
         authed_client = httpx.Client(base_url=self.base_url, headers={"Authorization": f"Bearer {session_key}"})
         self._authed_clients.append(authed_client)
         return authed_client
+
+    def start_worker(self) -> None:
+        """Start the worker loop now, for tests that must act while it is still idle. No-op once started."""
+        if self._worker_thread is not None:
+            return
+        self._worker_thread = _start_worker(database_url=self.database_url, stop=self._stop_worker)
+
+    def stop_worker(self) -> None:
+        """Stop the worker loop and wait for it, if one is running."""
+        self._stop_worker.set()
+        if self._worker_thread is not None:
+            self._worker_thread.join(timeout=_SHUTDOWN_TIMEOUT_SECONDS)
 
     def close_authed_clients(self) -> None:
         """Close every client `authed` handed out."""
@@ -67,19 +82,16 @@ def running_stack(*, database_url: str, start_worker: bool) -> Iterator[LiveStac
     server_thread.start()
     _wait_until(condition=lambda: server.started, description="the API server to start")
 
-    stop_worker = threading.Event()
-    worker_thread = _start_worker(database_url=database_url, stop=stop_worker) if start_worker else None
-
     base_url = f"http://127.0.0.1:{port}"
     with httpx.Client(base_url=base_url) as client:
         stack = LiveStack(base_url=base_url, database_url=database_url, client=client)
         try:
+            if start_worker:
+                stack.start_worker()
             yield stack
         finally:
             stack.close_authed_clients()
-            stop_worker.set()
-            if worker_thread is not None:
-                worker_thread.join(timeout=_SHUTDOWN_TIMEOUT_SECONDS)
+            stack.stop_worker()
 
             server.should_exit = True
             server_thread.join(timeout=_SHUTDOWN_TIMEOUT_SECONDS)

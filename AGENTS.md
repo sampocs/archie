@@ -17,6 +17,11 @@ truth); how it's built lives in `docs/superpowers/specs/2026-11-02-backend-archi
 - `make db-up` / `make db-down` — local Postgres + pgvector on `127.0.0.1:5434` (dbs `archie`, `archie_test`)
 - `make test-db` — only the Postgres-backed tests, against `archie_test`
 - `make start-api-local` / `make start-worker-local` — run against the local dev database
+- `make migrate-local` — apply migrations to the local dev database
+- `make start-local` — API + worker together, as the container runs them
+- `make reset-local-data` — empty the local dev database's synced data
+- `make maestro` / `make maestro-offline` — Maestro flows on the booted simulator (see `maestro/README.md`)
+- `cd app && npm test` / `npm run typecheck` — app jest suite / `tsc --noEmit`
 - `make scaffold` — list remaining scaffold markers
 
 ## Testing

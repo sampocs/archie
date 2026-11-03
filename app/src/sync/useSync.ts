@@ -12,6 +12,10 @@ import { createApiTransport, createDbSyncStore } from "./transport";
 
 const POLL_INTERVAL_MS = 60_000;
 
+// After a local change, the backend worker fills in the title a moment later; pull a few times to pick it up
+// rather than waiting for the next poll.
+const FOLLOW_UP_DELAYS_MS = [2_000, 5_000, 10_000];
+
 // The active hook instance registers its trigger here so non-React callers (e.g. after addSource) can request a sync.
 let activeTrigger: (() => void) | null = null;
 
@@ -41,7 +45,11 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
     });
     const fire = () => void trigger().catch(() => undefined);
 
-    activeTrigger = fire;
+    const followUpTimers: ReturnType<typeof setTimeout>[] = [];
+    activeTrigger = () => {
+      fire();
+      followUpTimers.push(...FOLLOW_UP_DELAYS_MS.map((delay) => setTimeout(fire, delay)));
+    };
     fire();
 
     const appStateSub = AppState.addEventListener("change", (state) => {
@@ -55,7 +63,8 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
     }, POLL_INTERVAL_MS);
 
     return () => {
-      if (activeTrigger === fire) activeTrigger = null;
+      activeTrigger = null;
+      followUpTimers.forEach(clearTimeout);
       appStateSub.remove();
       networkSub.remove();
       clearInterval(interval);

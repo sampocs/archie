@@ -80,4 +80,23 @@ start-worker-local: migrate-local
 start-local: migrate-local
 	@DATABASE_URL=$(LOCAL_DATABASE_URL) ARCHIE_ENV=dev $(UV_RUN) archie-launch
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local start-api-local start-worker-local start-local
+###################################################
+##                   Maestro                     ##
+###################################################
+
+# Maestro drives the debug app on the booted simulator; see maestro/README.md for the setup.
+MAESTRO_PATH := /opt/homebrew/opt/openjdk@17/bin:$(HOME)/.maestro/bin:$(PATH)
+
+# Empty the local development database's synced data so a flow never sees leftovers from an earlier run.
+reset-local-data: db-up
+	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, sources, sessions, users RESTART IDENTITY CASCADE"
+
+# The flows that only need a running backend (`make start-local` in another terminal).
+maestro: reset-local-data
+	@PATH="$(MAESTRO_PATH)" maestro test maestro/add_link.yaml maestro/sign_out.yaml
+
+# Starts and stops the backend itself, to take the phone offline mid-flow.
+maestro-offline: reset-local-data
+	@maestro/run_offline.sh
+
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-offline

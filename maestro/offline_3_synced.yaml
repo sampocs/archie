@@ -1,0 +1,8 @@
+appId: com.sampocs.archie
+---
+- extendedWaitUntil:
+    notVisible: ".*changes? waiting.*"
+    timeout: 60000
+- extendedWaitUntil:
+    visible: ".*Example Domain.*"
+    timeout: 30000

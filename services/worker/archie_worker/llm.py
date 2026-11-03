@@ -110,6 +110,7 @@ def complete(
         {"output_config": {"format": {"type": "json_schema", "schema": json_schema}}} if json_schema else {}
     )
 
+    # `models` is the ModelPair parameter here, shadowing the `archie_db.models` module inside this function.
     for model in (models.primary, models.fallback):
         response = client.messages.create(
             model=model,

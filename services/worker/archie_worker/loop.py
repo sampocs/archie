@@ -31,6 +31,8 @@ from archie_worker import errors
 # (see the module docstring); the loop marks the job done after it returns.
 Handler = Callable[[sqlalchemy.orm.Session, models.Job], None]
 # Runs when a job fails for good, with the user-facing reason, in the transaction that marks it failed.
+# A hook must not raise: an exception escapes `_record_failure` and `run_one`, stops `run_forever`, and
+# leaves the job `running` until the stale sweep.
 FailureHook = Callable[[sqlalchemy.orm.Session, models.Job, str], None]
 
 # Seconds to wait before attempt 2, 3, ...; the last value repeats.

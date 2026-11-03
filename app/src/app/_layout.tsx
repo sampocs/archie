@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { Text as NativeText } from "react-native";
 
 import { seedSyncState, useDbMigrations } from "@/db/client";
+import { SyncRoot } from "@/sync/SyncRoot";
 import { fontAssets } from "@/theme/type";
 
 export default function RootLayout() {
@@ -23,6 +24,8 @@ export default function RootLayout() {
   return (
     <>
       <StatusBar style="auto" />
+      {/* Placeholder: Task 9 passes the real session key and clearSession here. */}
+      <SyncRoot sessionKey={null} onUnauthorized={() => undefined} />
       <Stack screenOptions={{ headerShown: false }} />
     </>
   );

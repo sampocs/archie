@@ -168,42 +168,161 @@ def test_pull_does_not_skip_a_row_committed_after_a_later_one(live_stack: LiveSt
 
     # Writer A: takes the lock and a position, and stays uncommitted.
     slow_writer = sqlalchemy.orm.Session(engine)
-    changes.lock_user_writes(slow_writer, user_id)
-    slow_source_id = uuid.uuid4()
-    slow_writer.add(
-        models.Source(
-            id=slow_source_id,
-            user_id=user_id,
-            url="https://example.com/slow",
-            kind="link",
-            state="queued",
-            intent="queue",
-            change_seq=slow_writer.execute(sqlalchemy.select(changes.next_change_seq())).scalar_one(),
-        )
-    )
-    slow_writer.flush()
-
     # Writer B: a push through the API, which must wait for A. It gets its own client for the longer timeout.
     pusher = httpx.Client(base_url=live_stack.base_url, headers={"Authorization": f"Bearer {session_key}"}, timeout=10)
-    push_thread = threading.Thread(
-        target=lambda: pusher.post("/sync/push", json={"actions": [_add_source("https://example.com/fast")]})
-    )
-    push_thread.start()
-    push_thread.join(timeout=0.5)
-    assert push_thread.is_alive()
+    # Closing in finally releases the advisory lock even when an assertion fails, so later tests can't hang.
+    try:
+        changes.lock_user_writes(slow_writer, user_id)
+        slow_source_id = uuid.uuid4()
+        slow_writer.add(
+            models.Source(
+                id=slow_source_id,
+                user_id=user_id,
+                url="https://example.com/slow",
+                kind="link",
+                state="queued",
+                intent="queue",
+                change_seq=slow_writer.execute(sqlalchemy.select(changes.next_change_seq())).scalar_one(),
+            )
+        )
+        slow_writer.flush()
 
-    mid = authed.get("/sync/pull", params={"since": 0}).json()
-    assert mid["rows"]["sources"] == []
+        push_thread = threading.Thread(
+            target=lambda: pusher.post("/sync/push", json={"actions": [_add_source("https://example.com/fast")]})
+        )
+        push_thread.start()
+        push_thread.join(timeout=0.5)
+        assert push_thread.is_alive()
 
-    slow_writer.commit()
-    push_thread.join(timeout=5)
-    assert not push_thread.is_alive()
-    final_rows = authed.get("/sync/pull", params={"since": mid["position"]}).json()["rows"]["sources"]
-    slow_writer.close()
-    pusher.close()
+        mid = authed.get("/sync/pull", params={"since": 0}).json()
+        assert mid["rows"]["sources"] == []
+
+        slow_writer.commit()
+        push_thread.join(timeout=5)
+        assert not push_thread.is_alive()
+        final_rows = authed.get("/sync/pull", params={"since": mid["position"]}).json()["rows"]["sources"]
+    finally:
+        slow_writer.close()
+        pusher.close()
 
     assert len(final_rows) == 2
     assert str(slow_source_id) in {row["id"] for row in final_rows}
+
+
+def test_unparseable_urls_are_rejected_without_blocking_later_actions(live_stack: LiveStack) -> None:
+    """A malformed or NUL-bearing url is a rejection, not a 500, so a retried batch can't wedge the outbox."""
+    authed = live_stack.authed(live_stack.sign_in())
+    actions = [
+        _add_source("http://[::1"),
+        _add_source("https://example.com/\u0000"),
+        _add_source("https://example.com/ok"),
+    ]
+
+    response = authed.post("/sync/push", json={"actions": actions})
+
+    assert response.status_code == 200
+    assert [(result["result"], result["reason"]) for result in response.json()["results"]] == [
+        ("rejected", "url is not a valid URL"),
+        ("rejected", "url is not a valid URL"),
+        ("applied", None),
+    ]
+
+
+def test_another_users_action_id_is_rejected_and_leaves_the_owner_untouched(live_stack: LiveStack) -> None:
+    """Action ids are global: B reusing A's id is refused, and A's pull is unchanged."""
+    owner = live_stack.authed(live_stack.sign_in(apple_sub="user-a"))
+    intruder = live_stack.authed(live_stack.sign_in(apple_sub="user-b"))
+    action = _add_source("https://example.com/a")
+    owner.post("/sync/push", json={"actions": [action]})
+    before = owner.get("/sync/pull", params={"since": 0}).json()
+
+    stolen = _add_source("https://example.com/b", action_id=uuid.UUID(action["id"]))
+    result = intruder.post("/sync/push", json={"actions": [stolen]}).json()["results"]
+
+    assert result == [{"id": action["id"], "result": "rejected", "reason": "action id already used"}]
+    assert owner.get("/sync/pull", params={"since": 0}).json() == before
+    assert intruder.get("/sync/pull", params={"since": 0}).json()["rows"]["sources"] == []
+
+
+def _race_push_against_uncommitted_insert(
+    live_stack: LiveStack, *, rival_row: Any, pushed_action: dict[str, Any], pusher_key: str
+) -> dict[str, Any]:
+    """Push while another transaction holds an uncommitted row with a clashing key, then let it commit.
+
+    The push passes its existence checks (the rival is uncommitted), blocks on the unique index, and hits an
+    IntegrityError once the rival commits. Returns the push's single result.
+    """
+    engine = session.engine_for(live_stack.database_url)
+    rival = sqlalchemy.orm.Session(engine)
+    pusher = httpx.Client(base_url=live_stack.base_url, headers={"Authorization": f"Bearer {pusher_key}"}, timeout=10)
+    responses: list[httpx.Response] = []
+    try:
+        rival.add(rival_row)
+        rival.flush()
+
+        push_thread = threading.Thread(
+            target=lambda: responses.append(pusher.post("/sync/push", json={"actions": [pushed_action]}))
+        )
+        push_thread.start()
+        push_thread.join(timeout=0.5)
+        assert push_thread.is_alive()
+
+        rival.commit()
+        push_thread.join(timeout=5)
+        assert not push_thread.is_alive()
+    finally:
+        rival.close()
+        pusher.close()
+
+    assert responses[0].status_code == 200
+    return responses[0].json()["results"][0]
+
+
+def test_two_users_racing_on_one_action_id_rejects_the_loser(live_stack: LiveStack) -> None:
+    """The unique index on action ids decides the race; the loser is told so and records nothing."""
+    winner_key = live_stack.sign_in(apple_sub="user-a")
+    loser_key = live_stack.sign_in(apple_sub="user-b")
+    winner_id = live_stack.authed(winner_key).get("/me").json()["user_id"]
+    action = _add_source("https://example.com/b")
+
+    result = _race_push_against_uncommitted_insert(
+        live_stack,
+        rival_row=models.AppliedAction(action_id=uuid.UUID(action["id"]), user_id=winner_id, result="applied"),
+        pushed_action=action,
+        pusher_key=loser_key,
+    )
+
+    assert result == {"id": action["id"], "result": "rejected", "reason": "action id already used"}
+    assert live_stack.authed(loser_key).get("/sync/pull", params={"since": 0}).json()["rows"]["sources"] == []
+
+
+def test_two_users_racing_on_one_source_id_rejects_the_loser(live_stack: LiveStack) -> None:
+    """The unique index on source ids decides the race; the loser's action is recorded as rejected."""
+    winner_key = live_stack.sign_in(apple_sub="user-a")
+    loser_key = live_stack.sign_in(apple_sub="user-b")
+    winner_id = live_stack.authed(winner_key).get("/me").json()["user_id"]
+    action = _add_source("https://example.com/b")
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as seq_db:
+        change_seq = seq_db.execute(sqlalchemy.select(changes.next_change_seq())).scalar_one()
+        seq_db.commit()
+    rival_source = models.Source(
+        id=uuid.UUID(action["payload"]["id"]),
+        user_id=winner_id,
+        url="https://example.com/a",
+        kind="link",
+        state="queued",
+        intent="queue",
+        change_seq=change_seq,
+    )
+
+    result = _race_push_against_uncommitted_insert(
+        live_stack, rival_row=rival_source, pushed_action=action, pusher_key=loser_key
+    )
+
+    assert result == {"id": action["id"], "result": "rejected", "reason": "source id already exists"}
+    retried = live_stack.authed(loser_key).post("/sync/push", json={"actions": [action]}).json()["results"]
+    assert retried[0]["result"] == "duplicate"
 
 
 def test_pull_pages_until_more_is_false(live_stack: LiveStack) -> None:

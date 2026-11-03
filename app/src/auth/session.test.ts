@@ -6,11 +6,18 @@ const mockCalls: string[] = [];
 let mockLogout: () => Promise<unknown> = async () => null;
 
 jest.mock("expo-apple-authentication", () => ({}));
+// An in-memory Keychain keyed by access group, like the real one: a lookup only sees its own group.
+const mockKeychain = new Map<string, string>();
+const slot = (key: string, options?: { accessGroup?: string }) => `${options?.accessGroup ?? "none"}/${key}`;
+
 jest.mock("expo-secure-store", () => ({
-  getItemAsync: jest.fn(async () => "key-1"),
-  setItemAsync: jest.fn(async () => undefined),
-  deleteItemAsync: jest.fn(async () => {
+  getItemAsync: jest.fn(async (key: string, options?: { accessGroup?: string }) => mockKeychain.get(slot(key, options)) ?? null),
+  setItemAsync: jest.fn(async (key: string, value: string, options?: { accessGroup?: string }) => {
+    mockKeychain.set(slot(key, options), value);
+  }),
+  deleteItemAsync: jest.fn(async (key: string, options?: { accessGroup?: string }) => {
     mockCalls.push("keychain-delete");
+    mockKeychain.delete(slot(key, options));
   }),
 }));
 jest.mock("@/api/client", () => ({
@@ -38,8 +45,76 @@ jest.mock("@/db/client", () => {
 });
 
 import { db } from "@/db/client";
-import { clearSession, setSessionKey } from "./session";
+import * as SecureStore from "expo-secure-store";
 
+import { KEYCHAIN_KEY, LEGACY_KEYCHAIN_GROUP, SHARED_KEYCHAIN_GROUP } from "./keychain";
+import { clearSession, getSessionKey, migrateSessionKeyToSharedGroup, setSessionKey } from "./session";
+
+const SHARED_SLOT = `${SHARED_KEYCHAIN_GROUP}/${KEYCHAIN_KEY}`;
+const LEGACY_SLOT = `${LEGACY_KEYCHAIN_GROUP}/${KEYCHAIN_KEY}`;
+
+describe("shared Keychain group", () => {
+  beforeEach(() => {
+    mockKeychain.clear();
+    mockCalls.length = 0;
+  });
+
+  it("stores and reads the session key in the shared group", async () => {
+    await setSessionKey("key-2");
+
+    expect(mockKeychain.get(SHARED_SLOT)).toBe("key-2");
+    expect(await getSessionKey()).toBe("key-2");
+  });
+
+  it("migration copies an M1 key into the group and removes the old one", async () => {
+    mockKeychain.set(LEGACY_SLOT, "m1-key");
+
+    await migrateSessionKeyToSharedGroup();
+
+    expect(mockKeychain.get(SHARED_SLOT)).toBe("m1-key");
+    expect(mockKeychain.has(LEGACY_SLOT)).toBe(false);
+  });
+
+  it("migration runs once: a second run does not touch the keychain", async () => {
+    mockKeychain.set(LEGACY_SLOT, "m1-key");
+    await migrateSessionKeyToSharedGroup();
+    (SecureStore.setItemAsync as jest.Mock).mockClear();
+    (SecureStore.deleteItemAsync as jest.Mock).mockClear();
+
+    await migrateSessionKeyToSharedGroup();
+
+    expect(SecureStore.setItemAsync).not.toHaveBeenCalled();
+    expect(SecureStore.deleteItemAsync).not.toHaveBeenCalled();
+    expect(mockKeychain.get(SHARED_SLOT)).toBe("m1-key");
+  });
+
+  it("migration never overwrites a key already in the group", async () => {
+    mockKeychain.set(SHARED_SLOT, "new-key");
+    mockKeychain.set(LEGACY_SLOT, "stale-m1-key");
+
+    await migrateSessionKeyToSharedGroup();
+
+    expect(mockKeychain.get(SHARED_SLOT)).toBe("new-key");
+    expect(mockKeychain.has(LEGACY_SLOT)).toBe(false);
+  });
+
+  it("a stale legacy key is not migrated back after sign-out", async () => {
+    mockKeychain.set(SHARED_SLOT, "key-1");
+    mockKeychain.set(LEGACY_SLOT, "stale-m1-key");
+
+    await clearSession();
+    await migrateSessionKeyToSharedGroup();
+
+    expect(mockKeychain.has(SHARED_SLOT)).toBe(false);
+    expect(mockKeychain.has(LEGACY_SLOT)).toBe(false);
+  });
+
+  it("migration does nothing when there is no key anywhere", async () => {
+    await migrateSessionKeyToSharedGroup();
+
+    expect(mockKeychain.size).toBe(0);
+  });
+});
 
 describe("clearSession", () => {
   beforeEach(async () => {
@@ -55,7 +130,8 @@ describe("clearSession", () => {
     await clearSession();
 
     expect(getSessionEpoch()).toBe(before + 1);
-    expect(mockCalls).toEqual(["/auth/logout:key-1", "keychain-delete"]);
+    expect(mockCalls).toEqual(["/auth/logout:key-1", "keychain-delete", "keychain-delete"]);
+    expect(mockKeychain.has(SHARED_SLOT)).toBe(false);
     expect(db.select().from(schema.sources).all()).toEqual([]);
     expect(db.select().from(schema.syncState).get()).toMatchObject({ position: 0 });
   });

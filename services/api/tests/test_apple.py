@@ -91,15 +91,30 @@ def test_the_wrong_issuer_is_rejected(apple_key: rsa.RSAPrivateKey) -> None:
         _verify(apple_key, _mint(apple_key, iss="https://evil.example.com"))
 
 
+class _RecordingKeyClient(jwt.PyJWKClient):
+    """A real `PyJWKClient` that records any attempt to fetch keys (parsing the token header comes first, and is free)."""
+
+    def __init__(self) -> None:
+        super().__init__(apple.APPLE_JWKS_URL)
+        self.key_lookups = 0
+
+    def fetch_data(self) -> Any:
+        self.key_lookups += 1
+        return super().fetch_data()
+
+    def get_signing_keys(self, refresh: bool = False) -> Any:
+        self.key_lookups += 1
+        return super().get_signing_keys(refresh=refresh)
+
+
 def test_a_malformed_token_is_rejected_without_fetching_keys() -> None:
     """A malformed token is rejected without fetching keys."""
+    client = _RecordingKeyClient()
+
     with pytest.raises(apple.InvalidAppleToken):
-        apple.verify_identity_token("not-a-jwt", audience=AUDIENCE, jwks_client=apple.get_jwks_client())
+        apple.verify_identity_token("not-a-jwt", audience=AUDIENCE, jwks_client=client)
 
-
-def test_the_jwks_client_is_shared_across_requests() -> None:
-    """The jwks client is shared across requests."""
-    assert apple.get_jwks_client() is apple.get_jwks_client()
+    assert client.key_lookups == 0
 
 
 @pytest.mark.postgres

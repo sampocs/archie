@@ -38,6 +38,7 @@ export default function RootLayout() {
         <Stack.Protected guard={session.status === "signedOut"}>
           <Stack.Screen name="sign-in" />
         </Stack.Protected>
+        {/* The guard covers only the screens listed here: a new top-level route must be added to this block or it is reachable signed out. */}
         <Stack.Protected guard={session.status === "signedIn"}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(tabs)" />

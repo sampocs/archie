@@ -1,0 +1,94 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - api.fxtwitter.com
+      user-agent:
+      - archie-worker/0.1
+    method: GET
+    uri: https://api.fxtwitter.com/2/thread/2107691261776052633
+  response:
+    body:
+      string: '{"status":{"type":"status","url":"https://x.com/sama/status/2107691261776052633","id":"2107691261776052633","text":"looking
+        up at the stars with extra awe tonight.\n\n\"thy sea is so great and my boat
+        is so small.\"","raw_text":{"text":"looking up at the stars with extra awe
+        tonight.\n\n\"thy sea is so great and my boat is so small.\"","display_text_range":[0,95],"facets":[]},"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415851,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"replies":1225,"reposts":674,"likes":12695,"bookmarks":968,"quotes":309,"embed_card":"tweet","created_at":"Wed
+        Oct 07 04:35:30 +0000 2026","created_timestamp":1791347730,"views":1944828,"is_note_tweet":false,"community_note":null,"lang":"en","replying_to":null,"media":{},"provider":"twitter","reposted_by":null},"thread":[{"type":"status","url":"https://x.com/sama/status/2107691261776052633","id":"2107691261776052633","text":"looking
+        up at the stars with extra awe tonight.\n\n\"thy sea is so great and my boat
+        is so small.\"","raw_text":{"text":"looking up at the stars with extra awe
+        tonight.\n\n\"thy sea is so great and my boat is so small.\"","display_text_range":[0,95],"facets":[]},"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415851,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"replies":1225,"reposts":674,"likes":12695,"bookmarks":968,"quotes":309,"embed_card":"tweet","created_at":"Wed
+        Oct 07 04:35:30 +0000 2026","created_timestamp":1791347730,"views":1944828,"is_note_tweet":false,"community_note":null,"lang":"en","replying_to":null,"media":{},"provider":"twitter","reposted_by":null},{"type":"status","url":"https://x.com/sama/status/2107691262795239805","id":"2107691262795239805","text":"thank
+        you to the machines, and the structure of reality, for letting us understand
+        a little more.","raw_text":{"text":"thank you to the machines, and the structure
+        of reality, for letting us understand a little more.","display_text_range":[0,97],"facets":[]},"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415853,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"replies":256,"reposts":105,"likes":3683,"bookmarks":122,"quotes":65,"embed_card":"tweet","created_at":"Wed
+        Oct 07 04:35:30 +0000 2026","created_timestamp":1791347730,"views":419540,"is_note_tweet":false,"community_note":null,"lang":"en","replying_to":{"screen_name":"sama","status":"2107691261776052633","url":"https://x.com/sama/status/2107691261776052633","profile_url":"https://x.com/sama"},"media":{},"provider":"twitter","reposted_by":null},{"type":"status","url":"https://x.com/sama/status/2107691577015755196","id":"2107691577015755196","text":"and
+        thank you to the untold number of people who put in the technical work, brick
+        by brick over the generations, to get us to the point where such a wonder
+        is possible.","raw_text":{"text":"and thank you to the untold number of people
+        who put in the technical work, brick by brick over the generations, to get
+        us to the point where such a wonder is possible.","display_text_range":[0,168],"facets":[]},"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415853,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"replies":224,"reposts":127,"likes":3962,"bookmarks":136,"quotes":34,"embed_card":"tweet","created_at":"Wed
+        Oct 07 04:36:45 +0000 2026","created_timestamp":1791347805,"views":361206,"is_note_tweet":false,"community_note":null,"lang":"en","replying_to":{"screen_name":"sama","status":"2107691262795239805","url":"https://x.com/sama/status/2107691262795239805","profile_url":"https://x.com/sama"},"media":{},"provider":"twitter","reposted_by":null}],"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415851,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"code":200}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      allow:
+      - OPTIONS, GET, PURGE, HEAD
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-ray:
+      - a54f4250cd39eadb-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '6788'
+      content-type:
+      - application/json
+      date:
+      - Tue, 03 Nov 2026 23:46:35 GMT
+      nel:
+      - '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}'
+      report-to:
+      - '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=4JwBEb2%2FPI4GNqDEAw8WNHvhbGbg7%2Fxpatp0E3BtiKo18WzPegk6hZpnogLOVOI6rBhigapHB8RRqOJaS9SxpTSKB9q%2BMRdRUrnR0Mev1QStJP1w%2Bftp6WV%2FbUzu9p0PY8dWgRk9AMnOybBb3V6jGw%3D%3D"}]}'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding, User-Agent
+      x-powered-by:
+      - fixtweet-main-ec941e7-2026-11-03T16:53:52
+      x-trans-rights:
+      - 'true'
+    status:
+      code: 200
+      message: OK
+version: 1

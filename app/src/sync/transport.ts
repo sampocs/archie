@@ -100,10 +100,46 @@ export function createDbSyncStore(db: AppDb, runEpoch: number = getSessionEpoch(
             createdAt: source.created_at,
             updatedAt: source.updated_at,
             deletedAt: source.deleted_at,
+            processing: source.processing,
+            processingError: source.processing_error,
+            reaction: source.reaction,
+            note: source.note,
+            prepMe: source.prep_me ? 1 : 0,
+            mergedIntoId: source.merged_into_id,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })
             .onConflictDoUpdate({ target: schema.sources.id, set: values })
+            .run();
+        }
+
+        for (const artifact of page.rows.artifacts) {
+          const values = {
+            sourceId: artifact.source_id,
+            kind: artifact.kind,
+            version: artifact.version,
+            content: JSON.stringify(artifact.content),
+            isCurrent: artifact.is_current ? 1 : 0,
+            createdAt: artifact.created_at,
+          };
+          tx.insert(schema.artifacts)
+            .values({ id: artifact.id, ...values })
+            .onConflictDoUpdate({ target: schema.artifacts.id, set: values })
+            .run();
+        }
+
+        for (const card of page.rows.cards) {
+          const values = {
+            sourceId: card.source_id,
+            kind: card.kind,
+            question: card.question,
+            answer: card.answer,
+            createdAt: card.created_at,
+            deletedAt: card.deleted_at,
+          };
+          tx.insert(schema.cards)
+            .values({ id: card.id, ...values })
+            .onConflictDoUpdate({ target: schema.cards.id, set: values })
             .run();
         }
 

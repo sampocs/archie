@@ -65,14 +65,15 @@ export async function clearSession(): Promise<void> {
   }
 }
 
+// Sign-out never waits longer than this on the server: a slow or captive network must not hang it.
+const REVOKE_TIMEOUT_MS = 3000;
+
 // Failures are ignored on purpose: sign-out must work offline, and the key is discarded either way.
 async function revokeServerSession(sessionKey: string | null): Promise<void> {
   if (!sessionKey) return;
-  try {
-    await apiFetch("/auth/logout", { method: "POST", sessionKey });
-  } catch {
-    // Unreachable or already invalid; nothing more to do.
-  }
+  const revoke = apiFetch("/auth/logout", { method: "POST", sessionKey }).catch(() => undefined);
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, REVOKE_TIMEOUT_MS));
+  await Promise.race([revoke, timeout]);
 }
 
 export async function signInWithApple(): Promise<void> {

@@ -54,4 +54,8 @@ def test_a_trickling_server_hits_the_total_deadline(monkeypatch: pytest.MonkeyPa
     monkeypatch.setattr(fetch_title.time, "monotonic", lambda: next(clock))
 
     with pytest.raises(TimeoutError):
-        fetch_title._fetch_page(url="https://slow.example/")
+        fetch_title.fetch_page(
+            url="https://slow.example/",
+            timeout_seconds=fetch_title._FETCH_TIMEOUT_SECONDS,
+            max_bytes=fetch_title._MAX_BODY_BYTES,
+        )

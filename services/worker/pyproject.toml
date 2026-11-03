@@ -8,6 +8,7 @@ dependencies = [
   "archie-db",
   "httpx>=0.28.1",
   "anthropic>=2.4",
+  "trafilatura>=2.3.1",
 ]
 
 [project.scripts]

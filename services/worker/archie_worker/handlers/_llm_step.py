@@ -31,12 +31,15 @@ class StepRun:
 def prepare_run(db: sqlalchemy.orm.Session, job: models.Job, *, step: models.JobKind) -> StepRun | None:
     """Read what the model call needs and commit; None when the source is gone or deleted, so there is nothing to do.
 
-    Raises `PermanentJobError` for a user without an API key, and a plain error when the text artifact is missing
-    (the loop retries, as fetch_content may still be committing).
+    Raises `PermanentJobError` for a user without an API key (checked first, so it fails at once even when the text
+    artifact is missing), and a plain error when the text artifact is missing (the loop retries, as fetch_content may
+    still be committing).
     """
     source = db.get(models.Source, uuid.UUID(job.payload[pipeline.SOURCE_ID_KEY]))
     if source is None or source.deleted_at is not None:
         return None
+
+    api_key = llm.api_key_for(db.get_one(models.User, source.user_id))
 
     text_artifact = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT)
     if text_artifact is None:
@@ -46,7 +49,7 @@ def prepare_run(db: sqlalchemy.orm.Session, job: models.Job, *, step: models.Job
         source_id=source.id,
         user_id=source.user_id,
         context=llm.CallContext(user_id=source.user_id, source_id=source.id, job_id=job.id, step=step),
-        api_key=llm.api_key_for(db.get_one(models.User, source.user_id)),
+        api_key=api_key,
         user_message=prompts.user_message(
             kind=models.SourceKind(source.kind),
             title=source.title,

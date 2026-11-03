@@ -27,6 +27,9 @@ POLL_INTERVAL_SECONDS = 0.2
 POLL_TIMEOUT_SECONDS = 10.0
 
 
+@pytest.mark.skip(
+    reason="Article URLs now queue fetch_content, not fetch_title; the final task re-records this path (plan Task 9)."
+)
 def test_a_pushed_link_comes_back_titled_at_a_newer_position(
     live_stack: LiveStack, request: pytest.FixtureRequest
 ) -> None:

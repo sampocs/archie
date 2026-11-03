@@ -3,7 +3,8 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { View } from "react-native";
 
-import { addSource, Intent } from "@/db/actions";
+import type { Intent } from "@/capture/types";
+import { addSource } from "@/db/actions";
 import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
 import { Button } from "@/theme/components/Button";

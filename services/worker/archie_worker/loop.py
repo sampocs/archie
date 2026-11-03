@@ -150,17 +150,14 @@ def _record_failure(
 
     with sqlalchemy.orm.Session(engine) as db:
         job = db.get_one(models.Job, job_id)
-        permanent = isinstance(error, errors.PermanentJobError)
-        if permanent:
-            job.last_error = error.reason[:_MAX_ERROR_LENGTH]
-        else:
-            job.last_error = repr(error)[:_MAX_ERROR_LENGTH]
+        permanent_reason = error.reason if isinstance(error, errors.PermanentJobError) else None
+        job.last_error = (permanent_reason or repr(error))[:_MAX_ERROR_LENGTH]
 
-        if permanent or job.attempts >= job.max_attempts:
+        if permanent_reason is not None or job.attempts >= job.max_attempts:
             job.status = models.JobStatus.FAILED.value
             hook = handlers[models.JobKind(job.kind)].on_final_failure
             if hook is not None:
-                hook(db, job, error.reason if permanent else errors.FailureReason.GAVE_UP.value)
+                hook(db, job, permanent_reason or errors.FailureReason.GAVE_UP.value)
         else:
             backoff = datetime.timedelta(seconds=BACKOFF_SECONDS[min(job.attempts - 1, len(BACKOFF_SECONDS) - 1)])
             job.status = models.JobStatus.QUEUED.value

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import Protocol, TypeVar
+from typing import Protocol
 
 import sqlalchemy
 from archie_db import models
@@ -17,9 +17,6 @@ PULL_PAGE_SIZE = 500
 class _Positioned(Protocol):
     @property
     def change_seq(self) -> int: ...
-
-
-_RowT = TypeVar("_RowT", models.Source, models.SourceArtifact, models.Card)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -83,9 +80,9 @@ def merge_page[SourceT: _Positioned, ArtifactT: _Positioned, CardT: _Positioned]
     )
 
 
-def _changed_rows(
-    db: orm.Session, model: type[_RowT], *criteria: sqlalchemy.ColumnElement[bool], user_id: int, since: int, limit: int
-) -> list[_RowT]:
+def _changed_rows[RowT: (models.Source, models.SourceArtifact, models.Card)](
+    db: orm.Session, model: type[RowT], *criteria: sqlalchemy.ColumnElement[bool], user_id: int, since: int, limit: int
+) -> list[RowT]:
     """The user's `limit` oldest `model` rows above `since` that match `criteria`."""
     return list(
         db.scalars(

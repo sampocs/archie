@@ -9,6 +9,8 @@ import * as schema from "@/db/schema";
 import {
   createSyncScheduler,
   OutboxEntry,
+  PulledArtifact,
+  PulledCard,
   PulledSource,
   PullPage,
   PushResult,
@@ -59,7 +61,7 @@ function makeEntries(count: number): OutboxEntry[] {
   return Array.from({ length: count }, (_, index) => ({ id: `a${index}`, type: "add_source", payload: {} }));
 }
 
-const emptyPage = (position: number, more = false): PullPage => ({ rows: { sources: [] }, position, more });
+const emptyPage = (position: number, more = false): PullPage => ({ rows: { sources: [], artifacts: [], cards: [] }, position, more });
 
 function makeTransport(overrides: Partial<SyncTransport> = {}) {
   const calls = { pushes: [] as string[][], pulls: [] as number[] };
@@ -271,11 +273,21 @@ function makeDbStore() {
   sqlite.exec(`
     CREATE TABLE sources (
       id text PRIMARY KEY NOT NULL, url text NOT NULL, title text, kind text NOT NULL, state text NOT NULL,
-      intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text
+      intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text,
+      processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
+      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
       status text NOT NULL, error text
+    );
+    CREATE TABLE artifacts (
+      id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, version integer NOT NULL,
+      content text NOT NULL, is_current integer NOT NULL, created_at text NOT NULL
+    );
+    CREATE TABLE cards (
+      id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, question text NOT NULL,
+      answer text NOT NULL, created_at text NOT NULL, deleted_at text
     );
     CREATE TABLE sync_state (id integer PRIMARY KEY NOT NULL, position integer NOT NULL, last_push_failed integer NOT NULL);
     INSERT INTO sync_state VALUES (1, 0, 0);
@@ -294,6 +306,34 @@ const pulledSource = (overrides: Partial<PulledSource>): PulledSource => ({
   created_at: "2026-11-01T00:00:00Z",
   updated_at: "2026-11-01T00:00:00Z",
   deleted_at: null,
+  processing: "pending",
+  processing_error: null,
+  reaction: null,
+  note: null,
+  prep_me: false,
+  merged_into_id: null,
+  ...overrides,
+});
+
+const pulledArtifact = (overrides: Partial<PulledArtifact>): PulledArtifact => ({
+  id: "a1",
+  source_id: "s1",
+  kind: "summary",
+  version: 1,
+  content: { gist: "One line", key_ideas: ["a", "b"] },
+  is_current: true,
+  created_at: "2026-11-01T00:00:00Z",
+  ...overrides,
+});
+
+const pulledCard = (overrides: Partial<PulledCard>): PulledCard => ({
+  id: "c1",
+  source_id: "s1",
+  kind: "qa",
+  question: "Q?",
+  answer: "A.",
+  created_at: "2026-11-01T00:00:00Z",
+  deleted_at: null,
   ...overrides,
 });
 
@@ -305,7 +345,7 @@ describe("database SyncStore", () => {
       .run();
 
     await store.applyPage({
-      rows: { sources: [pulledSource({ title: "Server title", state: "consumed", updated_at: "2026-11-02T00:00:00Z" })] },
+      rows: { sources: [pulledSource({ title: "Server title", state: "consumed", updated_at: "2026-11-02T00:00:00Z" })], artifacts: [], cards: [] },
       position: 42,
       more: false,
     });
@@ -325,7 +365,7 @@ describe("database SyncStore", () => {
       .run();
 
     await store.applyPage({
-      rows: { sources: [pulledSource({ title: "Server title" }), pulledSource({ id: "s3", title: "Other" })] },
+      rows: { sources: [pulledSource({ title: "Server title" }), pulledSource({ id: "s3", title: "Other" })], artifacts: [], cards: [] },
       position: 9,
       more: false,
     });
@@ -336,11 +376,42 @@ describe("database SyncStore", () => {
     expect(await store.getPosition()).toBe(9);
   });
 
+  it("stores pulled artifacts (content as JSON text) and cards, and updates them in place on a re-pull", async () => {
+    const { db, store } = makeDbStore();
+    const page = (artifact: PulledArtifact, card: PulledCard): PullPage => ({
+      rows: { sources: [pulledSource({ processing: "ready", prep_me: true, reaction: "easy" })], artifacts: [artifact], cards: [card] },
+      position: 5,
+      more: false,
+    });
+
+    await store.applyPage(page(pulledArtifact({}), pulledCard({})));
+
+    expect(db.select().from(schema.sources).get()).toMatchObject({ processing: "ready", prepMe: 1, reaction: "easy" });
+    const stored = db.select().from(schema.artifacts).get();
+    expect(stored).toMatchObject({ sourceId: "s1", kind: "summary", version: 1, isCurrent: 1 });
+    expect(JSON.parse(stored!.content)).toEqual({ gist: "One line", key_ideas: ["a", "b"] });
+    expect(db.select().from(schema.cards).get()).toMatchObject({ question: "Q?", answer: "A.", deletedAt: null });
+
+    await store.applyPage(
+      page(
+        pulledArtifact({ is_current: false, content: { gist: "Newer" } }),
+        pulledCard({ answer: "A2.", deleted_at: "2026-11-02T00:00:00Z" }),
+      ),
+    );
+
+    expect(db.select().from(schema.artifacts).all()).toHaveLength(1);
+    const updated = db.select().from(schema.artifacts).get();
+    expect(updated?.isCurrent).toBe(0);
+    expect(JSON.parse(updated!.content)).toEqual({ gist: "Newer" });
+    expect(db.select().from(schema.cards).all()).toHaveLength(1);
+    expect(db.select().from(schema.cards).get()).toMatchObject({ answer: "A2.", deletedAt: "2026-11-02T00:00:00Z" });
+  });
+
   it("inserts rows it has not seen and applies tombstones", async () => {
     const { db, store } = makeDbStore();
 
     await store.applyPage({
-      rows: { sources: [pulledSource({ id: "s2", deleted_at: "2026-11-02T00:00:00Z" })] },
+      rows: { sources: [pulledSource({ id: "s2", deleted_at: "2026-11-02T00:00:00Z" })], artifacts: [], cards: [] },
       position: 1,
       more: false,
     });
@@ -443,7 +514,7 @@ describe("sign-out during a sync run", () => {
         // The user signs out (epoch bump, then wipe) while this response is on the wire.
         bumpSessionEpoch();
         wipe(db);
-        return { rows: { sources: [pulledSource({ id: "old-account" })] }, position: 7, more: false };
+        return { rows: { sources: [pulledSource({ id: "old-account" })], artifacts: [], cards: [] }, position: 7, more: false };
       },
     };
 

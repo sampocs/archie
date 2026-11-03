@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+# Longest text kept from one source, however it was fetched.
+MAX_TEXT_LENGTH = 200_000
+
 
 @dataclass(frozen=True)
 class ExtractedText:

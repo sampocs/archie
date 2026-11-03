@@ -29,7 +29,7 @@ _MIN_X_WORDS = 1
 _MAX_TITLE_LENGTH = 500
 # Page statuses that mean "paywalled, blocked or gone"; a retry cannot fix them, sharing from Safari can.
 _PERMANENT_PAGE_STATUSES = frozenset({401, 403, 404, 410, 451})
-# Postgres text columns reject NUL, so a page containing one would fail the job forever.
+# Postgres text and jsonb values reject NUL, so a title or page text containing one would fail the job forever.
 _NUL = "\x00"
 
 _logger = logging.get_logger(logging.LoggerName.WORKER, "fetch_content")
@@ -74,7 +74,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         db,
         source=source,
         kind=models.ArtifactKind.TEXT,
-        content={"text": extracted.text},
+        content={"text": extracted.text.replace(_NUL, "")},
         model=None,
         prompt_version=None,
     )

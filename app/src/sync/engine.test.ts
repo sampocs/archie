@@ -132,6 +132,17 @@ describe("runSync push", () => {
     expect(calls.pulls).toEqual([]);
   });
 
+  it("throws instead of re-sending forever when no result belongs to the pushed batch", async () => {
+    const { store } = makeMemoryStore(makeEntries(2));
+    const { transport } = makeTransport({
+      async push() {
+        return [{ id: "unrelated", result: "applied", reason: null }];
+      },
+    });
+
+    await expect(runSync(store, transport)).rejects.toThrow("no results for the pushed batch");
+  });
+
   it("clears lastPushFailed after a successful push", async () => {
     const { store, state } = makeMemoryStore(makeEntries(1));
     const { transport } = makeTransport();
@@ -176,6 +187,18 @@ describe("runSync pull", () => {
     expect(calls.pulls).toEqual([7, 10, 20]);
     expect(state.applied.map((page) => page.position)).toEqual([10, 20, 25]);
     expect(state.position).toBe(25);
+  });
+
+  it("returns offline on a pull NetworkError without flagging a failed push", async () => {
+    const { store, state } = makeMemoryStore(makeEntries(1));
+    const { transport } = makeTransport({
+      async pull() {
+        throw new NetworkError("down");
+      },
+    });
+
+    expect(await runSync(store, transport)).toBe("offline");
+    expect(state.failedFlags).toEqual([false]);
   });
 
   it("returns unauthorized when pull is rejected with 401", async () => {
@@ -237,6 +260,27 @@ describe("database SyncStore", () => {
     const row = db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get();
     expect(row).toMatchObject({ title: "Server title", state: "consumed", updatedAt: "2026-11-02T00:00:00Z", syncError: "boom" });
     expect(await store.getPosition()).toBe(42);
+  });
+
+  it("skips rows whose source has an unsent local action but still saves the position", async () => {
+    const { db, store } = makeDbStore();
+    db.insert(schema.sources)
+      .values({ ...pulledSource({ title: "Local title" }), createdAt: "x", updatedAt: "x" })
+      .run();
+    db.insert(schema.outbox)
+      .values({ id: "o1", type: "update_source", payload: JSON.stringify({ id: "s1" }), createdAt: "x", status: "pending" })
+      .run();
+
+    await store.applyPage({
+      rows: { sources: [pulledSource({ title: "Server title" }), pulledSource({ id: "s3", title: "Other" })] },
+      position: 9,
+      more: false,
+    });
+
+    const rows = db.select().from(schema.sources).all();
+    expect(rows.find((row) => row.id === "s1")?.title).toBe("Local title");
+    expect(rows.find((row) => row.id === "s3")?.title).toBe("Other");
+    expect(await store.getPosition()).toBe(9);
   });
 
   it("inserts rows it has not seen and applies tombstones", async () => {
@@ -303,5 +347,27 @@ describe("createSyncScheduler", () => {
 
     expect(runs).toBe(2);
     expect(maxActive).toBe(1);
+  });
+
+  it("runs the coalesced rerun even when the run it landed in throws, then rethrows the first error", async () => {
+    let runs = 0;
+    let release: () => void = () => undefined;
+    let trigger: () => Promise<void> = async () => undefined;
+    trigger = createSyncScheduler(async () => {
+      runs += 1;
+      if (runs > 1) throw new Error("second");
+      await new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      throw new Error("first");
+    });
+
+    const first = trigger();
+    const settled = first.catch((error: Error) => error);
+    await trigger();
+    release();
+
+    expect(await settled).toEqual(new Error("first"));
+    expect(runs).toBe(2);
   });
 });

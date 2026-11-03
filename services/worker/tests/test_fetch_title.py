@@ -25,6 +25,13 @@ def test_a_page_with_only_blank_candidates_has_no_title() -> None:
     assert fetch_title.extract_title(page=page) is None
 
 
+def test_nul_characters_are_stripped_from_titles() -> None:
+    """Postgres cannot store NUL; a candidate that is only NULs counts as blank and falls through."""
+    page = '<head><meta property="og:title" content="\x00\x00"><title>Re\x00al Title</title></head>'
+
+    assert fetch_title.extract_title(page=page) == "Real Title"
+
+
 def test_a_long_title_is_truncated() -> None:
     """Titles are capped so a hostile page cannot store a huge string."""
     page = f"<title>{'x' * (fetch_title._MAX_TITLE_LENGTH + 100)}</title>"

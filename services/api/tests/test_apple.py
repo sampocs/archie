@@ -92,7 +92,7 @@ def test_the_wrong_issuer_is_rejected(apple_key: rsa.RSAPrivateKey) -> None:
 
 
 class _RecordingKeyClient(jwt.PyJWKClient):
-    """A real `PyJWKClient` that records any attempt to fetch keys (parsing the token header comes first, and is free)."""
+    """A real `PyJWKClient` that records any attempt to fetch keys (header parsing comes first and is free)."""
 
     def __init__(self) -> None:
         super().__init__(apple.APPLE_JWKS_URL)

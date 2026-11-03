@@ -14,6 +14,8 @@ from archie_api.sync import schemas
 
 MAX_URL_LENGTH = 2048
 _ALLOWED_URL_SCHEMES = frozenset({"http", "https"})
+_INVALID_URL = "url is not a valid URL"
+_ACTION_ID_USED = "action id already used"
 
 
 class _AddSourcePayload(pydantic.BaseModel):
@@ -42,7 +44,7 @@ def _apply_action(db: orm.Session, *, user: models.User, action: schemas.ActionI
 
     # The action id is globally unique, so another user's id can't be recorded; refuse it without a row.
     if existing is not None:
-        return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason="action id already used")
+        return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason=_ACTION_ID_USED)
 
     try:
         with db.begin_nested():
@@ -53,7 +55,11 @@ def _apply_action(db: orm.Session, *, user: models.User, action: schemas.ActionI
 
             _record(db, user=user, action=action, result=models.ActionResult.APPLIED, reason=None)
     except exc.IntegrityError:
-        # Only another user inserting the same source id at the same instant gets here (the lock is per user).
+        # The lock is per user, so another user racing us on a unique key gets here: the same source id, or the
+        # same (globally unique) action id. In the action-id case the winner owns the row, so we record nothing.
+        if db.get(models.AppliedAction, action.id) is not None:
+            return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason=_ACTION_ID_USED)
+
         reason = "source id already exists"
         _record(db, user=user, action=action, result=models.ActionResult.REJECTED, reason=reason)
         return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason=reason)
@@ -95,7 +101,14 @@ def _validate_add_source(db: orm.Session, *, payload: _AddSourcePayload) -> str 
     if len(payload.url) > MAX_URL_LENGTH:
         return f"url is longer than {MAX_URL_LENGTH} characters"
 
-    parts = parse.urlsplit(payload.url)
+    # Postgres text can't hold NUL, and urlsplit raises on e.g. an unclosed IPv6 bracket; both are the client's bug.
+    if "\x00" in payload.url:
+        return _INVALID_URL
+    try:
+        parts = parse.urlsplit(payload.url)
+    except ValueError:
+        return _INVALID_URL
+
     if parts.scheme not in _ALLOWED_URL_SCHEMES or not parts.netloc:
         return "url must be http or https"
 

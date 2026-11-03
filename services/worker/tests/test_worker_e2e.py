@@ -16,7 +16,7 @@ import sqlalchemy
 import sqlalchemy.orm
 import vcr as vcr_module
 from archie_db import changes, jobs, models, session
-from archie_worker import handlers, loop
+from archie_worker import errors, handlers, loop
 
 pytestmark = pytest.mark.postgres
 
@@ -200,6 +200,102 @@ def test_an_idle_queue_runs_nothing(engine: sqlalchemy.Engine) -> None:
     _make_due(engine, seconds_from_now=60)
 
     assert loop.run_one(engine, handlers=handlers.HANDLERS) is False
+
+
+def test_a_permanent_error_fails_the_job_at_once_and_calls_the_hook_with_its_reason(engine: sqlalchemy.Engine) -> None:
+    """No retry for a permanent error: one attempt, the reason kept as last_error, the hook told the same reason."""
+    calls: list[tuple[int, str]] = []
+
+    def explode(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise errors.PermanentJobError("nope, for good")
+
+    def record(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+        calls.append((job.id, reason))
+
+    _add_source_and_job(engine, url=OG_PAGE_URL)
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=explode, on_final_failure=record)}
+
+    loop.run_one(engine, handlers=specs)
+
+    job = _only_job(engine)
+    assert (job.attempts, job.status, job.last_error) == (1, models.JobStatus.FAILED.value, "nope, for good")
+    assert calls == [(job.id, "nope, for good")]
+
+
+def test_a_job_out_of_attempts_calls_the_hook_with_the_gave_up_reason(engine: sqlalchemy.Engine) -> None:
+    """Retries do not call the hook; the last allowed attempt does, with the generic user-facing reason."""
+    calls: list[str] = []
+
+    def explode(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise RuntimeError("transient")
+
+    def record(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+        calls.append(reason)
+
+    _add_source_and_job(engine, url=OG_PAGE_URL)
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=explode, on_final_failure=record)}
+
+    for _ in range(3):
+        loop.run_one(engine, handlers=specs)
+        _make_due(engine)
+
+    assert _only_job(engine).status == models.JobStatus.FAILED.value
+    assert calls == [errors.FailureReason.GAVE_UP]
+
+
+def test_the_hook_commits_with_the_job_failure(engine: sqlalchemy.Engine) -> None:
+    """A hook writing to the source lands in the same transaction as the failed job."""
+    source_id = _add_source_and_job(engine, url=OG_PAGE_URL)
+
+    def explode(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING)
+
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=explode, on_final_failure=handlers.mark_source_failed)}
+
+    loop.run_one(engine, handlers=specs)
+
+    source = _source(engine, source_id)
+    assert source.processing == models.ProcessingStatus.FAILED
+    assert source.processing_error == errors.FailureReason.TEXT_MISSING
+    assert _only_job(engine).status == models.JobStatus.FAILED.value
+
+
+def test_mark_source_failed_skips_a_deleted_source(engine: sqlalchemy.Engine) -> None:
+    """A tombstone is not touched by the failure hook."""
+    source_id = _add_source_and_job(engine, url=OG_PAGE_URL)
+    with sqlalchemy.orm.Session(engine) as db:
+        db.get_one(models.Source, source_id).deleted_at = sqlalchemy.func.now()
+        db.commit()
+    seq_before = _source(engine, source_id).change_seq
+
+    def explode(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise errors.PermanentJobError("gone")
+
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=explode, on_final_failure=handlers.mark_source_failed)}
+    loop.run_one(engine, handlers=specs)
+
+    source = _source(engine, source_id)
+    assert (source.processing, source.change_seq) == (models.ProcessingStatus.PENDING, seq_before)
+
+
+def test_jobs_enqueued_together_run_in_enqueue_order(engine: sqlalchemy.Engine) -> None:
+    """Both jobs are due at the same instant (one transaction); they still run first-in, first-out."""
+    ran: list[models.JobKind] = []
+
+    def record_kind(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        ran.append(models.JobKind(job.kind))
+
+    user_id = _add_user(engine)
+    with sqlalchemy.orm.Session(engine) as db:
+        for kind in (models.JobKind.ANALYZE, models.JobKind.PRIMER, models.JobKind.FETCH_CONTENT):
+            jobs.enqueue(db, kind=kind, user_id=user_id, payload={})
+        db.commit()
+    specs = {kind: loop.HandlerSpec(run=record_kind) for kind in models.JobKind}
+
+    while loop.run_one(engine, handlers=specs):
+        pass
+
+    assert ran == [models.JobKind.ANALYZE, models.JobKind.PRIMER, models.JobKind.FETCH_CONTENT]
 
 
 def _add_user(engine: sqlalchemy.Engine) -> int:

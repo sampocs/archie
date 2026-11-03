@@ -221,6 +221,7 @@ def _add_source_and_job(engine: sqlalchemy.Engine, *, url: str) -> uuid.UUID:
                 id=source_id,
                 user_id=user_id,
                 url=url,
+                normalized_url=url,
                 kind=models.SourceKind.LINK.value,
                 state=models.SourceState.INBOX.value,
                 intent=models.SourceIntent.QUEUE.value,

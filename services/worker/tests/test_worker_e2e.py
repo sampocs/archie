@@ -171,7 +171,7 @@ def test_only_jobs_running_too_long_are_requeued(engine: sqlalchemy.Engine) -> N
         stale_id, fresh_id = stale.id, fresh.id
 
     with sqlalchemy.orm.Session(engine) as db:
-        requeued = loop.requeue_stale(db, now=now)
+        requeued = loop.requeue_stale(db, now=now, handlers=handlers.HANDLERS)
 
     assert requeued == 1
     with sqlalchemy.orm.Session(engine) as db:
@@ -189,9 +189,36 @@ def test_a_crashed_job_out_of_attempts_fails_instead_of_looping(engine: sqlalche
         db.commit()
 
     with sqlalchemy.orm.Session(engine) as db:
-        loop.requeue_stale(db, now=now)
+        loop.requeue_stale(db, now=now, handlers=handlers.HANDLERS)
 
     assert _only_job(engine).status == models.JobStatus.FAILED.value
+
+
+def test_the_stale_sweep_runs_the_hook_only_for_jobs_it_fails(engine: sqlalchemy.Engine) -> None:
+    """A crash on the last attempt still tells the hook (GAVE_UP); a re-queued job is not final, so no hook."""
+    calls: list[tuple[int, str]] = []
+
+    def record(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+        calls.append((job.id, reason))
+
+    now = datetime.datetime.now(datetime.UTC)
+    user_id = _add_user(engine)
+    with sqlalchemy.orm.Session(engine) as db:
+        exhausted = _running_job(db, user_id=user_id, started_at=now - loop.STALE_AFTER - datetime.timedelta(minutes=1))
+        exhausted.attempts = exhausted.max_attempts
+        retryable = _running_job(db, user_id=user_id, started_at=now - loop.STALE_AFTER - datetime.timedelta(minutes=1))
+        retryable.max_attempts = retryable.attempts + 1
+        db.commit()
+        exhausted_id, retryable_id = exhausted.id, retryable.id
+
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=lambda db, job: None, on_final_failure=record)}
+    with sqlalchemy.orm.Session(engine) as db:
+        loop.requeue_stale(db, now=now, handlers=specs)
+
+    with sqlalchemy.orm.Session(engine) as db:
+        assert db.get_one(models.Job, exhausted_id).status == models.JobStatus.FAILED.value
+        assert db.get_one(models.Job, retryable_id).status == models.JobStatus.QUEUED.value
+    assert calls == [(exhausted_id, errors.FailureReason.GAVE_UP.value)]
 
 
 def test_an_idle_queue_runs_nothing(engine: sqlalchemy.Engine) -> None:

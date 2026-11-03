@@ -83,8 +83,7 @@ def test_database_url(request: pytest.FixtureRequest) -> str:
 
 
 # Emptied after every Postgres test so tests never see each other's rows.
-# SCAFFOLD: sample table list; becomes ("applied_actions", "jobs", "sources", "sessions", "users") in plan Task 2.
-_TRUNCATE_TABLES = ("sources",)
+_TRUNCATE_TABLES = ("applied_actions", "jobs", "sources", "sessions", "users")
 
 
 @pytest.fixture

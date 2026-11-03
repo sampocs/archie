@@ -28,10 +28,13 @@ _logger = logging.get_logger(logging.LoggerName.WORKER, "x")
 
 
 def fetch_thread(*, post_id: str) -> content.ExtractedText:
-    """Text of the shared post's thread: fxtwitter with retries, then vxtwitter's single post; raises if both fail."""
+    """Text of the shared post's thread: fxtwitter with retries, then vxtwitter's single post; raises if both fail.
+
+    fxtwitter falls back on an HTTP failure, a body that is not JSON, or JSON without the expected fields.
+    """
     try:
         return thread_text(data=_get_json_with_retries(url=FXTWITTER_THREAD_URL.format(post_id=post_id)))
-    except httpx.HTTPError as error:
+    except (httpx.HTTPError, ValueError, KeyError) as error:
         _logger.warning("fxtwitter failed for post %s (%r); trying vxtwitter", post_id, error)
 
     return _single_post_text(data=_get_json(url=VXTWITTER_STATUS_URL.format(post_id=post_id)))

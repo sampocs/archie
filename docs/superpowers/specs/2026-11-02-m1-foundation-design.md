@@ -1,5 +1,7 @@
 # Milestone 1: Foundation (2026-11-02)
 
+**Status:** Built 2026-11-03. Deployed to Railway and checked live on the owner's iPhone.
+
 The first milestone of the roadmap in `2026-11-02-backend-architecture-design.md`. Product behavior is defined in `2026-10-26-product-scope.md` and the visual design in `2026-10-29-ux-and-brand-design.md`.
 
 ## Goal

@@ -70,11 +70,11 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
 
     # Committing first releases the connection's transaction, and the page is fetched before the user's
     # write lock is taken, so a slow site never holds either or blocks their syncs.
-    url, user_id = source.url, source.user_id
+    source_id, url, user_id = source.id, source.url, source.user_id
     db.commit()
     title = extract_title(page=_fetch_page(url=url))
     if title is None:
-        _logger.info("No title found for source %s", source.id)
+        _logger.info("No title found for source %s", source_id)
         return
 
     # The user may have deleted the link during the fetch; the lock makes the refreshed state final.

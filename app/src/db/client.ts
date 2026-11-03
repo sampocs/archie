@@ -9,7 +9,7 @@ import * as schema from "./schema";
 // Both expo-sqlite (app) and better-sqlite3 (tests) are synchronous drivers, so they share this type.
 export type AppDb = BaseSQLiteDatabase<"sync", unknown, typeof schema>;
 
-export const db = drizzle(openDatabaseSync("archie.db"), { schema });
+export const db = drizzle(openDatabaseSync("archie.db", { enableChangeListener: true }), { schema });
 
 export function useDbMigrations() {
   return useMigrations(db, migrations);

@@ -1,0 +1,95 @@
+import { asc, eq, inArray } from "drizzle-orm";
+
+import { apiFetch } from "@/api/client";
+import type { AppDb } from "@/db/client";
+import * as schema from "@/db/schema";
+
+import type { OutboxEntry, PullPage, PushResult, SyncStore, SyncTransport } from "./engine";
+
+export function createApiTransport(getSessionKey: () => string | null): SyncTransport {
+  return {
+    async push(actions: OutboxEntry[]): Promise<PushResult[]> {
+      const response = (await apiFetch("/sync/push", {
+        method: "POST",
+        body: { actions },
+        sessionKey: getSessionKey(),
+      })) as { results: PushResult[] };
+      return response.results;
+    },
+
+    async pull(since: number): Promise<PullPage> {
+      return (await apiFetch(`/sync/pull?since=${since}`, { sessionKey: getSessionKey() })) as PullPage;
+    },
+  };
+}
+
+export function createDbSyncStore(db: AppDb): SyncStore {
+  return {
+    async pendingActions(limit) {
+      const rows = db
+        .select()
+        .from(schema.outbox)
+        .where(eq(schema.outbox.status, "pending"))
+        .orderBy(asc(schema.outbox.createdAt), asc(schema.outbox.id))
+        .limit(limit)
+        .all();
+      return rows.map((row) => ({ id: row.id, type: row.type, payload: JSON.parse(row.payload) }));
+    },
+
+    async removeActions(ids) {
+      if (ids.length === 0) return;
+      db.delete(schema.outbox).where(inArray(schema.outbox.id, ids)).run();
+    },
+
+    async rejectAction(id, reason) {
+      db.transaction((tx) => {
+        const entry = tx.select().from(schema.outbox).where(eq(schema.outbox.id, id)).get();
+        tx.update(schema.outbox).set({ status: "rejected", error: reason }).where(eq(schema.outbox.id, id)).run();
+        if (!entry) return;
+
+        // The payload carries the source id for source actions; surface the failure on that row.
+        const sourceId = (JSON.parse(entry.payload) as { id?: string }).id;
+        if (sourceId) {
+          tx.update(schema.sources).set({ syncError: reason }).where(eq(schema.sources.id, sourceId)).run();
+        }
+      });
+    },
+
+    async getPosition() {
+      const row = db.select().from(schema.syncState).where(eq(schema.syncState.id, 1)).get();
+      return row?.position ?? 0;
+    },
+
+    async applyPage(page) {
+      db.transaction((tx) => {
+        for (const source of page.rows.sources) {
+          // Server copy wins: a push always happens first, so it already includes our local changes.
+          // syncError is deliberately left out of the update set.
+          const values = {
+            url: source.url,
+            title: source.title,
+            kind: source.kind,
+            state: source.state,
+            intent: source.intent,
+            createdAt: source.created_at,
+            updatedAt: source.updated_at,
+            deletedAt: source.deleted_at,
+          };
+          tx.insert(schema.sources)
+            .values({ id: source.id, ...values })
+            .onConflictDoUpdate({ target: schema.sources.id, set: values })
+            .run();
+        }
+
+        tx.update(schema.syncState).set({ position: page.position }).where(eq(schema.syncState.id, 1)).run();
+      });
+    },
+
+    async setLastPushFailed(failed) {
+      db.update(schema.syncState)
+        .set({ lastPushFailed: failed ? 1 : 0 })
+        .where(eq(schema.syncState.id, 1))
+        .run();
+    },
+  };
+}

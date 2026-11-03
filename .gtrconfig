@@ -1,0 +1,7 @@
+# git gtr worktree setup: every new worktree gets the local secrets and a synced uv environment.
+[copy]
+	include = .env
+	include = .env.*
+
+[hook]
+	postCreate = uv sync

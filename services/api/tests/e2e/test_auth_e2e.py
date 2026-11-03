@@ -45,3 +45,12 @@ def test_logout_revokes_the_session_key(live_stack: LiveStack) -> None:
     assert authed.post("/auth/logout").status_code == 204
     assert authed.get("/me").status_code == 401
     assert other_session.get("/me").status_code == 200
+
+
+def test_apple_sign_in_rejects_an_invalid_token(live_stack: LiveStack, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A token that isn't a valid Apple identity token gets 401 and no session."""
+    monkeypatch.setenv("APPLE_AUDIENCE", "com.sampocs.archie")
+
+    response = live_stack.client.post("/auth/apple", json={"identity_token": "not-a-jwt"})
+
+    assert response.status_code == 401

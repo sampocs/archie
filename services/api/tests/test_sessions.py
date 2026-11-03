@@ -36,6 +36,8 @@ def test_last_used_at_is_refreshed_only_when_stale(migrated_database_url: str) -
         db.commit()
 
         assert sessions.resolve_session(db, raw_key=raw_key) is not None
+        assert db.dirty
+        db.commit()
         assert _last_used_at(db) > stale
     engine.dispose()
 

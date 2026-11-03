@@ -37,11 +37,11 @@ def resolve_session(db: orm.Session, *, raw_key: str) -> models.User | None:
 
     session, user = row
 
-    # Throttled so an ordinary read isn't a database write on every request.
+    # Throttled so an ordinary read isn't a database write on every request. Left dirty, not flushed, so
+    # the caller can tell a touch happened (`db.dirty`) and commit only then.
     now = datetime.datetime.now(tz=datetime.UTC)
     if now - session.last_used_at > SESSION_TOUCH_INTERVAL:
         session.last_used_at = now
-        db.flush()
     return user
 
 

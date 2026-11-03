@@ -12,7 +12,7 @@ import socket
 import threading
 import time
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import archie_api.deps
 import archie_api.main
@@ -32,6 +32,7 @@ class LiveStack:
     base_url: str
     database_url: str
     client: httpx.Client
+    _authed_clients: list[httpx.Client] = field(default_factory=list)
 
     def sign_in(self, *, apple_sub: str = "test-user") -> str:
         """Create (or reuse) a user and return a fresh session key, via the test-only route."""
@@ -41,7 +42,14 @@ class LiveStack:
 
     def authed(self, session_key: str) -> httpx.Client:
         """A client that sends `session_key` as a bearer token on every request."""
-        return httpx.Client(base_url=self.base_url, headers={"Authorization": f"Bearer {session_key}"})
+        authed_client = httpx.Client(base_url=self.base_url, headers={"Authorization": f"Bearer {session_key}"})
+        self._authed_clients.append(authed_client)
+        return authed_client
+
+    def close_authed_clients(self) -> None:
+        """Close every client `authed` handed out."""
+        for authed_client in self._authed_clients:
+            authed_client.close()
 
 
 @contextlib.contextmanager
@@ -64,9 +72,11 @@ def running_stack(*, database_url: str, start_worker: bool) -> Iterator[LiveStac
 
     base_url = f"http://127.0.0.1:{port}"
     with httpx.Client(base_url=base_url) as client:
+        stack = LiveStack(base_url=base_url, database_url=database_url, client=client)
         try:
-            yield LiveStack(base_url=base_url, database_url=database_url, client=client)
+            yield stack
         finally:
+            stack.close_authed_clients()
             stop_worker.set()
             if worker_thread is not None:
                 worker_thread.join(timeout=_SHUTDOWN_TIMEOUT_SECONDS)

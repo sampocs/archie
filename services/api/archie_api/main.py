@@ -14,6 +14,8 @@ from archie_shared import config, logging
 from archie_api import deps, test_routes
 from archie_api.auth import routes as auth_routes
 
+_TEST_ROUTE_ENVS = frozenset({config.ArchieEnv.DEV, config.ArchieEnv.TEST})
+
 
 class HealthView(pydantic.BaseModel):
     """Liveness plus whether the database answered, so Railway and the live check see one signal."""
@@ -29,10 +31,19 @@ def create_app() -> fastapi.FastAPI:
     app.add_api_route("/health", health, methods=["GET"])
     app.include_router(auth_routes.router)
 
-    # Test-only sign-in must never exist in production.
-    if config.get_settings().env() is not config.ArchieEnv.PROD:
+    if _test_routes_enabled():
         app.include_router(test_routes.router)
     return app
+
+
+def _test_routes_enabled() -> bool:
+    """Whether the auth-bypassing test routes may exist: only when `ARCHIE_ENV` is explicitly `dev` or `test`.
+
+    `Settings.env()` defaults an unset variable to `DEV`, so it can't be the gate: a production deploy that
+    forgot to set `ARCHIE_ENV` would otherwise expose a sign-in that needs no credentials.
+    """
+    settings = config.get_settings()
+    return bool(settings.archie_env) and settings.env() in _TEST_ROUTE_ENVS
 
 
 def health() -> HealthView:

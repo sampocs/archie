@@ -6,9 +6,8 @@ import { apiFetch } from "@/api/client";
 import { db, seedSyncState } from "@/db/client";
 import * as schema from "@/db/schema";
 
+import { KEYCHAIN_KEY, LEGACY_OPTIONS, SHARED_OPTIONS } from "./keychain";
 import { bumpSessionEpoch } from "./sessionEpoch";
-
-const KEYCHAIN_KEY = "archie.session";
 
 type SessionState = { status: "loading" | "signedOut" | "signedIn"; sessionKey: string | null };
 
@@ -26,8 +25,23 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-// Read the keychain once at startup; until it answers the app shows nothing rather than a flash of sign-in.
-SecureStore.getItemAsync(KEYCHAIN_KEY)
+// Moves an M1 key (stored in the app's own group) into the shared group so the share extension can read it and
+// the owner doesn't sign in again. The legacy item is addressed by its explicit group, not "no group": an
+// ungrouped query also matches the shared item, and deleting that would wipe the copy just made.
+export async function migrateSessionKeyToSharedGroup(): Promise<void> {
+  if (await SecureStore.getItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS)) return;
+
+  const legacyKey = await SecureStore.getItemAsync(KEYCHAIN_KEY, LEGACY_OPTIONS);
+  if (!legacyKey) return;
+
+  await SecureStore.setItemAsync(KEYCHAIN_KEY, legacyKey, SHARED_OPTIONS);
+  await SecureStore.deleteItemAsync(KEYCHAIN_KEY, LEGACY_OPTIONS);
+}
+
+// Read the keychain once at startup (after the migration); until it answers the app shows nothing rather than a
+// flash of sign-in.
+migrateSessionKeyToSharedGroup()
+  .then(() => getSessionKey())
   .then((key) => setState(key ? { status: "signedIn", sessionKey: key } : { status: "signedOut", sessionKey: null }))
   .catch(() => setState({ status: "signedOut", sessionKey: null }));
 
@@ -36,11 +50,11 @@ export function useSession(): SessionState {
 }
 
 export async function getSessionKey(): Promise<string | null> {
-  return SecureStore.getItemAsync(KEYCHAIN_KEY);
+  return SecureStore.getItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS);
 }
 
 export async function setSessionKey(key: string): Promise<void> {
-  await SecureStore.setItemAsync(KEYCHAIN_KEY, key);
+  await SecureStore.setItemAsync(KEYCHAIN_KEY, key, SHARED_OPTIONS);
   setState({ status: "signedIn", sessionKey: key });
 }
 
@@ -53,7 +67,7 @@ export async function clearSession(): Promise<void> {
   bumpSessionEpoch();
   await revokeServerSession(state.sessionKey);
   try {
-    await SecureStore.deleteItemAsync(KEYCHAIN_KEY);
+    await SecureStore.deleteItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS);
     db.transaction((tx) => {
       tx.delete(schema.sources).run();
       tx.delete(schema.outbox).run();

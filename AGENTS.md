@@ -23,6 +23,8 @@ truth); how it's built lives in `docs/superpowers/specs/2026-11-02-backend-archi
 - `make maestro` / `make maestro-offline` — Maestro flows on the booted simulator (see `maestro/README.md`)
 - `cd app && npm test` / `npm run typecheck` — app jest suite / `tsc --noEmit`
 - `make scaffold` — list remaining scaffold markers
+- `scripts/install_ios.sh [api-url]` — Release build against the Railway API, installed on the connected iPhone
+- Deploys: Railway project `archie` builds the app service from GitHub on push; settings made by hand are in `docs/deploy.md`
 
 ## Testing
 

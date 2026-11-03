@@ -7,6 +7,7 @@ neither is a success with nothing to write; only a failed fetch raises, so the l
 from __future__ import annotations
 
 import html.parser
+import time
 import uuid
 
 import httpx
@@ -19,6 +20,7 @@ SOURCE_ID_KEY = "source_id"
 
 _FETCH_TIMEOUT_SECONDS = 10
 _MAX_BODY_BYTES = 1_000_000
+_MAX_TITLE_LENGTH = 500
 _OG_TITLE_PROPERTY = "og:title"
 
 _logger = logging.get_logger(logging.LoggerName.WORKER, "fetch_title")
@@ -43,7 +45,7 @@ class _TitleParser(html.parser.HTMLParser):
         if tag != "meta" or self.og_title is not None:
             return
         attributes = dict(attrs)
-        if attributes.get("property") == _OG_TITLE_PROPERTY and attributes.get("content"):
+        if attributes.get("property") == _OG_TITLE_PROPERTY and attributes.get("content") is not None:
             self.og_title = attributes["content"]
 
     def handle_endtag(self, tag: str) -> None:
@@ -70,30 +72,46 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         _logger.info("No title found for source %s", source.id)
         return
 
-    changes.lock_user_writes(db, job.user_id)
+    # The user may have deleted the link during the fetch; the lock makes the refreshed state final.
+    changes.lock_user_writes(db, source.user_id)
+    db.refresh(source)
+    if source.deleted_at is not None:
+        return
+
     source.title = title
     source.updated_at = sqlalchemy.func.now()
     source.change_seq = changes.next_change_seq()
 
 
 def extract_title(*, page: str) -> str | None:
-    """The page's `og:title`, else its `<title>`, with whitespace collapsed; None when it has neither."""
+    """The page's `og:title`, else its `<title>`: whitespace collapsed, capped at 500 characters.
+
+    A blank candidate is skipped, so it never hides the next one; None when neither has text.
+    """
     parser = _TitleParser()
     parser.feed(page)
     parser.close()
 
-    raw_title = parser.og_title or parser.title_text
-    return " ".join(raw_title.split()) or None
+    candidates = (" ".join(raw_title.split()) for raw_title in (parser.og_title or "", parser.title_text))
+    title = next((candidate for candidate in candidates if candidate), None)
+    return title[:_MAX_TITLE_LENGTH] if title else None
 
 
 def _fetch_page(*, url: str) -> str:
-    """Download `url` as text, reading at most 1 MB; raises on any 4xx/5xx so the job retries."""
+    """Download `url` as text, reading at most 1 MB; raises on any 4xx/5xx or past a 10 s total deadline.
+
+    httpx's timeout applies to each read, so the deadline is checked per chunk to stop a trickling server
+    from holding the worker; the loop's error boundary retries the `TimeoutError`.
+    """
+    deadline = time.monotonic() + _FETCH_TIMEOUT_SECONDS
     with httpx.Client(timeout=_FETCH_TIMEOUT_SECONDS, follow_redirects=True) as client:
         with client.stream("GET", url) as response:
             response.raise_for_status()
 
             body = bytearray()
             for chunk in response.iter_bytes():
+                if time.monotonic() > deadline:
+                    raise TimeoutError(f"Fetching {url} took longer than {_FETCH_TIMEOUT_SECONDS}s")
                 body.extend(chunk)
                 if len(body) >= _MAX_BODY_BYTES:
                     break

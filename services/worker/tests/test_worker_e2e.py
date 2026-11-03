@@ -97,6 +97,22 @@ def test_page_without_a_title_still_finishes_the_job(engine: sqlalchemy.Engine, 
     assert _only_job(engine).status == models.JobStatus.DONE.value
 
 
+def test_a_source_deleted_before_the_job_runs_is_left_alone(engine: sqlalchemy.Engine) -> None:
+    """No request is made (record mode "none" would raise) and the tombstone keeps its title and change position."""
+    source_id = _add_source_and_job(engine, url=OG_PAGE_URL)
+    with sqlalchemy.orm.Session(engine) as db:
+        db.get_one(models.Source, source_id).deleted_at = sqlalchemy.func.now()
+        db.commit()
+    seq_before = _source(engine, source_id).change_seq
+
+    assert loop.run_one(engine, handlers=handlers.HANDLERS) is True
+
+    source = _source(engine, source_id)
+    assert source.title is None
+    assert source.change_seq == seq_before
+    assert _only_job(engine).status == models.JobStatus.DONE.value
+
+
 def test_a_server_error_is_retried_with_backoff_then_fails_for_good(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """A recorded 500 re-queues the job 10s out; after the last allowed attempt it is failed with its error kept."""
     source_id = _add_source_and_job(engine, url=SERVER_ERROR_URL)

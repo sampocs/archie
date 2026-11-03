@@ -1,0 +1,70 @@
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as SecureStore from "expo-secure-store";
+import { useSyncExternalStore } from "react";
+
+import { apiFetch } from "@/api/client";
+import { db, seedSyncState } from "@/db/client";
+import * as schema from "@/db/schema";
+
+const KEYCHAIN_KEY = "archie.session";
+
+type SessionState = { status: "loading" | "signedOut" | "signedIn"; sessionKey: string | null };
+
+// A tiny module-level store so `clearSession` (called from anywhere) updates every `useSession` subscriber.
+let state: SessionState = { status: "loading", sessionKey: null };
+const listeners = new Set<() => void>();
+
+function setState(next: SessionState): void {
+  state = next;
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+// Read the keychain once at startup; until it answers the app shows nothing rather than a flash of sign-in.
+SecureStore.getItemAsync(KEYCHAIN_KEY)
+  .then((key) => setState(key ? { status: "signedIn", sessionKey: key } : { status: "signedOut", sessionKey: null }))
+  .catch(() => setState({ status: "signedOut", sessionKey: null }));
+
+export function useSession(): SessionState {
+  return useSyncExternalStore(subscribe, () => state);
+}
+
+export async function getSessionKey(): Promise<string | null> {
+  return SecureStore.getItemAsync(KEYCHAIN_KEY);
+}
+
+export async function setSessionKey(key: string): Promise<void> {
+  await SecureStore.setItemAsync(KEYCHAIN_KEY, key);
+  setState({ status: "signedIn", sessionKey: key });
+}
+
+// Signing out also wipes the local copy, so the next person to sign in on this device never sees it.
+export async function clearSession(): Promise<void> {
+  await SecureStore.deleteItemAsync(KEYCHAIN_KEY);
+  db.delete(schema.sources).run();
+  db.delete(schema.outbox).run();
+  db.delete(schema.syncState).run();
+  seedSyncState();
+  setState({ status: "signedOut", sessionKey: null });
+}
+
+export async function signInWithApple(): Promise<void> {
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [
+      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+      AppleAuthentication.AppleAuthenticationScope.EMAIL,
+    ],
+  });
+  if (!credential.identityToken) throw new Error("Apple returned no identity token");
+
+  const response = (await apiFetch("/auth/apple", {
+    method: "POST",
+    body: { identity_token: credential.identityToken },
+    sessionKey: null,
+  })) as { session_key: string };
+  await setSessionKey(response.session_key);
+}

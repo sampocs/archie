@@ -19,7 +19,9 @@ appId: com.sampocs.archie
     id: "add-url"
 - inputText: "https://www.paulgraham.com/greatwork.html"
 - tapOn:
-    id: "add-queue"
+    id: "intent-queue"
+- tapOn:
+    id: "add-save"
 # The worker fetches the title; the Library card swaps the URL for it.
 - extendedWaitUntil:
     visible: ".*How to Do Great Work.*"

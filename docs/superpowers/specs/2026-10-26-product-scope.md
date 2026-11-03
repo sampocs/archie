@@ -21,7 +21,7 @@ The core problem is **integration, not consumption**. Carl turns what I already 
 - **App-first, with chat inside it.** Structured screens for reviewing and browsing, plus chat for questions.
 - **Foundations over facts.** Background knowledge (primers) matters more than one-off facts from an episode.
 - **Calm.** One notification a day at most. Nothing should feel like homework.
-- **Built for me, publishable to others.** I'm the main user. It ships on the App Store because TestFlight builds expire. Other people can sign in with Google or Apple, but only whitelisted emails use my API keys, and everyone else brings their own. Onboarding friction for other users is acceptable. (Decided 2026-11-02.)
+- **Built for me, publishable to others.** I'm the main user. It ships on the App Store because TestFlight builds expire. Sign-in is Sign in with Apple only (Google can be added later). Other people can sign in too, but only whitelisted emails use my API keys, and everyone else brings their own. Onboarding friction for other users is acceptable. (Decided 2026-11-02.)
 - **One reading voice.** Everything Carl writes (summaries, primers, Pulse, chat, card explanations) uses one style tuned to what I find easiest to read.
 
 ## Getting content in

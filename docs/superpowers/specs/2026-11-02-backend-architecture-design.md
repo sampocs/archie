@@ -50,7 +50,8 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
 - **sources:** one row per captured item.
   - kind: podcast, YouTube, X, article, newsletter or note
   - URL and title
-  - state: Queued / Inbox / Briefed / Consumed, plus Processing and Failed for the pipeline
+  - state: Queued / Inbox / Briefed / Consumed
+  - processing status, separate from state: pending / processing / ready / failed / unsupported (M2)
   - capture intent: Finished / Queue it / Prep me
   - the raw capture: shared text, Safari page text, raw newsletter email
   - whether the source gets cards: educational content does; pure entertainment gets a summary only

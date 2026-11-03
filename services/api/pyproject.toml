@@ -10,6 +10,9 @@ dependencies = [
   "archie-db",
 ]
 
+[project.scripts]
+archie-launch = "archie_api.launch:main"
+
 [tool.uv.sources]
 archie-shared = { workspace = true }
 archie-db = { workspace = true }

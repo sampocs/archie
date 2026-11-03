@@ -6,7 +6,11 @@ requires-python = ">=3.13"
 dependencies = [
   "archie-shared",
   "archie-db",
+  "httpx>=0.28.1",
 ]
+
+[project.scripts]
+archie-worker = "archie_worker.main:main"
 
 [tool.uv.sources]
 archie-shared = { workspace = true }

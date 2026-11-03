@@ -1,0 +1,67 @@
+name: Python
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  Lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: "**/uv.lock"
+
+    - name: Install dependencies
+      run: make install
+
+    # `make lint` runs ruff check, ruff format --check, and mypy across the workspace.
+    - name: Run lint
+      run: make lint
+
+  Test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: archie
+          POSTGRES_PASSWORD: archie
+          POSTGRES_DB: archie_test
+        ports:
+          - 5434:5432
+        options: >-
+          --health-cmd "pg_isready -U archie"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+
+    env:
+      TEST_DATABASE_URL: postgresql+psycopg://archie:archie@127.0.0.1:5434/archie_test
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+        enable-cache: true
+        cache-dependency-glob: "**/uv.lock"
+
+    - name: Install dependencies
+      run: make install
+
+    - name: Run tests
+      run: make test

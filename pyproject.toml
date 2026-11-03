@@ -1,0 +1,47 @@
+[tool.uv.workspace]
+# Every importable library lives in packages/; every deployable/runnable service in services/.
+members = ["packages/*", "services/*"]
+
+# Dev tooling is installed once into the shared workspace .venv, so `uv run ruff` / `mypy` /
+# `pytest` work from the repo root across every member.
+[dependency-groups]
+dev = [
+  "pytest>=8.0.0",
+  "ruff==0.14.1",
+  "mypy==1.18.2",
+  "httpx>=0.28",
+]
+
+# Ruff, Mypy, and Pytest are configured once at the root and apply to every member, so the house
+# style can't drift between packages. The Expo app, Maestro flows, and spikes are not workspace code.
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+extend-exclude = ["app", "spikes", "maestro"]
+
+[tool.ruff.lint]
+select = [
+  "E",    # pycodestyle errors
+  "W",    # pycodestyle warnings
+  "F",    # pyflakes (unused imports, etc)
+  "I",    # isort (import sorting)
+  "D101", "D102", "D103", "D105", "D106", # docstrings on public classes/functions
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.mypy]
+python_version = "3.13"
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_optional = true
+exclude = ["app", "spikes", "maestro"]
+
+[tool.pytest.ini_options]
+testpaths = ["packages", "services"]
+addopts = "--import-mode=importlib"
+norecursedirs = ["app", "spikes", "maestro", ".venv"]

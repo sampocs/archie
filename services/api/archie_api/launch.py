@@ -35,16 +35,17 @@ def main() -> None:
     children = [api, worker]
     terminated = threading.Event()
 
-    def forward_sigterm(signal_number: int, frame: FrameType | None) -> None:
+    def forward_stop(signal_number: int, frame: FrameType | None) -> None:
         terminated.set()
         for child in children:
             child.terminate()
 
-    signal.signal(signal.SIGTERM, forward_sigterm)
+    signal.signal(signal.SIGTERM, forward_stop)
+    signal.signal(signal.SIGINT, forward_stop)
 
     exit_code = _wait_for_first_exit(children)
 
-    # A SIGTERM we were asked to forward is a clean stop (uvicorn re-raises it, so its code is -15).
+    # A SIGTERM or SIGINT we were asked to forward is a clean stop (uvicorn re-raises it, so its code is -15).
     if terminated.is_set():
         sys.exit(0)
     # A child that quits on its own is a failure even with code 0, or the restart policy would not restart us.

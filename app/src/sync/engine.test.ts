@@ -21,7 +21,9 @@ import {
 import { bumpSessionEpoch, getSessionEpoch } from "@/auth/sessionEpoch";
 import { createDbSyncStore } from "./transport";
 
-jest.mock("expo-crypto", () => ({ randomUUID: () => require("crypto").randomUUID() }));
+jest.mock("expo-crypto", () => ({
+  randomUUID: () => require("crypto").randomUUID(),
+}));
 
 // In-memory store: a plain object over arrays.
 function makeMemoryStore(pending: OutboxEntry[], position = 0) {
@@ -58,17 +60,29 @@ function makeMemoryStore(pending: OutboxEntry[], position = 0) {
 }
 
 function makeEntries(count: number): OutboxEntry[] {
-  return Array.from({ length: count }, (_, index) => ({ id: `a${index}`, type: "add_source", payload: {} }));
+  return Array.from({ length: count }, (_, index) => ({
+    id: `a${index}`,
+    type: "add_source",
+    payload: {},
+  }));
 }
 
-const emptyPage = (position: number, more = false): PullPage => ({ rows: { sources: [], artifacts: [], cards: [] }, position, more });
+const emptyPage = (position: number, more = false): PullPage => ({
+  rows: { sources: [], artifacts: [], cards: [] },
+  position,
+  more,
+});
 
 function makeTransport(overrides: Partial<SyncTransport> = {}) {
   const calls = { pushes: [] as string[][], pulls: [] as number[] };
   const transport: SyncTransport = {
     async push(actions) {
       calls.pushes.push(actions.map((entry) => entry.id));
-      return actions.map((entry): PushResult => ({ id: entry.id, result: "applied", reason: null }));
+      return actions.map((entry): PushResult => ({
+        id: entry.id,
+        result: "applied",
+        reason: null,
+      }));
     },
     async pull(since) {
       calls.pulls.push(since);
@@ -97,7 +111,9 @@ describe("runSync push", () => {
 
     expect(outcome).toBe("synced");
     expect(calls.pushes.map((batch) => batch.length)).toEqual([50, 50, 20]);
-    expect(calls.pushes.flat()).toEqual(makeEntries(120).map((entry) => entry.id));
+    expect(calls.pushes.flat()).toEqual(
+      makeEntries(120).map((entry) => entry.id),
+    );
     expect(state.pending).toEqual([]);
   });
 
@@ -169,7 +185,9 @@ describe("runSync push", () => {
       },
     });
 
-    await expect(runSync(store, transport)).rejects.toThrow("no results for the pushed batch");
+    await expect(runSync(store, transport)).rejects.toThrow(
+      "no results for the pushed batch",
+    );
   });
 
   it("clears lastPushFailed after a successful push", async () => {
@@ -223,11 +241,19 @@ describe("runSync pull", () => {
   it("pushes first, then pulls from the stored position following `more` and saves the final position", async () => {
     const { store, state } = makeMemoryStore(makeEntries(1), 7);
     const order: string[] = [];
-    const pages = [emptyPage(10, true), emptyPage(20, true), emptyPage(25, false)];
+    const pages = [
+      emptyPage(10, true),
+      emptyPage(20, true),
+      emptyPage(25, false),
+    ];
     const { transport, calls } = makeTransport({
       async push(actions) {
         order.push("push");
-        return actions.map((entry): PushResult => ({ id: entry.id, result: "applied", reason: null }));
+        return actions.map((entry): PushResult => ({
+          id: entry.id,
+          result: "applied",
+          reason: null,
+        }));
       },
       async pull(since) {
         order.push("pull");
@@ -315,7 +341,9 @@ const pulledSource = (overrides: Partial<PulledSource>): PulledSource => ({
   ...overrides,
 });
 
-const pulledArtifact = (overrides: Partial<PulledArtifact>): PulledArtifact => ({
+const pulledArtifact = (
+  overrides: Partial<PulledArtifact>,
+): PulledArtifact => ({
   id: "a1",
   source_id: "s1",
   kind: "summary",
@@ -341,31 +369,72 @@ describe("database SyncStore", () => {
   it("upserts a pulled row over the local copy, keeps syncError, and saves the position", async () => {
     const { db, store } = makeDbStore();
     db.insert(schema.sources)
-      .values({ ...pulledSource({}), createdAt: "2026-11-01T00:00:00Z", updatedAt: "2026-11-01T00:00:00Z", syncError: "boom" })
+      .values({
+        ...pulledSource({}),
+        createdAt: "2026-11-01T00:00:00Z",
+        updatedAt: "2026-11-01T00:00:00Z",
+        syncError: "boom",
+      })
       .run();
 
     await store.applyPage({
-      rows: { sources: [pulledSource({ title: "Server title", state: "consumed", updated_at: "2026-11-02T00:00:00Z" })], artifacts: [], cards: [] },
+      rows: {
+        sources: [
+          pulledSource({
+            title: "Server title",
+            state: "consumed",
+            updated_at: "2026-11-02T00:00:00Z",
+          }),
+        ],
+        artifacts: [],
+        cards: [],
+      },
       position: 42,
       more: false,
     });
 
-    const row = db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get();
-    expect(row).toMatchObject({ title: "Server title", state: "consumed", updatedAt: "2026-11-02T00:00:00Z", syncError: "boom" });
+    const row = db
+      .select()
+      .from(schema.sources)
+      .where(eq(schema.sources.id, "s1"))
+      .get();
+    expect(row).toMatchObject({
+      title: "Server title",
+      state: "consumed",
+      updatedAt: "2026-11-02T00:00:00Z",
+      syncError: "boom",
+    });
     expect(await store.getPosition()).toBe(42);
   });
 
   it("skips rows whose source has an unsent local action but still saves the position", async () => {
     const { db, store } = makeDbStore();
     db.insert(schema.sources)
-      .values({ ...pulledSource({ title: "Local title" }), createdAt: "x", updatedAt: "x" })
+      .values({
+        ...pulledSource({ title: "Local title" }),
+        createdAt: "x",
+        updatedAt: "x",
+      })
       .run();
     db.insert(schema.outbox)
-      .values({ id: "o1", type: "update_source", payload: JSON.stringify({ id: "s1" }), createdAt: "x", status: "pending" })
+      .values({
+        id: "o1",
+        type: "update_source",
+        payload: JSON.stringify({ id: "s1" }),
+        createdAt: "x",
+        status: "pending",
+      })
       .run();
 
     await store.applyPage({
-      rows: { sources: [pulledSource({ title: "Server title" }), pulledSource({ id: "s3", title: "Other" })], artifacts: [], cards: [] },
+      rows: {
+        sources: [
+          pulledSource({ title: "Server title" }),
+          pulledSource({ id: "s3", title: "Other" }),
+        ],
+        artifacts: [],
+        cards: [],
+      },
       position: 9,
       more: false,
     });
@@ -379,18 +448,44 @@ describe("database SyncStore", () => {
   it("stores pulled artifacts (content as JSON text) and cards, and updates them in place on a re-pull", async () => {
     const { db, store } = makeDbStore();
     const page = (artifact: PulledArtifact, card: PulledCard): PullPage => ({
-      rows: { sources: [pulledSource({ processing: "ready", prep_me: true, reaction: "easy" })], artifacts: [artifact], cards: [card] },
+      rows: {
+        sources: [
+          pulledSource({
+            processing: "ready",
+            prep_me: true,
+            reaction: "easy",
+          }),
+        ],
+        artifacts: [artifact],
+        cards: [card],
+      },
       position: 5,
       more: false,
     });
 
     await store.applyPage(page(pulledArtifact({}), pulledCard({})));
 
-    expect(db.select().from(schema.sources).get()).toMatchObject({ processing: "ready", prepMe: 1, reaction: "easy" });
+    expect(db.select().from(schema.sources).get()).toMatchObject({
+      processing: "ready",
+      prepMe: 1,
+      reaction: "easy",
+    });
     const stored = db.select().from(schema.artifacts).get();
-    expect(stored).toMatchObject({ sourceId: "s1", kind: "summary", version: 1, isCurrent: 1 });
-    expect(JSON.parse(stored!.content)).toEqual({ gist: "One line", key_ideas: ["a", "b"] });
-    expect(db.select().from(schema.cards).get()).toMatchObject({ question: "Q?", answer: "A.", deletedAt: null });
+    expect(stored).toMatchObject({
+      sourceId: "s1",
+      kind: "summary",
+      version: 1,
+      isCurrent: 1,
+    });
+    expect(JSON.parse(stored!.content)).toEqual({
+      gist: "One line",
+      key_ideas: ["a", "b"],
+    });
+    expect(db.select().from(schema.cards).get()).toMatchObject({
+      question: "Q?",
+      answer: "A.",
+      deletedAt: null,
+    });
 
     await store.applyPage(
       page(
@@ -404,25 +499,42 @@ describe("database SyncStore", () => {
     expect(updated?.isCurrent).toBe(0);
     expect(JSON.parse(updated!.content)).toEqual({ gist: "Newer" });
     expect(db.select().from(schema.cards).all()).toHaveLength(1);
-    expect(db.select().from(schema.cards).get()).toMatchObject({ answer: "A2.", deletedAt: "2026-11-02T00:00:00Z" });
+    expect(db.select().from(schema.cards).get()).toMatchObject({
+      answer: "A2.",
+      deletedAt: "2026-11-02T00:00:00Z",
+    });
   });
 
   it("inserts rows it has not seen and applies tombstones", async () => {
     const { db, store } = makeDbStore();
 
     await store.applyPage({
-      rows: { sources: [pulledSource({ id: "s2", deleted_at: "2026-11-02T00:00:00Z" })], artifacts: [], cards: [] },
+      rows: {
+        sources: [
+          pulledSource({ id: "s2", deleted_at: "2026-11-02T00:00:00Z" }),
+        ],
+        artifacts: [],
+        cards: [],
+      },
       position: 1,
       more: false,
     });
 
-    const row = db.select().from(schema.sources).where(eq(schema.sources.id, "s2")).get();
+    const row = db
+      .select()
+      .from(schema.sources)
+      .where(eq(schema.sources.id, "s2"))
+      .get();
     expect(row?.deletedAt).toBe("2026-11-02T00:00:00Z");
   });
 
   it("returns only pending actions oldest first, and a rejection sets the source's syncError and leaves the queue", async () => {
     const { db, store } = makeDbStore();
-    const outboxRow = (id: string, createdAt: string, status: "pending" | "rejected") => ({
+    const outboxRow = (
+      id: string,
+      createdAt: string,
+      status: "pending" | "rejected",
+    ) => ({
       id,
       type: "add_source",
       payload: JSON.stringify({ id: `src-${id}` }),
@@ -430,16 +542,35 @@ describe("database SyncStore", () => {
       status,
     });
     db.insert(schema.outbox)
-      .values([outboxRow("late", "2026-11-01T00:00:02Z", "pending"), outboxRow("early", "2026-11-01T00:00:01Z", "pending"), outboxRow("old", "2026-11-01T00:00:00Z", "rejected")])
+      .values([
+        outboxRow("late", "2026-11-01T00:00:02Z", "pending"),
+        outboxRow("early", "2026-11-01T00:00:01Z", "pending"),
+        outboxRow("old", "2026-11-01T00:00:00Z", "rejected"),
+      ])
       .run();
-    db.insert(schema.sources).values({ ...pulledSource({ id: "src-early" }), createdAt: "x", updatedAt: "x" }).run();
+    db.insert(schema.sources)
+      .values({
+        ...pulledSource({ id: "src-early" }),
+        createdAt: "x",
+        updatedAt: "x",
+      })
+      .run();
 
-    expect((await store.pendingActions(50)).map((entry) => entry.id)).toEqual(["early", "late"]);
+    expect((await store.pendingActions(50)).map((entry) => entry.id)).toEqual([
+      "early",
+      "late",
+    ]);
 
     await store.rejectAction("early", "bad url");
 
-    expect((await store.pendingActions(50)).map((entry) => entry.id)).toEqual(["late"]);
-    const source = db.select().from(schema.sources).where(eq(schema.sources.id, "src-early")).get();
+    expect((await store.pendingActions(50)).map((entry) => entry.id)).toEqual([
+      "late",
+    ]);
+    const source = db
+      .select()
+      .from(schema.sources)
+      .where(eq(schema.sources.id, "src-early"))
+      .get();
     expect(source?.syncError).toBe("bad url");
   });
 });
@@ -514,7 +645,15 @@ describe("sign-out during a sync run", () => {
         // The user signs out (epoch bump, then wipe) while this response is on the wire.
         bumpSessionEpoch();
         wipe(db);
-        return { rows: { sources: [pulledSource({ id: "old-account" })], artifacts: [], cards: [] }, position: 7, more: false };
+        return {
+          rows: {
+            sources: [pulledSource({ id: "old-account" })],
+            artifacts: [],
+            cards: [],
+          },
+          position: 7,
+          more: false,
+        };
       },
     };
 
@@ -526,9 +665,17 @@ describe("sign-out during a sync run", () => {
 
   it("drops a late push settlement too: no outbox removal, rejection or failure flag", async () => {
     const { db } = makeDbStore();
-    db.insert(schema.sources).values({ ...pulledSource({}), createdAt: "x", updatedAt: "x" }).run();
+    db.insert(schema.sources)
+      .values({ ...pulledSource({}), createdAt: "x", updatedAt: "x" })
+      .run();
     db.insert(schema.outbox)
-      .values({ id: "o1", type: "add_source", payload: JSON.stringify({ id: "s1" }), createdAt: "x", status: "pending" })
+      .values({
+        id: "o1",
+        type: "add_source",
+        payload: JSON.stringify({ id: "s1" }),
+        createdAt: "x",
+        status: "pending",
+      })
       .run();
     const store = createDbSyncStore(db, getSessionEpoch());
 
@@ -537,7 +684,11 @@ describe("sign-out during a sync run", () => {
     await store.removeActions(["o1"]);
     await store.setLastPushFailed(true);
 
-    expect(db.select().from(schema.outbox).get()).toMatchObject({ id: "o1", status: "pending", error: null });
+    expect(db.select().from(schema.outbox).get()).toMatchObject({
+      id: "o1",
+      status: "pending",
+      error: null,
+    });
     expect(db.select().from(schema.sources).get()?.syncError).toBeNull();
     expect(db.select().from(schema.syncState).get()?.lastPushFailed).toBe(0);
   });

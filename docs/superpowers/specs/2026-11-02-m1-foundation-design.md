@@ -26,13 +26,18 @@ This proves the whole loop: phone action → outbox → API → Postgres → wor
 ## Repo layout
 
 ```
-backend/     uv Python project: FastAPI, SQLAlchemy 2, Alembic, psycopg 3
-app/         Expo app (latest stable SDK), expo-router
-spikes/      unchanged, reference only
+pyproject.toml, Makefile, docker-compose.yml, conftest.py, Dockerfile   uv workspace root
+packages/archie-shared/   config, logging
+packages/archie-db/       models, session, migrations, change positions, job enqueue
+services/api/             FastAPI app (archie_api): auth, sync, test routes, launcher
+services/worker/          job loop and handlers (archie_worker)
+app/                      Expo app (latest stable SDK), expo-router under app/src/app
+maestro/                  Maestro flows and the offline script
+spikes/                   unchanged, reference only
 docs/
 ```
 
-The backend is seeded with the `/scaffold` skill before any feature code, so later code copies its patterns.
+The Python side is seeded with the `/scaffold` skill before any feature code, so later code copies its patterns. The layout follows the skill: a uv workspace at the repo root.
 
 ## Backend
 
@@ -123,7 +128,7 @@ All routes except `/auth/*` and `/health` need `Authorization: Bearer <session k
     5. Upsert the rows, with the latest change winning, and save the position.
   - **On a network error,** it stops and waits for the next trigger, with nothing lost.
   - **A 401** clears the session and shows the sign-in screen.
-- **Session key:** stored in `expo-secure-store` (the Keychain). The access group is set up now so the share extension can read it in milestone 2.
+- **Session key:** stored in `expo-secure-store` (the Keychain). The shared Keychain access group the share extension needs is added in milestone 2. Adding it now risks the signing trouble the spike had with App Groups, and moving the key into the group later only costs one re-sign-in.
 - **Dev-only login link:** `archie://dev/login`, compiled only into debug builds. It calls `POST /test/session`, saves the key and opens Library. The Maestro flows use it so they skip the Apple sign-in screen.
 - **Backend URL:** the deployed Railway URL in release builds, and the local backend in debug builds. Set through the app config.
 

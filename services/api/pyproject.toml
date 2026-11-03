@@ -11,6 +11,9 @@ dependencies = [
   "pyjwt[crypto]>=2.15.1",
 ]
 
+[project.scripts]
+archie-launch = "archie_api.launch:main"
+
 [tool.uv.sources]
 archie-shared = { workspace = true }
 archie-db = { workspace = true }

@@ -1,5 +1,3 @@
-# Real 401 recording; only the error message was reworded (the header name it quoted) and the request id redacted,
-# so no credential-related text lives in the repo.
 interactions:
 - request:
     body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Source
@@ -250,14 +248,14 @@ interactions:
   response:
     body:
       string: '{"type":"error","error":{"type":"authentication_error","message":"invalid
-        api key"},"request_id":"req_redacted"}'
+        x-api-key"},"request_id":"req_011CggtrsswmuTmbBjSF6Y1R"}'
     headers:
       cache-control:
       - no-store
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a54f44b41da5b165-ORD
+      - a54f4bf00c7de5db-ORD
       connection:
       - keep-alive
       content-length:
@@ -267,7 +265,7 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 03 Nov 2026 23:48:11 GMT
+      - Tue, 03 Nov 2026 23:53:07 GMT
       server:
       - cloudflare
       server-timing:

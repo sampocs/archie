@@ -6,6 +6,8 @@ import { apiFetch } from "@/api/client";
 import { db, seedSyncState } from "@/db/client";
 import * as schema from "@/db/schema";
 
+import { bumpSessionEpoch } from "./sessionEpoch";
+
 const KEYCHAIN_KEY = "archie.session";
 
 type SessionState = { status: "loading" | "signedOut" | "signedIn"; sessionKey: string | null };
@@ -42,12 +44,16 @@ export async function setSessionKey(key: string): Promise<void> {
   setState({ status: "signedIn", sessionKey: key });
 }
 
-// Signing out also wipes the local copy, so the next person to sign in on this device never sees it. The wipe is one
-// transaction (a failure leaves the old data intact, never half-deleted), and the store flips to signedOut in `finally`
-// because the Keychain key is already gone: a local-db failure must not leave the UI signedIn without a key.
+// Signing out revokes the server session (best effort, so it works offline) and wipes the local copy, so the next
+// person to sign in on this device never sees it. The epoch is bumped first, synchronously, so sync runs already in
+// flight stop writing before anything else happens. The wipe is one transaction (a failure leaves the old data
+// intact, never half-deleted), and the store flips to signedOut in `finally` because the Keychain key is already
+// gone: a local-db failure must not leave the UI signedIn without a key.
 export async function clearSession(): Promise<void> {
-  await SecureStore.deleteItemAsync(KEYCHAIN_KEY);
+  bumpSessionEpoch();
+  await revokeServerSession(state.sessionKey);
   try {
+    await SecureStore.deleteItemAsync(KEYCHAIN_KEY);
     db.transaction((tx) => {
       tx.delete(schema.sources).run();
       tx.delete(schema.outbox).run();
@@ -56,6 +62,16 @@ export async function clearSession(): Promise<void> {
     });
   } finally {
     setState({ status: "signedOut", sessionKey: null });
+  }
+}
+
+// Failures are ignored on purpose: sign-out must work offline, and the key is discarded either way.
+async function revokeServerSession(sessionKey: string | null): Promise<void> {
+  if (!sessionKey) return;
+  try {
+    await apiFetch("/auth/logout", { method: "POST", sessionKey });
+  } catch {
+    // Unreachable or already invalid; nothing more to do.
   }
 }
 

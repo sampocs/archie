@@ -1,4 +1,4 @@
-import { NetworkError, UnauthorizedError } from "@/api/client";
+import { ClientError, NetworkError, UnauthorizedError } from "@/api/client";
 
 export type OutboxEntry = { id: string; type: string; payload: unknown };
 export type PushResult = { id: string; result: "applied" | "duplicate" | "rejected"; reason: string | null };
@@ -50,11 +50,14 @@ export async function runSync(
     return "synced";
   } catch (error) {
     if (error instanceof UnauthorizedError) return "unauthorized";
-    if (error instanceof NetworkError) {
-      // Only a failed push means local changes are stuck; a failed pull says nothing about them.
-      if (pushing) await store.setLastPushFailed(true);
+    // A refused push (4xx) leaves local changes just as stuck as an unreachable server, and retrying won't
+    // unstick them; surface it as waiting rather than stalling silently.
+    if (pushing && (error instanceof NetworkError || error instanceof ClientError)) {
+      await store.setLastPushFailed(true);
       return "offline";
     }
+    // A failed pull says nothing about local changes.
+    if (error instanceof NetworkError) return "offline";
     throw error;
   }
 }

@@ -16,6 +16,7 @@ DATABASE_URL_ENV = "DATABASE_URL"
 OWNER_EMAILS_ENV = "OWNER_EMAILS"
 APPLE_AUDIENCE_ENV = "APPLE_AUDIENCE"
 ARCHIE_ENV_ENV = "ARCHIE_ENV"
+ANTHROPIC_API_KEY_ENV = "ANTHROPIC_API_KEY"
 
 
 class ConfigError(RuntimeError):
@@ -43,6 +44,7 @@ class Settings(BaseSettings):
     owner_emails: str | None = None
     apple_audience: str | None = None
     archie_env: str | None = None
+    anthropic_api_key: str | None = None
 
     def require_database_url(self) -> str:
         """Return the Postgres URL, raising a clear error if it is missing."""
@@ -57,6 +59,13 @@ class Settings(BaseSettings):
         if not apple_audience:
             raise ConfigError(f"Missing Apple configuration: {APPLE_AUDIENCE_ENV} (see .env.example).")
         return apple_audience
+
+    def require_anthropic_api_key(self) -> str:
+        """Return the Anthropic API key, raising a clear error if it is missing."""
+        anthropic_api_key = self.anthropic_api_key
+        if not anthropic_api_key:
+            raise ConfigError(f"Missing Anthropic configuration: {ANTHROPIC_API_KEY_ENV} (see .env.example).")
+        return anthropic_api_key
 
     def owner_email_set(self) -> frozenset[str]:
         """The owner's emails, trimmed and lower-cased; empty when `OWNER_EMAILS` is unset.

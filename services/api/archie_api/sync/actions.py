@@ -8,6 +8,7 @@ from urllib import parse
 import pydantic
 import sqlalchemy
 from archie_db import changes, jobs, models
+from archie_shared import urls
 from sqlalchemy import exc, orm
 
 from archie_api.sync import schemas
@@ -85,6 +86,7 @@ def _add_source(db: orm.Session, *, user: models.User, action: schemas.ActionIn)
             id=payload.id,
             user_id=user.id,
             url=payload.url,
+            normalized_url=urls.normalize_url(payload.url),
             kind=models.SourceKind.LINK.value,
             state=state.value,
             intent=payload.intent,

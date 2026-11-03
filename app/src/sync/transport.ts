@@ -62,8 +62,22 @@ export function createDbSyncStore(db: AppDb): SyncStore {
 
     async applyPage(page) {
       db.transaction((tx) => {
+        // A source with an unsent local action keeps its local copy; it returns on a later pull once the
+        // push bumps its change_seq. No timestamp comparison: phone and server clocks can't be trusted.
+        const unsent = new Set(
+          tx
+            .select()
+            .from(schema.outbox)
+            .where(eq(schema.outbox.status, "pending"))
+            .all()
+            .map((entry) => (JSON.parse(entry.payload) as { id?: string }).id),
+        );
+
         for (const source of page.rows.sources) {
-          // Server copy wins: a push always happens first, so it already includes our local changes.
+          if (unsent.has(source.id)) continue;
+
+          // Server copy wins: a push always happens first, so it already includes our local changes
+          // (except actions queued mid-sync, skipped above).
           // syncError is deliberately left out of the update set.
           const values = {
             url: source.url,

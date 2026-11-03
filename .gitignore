@@ -10,3 +10,6 @@ spikes/**/.wrangler/
 .mypy_cache/
 .ruff_cache/
 .pytest_cache/
+
+# Railway IaC SDK (root package.json)
+/node_modules/

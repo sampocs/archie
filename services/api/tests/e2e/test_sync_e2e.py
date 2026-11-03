@@ -240,7 +240,7 @@ def test_a_duplicate_url_merges_into_the_existing_source(live_stack: LiveStack) 
 
 
 def test_a_duplicate_never_moves_a_source_backwards(live_stack: LiveStack) -> None:
-    """Re-sharing a finished source as queue leaves it consumed and finished; absent fields don't overwrite."""
+    """Re-sharing a finished source as queue leaves it consumed and finished, and never sets prep_me on it."""
     authed = live_stack.authed(live_stack.sign_in())
     original = _add_source("https://example.com/a", intent="finished", reaction="easy", note="keep", prep_me=False)
     _push(authed, original)
@@ -249,7 +249,7 @@ def test_a_duplicate_never_moves_a_source_backwards(live_stack: LiveStack) -> No
     kept = _pull_sources(authed)[original["payload"]["id"]]
 
     assert (kept["state"], kept["intent"]) == ("consumed", "finished")
-    assert (kept["reaction"], kept["note"], kept["prep_me"]) == ("easy", "keep", True)
+    assert (kept["reaction"], kept["note"], kept["prep_me"]) == ("easy", "keep", False)
 
 
 def test_a_duplicate_does_not_advance_a_source_the_user_is_already_reading(live_stack: LiveStack) -> None:

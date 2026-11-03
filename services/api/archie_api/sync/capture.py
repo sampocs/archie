@@ -229,7 +229,8 @@ def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSource
         existing.reaction = payload.reaction
     if payload.note is not None:
         existing.note = payload.note
-    if payload.prep_me is not None:
+    # A finished source with prep_me is the combination validation rejects ("prep_me needs intent queue").
+    if payload.prep_me is not None and existing.intent != models.SourceIntent.FINISHED:
         existing.prep_me = payload.prep_me
 
     stored_capture = False

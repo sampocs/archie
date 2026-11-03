@@ -344,7 +344,7 @@ def test_second_writer_waits_for_first_so_positions_commit_in_order(migrated_dat
   - **The harness**, for every later e2e task:
     - fixture `live_stack(migrated_database_url) -> LiveStack`
     - `@dataclass class LiveStack: base_url: str; database_url: str; client: httpx.Client; def sign_in(self, *, apple_sub: str = "test-user") -> str; def authed(self, session_key: str) -> httpx.Client`
-    - `start_worker: bool` is controlled by marker `@pytest.mark.worker`. The worker loop it uses is Task 6's, imported lazily so this task doesn't depend on it; without the marker, no worker starts.
+    - `start_worker: bool` is controlled by marker `@pytest.mark.worker`. The worker loop it uses is Task 7's, imported lazily so this task doesn't depend on it; without the marker, no worker starts.
 - Review: yes (auth).
 
 - [ ] **Step 1: Write the harness.**
@@ -631,8 +631,9 @@ def test_pull_does_not_skip_a_row_committed_after_a_later_one(live_stack: LiveSt
 
     slow_writer.commit()
     push_thread.join(timeout=5)
-    final = authed.get("/sync/pull", params={"since": mid["position"]}).json()
-    assert {row["id"] for row in final["rows"]["sources"]} == {str(slow_source_id), final["rows"]["sources"][1]["id"]}
+    final_rows = authed.get("/sync/pull", params={"since": mid["position"]}).json()["rows"]["sources"]
+    assert len(final_rows) == 2
+    assert str(slow_source_id) in {row["id"] for row in final_rows}
 
 
 def test_pull_pages_until_more_is_false(live_stack: LiveStack) -> None:
@@ -652,7 +653,6 @@ def test_pull_pages_until_more_is_false(live_stack: LiveStack) -> None:
 ```
 
   - The `httpx.Client` used from the thread needs `timeout=10`.
-  - In the ordering test, assert on the set of both ids. The fast row's id is unknown to the test, so assert `len(final) == 2` and that `slow_source_id` is in it. Implementers: simplify the last assert to exactly that.
 - [ ] **Step 2: Run** `make test-db`. The tests FAIL with 404s.
 - [ ] **Step 3: Implement `actions.py`.**
   - `apply_actions` opens one transaction per push and calls `changes.lock_user_writes(db, user.id)` first.

@@ -13,10 +13,10 @@ import uuid
 import httpx
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, models
+from archie_db import changes, models, pipeline
 from archie_shared import logging
 
-SOURCE_ID_KEY = "source_id"
+SOURCE_ID_KEY = pipeline.SOURCE_ID_KEY
 
 _FETCH_TIMEOUT_SECONDS = 10
 _MAX_BODY_BYTES = 1_000_000
@@ -68,14 +68,17 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     if source is None or source.deleted_at is not None:
         return
 
-    # The page is fetched before the user's write lock is taken, so a slow site never blocks their syncs.
-    title = extract_title(page=_fetch_page(url=source.url))
+    # Committing first releases the connection's transaction, and the page is fetched before the user's
+    # write lock is taken, so a slow site never holds either or blocks their syncs.
+    url, user_id = source.url, source.user_id
+    db.commit()
+    title = extract_title(page=_fetch_page(url=url))
     if title is None:
         _logger.info("No title found for source %s", source.id)
         return
 
     # The user may have deleted the link during the fetch; the lock makes the refreshed state final.
-    changes.lock_user_writes(db, source.user_id)
+    changes.lock_user_writes(db, user_id)
     db.refresh(source)
     if source.deleted_at is not None:
         return

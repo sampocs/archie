@@ -5,7 +5,7 @@ import uuid
 import sqlalchemy.orm
 from archie_db import changes, models, pipeline
 
-from archie_worker.handlers import fetch_title
+from archie_worker.handlers import analyze, fetch_title, primer
 from archie_worker.loop import HandlerSpec
 
 
@@ -25,4 +25,6 @@ def mark_source_failed(db: sqlalchemy.orm.Session, job: models.Job, reason: str)
 
 HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.FETCH_TITLE: HandlerSpec(run=fetch_title.handle),
+    models.JobKind.ANALYZE: HandlerSpec(run=analyze.handle, on_final_failure=mark_source_failed),
+    models.JobKind.PRIMER: HandlerSpec(run=primer.handle, on_final_failure=mark_source_failed),
 }

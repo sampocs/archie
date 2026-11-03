@@ -1,0 +1,26 @@
+appId: com.sampocs.archie
+---
+- runFlow: login.yaml
+- tapOn:
+    id: "tab-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://www.paulgraham.com/greatwork.html"
+- tapOn:
+    id: "add-queue"
+# The worker fetches the title; the Library card swaps the URL for it.
+- extendedWaitUntil:
+    visible: ".*How to Do Great Work.*"
+    timeout: 15000

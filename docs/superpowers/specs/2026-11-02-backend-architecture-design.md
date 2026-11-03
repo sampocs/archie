@@ -19,7 +19,7 @@ It builds on:
 | Embeddings | OpenAI `text-embedding-3-small`. |
 | Jobs | A job queue table in Postgres, run by the worker. No Redis and no hosted workflow service. |
 | Processing speed | Every job runs right away. The Batch API is not used; it would save about $1.50/mo. |
-| Login | Sign in with Google and with Apple. After the first sign-in, a long-lived session key is kept in the Keychain. |
+| Login | Sign in with Apple only (decided 2026-11-02; Google can be added later without design changes). After the first sign-in, a long-lived session key is kept in the Keychain. |
 | Users | Built for many users from the start. Only whitelisted emails use the owner's API keys; everyone else brings their own. |
 | Phone data | The phone keeps a full copy of the library in a local database, with an outbox for offline changes. |
 | Chat | Answers from the library first, then from Claude's own knowledge, then from web search when needed. Every claim is labeled with where it came from. |
@@ -107,15 +107,15 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
 
 ## Login
 
-- **Sign-in buttons:** Google and Apple. Apple's App Store rules require Sign in with Apple when Google sign-in is offered.
+- **Sign-in:** Sign in with Apple only. Archie is iPhone-only, so this meets the App Store rules on its own and needs no Google Cloud setup. Google sign-in can be added later as another `/auth/<provider>` route. Apple can hide a user's email behind a relay address, so the owner picks "Share My Email" on first sign-in, so that the whitelist matches.
 - **First sign-in:**
   - The app sends the provider's ID token to `/auth`.
-  - The backend checks the token's signature against Google's or Apple's public keys, which are cached.
+  - The backend checks the token's signature against Apple's public keys, which are cached.
   - It then creates the user if they're new, and returns a random session key.
 - **Storing the session key:**
   - The key lives in the iOS Keychain, in an access group shared with the share extension.
   - Each use extends its expiry, so the user stays signed in until they reinstall or sign out.
-- **Each request** costs one indexed lookup of the key's hash in Postgres. There are no calls to Google or Apple after sign-in, and a lost phone's session can be revoked.
+- **Each request** costs one indexed lookup of the key's hash in Postgres. There are no calls to Apple after sign-in, and a lost phone's session can be revoked.
 - **Whitelist:** the owner's emails are kept in config. Any other user must add their own keys in Settings before their sources are processed. That friction is fine, since Archie is mainly for its owner.
 
 ## Phone sync
@@ -165,7 +165,7 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - choosing the current version
   - deciding retries and model fallback
   - routing calls to the owner's keys or the user's own keys
-  - checking the Google and Apple sign-in token, using test signing keys
+  - checking the Apple sign-in token, using test signing keys
 - **Not tests:**
   - restating a constant
   - a function that only calls other functions
@@ -200,7 +200,7 @@ Each milestone gets its own spec → plan → build, and each one ends with some
 
 | # | Milestone | Done when the user can… |
 |---|---|---|
-| 1 | **Foundation:** Railway + Postgres, the job queue, Google/Apple login and sessions, an Expo app shell with the local database, the outbox and the sync layer, and the test setup (replay recording, Maestro) | log in on the phone, and a change made offline syncs |
+| 1 | **Foundation:** Railway + Postgres, the job queue, Sign in with Apple and sessions, an Expo app shell with the local database, the outbox and the sync layer, and the test setup (replay recording, Maestro) | log in on the phone, and a change made offline syncs |
 | 2 | **Capture → pipeline:** share extension → API; analyze, primer and cards; versions; `llm_calls`; articles/Safari and X first | share an article and read its summary minutes later |
 | 3 | **All sources:** podcasts (Spotify), YouTube, newsletters from the Worker | see everything they consume arrive |
 | 4 | **Library + Today screens:** states, domains/topics, source pages, following the UX spec | actually live in the app |

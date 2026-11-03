@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "description": "Only the Railway IaC SDK, so the Railway CLI can evaluate .railway/railway.ts. The app has its own package.json in app/.",
+  "devDependencies": {
+    "railway": "3.16.0"
+  }
+}

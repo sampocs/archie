@@ -1,0 +1,25 @@
+[project]
+name = "archie-testing"
+version = "0.1.0"
+description = "Test harness shared by every service's e2e tests: boots the real API (and optionally the worker) on a test database."
+requires-python = ">=3.13"
+dependencies = [
+  "archie-api",
+  "archie-db",
+  "archie-shared",
+  "httpx>=0.28",
+  "uvicorn>=0.32",
+  "pytest>=8.0.0",
+]
+
+[tool.uv.sources]
+archie-api = { workspace = true }
+archie-db = { workspace = true }
+archie-shared = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["archie_testing"]

@@ -1,0 +1,44 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - httpbin.org
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://httpbin.org/json
+  response:
+    body:
+      string: "{\n  \"slideshow\": {\n    \"author\": \"Yours Truly\", \n    \"date\":
+        \"date of publication\", \n    \"slides\": [\n      {\n        \"title\":
+        \"Wake up to WonderWidgets!\", \n        \"type\": \"all\"\n      }, \n      {\n
+        \       \"items\": [\n          \"Why <em>WonderWidgets</em> are great\",
+        \n          \"Who <em>buys</em> WonderWidgets\"\n        ], \n        \"title\":
+        \"Overview\", \n        \"type\": \"all\"\n      }\n    ], \n    \"title\":
+        \"Sample Slide Show\"\n  }\n}\n"
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - Retry-After, RateLimit, RateLimit-Policy
+      content-length:
+      - '429'
+      content-type:
+      - application/json
+      date:
+      - Tue, 03 Nov 2026 15:31:07 GMT
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+version: 1

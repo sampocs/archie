@@ -18,7 +18,6 @@ const VIDEOS = [
 const ANDROID_CONTEXT = {
   client: { clientName: "ANDROID", clientVersion: "20.10.38", androidSdkVersion: 30, hl: "en", gl: "US" },
 };
-const PUBLIC_INNERTUBE_KEY = "AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w";
 const ANDROID_UA = "com.google.android.youtube/20.10.38 (Linux; U; Android 11) gzip";
 const BROWSER_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36";
@@ -39,12 +38,12 @@ async function fetchTranscript(videoId) {
     if (!pageKey) {
       result.watchError = result.watchHtmlHasRecaptcha ? "IpBlocked (recaptcha page)" : "no INNERTUBE_API_KEY in watch page";
     }
-    // The key is public and constant, so we keep going without the watch page to see whether the player endpoint is blocked too.
-    const key = pageKey ?? PUBLIC_INNERTUBE_KEY;
+    // Without the watch page's key, keep going keyless to see whether the player endpoint is blocked too.
+    const keyParam = pageKey ? `?key=${pageKey}` : "";
 
     // Step 2: InnerTube player endpoint as the Android client, which returns caption track URLs.
     result.step = "innertube_player";
-    const player = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${key}`, {
+    const player = await fetch(`https://www.youtube.com/youtubei/v1/player${keyParam}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "User-Agent": ANDROID_UA },
       body: JSON.stringify({ context: ANDROID_CONTEXT, videoId }),

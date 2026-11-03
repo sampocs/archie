@@ -66,7 +66,7 @@ Separate from the reading `state` (Queued/Consumed…), because a queued item is
 
 ### Model calls
 
-- One small module, `archie_worker.llm`, wraps the Anthropic SDK: streaming `messages.stream(...)` + `get_final_message()`, structured output through `output_config.format` (json_schema) for analyze, and a `(primary, fallback)` model pair per step.
+- One small module, `archie_worker.llm`, wraps the Anthropic SDK: `messages.create(...)` with a 300 s timeout (outputs are at most 8,000 tokens, so streaming isn't needed, and plain responses record and replay cleanly), SDK retries off (the job loop retries), structured output through `output_config.format` (json_schema) for analyze, and a `(primary, fallback)` model pair per step.
 - **Fallback:** a response with `stop_reason` `refusal` or `max_tokens` is a failure of that model; the call is repeated once on the fallback model in the same attempt. If the fallback also fails that way, the step raises (and the job retries per the loop). API errors (429, 5xx, connection) raise and use the loop's backoff.
 - **Every call** — including a refused one — inserts an `llm_calls` row: user, source, job, step, provider `anthropic`, model, input and output tokens, `cost_usd` (`Decimal`, computed from a price table in code: Haiku 5.5 $0.10/$0.50, Sonnet 5.5 $2/$10, Opus 5.5 $4/$20 per M tokens), stop reason, created_at.
 - **Keys:** whitelisted users use `ANTHROPIC_API_KEY` from the environment. Anyone else: `PermanentJobError("needs_api_key")` → "Add your own API key in Settings (coming soon)".
@@ -106,7 +106,7 @@ Payload: `{id, url, intent, reaction?, note?, prep_me?, capture?: {title, text}}
 
 - `reaction`: `easy` | `mostly` | `lost` (Finished only). `note`: up to 2,000 characters. `prep_me`: bool (Queue only). All stored on `sources` and synced.
 - `capture.text` up to 400,000 characters (`capture.title` up to 500). Stored in a `source_captures` table (source_id, title, text, created_at) that `fetch_content` reads, so `add_source` stays a quick insert. Not synced.
-- The push body limit rises to 2 MB for this.
+- The lengths are checked when the action is validated; an over-long capture is rejected like any bad payload.
 
 ### Duplicates
 

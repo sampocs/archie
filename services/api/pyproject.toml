@@ -8,6 +8,7 @@ dependencies = [
   "uvicorn[standard]>=0.32",
   "archie-shared",
   "archie-db",
+  "pyjwt[crypto]>=2.15.1",
 ]
 
 [tool.uv.sources]

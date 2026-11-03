@@ -7,6 +7,7 @@ import json
 import pathlib
 from typing import Any
 
+from archie_worker import content
 from archie_worker.content import article, x
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures"
@@ -38,7 +39,15 @@ def test_clean_capture_normalizes_whitespace_and_collapses_blank_runs() -> None:
 
 def test_clean_capture_is_capped() -> None:
     """Text over 200,000 characters is cut to exactly that."""
-    assert len(article.clean_capture("word " * 100_000)) == article.MAX_TEXT_LENGTH
+    assert len(article.clean_capture("word " * 100_000)) == content.MAX_TEXT_LENGTH
+
+
+def test_thread_text_is_capped() -> None:
+    """A thread whose joined posts pass 200,000 characters is cut to exactly that."""
+    data = _load(THREAD_FIXTURE)
+    data["thread"][0]["text"] = "word " * 100_000
+
+    assert len(x.thread_text(data=data).text) == content.MAX_TEXT_LENGTH
 
 
 def test_extract_finds_nothing_in_a_page_without_text() -> None:

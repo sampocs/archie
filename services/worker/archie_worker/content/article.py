@@ -10,8 +10,6 @@ import trafilatura
 from archie_worker import content
 from archie_worker.handlers import fetch_title
 
-MAX_TEXT_LENGTH = 200_000
-
 # Shorter lines (headings, "Yes", "Share") legitimately repeat; only long ones are page chrome or captions.
 _MIN_REPEATED_LINE_LENGTH = 20
 _MAX_LINE_REPEATS = 2
@@ -35,7 +33,7 @@ def clean_capture(text: str) -> str:
         kept.append(line)
 
     collapsed = _BLANK_RUNS.sub("\n\n", "\n".join(kept)).strip()
-    return collapsed[:MAX_TEXT_LENGTH]
+    return collapsed[: content.MAX_TEXT_LENGTH]
 
 
 def extract(*, html: str, url: str) -> content.ExtractedText | None:
@@ -49,4 +47,4 @@ def extract(*, html: str, url: str) -> content.ExtractedText | None:
 
     metadata = trafilatura.extract_metadata(html, default_url=url)
     title = (metadata.title if metadata is not None else None) or fetch_title.extract_title(page=html)
-    return content.ExtractedText(title=title, text=text[:MAX_TEXT_LENGTH])
+    return content.ExtractedText(title=title, text=text[: content.MAX_TEXT_LENGTH])

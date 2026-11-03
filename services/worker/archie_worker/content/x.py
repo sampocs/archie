@@ -45,6 +45,7 @@ def thread_text(*, data: dict[str, Any]) -> content.ExtractedText:
 
     A reply's thread also holds other authors' ancestors, which are skipped. Each post contributes its
     text, then its quoted post as `Quoting @handle: ...`, then an X Article as its title and body blocks.
+    The joined text is capped at `content.MAX_TEXT_LENGTH` characters.
     The title is the Article's, else `@handle: ` and the first 80 characters of the first post.
     """
     shared_post = data["status"]
@@ -55,7 +56,7 @@ def thread_text(*, data: dict[str, Any]) -> content.ExtractedText:
     paragraphs = [paragraph for post in posts for paragraph in _post_paragraphs(post=post)]
     first_article = posts[0].get("article")
     title = first_article["title"] if first_article else f"@{handle}: {posts[0]['text'][:TITLE_POST_LENGTH]}"
-    return content.ExtractedText(title=title, text="\n\n".join(paragraphs))
+    return content.ExtractedText(title=title, text="\n\n".join(paragraphs)[: content.MAX_TEXT_LENGTH])
 
 
 def _post_paragraphs(*, post: dict[str, Any]) -> list[str]:

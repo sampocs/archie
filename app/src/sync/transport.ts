@@ -3,6 +3,7 @@ import { asc, eq, inArray } from "drizzle-orm";
 import { apiFetch } from "@/api/client";
 import type { AppDb } from "@/db/client";
 import * as schema from "@/db/schema";
+import { getSessionEpoch } from "@/auth/sessionEpoch";
 
 import type { OutboxEntry, PullPage, PushResult, SyncStore, SyncTransport } from "./engine";
 
@@ -23,7 +24,12 @@ export function createApiTransport(getSessionKey: () => string | null): SyncTran
   };
 }
 
-export function createDbSyncStore(db: AppDb): SyncStore {
+// `runEpoch` is the session epoch when the sync run started. Every write is a no-op once it has changed (the user
+// signed out and the local database was wiped), so a late response can't repopulate it. The check runs inside the
+// transaction, and the drivers are synchronous, so nothing can slip in between the check and the write.
+export function createDbSyncStore(db: AppDb, runEpoch: number = getSessionEpoch()): SyncStore {
+  const signedOutSinceStart = () => getSessionEpoch() !== runEpoch;
+
   return {
     async pendingActions(limit) {
       const rows = db
@@ -38,11 +44,15 @@ export function createDbSyncStore(db: AppDb): SyncStore {
 
     async removeActions(ids) {
       if (ids.length === 0) return;
-      db.delete(schema.outbox).where(inArray(schema.outbox.id, ids)).run();
+      db.transaction((tx) => {
+        if (signedOutSinceStart()) return;
+        tx.delete(schema.outbox).where(inArray(schema.outbox.id, ids)).run();
+      });
     },
 
     async rejectAction(id, reason) {
       db.transaction((tx) => {
+        if (signedOutSinceStart()) return;
         const entry = tx.select().from(schema.outbox).where(eq(schema.outbox.id, id)).get();
         tx.update(schema.outbox).set({ status: "rejected", error: reason }).where(eq(schema.outbox.id, id)).run();
         if (!entry) return;
@@ -62,6 +72,8 @@ export function createDbSyncStore(db: AppDb): SyncStore {
 
     async applyPage(page) {
       db.transaction((tx) => {
+        if (signedOutSinceStart()) return;
+
         // A source with an unsent local action keeps its local copy; it returns on a later pull once the
         // push bumps its change_seq. No timestamp comparison: phone and server clocks can't be trusted.
         const unsent = new Set(
@@ -100,10 +112,13 @@ export function createDbSyncStore(db: AppDb): SyncStore {
     },
 
     async setLastPushFailed(failed) {
-      db.update(schema.syncState)
-        .set({ lastPushFailed: failed ? 1 : 0 })
-        .where(eq(schema.syncState.id, 1))
-        .run();
+      db.transaction((tx) => {
+        if (signedOutSinceStart()) return;
+        tx.update(schema.syncState)
+          .set({ lastPushFailed: failed ? 1 : 0 })
+          .where(eq(schema.syncState.id, 1))
+          .run();
+      });
     },
   };
 }

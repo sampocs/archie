@@ -2,7 +2,7 @@ import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { eq } from "drizzle-orm";
 
-import { NetworkError, UnauthorizedError } from "@/api/client";
+import { ClientError, NetworkError, UnauthorizedError } from "@/api/client";
 import type { AppDb } from "@/db/client";
 import * as schema from "@/db/schema";
 
@@ -16,6 +16,7 @@ import {
   SyncStore,
   SyncTransport,
 } from "./engine";
+import { bumpSessionEpoch, getSessionEpoch } from "@/auth/sessionEpoch";
 import { createDbSyncStore } from "./transport";
 
 jest.mock("expo-crypto", () => ({ randomUUID: () => require("crypto").randomUUID() }));
@@ -130,6 +131,32 @@ describe("runSync push", () => {
     expect(state.failedFlags).toEqual([true]);
     expect(state.pending).toHaveLength(3);
     expect(calls.pulls).toEqual([]);
+  });
+
+  it("treats a refused push (4xx) as a failed push: flags it, keeps the actions and goes offline", async () => {
+    const { store, state } = makeMemoryStore(makeEntries(2));
+    const { transport, calls } = makeTransport({
+      async push() {
+        throw new ClientError("422");
+      },
+    });
+
+    expect(await runSync(store, transport)).toBe("offline");
+    expect(state.failedFlags).toEqual([true]);
+    expect(state.pending).toHaveLength(2);
+    expect(calls.pulls).toEqual([]);
+  });
+
+  it("still throws a refused pull (4xx) without flagging a failed push", async () => {
+    const { store, state } = makeMemoryStore([]);
+    const { transport } = makeTransport({
+      async pull() {
+        throw new ClientError("400");
+      },
+    });
+
+    await expect(runSync(store, transport)).rejects.toBeInstanceOf(ClientError);
+    expect(state.failedFlags).toEqual([false]);
   });
 
   it("throws instead of re-sending forever when no result belongs to the pushed batch", async () => {
@@ -395,5 +422,52 @@ describe("createSyncScheduler", () => {
 
     expect(await settled).toEqual(new Error("first"));
     expect(runs).toBe(2);
+  });
+});
+
+describe("sign-out during a sync run", () => {
+  function wipe(db: AppDb): void {
+    db.delete(schema.sources).run();
+    db.delete(schema.outbox).run();
+    db.update(schema.syncState).set({ position: 0, lastPushFailed: 0 }).run();
+  }
+
+  it("drops the in-flight run's pulled rows and position once the session epoch moved on", async () => {
+    const { db } = makeDbStore();
+    const store = createDbSyncStore(db, getSessionEpoch());
+    const transport: SyncTransport = {
+      async push() {
+        return [];
+      },
+      async pull() {
+        // The user signs out (epoch bump, then wipe) while this response is on the wire.
+        bumpSessionEpoch();
+        wipe(db);
+        return { rows: { sources: [pulledSource({ id: "old-account" })] }, position: 7, more: false };
+      },
+    };
+
+    expect(await runSync(store, transport)).toBe("synced");
+
+    expect(db.select().from(schema.sources).all()).toEqual([]);
+    expect(await store.getPosition()).toBe(0);
+  });
+
+  it("drops a late push settlement too: no outbox removal, rejection or failure flag", async () => {
+    const { db } = makeDbStore();
+    db.insert(schema.sources).values({ ...pulledSource({}), createdAt: "x", updatedAt: "x" }).run();
+    db.insert(schema.outbox)
+      .values({ id: "o1", type: "add_source", payload: JSON.stringify({ id: "s1" }), createdAt: "x", status: "pending" })
+      .run();
+    const store = createDbSyncStore(db, getSessionEpoch());
+
+    bumpSessionEpoch();
+    await store.rejectAction("o1", "late");
+    await store.removeActions(["o1"]);
+    await store.setLastPushFailed(true);
+
+    expect(db.select().from(schema.outbox).get()).toMatchObject({ id: "o1", status: "pending", error: null });
+    expect(db.select().from(schema.sources).get()?.syncError).toBeNull();
+    expect(db.select().from(schema.syncState).get()?.lastPushFailed).toBe(0);
   });
 });

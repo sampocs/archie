@@ -26,6 +26,7 @@ const config: ExpoConfig = {
       { image: "./assets/images/splash-icon.png", resizeMode: "contain", backgroundColor: "#F4F2EC" },
     ],
   ],
+  extra: { apiUrl: process.env.EXPO_PUBLIC_API_URL },
   experiments: { typedRoutes: true },
 };
 

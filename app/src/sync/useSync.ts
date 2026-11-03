@@ -4,6 +4,7 @@ import * as Network from "expo-network";
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 
+import { getSessionEpoch } from "@/auth/sessionEpoch";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 
@@ -37,7 +38,6 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
   useEffect(() => {
     if (!hasSession) return;
 
-    const store = createDbSyncStore(db);
     const transport = createApiTransport(() => sessionKeyRef.current);
     let followUpTimers: ReturnType<typeof setTimeout>[] = [];
     // Replaces any pending follow-ups so repeated pushes don't pile up timers.
@@ -46,6 +46,8 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
       followUpTimers = FOLLOW_UP_DELAYS_MS.map((delay) => setTimeout(fire, delay));
     };
     const trigger = createSyncScheduler(async () => {
+      // A fresh store per run pins the run to the session it started in; see createDbSyncStore.
+      const store = createDbSyncStore(db, getSessionEpoch());
       const outcome = await runSync(store, transport, scheduleFollowUps);
       if (outcome === "unauthorized") onUnauthorizedRef.current();
     });

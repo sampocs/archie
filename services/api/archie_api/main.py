@@ -13,6 +13,7 @@ from archie_shared import config, logging
 
 from archie_api import deps, test_routes
 from archie_api.auth import routes as auth_routes
+from archie_api.sync import routes as sync_routes
 
 _TEST_ROUTE_ENVS = frozenset({config.ArchieEnv.DEV, config.ArchieEnv.TEST})
 
@@ -30,6 +31,7 @@ def create_app() -> fastapi.FastAPI:
     app = fastapi.FastAPI(title="Archie")
     app.add_api_route("/health", health, methods=["GET"])
     app.include_router(auth_routes.router)
+    app.include_router(sync_routes.router)
 
     if _test_routes_enabled():
         app.include_router(test_routes.router)

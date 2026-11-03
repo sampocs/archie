@@ -12,6 +12,12 @@ type PageCapture = { title: string | null; text: string };
 const MAX_CAPTURE_TEXT_CHARS = 400_000;
 const MAX_CAPTURE_TITLE_CHARS = 500;
 
+// Cuts by code point, so an emoji at the boundary is dropped whole instead of leaving half a surrogate pair.
+function truncateTitle(title: string | null | undefined): string | null {
+  if (title == null) return null;
+  return Array.from(title).slice(0, MAX_CAPTURE_TITLE_CHARS).join("");
+}
+
 // A hung request must read as offline, so the sheet offers Open Archie instead of spinning forever.
 const SUBMIT_TIMEOUT_MS = 15_000;
 
@@ -32,7 +38,7 @@ export function buildShareAction(input: ShareInput): OutboxEntry {
       ...(choice.reaction ? { reaction: choice.reaction } : {}),
       ...(choice.note ? { note: choice.note } : {}),
       ...(choice.prepMe ? { prep_me: true } : {}),
-      ...(keepCapture ? { capture: { title: capture.title?.slice(0, MAX_CAPTURE_TITLE_CHARS) ?? null, text: capture.text } } : {}),
+      ...(keepCapture ? { capture: { title: truncateTitle(capture.title), text: capture.text } } : {}),
     },
   };
 }

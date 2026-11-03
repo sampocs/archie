@@ -285,17 +285,36 @@ def test_a_duplicate_stores_a_capture_only_when_the_source_has_none(live_stack: 
         assert capture is not None and capture.text == "first"
 
 
-def test_a_duplicate_of_a_failed_source_restarts_it(live_stack: LiveStack) -> None:
-    """Sharing a failed article again is a retry: processing restarts and the steps are queued once more."""
+def test_a_duplicate_of_a_failed_source_with_a_capture_restarts_it(live_stack: LiveStack) -> None:
+    """Sharing a failed article again with a capture is a retry: the capture is stored and the steps queue again."""
     authed = live_stack.authed(live_stack.sign_in())
     original = _add_source("https://example.com/a")
     _push(authed, original)
     _set_processing(live_stack, source_id=original["payload"]["id"], processing="failed")
 
-    _push(authed, _add_source("https://example.com/a?utm_source=x"))
+    _push(authed, _add_source("https://example.com/a?utm_source=x", capture={"text": "body"}))
 
     assert _pull_sources(authed)[original["payload"]["id"]]["processing"] == "processing"
     assert _queued_jobs(live_stack) == [("fetch_content", {"source_id": original["payload"]["id"]})] * 2
+    with sqlalchemy.orm.Session(session.engine_for(live_stack.database_url)) as db:
+        capture = db.get(models.SourceCapture, uuid.UUID(original["payload"]["id"]))
+        assert capture is not None and capture.text == "body"
+
+
+def test_a_duplicate_of_a_failed_source_without_a_capture_does_not_restart_it(live_stack: LiveStack) -> None:
+    """Without a capture there is nothing new to process, so a failed source stays failed but still moves forward."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original)
+    _set_processing(live_stack, source_id=original["payload"]["id"], processing="failed")
+    before = _pull_sources(authed)[original["payload"]["id"]]
+
+    _push(authed, _add_source("https://example.com/a?utm_source=x"))
+
+    after = _pull_sources(authed)[original["payload"]["id"]]
+    assert after["processing"] == "failed"
+    assert len(_queued_jobs(live_stack)) == 1
+    assert after["change_seq"] > before["change_seq"]
 
 
 def test_a_duplicate_of_a_ready_source_does_not_reprocess_it(live_stack: LiveStack) -> None:

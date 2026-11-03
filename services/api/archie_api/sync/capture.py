@@ -232,11 +232,13 @@ def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSource
     if payload.prep_me is not None:
         existing.prep_me = payload.prep_me
 
+    stored_capture = False
     if payload.capture is not None and db.get(models.SourceCapture, existing.id) is None:
         _add_capture(db, source_id=existing.id, capture=payload.capture)
+        stored_capture = True
 
-    # Sharing a failed page again is the user asking for another try; the restart also moves the position.
-    if existing.processing == models.ProcessingStatus.FAILED:
+    # A failed source retries only when this share brings the capture it lacked; the restart also moves the position.
+    if stored_capture and existing.processing == models.ProcessingStatus.FAILED:
         _restart_pipeline(db, source=existing)
         return
 

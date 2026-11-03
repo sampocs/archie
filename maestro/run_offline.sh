@@ -24,7 +24,17 @@ start_backend() {
 stop_backend() {
   [ -n "$BACKEND_PID" ] || return 0
   kill -TERM -- "-$BACKEND_PID" 2>/dev/null || true
-  while curl -fs http://localhost:8000/health >/dev/null 2>&1; do sleep 0.5; done
+
+  # Bounded: a health check that keeps answering means this script's backend isn't what is serving :8000.
+  local waited=0
+  while curl -fs http://localhost:8000/health >/dev/null 2>&1; do
+    if [ "$waited" -ge 60 ]; then
+      echo "backend still answering on :8000 (another backend running?)"
+      exit 1
+    fi
+    waited=$((waited + 1))
+    sleep 0.5
+  done
   BACKEND_PID=""
 }
 

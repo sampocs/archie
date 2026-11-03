@@ -46,33 +46,46 @@ def test_a_pushed_link_comes_back_titled_at_a_newer_position(
         "payload": {"id": source_id, "url": PAGE_URL, "intent": "queue"},
     }
 
-    # Taken before the push: the worker may title the link before any later pull could observe it untitled.
-    position_before = _pull(authed)["position"]
-
     with recorder.use_cassette("main_path.yaml", allow_playback_repeats=True):
         authed.post("/sync/push", json={"actions": [action]}).raise_for_status()
-        titled_pull = _poll_until_titled(authed, source_id=source_id)
 
-    assert _source(titled_pull, source_id)["title"] == PAGE_TITLE
-    assert titled_pull["position"] > position_before
+        # Pulled right after the push, while the worker is still idle (it polls every IDLE_POLL_SECONDS): the
+        # source must be there untitled, and this position is the baseline the titled row has to beat.
+        untitled_pull = _pull(authed, since=0)
+        assert _source(untitled_pull, source_id)["title"] is None, (
+            f"source {source_id} was already titled at the first pull; the worker beat the test, so the "
+            "position assertion below would prove nothing"
+        )
+        titled_pull = _poll_until_titled(authed, source_id=source_id, since=untitled_pull["position"])
+
+    titled_source = _source(titled_pull, source_id)
+    assert titled_source["title"] == PAGE_TITLE
+    assert titled_source["change_seq"] > untitled_pull["position"]
 
 
-def _pull(authed: httpx.Client) -> dict[str, Any]:
-    response = authed.get("/sync/pull", params={"since": 0})
+def _pull(authed: httpx.Client, *, since: int) -> dict[str, Any]:
+    response = authed.get("/sync/pull", params={"since": since})
     response.raise_for_status()
     return response.json()
 
 
-def _poll_until_titled(authed: httpx.Client, *, source_id: str) -> dict[str, Any]:
+def _poll_until_titled(authed: httpx.Client, *, source_id: str, since: int) -> dict[str, Any]:
     deadline = time.monotonic() + POLL_TIMEOUT_SECONDS
     while True:
-        pulled = _pull(authed)
-        if _source(pulled, source_id)["title"] is not None:
+        pulled = _pull(authed, since=since)
+        if _titled(pulled, source_id):
             return pulled
         if time.monotonic() > deadline:
             raise TimeoutError(f"source {source_id} was not titled within {POLL_TIMEOUT_SECONDS}s")
         time.sleep(POLL_INTERVAL_SECONDS)
 
 
+def _titled(pulled: dict[str, Any], source_id: str) -> bool:
+    # Pulling since a position only returns changed rows, so the source may legitimately be absent yet.
+    return any(row["id"] == source_id and row["title"] is not None for row in pulled["rows"]["sources"])
+
+
 def _source(pulled: dict[str, Any], source_id: str) -> dict[str, Any]:
-    return next(row for row in pulled["rows"]["sources"] if row["id"] == source_id)
+    source = next((row for row in pulled["rows"]["sources"] if row["id"] == source_id), None)
+    assert source is not None, f"source {source_id} is missing from the pull (position {pulled['position']})"
+    return source

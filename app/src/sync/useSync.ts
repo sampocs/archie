@@ -12,8 +12,8 @@ import { createApiTransport, createDbSyncStore } from "./transport";
 
 const POLL_INTERVAL_MS = 60_000;
 
-// After a local change, the backend worker fills in the title a moment later; pull a few times to pick it up
-// rather than waiting for the next poll.
+// After local changes reach the server, the backend worker fills in the title a moment later; pull a few times to
+// pick it up rather than waiting for the next poll.
 const FOLLOW_UP_DELAYS_MS = [2_000, 5_000, 10_000];
 
 // The active hook instance registers its trigger here so non-React callers (e.g. after addSource) can request a sync.
@@ -39,17 +39,19 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
 
     const store = createDbSyncStore(db);
     const transport = createApiTransport(() => sessionKeyRef.current);
+    let followUpTimers: ReturnType<typeof setTimeout>[] = [];
+    // Replaces any pending follow-ups so repeated pushes don't pile up timers.
+    const scheduleFollowUps = () => {
+      followUpTimers.forEach(clearTimeout);
+      followUpTimers = FOLLOW_UP_DELAYS_MS.map((delay) => setTimeout(fire, delay));
+    };
     const trigger = createSyncScheduler(async () => {
-      const outcome = await runSync(store, transport);
+      const outcome = await runSync(store, transport, scheduleFollowUps);
       if (outcome === "unauthorized") onUnauthorizedRef.current();
     });
     const fire = () => void trigger().catch(() => undefined);
 
-    const followUpTimers: ReturnType<typeof setTimeout>[] = [];
-    activeTrigger = () => {
-      fire();
-      followUpTimers.push(...FOLLOW_UP_DELAYS_MS.map((delay) => setTimeout(fire, delay)));
-    };
+    activeTrigger = fire;
     fire();
 
     const appStateSub = AppState.addEventListener("change", (state) => {
@@ -63,7 +65,7 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
     }, POLL_INTERVAL_MS);
 
     return () => {
-      activeTrigger = null;
+      if (activeTrigger === fire) activeTrigger = null;
       followUpTimers.forEach(clearTimeout);
       appStateSub.remove();
       networkSub.remove();

@@ -59,7 +59,7 @@ def running_stack(*, database_url: str, start_worker: bool) -> Iterator[LiveStac
     The caller must already have set `DATABASE_URL` and `ARCHIE_ENV=test`: the app reads them when built.
     """
     archie_api.deps.reset_engine()
-    port = _free_port()
+    port = free_port()
     server = uvicorn.Server(
         uvicorn.Config(archie_api.main.create_app(), host="127.0.0.1", port=port, log_level="warning")
     )
@@ -95,7 +95,8 @@ def _start_worker(*, database_url: str, stop: threading.Event) -> threading.Thre
     return thread
 
 
-def _free_port() -> int:
+def free_port() -> int:
+    """A currently unused local TCP port."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
         probe.bind(("127.0.0.1", 0))
         return probe.getsockname()[1]

@@ -7,6 +7,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `add_link.yaml` | Dev login, add a link, the worker's title appears in Library |
 | `sign_out.yaml` | Dev login, Today tab, account button, Sign out, back on the Apple sign-in screen |
 | `offline_*.yaml` + `run_offline.sh` | Add a link with the backend down ("1 change waiting"), restart it, the change syncs and the title arrives |
+| `login.yaml` | Shared preamble (fresh install + dev login, lands on Library); other flows `runFlow` it, it is not run on its own |
 
 ## One-time setup
 

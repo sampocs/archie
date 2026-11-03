@@ -10,7 +10,6 @@ import os
 import signal
 import subprocess
 import sys
-import threading
 import time
 from types import FrameType
 
@@ -33,10 +32,15 @@ def main() -> None:
     api = subprocess.Popen(["uvicorn", "archie_api.main:app", "--host", "0.0.0.0", "--port", port])
     worker = subprocess.Popen(["archie-worker"])
     children = [api, worker]
-    terminated = threading.Event()
+    stopping = False
 
     def forward_stop(signal_number: int, frame: FrameType | None) -> None:
-        terminated.set()
+        # A plain flag, not a threading.Event: a repeated signal (uv forwards ours again) re-enters this handler,
+        # and Event.set() would deadlock on its own lock. Idempotent, so a repeat does nothing.
+        nonlocal stopping
+        if stopping:
+            return
+        stopping = True
         for child in children:
             child.terminate()
 
@@ -46,7 +50,7 @@ def main() -> None:
     exit_code = _wait_for_first_exit(children)
 
     # A SIGTERM or SIGINT we were asked to forward is a clean stop (uvicorn re-raises it, so its code is -15).
-    if terminated.is_set():
+    if stopping:
         sys.exit(0)
     # A child that quits on its own is a failure even with code 0, or the restart policy would not restart us.
     sys.exit(exit_code or 1)

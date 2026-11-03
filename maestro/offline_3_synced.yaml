@@ -1,8 +1,10 @@
 appId: com.sampocs.archie
 ---
+# Recovery: the app notices the backend (network listener or the 60 s poll), pushes, and the banner clears.
+# The worker's title then arrives via the follow-up pulls that a push schedules (+2 s, +5 s, +10 s).
 - extendedWaitUntil:
     notVisible: ".*changes? waiting.*"
-    timeout: 60000
+    timeout: 90000
 - extendedWaitUntil:
     visible: ".*Example Domain.*"
     timeout: 30000

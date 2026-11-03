@@ -152,6 +152,32 @@ describe("runSync push", () => {
     expect(state.failedFlags).toEqual([false]);
   });
 
+  it("reports a push through onPushed, and stays silent when there was nothing to push", async () => {
+    const pushed = jest.fn();
+    const withActions = makeMemoryStore(makeEntries(2));
+    await runSync(withActions.store, makeTransport().transport, pushed);
+    expect(pushed).toHaveBeenCalledTimes(1);
+
+    pushed.mockClear();
+    const empty = makeMemoryStore([]);
+    await runSync(empty.store, makeTransport().transport, pushed);
+    expect(pushed).not.toHaveBeenCalled();
+  });
+
+  it("does not report a push that never reached the server", async () => {
+    const pushed = jest.fn();
+    const { store } = makeMemoryStore(makeEntries(1));
+    const { transport } = makeTransport({
+      async push() {
+        throw new NetworkError("down");
+      },
+    });
+
+    await runSync(store, transport, pushed);
+
+    expect(pushed).not.toHaveBeenCalled();
+  });
+
   it("returns unauthorized when push is rejected with 401", async () => {
     const { store } = makeMemoryStore(makeEntries(1));
     const { transport } = makeTransport({

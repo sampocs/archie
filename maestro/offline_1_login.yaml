@@ -1,25 +1,3 @@
 appId: com.sampocs.archie
 ---
-# A fresh install: the previous run's local database must not leak in.
-# The session key lives in the keychain, which clearState alone leaves alone.
-# Launching first (rather than cold-starting via the link) lets the app settle; a cold-start link can be dropped.
-- launchApp:
-    clearState: true
-    clearKeychain: true
-- extendedWaitUntil:
-    visible:
-      id: "apple-sign-in"
-    timeout: 30000
-- openLink: archie://dev/login
-# iOS asks to confirm opening a custom-scheme link.
-- extendedWaitUntil:
-    visible: "Open"
-    timeout: 5000
-    optional: true
-- tapOn:
-    text: "Open"
-    optional: true
-# A cold start after clearState runs migrations and the login round trip first.
-- extendedWaitUntil:
-    visible: "Library"
-    timeout: 30000
+- runFlow: login.yaml

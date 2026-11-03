@@ -35,10 +35,16 @@ export type SyncOutcome = "synced" | "offline" | "unauthorized";
 
 export const PUSH_BATCH = 50;
 
-export async function runSync(store: SyncStore, transport: SyncTransport): Promise<SyncOutcome> {
+// `onPushed` fires once local changes reached the server, so the caller can pull again soon for what the server
+// derives from them (e.g. a title) instead of waiting for the next poll.
+export async function runSync(
+  store: SyncStore,
+  transport: SyncTransport,
+  onPushed: () => void = () => undefined,
+): Promise<SyncOutcome> {
   let pushing = true;
   try {
-    await pushAll(store, transport);
+    if ((await pushAll(store, transport)) > 0) onPushed();
     pushing = false;
     await pullAll(store, transport);
     return "synced";
@@ -53,7 +59,9 @@ export async function runSync(store: SyncStore, transport: SyncTransport): Promi
   }
 }
 
-async function pushAll(store: SyncStore, transport: SyncTransport): Promise<void> {
+// Returns how many actions were sent.
+async function pushAll(store: SyncStore, transport: SyncTransport): Promise<number> {
+  let sent = 0;
   // Push before pulling: a pull must never overwrite a local change the server hasn't seen yet.
   for (
     let batch = await store.pendingActions(PUSH_BATCH);
@@ -61,6 +69,7 @@ async function pushAll(store: SyncStore, transport: SyncTransport): Promise<void
     batch = await store.pendingActions(PUSH_BATCH)
   ) {
     const results = await transport.push(batch);
+    sent += batch.length;
     // A response that settles nothing would re-send the same batch forever.
     if (results.length === 0) throw new Error("push returned no results for a non-empty batch");
 
@@ -76,6 +85,7 @@ async function pushAll(store: SyncStore, transport: SyncTransport): Promise<void
     await store.removeActions(results.filter((result) => result.result !== "rejected").map((result) => result.id));
   }
   await store.setLastPushFailed(false);
+  return sent;
 }
 
 async function pullAll(store: SyncStore, transport: SyncTransport): Promise<void> {

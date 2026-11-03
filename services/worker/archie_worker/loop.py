@@ -9,7 +9,8 @@ transaction is held during the call; it then takes `changes.lock_user_writes` an
 handler returns, the loop marks the job done in that same session and commits. A handler fails by
 raising: `PermanentJobError` fails the job at once, anything else is retried with backoff until the
 job's attempts run out. Either way a `HandlerSpec.on_final_failure` hook then runs in the transaction
-that marks the job failed, so the hook's writes and the failure commit together.
+that marks the job failed, so the hook's writes and the failure commit together. The stale sweep
+(`requeue_stale`) does the same for a job whose worker crashed on its last attempt.
 """
 
 from __future__ import annotations
@@ -89,17 +90,26 @@ def run_one(engine: sqlalchemy.Engine, *, handlers: Mapping[models.JobKind, Hand
     return True
 
 
-def requeue_stale(db: sqlalchemy.orm.Session, *, now: datetime.datetime) -> int:
-    """Recover jobs orphaned by a crashed worker: re-queue them, or fail those out of attempts. Returns the count."""
+def requeue_stale(
+    db: sqlalchemy.orm.Session,
+    *,
+    now: datetime.datetime,
+    handlers: Mapping[models.JobKind, HandlerSpec],
+) -> int:
+    """Recover jobs orphaned by a crashed worker: re-queue them, or fail those out of attempts. Returns the count.
+
+    A job failed here runs its kind's `on_final_failure` hook (reason `GAVE_UP`) in the same transaction,
+    exactly as when the loop fails it, so a pipeline source never stays `processing` forever.
+    """
     stale = (
         models.Job.status == models.JobStatus.RUNNING.value,
         models.Job.started_at < now - STALE_AFTER,
     )
-    failed_ids = db.scalars(
+    failed = db.execute(
         sqlalchemy.update(models.Job)
         .where(*stale, models.Job.attempts >= models.Job.max_attempts)
         .values(status=models.JobStatus.FAILED.value, last_error="worker stopped before the job finished")
-        .returning(models.Job.id)
+        .returning(models.Job.id, models.Job.kind)
     ).all()
     requeued_ids = db.scalars(
         sqlalchemy.update(models.Job)
@@ -107,8 +117,14 @@ def requeue_stale(db: sqlalchemy.orm.Session, *, now: datetime.datetime) -> int:
         .values(status=models.JobStatus.QUEUED.value, next_run_at=now)
         .returning(models.Job.id)
     ).all()
+
+    # Hooks run before the commit so their writes land with the failure.
+    for job_id, kind in failed:
+        hook = handlers[models.JobKind(kind)].on_final_failure
+        if hook is not None:
+            hook(db, db.get_one(models.Job, job_id), errors.FailureReason.GAVE_UP.value)
     db.commit()
-    return len(failed_ids) + len(requeued_ids)
+    return len(failed) + len(requeued_ids)
 
 
 def run_forever(engine: sqlalchemy.Engine, *, stop: threading.Event) -> None:
@@ -121,7 +137,7 @@ def run_forever(engine: sqlalchemy.Engine, *, stop: threading.Event) -> None:
         now = datetime.datetime.now(datetime.UTC)
         if now >= next_sweep_at:
             with sqlalchemy.orm.Session(engine) as db:
-                requeue_stale(db, now=now)
+                requeue_stale(db, now=now, handlers=handlers.HANDLERS)
             next_sweep_at = now + REQUEUE_STALE_EVERY
 
         if not run_one(engine, handlers=handlers.HANDLERS):

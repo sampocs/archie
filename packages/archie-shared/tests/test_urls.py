@@ -27,6 +27,7 @@ def test_normalize_drops_spotify_share_noise() -> None:
         "https://mobile.x.com/sama/status/2107691261776052633",
         "http://www.twitter.com/sama/status/2107691261776052633/",
         "https://x.com/i/status/2107691261776052633",
+        "https://twitter.com/i/web/status/2107691261776052633",
     ],
 )
 def test_normalize_collapses_x_status_urls(url: str) -> None:
@@ -62,6 +63,7 @@ def test_normalize_drops_m_and_mobile_prefixes_and_keeps_other_subdomains() -> N
     [
         (X_POST_URL, urls.UrlKind.X),
         ("https://twitter.com/sama/status/2107691261776052633", urls.UrlKind.X),
+        ("https://twitter.com/i/web/status/2107691261776052633", urls.UrlKind.X),
         ("https://www.youtube.com/watch?v=abc", urls.UrlKind.YOUTUBE),
         ("https://youtu.be/xyz", urls.UrlKind.YOUTUBE),
         ("https://open.spotify.com/episode/abc", urls.UrlKind.PODCAST),
@@ -87,3 +89,17 @@ def test_detect_kind(url: str, expected: urls.UrlKind) -> None:
 def test_x_post_id(url: str, expected: str | None) -> None:
     """The id comes from status and article paths on X hosts only."""
     assert urls.x_post_id(url) == expected
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("https://example.com/a?UTM_Source=x&SI=1&id=3", "https://example.com/a?id=3"),
+        ("https://Example.com:443/a", "https://example.com/a"),
+        ("http://user:pw@example.com:80/a", "http://example.com/a"),
+        ("http://example.com:8080/a", "http://example.com:8080/a"),
+    ],
+)
+def test_normalize_params_and_ports(url: str, expected: str) -> None:
+    """Tracking params match case-insensitively; only the scheme's default port is dropped."""
+    assert urls.normalize_url(url) == expected

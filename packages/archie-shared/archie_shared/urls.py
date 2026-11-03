@@ -21,7 +21,8 @@ YOUTUBE_HOSTS = frozenset({"youtube.com", "youtu.be"})
 PODCAST_HOSTS = frozenset({"open.spotify.com", "podcasts.apple.com"})
 
 # `/<handle>/status/<id>` or `/i/article/<id>` and so on; a profile (`/naval`) has no id.
-_X_POST_PATH = re.compile(r"^/[^/]+/(?:status|article)/(\d+)(?:/|$)")
+_X_POST_PATH = re.compile(r"^/(?:[^/]+/)+(?:status|article)/(\d+)(?:/|$)")
+_DEFAULT_PORTS = {"http": 80, "https": 443}
 _X_CANONICAL_URL = "https://x.com/i/status/{post_id}"
 
 
@@ -37,7 +38,7 @@ class UrlKind(StrEnum):
 def normalize_url(url: str) -> str:
     """Return the canonical form of `url` used to recognize the same page captured twice."""
     parts = urllib.parse.urlsplit(url.strip())
-    host = _bare_host(parts.netloc)
+    host = _bare_host(parts.netloc, scheme=parts.scheme)
 
     post_id = _x_post_id_for(host=host, path=parts.path)
     if post_id is not None:
@@ -46,7 +47,7 @@ def normalize_url(url: str) -> str:
     kept_params = [
         (name, value)
         for name, value in urllib.parse.parse_qsl(parts.query, keep_blank_values=True)
-        if name not in DROPPED_QUERY_PARAMS and not name.startswith(DROPPED_QUERY_PREFIX)
+        if name.lower() not in DROPPED_QUERY_PARAMS and not name.lower().startswith(DROPPED_QUERY_PREFIX)
     ]
     return urllib.parse.urlunsplit(
         (parts.scheme.lower(), host, parts.path.rstrip("/"), urllib.parse.urlencode(kept_params), "")
@@ -56,7 +57,7 @@ def normalize_url(url: str) -> str:
 def detect_kind(url: str) -> UrlKind:
     """Classify `url` by host; an X host without a post id (a profile) is an ordinary article."""
     parts = urllib.parse.urlsplit(url.strip())
-    host = _bare_host(parts.netloc)
+    host = _bare_host(parts.netloc, scheme=parts.scheme)
 
     if _x_post_id_for(host=host, path=parts.path) is not None:
         return UrlKind.X
@@ -70,11 +71,14 @@ def detect_kind(url: str) -> UrlKind:
 def x_post_id(url: str) -> str | None:
     """The numeric post id of an X status or article URL, or None for any other URL."""
     parts = urllib.parse.urlsplit(url.strip())
-    return _x_post_id_for(host=_bare_host(parts.netloc), path=parts.path)
+    return _x_post_id_for(host=_bare_host(parts.netloc, scheme=parts.scheme), path=parts.path)
 
 
-def _bare_host(netloc: str) -> str:
-    host = netloc.lower()
+def _bare_host(netloc: str, *, scheme: str = "") -> str:
+    host = netloc.lower().rpartition("@")[2]
+    default_port = _DEFAULT_PORTS.get(scheme.lower())
+    if default_port is not None:
+        host = host.removesuffix(f":{default_port}")
     for prefix in DROPPED_HOST_PREFIXES:
         if host.startswith(prefix):
             return host.removeprefix(prefix)

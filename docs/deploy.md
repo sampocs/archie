@@ -5,7 +5,7 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
 
 ## How a change ships
 
-- **App code:** push to the branch the `archie` service watches (`source` in `.railway/railway.ts`).
+- **App code:** merge to `main`, the branch the `archie` service watches (`source` in `.railway/railway.ts`).
   Railway waits for that commit's GitHub Actions checks (`checkSuites: true`), then builds the root
   `Dockerfile` and deploys it. The deploy goes live only after `/health` answers.
 - **Infrastructure:** edit `.railway/railway.ts`, run `railway config plan` to see the diff against

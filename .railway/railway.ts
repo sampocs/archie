@@ -41,7 +41,7 @@ export default defineRailway(() => {
   // One container: migrations, then the API and the worker (archie-launch).
   const archie = service("archie", {
     // checkSuites: deploy a commit only after its GitHub Actions checks pass.
-    source: github("sampocs/archie", { branch: "m1-foundation", checkSuites: true }),
+    source: github("sampocs/archie", { branch: "main", checkSuites: true }),
     // Railway builds the root Dockerfile without being told to, and restarts on failure by default.
     deploy: { healthcheckPath: "/health" },
     replicas: { [REGION]: 1 },

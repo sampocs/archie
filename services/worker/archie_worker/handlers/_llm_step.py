@@ -1,0 +1,91 @@
+"""The parts `analyze` and `primer` share: read the source's text, call the model, and re-check the source after.
+
+Both steps follow the loop's handler contract: read into locals, commit, make the (slow, billed) model call
+holding no transaction, then take the user's write lock and write.
+"""
+
+from __future__ import annotations
+
+import uuid
+from dataclasses import dataclass
+from typing import Any
+
+import sqlalchemy
+import sqlalchemy.orm
+from archie_db import changes, models, pipeline
+
+from archie_worker import llm, prompts
+
+
+@dataclass(frozen=True)
+class StepRun:
+    """What a model step needs after its first transaction ends, so it holds no ORM objects across the call."""
+
+    source_id: uuid.UUID
+    user_id: int
+    context: llm.CallContext
+    api_key: str
+    user_message: str
+
+
+def prepare_run(db: sqlalchemy.orm.Session, job: models.Job, *, step: models.JobKind) -> StepRun | None:
+    """Read what the model call needs and commit; None when the source is gone or deleted, so there is nothing to do.
+
+    Raises `PermanentJobError` for a user without an API key, and a plain error when the text artifact is missing
+    (the loop retries, as fetch_content may still be committing).
+    """
+    source = db.get(models.Source, uuid.UUID(job.payload[pipeline.SOURCE_ID_KEY]))
+    if source is None or source.deleted_at is not None:
+        return None
+
+    text_artifact = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT)
+    if text_artifact is None:
+        raise LookupError(f"Source {source.id} has no text artifact yet")
+
+    run = StepRun(
+        source_id=source.id,
+        user_id=source.user_id,
+        context=llm.CallContext(user_id=source.user_id, source_id=source.id, job_id=job.id, step=step),
+        api_key=llm.api_key_for(db.get_one(models.User, source.user_id)),
+        user_message=prompts.user_message(
+            kind=models.SourceKind(source.kind),
+            title=source.title,
+            url=source.url,
+            text=text_artifact.content["text"],
+        ),
+    )
+    db.commit()
+    return run
+
+
+def call_model(
+    db: sqlalchemy.orm.Session,
+    run: StepRun,
+    *,
+    model_pair: llm.ModelPair,
+    system: str,
+    max_tokens: int,
+    json_schema: dict[str, Any] | None = None,
+) -> llm.Completion:
+    """Make the model call on its own connection, so no transaction of `db` is open meanwhile."""
+    engine = db.get_bind()
+    assert isinstance(engine, sqlalchemy.Engine)
+
+    return llm.complete(
+        engine,
+        api_key=run.api_key,
+        context=run.context,
+        models=model_pair,
+        system=system,
+        user_message=run.user_message,
+        max_tokens=max_tokens,
+        json_schema=json_schema,
+    )
+
+
+def lock_live_source(db: sqlalchemy.orm.Session, run: StepRun) -> models.Source | None:
+    """Take the user's write lock and reload the source; None when the user deleted it during the call."""
+    changes.lock_user_writes(db, run.user_id)
+    source = db.get_one(models.Source, run.source_id)
+    db.refresh(source)
+    return None if source.deleted_at is not None else source

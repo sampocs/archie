@@ -1,0 +1,386 @@
+interactions:
+- request:
+    body: "{\"max_tokens\":6000,\"messages\":[{\"role\":\"user\",\"content\":\"Source
+      kind: article\\nTitle: How to Do Great Work\\nURL: https://www.paulgraham.com/greatwork.html\\n\\n<text>\\nHow
+      to Do Great Work\\n\\nJuly 2023\\n\\nIf you collected lists of techniques for
+      doing great work in a lot\\nof different fields, what would the intersection
+      look like? I decided\\nto find out by making it.\\n\\nPartly my goal was to
+      create a guide that could be used by someone\\nworking in any field. But I was
+      also curious about the shape of the\\nintersection. And one thing this exercise
+      shows is that it does\\nhave a definite shape; it's not just a point labelled
+      \\\"work hard.\\\"\\n\\nThe following recipe assumes you're very ambitious.\\n\\nThe
+      first step is to decide what to work on. The work you choose\\nneeds to have
+      three qualities: it has to be something you have a\\nnatural aptitude for, that
+      you have a deep interest in, and that\\noffers scope to do great work.\\n\\nIn
+      practice you don't have to worry much about the third criterion.\\nAmbitious
+      people are if anything already too conservative about it.\\nSo all you need
+      to do is find something you have an aptitude for\\nand great interest in.\\n[1]\\n\\nThat
+      sounds straightforward, but it's often quite difficult. When\\nyou're young
+      you don't know what you're good at or what different\\nkinds of work are like.
+      Some kinds of work you end up doing may not\\neven exist yet. So while some
+      people know what they want to do at\\n14, most have to figure it out.\\n\\nThe
+      way to figure out what to work on is by working. If you're not\\nsure what to
+      work on, guess. But pick something and get going.\\nYou'll probably guess wrong
+      some of the time, but that's fine. It's\\ngood to know about multiple things;
+      some of the biggest discoveries\\ncome from noticing connections between different
+      fields.\\n\\nDevelop a habit of working on your own projects. Don't let \\\"work\\\"\\nmean
+      something other people tell you to do. If you do manage to do\\ngreat work one
+      day, it will probably be on a project of your own.\\nIt may be within some bigger
+      project, but you'll be driving your\\npart of it.\\n\\nWhat should your projects
+      be? Whatever seems to you excitingly\\nambitious. As you grow older and your
+      taste in projects evolves,\\nexciting and important will converge. At 7 it may
+      seem excitingly\\nambitious to build huge things out of Lego, then at 14 to
+      teach\\nyourself calculus, till at 21 you're starting to explore unanswered\\nquestions
+      in physics. But always preserve excitingness.\\n\\nThere's a kind of excited
+      curiosity that's both the engine and the\\nrudder of great work. It will not
+      only drive you, but if you let\\nit have its way, will also show you what to
+      work on.\\n\\nWhat are you excessively curious about \u2014 curious to a degree
+      that\\nwould bore most other people? That's what you're looking for.\\n\\nOnce
+      you've found something you're excessively interested in, the\\nnext step is
+      to learn enough about it to get you to one of the\\nfrontiers of knowledge.
+      Knowledge expands fractally, and from a\\ndistance its edges look smooth, but
+      once you learn enough to get\\nclose to one, they turn out to be full of gaps.\\n\\nThe
+      next step is to notice them. This takes some skill, because\\nyour brain wants
+      to ignore such gaps in order to make a simpler\\nmodel of the world. Many discoveries
+      have come from asking questions\\nabout things that everyone else took for granted.
+      \\n[2]\\n\\nIf the answers seem strange, so much the better. Great work often\\nhas
+      a tincture of strangeness. You see this from painting to math.\\nIt would be
+      affected to try to manufacture it, but if it appears,\\nembrace it.\\n\\nBoldly
+      chase outlier ideas, even if other people aren't interested\\nin them \u2014
+      in fact, especially if they aren't. If you're excited\\nabout some possibility
+      that everyone else ignores, and you have\\nenough expertise to say precisely
+      what they're all overlooking,\\nthat's as good a bet as you'll find.\\n[3]\\n\\nFour
+      steps: choose a field, learn enough to get to the frontier,\\nnotice gaps, explore
+      promising ones. This is how practically everyone\\nwho's done great work has
+      done it, from painters to physicists.\\n\\nSteps two and four will require hard
+      work. It may not be possible\\nto prove that you have to work hard to do great
+      things, but the\\nempirical evidence is on the scale of the evidence for mortality.\\nThat's
+      why it's essential to work on something you're deeply\\ninterested in. Interest
+      will drive you to work harder than mere\\ndiligence ever could.\\n\\nThe three
+      most powerful motives are curiosity, delight, and the\\ndesire to do something
+      impressive. Sometimes they converge, and\\nthat combination is the most powerful
+      of all.\\n\\nThe big prize is to discover a new fractal bud. You notice a crack\\nin
+      the surface of knowledge, pry it open, and there's a whole world\\ninside.\\n\\nLet's
+      talk a little more about the complicated business of figuring\\nout what to
+      work on. The main reason it's hard is that you can't\\ntell what most kinds
+      of work are like except by doing them. Which\\nmeans the four steps overlap:
+      you may have to work at something for\\nyears before you know how much you like
+      it or how good you are at\\nit. And in the meantime you're not doing, and thus
+      not learning\\nabout, most other kinds of work. So in the worst case you choose\\nlate
+      based on very incomplete information.\\n[4]\\n\\nThe nature of ambition exacerbates
+      this problem. Ambition comes in\\ntwo forms, one that precedes interest in the
+      subject and one that\\ngrows out of it. Most people who do great work have a
+      mix, and the\\nmore you have of the former, the harder it will be to decide
+      what\\nto do.\\n\\nThe educational systems in most countries pretend it's easy.
+      They\\nexpect you to commit to a field long before you could know what\\nit's
+      really like. And as a result an ambitious person on an optimal\\ntrajectory
+      will often read to the system as an instance of breakage.\\n\\nIt would be better
+      if they at least admitted it \u2014 if they admitted\\nthat the system not only
+      can't do much to help you figure out what\\nto work on, but is designed on the
+      assumption that you'll somehow\\nmagically guess as a teenager. They don't tell
+      you, but I will:\\nwhen it comes to figuring out what to work on, you're on
+      your own.\\nSome people get lucky and do guess correctly, but the rest will\\nfind
+      themselves scrambling diagonally across tracks laid down on\\nthe assumption
+      that everyone does.\\n\\nWhat should you do if you're young and ambitious but
+      don't know\\nwhat to work on? What you should not do is drift along passively,\\nassuming
+      the problem will solve itself. You need to take action.\\nBut there is no systematic
+      procedure you can follow. When you read\\nbiographies of people who've done
+      great work, it's remarkable how\\nmuch luck is involved. They discover what
+      to work on as a result\\nof a chance meeting, or by reading a book they happen
+      to pick up.\\nSo you need to make yourself a big target for luck, and the way
+      to\\ndo that is to be curious. Try lots of things, meet lots of people,\\nread
+      lots of books, ask lots of questions.\\n[5]\\n\\nWhen in doubt, optimize for
+      interestingness. Fields change as you\\nlearn more about them. What mathematicians
+      do, for example, is very\\ndifferent from what you do in high school math classes.
+      So you need\\nto give different types of work a chance to show you what they're\\nlike.
+      But a field should become increasingly interesting as you\\nlearn more about
+      it. If it doesn't, it's probably not for you.\\n\\nDon't worry if you find you're
+      interested in different things than\\nother people. The stranger your tastes
+      in interestingness, the\\nbetter. Strange tastes are often strong ones, and
+      a strong taste\\nfor work means you'll be productive. And you're more likely
+      to find\\nnew things if you're looking where few have looked before.\\n\\nOne
+      sign that you're suited for some kind of work is when you like\\neven the parts
+      that other people find tedious or frightening.\\n\\nBut fields aren't people;
+      you don't owe them any loyalty. If in the\\ncourse of working on one thing you
+      discover another that's more\\nexciting, don't be afraid to switch.\\n\\nIf
+      you're making something for people, make sure it's something\\nthey actually
+      want. The best way to do this is to make something\\nyou yourself want. Write
+      the story you want to read; build the tool\\nyou want to use. Since your friends
+      probably have similar interests,\\nthis will also get you your initial audience.\\n\\nThis
+      should follow from the excitingness rule. Obviously the most\\nexciting story
+      to write will be the one you want to read. The reason\\nI mention this case
+      explicitly is that so many people get it wrong.\\nInstead of making what they
+      want, they try to make what some\\nimaginary, more sophisticated audience wants.
+      And once you go down\\nthat route, you're lost.\\n[6]\\n\\nThere are a lot of
+      forces that will lead you astray when you're\\ntrying to figure out what to
+      work on. Pretentiousness, fashion,\\nfear, money, politics, other people's wishes,
+      eminent frauds. But\\nif you stick to what you find genuinely interesting, you'll
+      be proof\\nagainst all of them. If you're interested, you're not astray.\\n\\nFollowing
+      your interests may sound like a rather passive strategy,\\nbut in practice it
+      usually means following them past all sorts of\\nobstacles. You usually have
+      to risk rejection and failure. So it\\ndoes take a good deal of boldness.\\n\\nBut
+      while you need boldness, you don't usually need much planning.\\nIn most cases
+      the recipe for doing great work is simply: work hard\\non excitingly ambitious
+      projects, and something good will come of\\nit. Instead of making a plan and
+      then executing it, you just try\\nto preserve certain invariants.\\n\\nThe trouble
+      with planning is that it only works for achievements\\nyou can describe in advance.
+      You can win a gold medal or get rich\\nby deciding to as a child and then tenaciously
+      pursuing that goal,\\nbut you can't discover natural selection that way.\\n\\nI
+      think for most people who want to do great work, the right strategy\\nis not
+      to plan too much. At each stage do whatever seems most\\ninteresting and gives
+      you the best options for the future. I call\\nthis approach \\\"staying upwind.\\\"
+      This is how most people who've done\\ngreat work seem to have done it.\\n\\nEven
+      when you've found something exciting to work on, working on\\nit is not always
+      straightforward. There will be times when some new\\nidea makes you leap out
+      of bed in the morning and get straight to\\nwork. But there will also be plenty
+      of times when things aren't\\nlike that.\\n\\nYou don't just put out your sail
+      and get blown forward by inspiration.\\nThere are headwinds and currents and
+      hidden shoals. So there's a\\ntechnique to working, just as there is to sailing.\\n\\nFor
+      example, while you must work hard, it's possible to work too\\nhard, and if
+      you do that you'll find you get diminishing returns:\\nfatigue will make you
+      stupid, and eventually even damage your health.\\nThe point at which work yields
+      diminishing returns depends on the\\ntype. Some of the hardest types you might
+      only be able to do for\\nfour or five hours a day.\\n\\nIdeally those hours
+      will be contiguous. To the extent you can, try\\nto arrange your life so you
+      have big blocks of time to work in.\\nYou'll shy away from hard tasks if you
+      know you might be interrupted.\\n\\nIt will probably be harder to start working
+      than to keep working.\\nYou'll often have to trick yourself to get over that
+      initial\\nthreshold. Don't worry about this; it's the nature of work, not a\\nflaw
+      in your character. Work has a sort of activation energy, both\\nper day and
+      per project. And since this threshold is fake in the\\nsense that it's higher
+      than the energy required to keep going, it's\\nok to tell yourself a lie of
+      corresponding magnitude to get over\\nit.\\n\\nIt's usually a mistake to lie
+      to yourself if you want to do great\\nwork, but this is one of the rare cases
+      where it isn't. When I'm\\nreluctant to start work in the morning, I often trick
+      myself by\\nsaying \\\"I'll just read over what I've got so far.\\\" Five minutes\\nlater
+      I've found something that seems mistaken or incomplete, and\\nI'm off.\\n\\nSimilar
+      techniques work for starting new projects. It's ok to lie\\nto yourself about
+      how much work a project will entail, for example.\\nLots of great things began
+      with someone saying \\\"How hard could it\\nbe?\\\"\\n\\nThis is one case where
+      the young have an advantage. They're more\\noptimistic, and even though one
+      of the sources of their optimism\\nis ignorance, in this case ignorance can
+      sometimes beat knowledge.\\n\\nTry to finish what you start, though, even if
+      it turns out to be\\nmore work than you expected. Finishing things is not just
+      an exercise\\nin tidiness or self-discipline. In many projects a lot of the
+      best\\nwork happens in what was meant to be the final stage.\\n\\nAnother permissible
+      lie is to exaggerate the importance of what\\nyou're working on, at least in
+      your own mind. If that helps you\\ndiscover something new, it may turn out not
+      to have been a lie after\\nall.\\n[7]\\n\\nSince there are two senses of starting
+      work \u2014 per day and per\\nproject \u2014 there are also two forms of procrastination.
+      Per-project\\nprocrastination is far the more dangerous. You put off starting\\nthat
+      ambitious project from year to year because the time isn't\\nquite right. When
+      you're procrastinating in units of years, you can\\nget a lot not done.\\n[8]\\n\\nOne
+      reason per-project procrastination is so dangerous is that it\\nusually camouflages
+      itself as work. You're not just sitting around\\ndoing nothing; you're working
+      industriously on something else. So\\nper-project procrastination doesn't set
+      off the alarms that per-day\\nprocrastination does. You're too busy to notice
+      it.\\n\\nThe way to beat it is to stop occasionally and ask yourself: Am I\\nworking
+      on what I most want to work on? When you're young it's ok\\nif the answer is
+      sometimes no, but this gets increasingly dangerous\\nas you get older.\\n[9]\\n\\nGreat
+      work usually entails spending what would seem to most people\\nan unreasonable
+      amount of time on a problem. You can't think of\\nthis time as a cost, or it
+      will seem too high. You have to find the\\nwork sufficiently engaging as it's
+      happening.\\n\\n</text>\"}],\"model\":\"claude-sonnet-5-5\",\"system\":\"You
+      write primers for a personal learning app. A primer gives the background a source
+      assumes its reader already has, so the source is easy to follow. It is not a
+      summary of the source.\\n\\nRead the text, work out which concepts, players,
+      history, and numbers the author takes for granted, and explain those. Write
+      for a smart beginner: friendly, no assumed jargon, a 5-8 minute read (roughly
+      900-1400 words). Use markdown with short sections and a title. Don't reveal
+      the source's own conclusions or story beats.\\n\\nWrite in plain, conversational
+      English for a smart reader who is new to the subject. Short sentences. Define
+      any jargon the first time it appears. Prefer concrete examples and rough numbers
+      (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\"}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '14885'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-sonnet-5-5","id":"msg_011CggtTAXtFy5owXhN3GN2B","type":"message","role":"assistant","content":[{"type":"text","text":"#
+        Primer: Background for \"How to Do Great Work\"\n\n## What this essay is,
+        and who wrote it\n\nPaul Graham is a programmer, essayist, and investor. In
+        2005 he co-founded Y Combinator, a startup \"accelerator.\" It funds very
+        young companies and coaches the founders. Companies that came through it include
+        Airbnb, Dropbox, and Stripe. Over about two decades Graham watched thousands
+        of ambitious people try to build something new, and he has written plainly
+        about it ever since.\n\nThis essay is a piece of advice, not a research paper.
+        It''s a personal synthesis, so expect confident claims drawn from observation
+        and from reading about famous people, not from experiments. You''re getting
+        one smart person''s pattern-matching. That is useful, but it isn''t proof.\n\n##
+        The setup: \"the intersection\"\n\nGraham opens with an idea from set theory.
+        If you gather several lists and keep only the items that appear on all of
+        them, you get their *intersection*. Picture lists of tips from painters, physicists,
+        novelists, and mathematicians. The intersection is whatever advice holds true
+        in every field.\n\nHe asks whether that overlap would be empty, or would just
+        say \"work hard.\" His claim is that it has a real structure. The rest of
+        the essay is his attempt to describe it.\n\nHe also states a premise early:
+        the advice assumes you''re *very ambitious*. It isn''t aimed at someone who
+        wants a comfortable career. It''s aimed at someone who wants to do work that
+        other people in the field remember.\n\n## Terms and ideas worth knowing\n\n**\"Great
+        work.\"** The essay doesn''t define this tightly. Think of work that changes
+        a field, such as a major scientific discovery, a landmark book, or a new kind
+        of company. Keep that scale in mind and the advice will make more sense.\n\n**The
+        frontier of knowledge.** Any field has a body of settled knowledge and an
+        edge where questions are still open. Researchers call that edge the *frontier*.
+        The essay''s central picture is that you learn enough to reach the edge, and
+        then you look for unexplored spots there.\n\n**Fractal.** A fractal is a shape
+        that stays complex however closely you zoom in. A coastline is the standard
+        example. From a plane it looks like a smooth curve, but on foot it''s all
+        inlets and rocks, and each inlet has smaller ones. Graham uses this as a metaphor
+        for knowledge. From far away a subject looks finished. Up close it''s full
+        of gaps, and some of those gaps open into whole new areas. He calls such an
+        opening a \"bud,\" like a new branch growing from a stem.\n\n**Natural selection.**
+        Graham mentions Darwin''s theory as an example of a discovery nobody could
+        have planned in advance. The theory explains how species change over time
+        because individuals that fit their environment tend to leave more offspring.
+        You don''t need more than that here. The point is that Darwin couldn''t have
+        said as a child, \"I will discover natural selection.\"\n\n**Aptitude vs.
+        interest.** *Aptitude* means a natural knack, meaning you pick something up
+        faster than most people. *Interest* means you find it absorbing. The essay
+        says you need both, and it treats them as separate things.\n\n## Metaphors
+        you''ll meet\n\nThe essay borrows several images, and knowing them helps.\n\n-
+        **Sailing.** Graham uses a long sailing metaphor. A sailboat doesn''t go straight
+        to its goal. Wind, currents, and hidden rocks (*shoals*) force the sailor
+        to adjust constantly. He calls his strategy \"staying upwind.\" In sailing,
+        if you stay on the upwind side of your target, you keep the option to move
+        toward it from any direction. If you drift downwind, you lose options. The
+        essay applies this to careers: keep your options open instead of committing
+        to a fixed plan.\n- **Invariants.** In programming and math, an *invariant*
+        is something you keep true while everything else changes. Here it means a
+        few rules you hold to, such as \"stay excited\" and \"stay ambitious,\" instead
+        of a step-by-step plan.\n- **Activation energy.** In chemistry this is the
+        push a reaction needs to get started, even when the reaction releases energy
+        afterward. Graham uses it for the way starting a task feels harder than continuing
+        it.\n- **Engine and rudder.** The engine pushes you forward and the rudder
+        steers. He says curiosity does both.\n\n## A few background points the author
+        assumes\n\n**How schooling works.** The essay criticizes education systems
+        for asking teenagers to pick a track early. Examples are choosing a university
+        major, selecting exam subjects, or applying to a specialized program. Graham''s
+        point is that most people can''t know at 16 or 18 what a field is really like.
+        If you haven''t seen this firsthand, the complaint may seem odd. In the US,
+        students usually choose a major in their first or second year of college.
+        In many other countries the choice comes earlier and is harder to reverse.\n\n**What
+        mathematicians actually do.** Graham says high school math is very different
+        from real mathematics. In school you learn known procedures and apply them.
+        Professional mathematicians spend their time proving new statements and working
+        on unsolved problems. The contrast is meant to show that you can''t judge
+        a field from the school version of it.\n\n**Two kinds of procrastination.**
+        He distinguishes putting off today''s work from putting off an entire life
+        project for years. You don''t need prior knowledge for this, but notice that
+        he thinks the second kind is more serious and harder to spot.\n\n**Biography
+        as evidence.** He often says \"when you read biographies of people who''ve
+        done great work.\" His evidence comes largely from the life stories of famous
+        scientists, artists, and founders. That means his sample is people who succeeded
+        and became well known. Keep that in mind, because it leaves out people who
+        followed the same habits and didn''t get far. It''s a fair caveat to hold
+        while reading, not a reason to dismiss him.\n\n## The endnotes\n\nThe numbers
+        in square brackets, like [1] and [2], point to endnotes. The text you''ve
+        been given doesn''t include them. The main essay still reads fine on its own.\n\n##
+        What to watch for as you read\n\nHere are some questions to hold in mind:\n\n1.
+        **Where is the advice general, and where is it specific?** Graham claims it
+        applies to any field. Test that against fields you know.\n2. **What does he
+        treat as obvious, and what does he argue for?** He argues for following your
+        interests. He mostly just asserts that hard work is necessary, comparing the
+        evidence to the evidence that people die.\n3. **How much of the advice is
+        about psychology?** Much of it concerns motivation, such as tricking yourself
+        into starting, keeping excitement alive, and avoiding distraction, and less
+        of it concerns technique.\n4. **What would count as a counterexample?** For
+        instance, are there people who planned their careers carefully and still did
+        great work? Notice how he handles that case when he says planning works only
+        for goals \"you can describe in advance.\"\n\nRead it as a long, opinionated
+        field guide. You don''t have to agree with all of it, but you''ll get more
+        from it if you notice which claims he''s treating as settled and which he''s
+        offering as his best guess."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":4446,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2207,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9998000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-03T23:47:46Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1999000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-03T23:48:06Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-03T23:47:46Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11997000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-03T23:47:46Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a54f4414de309652-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '7721'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Tue, 03 Nov 2026 23:48:06 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=20344
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-8c2b6aaba82abb35597c43664f08c85b-5c04a4c97d0e89c9-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

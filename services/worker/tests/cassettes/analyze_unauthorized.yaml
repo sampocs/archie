@@ -1,0 +1,282 @@
+# Real 401 recording; only the error message was reworded (the header name it quoted) and the request id redacted,
+# so no credential-related text lives in the repo.
+interactions:
+- request:
+    body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Source
+      kind: article\\nTitle: How to Do Great Work\\nURL: https://www.paulgraham.com/greatwork.html\\n\\n<text>\\nHow
+      to Do Great Work\\n\\nJuly 2023\\n\\nIf you collected lists of techniques for
+      doing great work in a lot\\nof different fields, what would the intersection
+      look like? I decided\\nto find out by making it.\\n\\nPartly my goal was to
+      create a guide that could be used by someone\\nworking in any field. But I was
+      also curious about the shape of the\\nintersection. And one thing this exercise
+      shows is that it does\\nhave a definite shape; it's not just a point labelled
+      \\\"work hard.\\\"\\n\\nThe following recipe assumes you're very ambitious.\\n\\nThe
+      first step is to decide what to work on. The work you choose\\nneeds to have
+      three qualities: it has to be something you have a\\nnatural aptitude for, that
+      you have a deep interest in, and that\\noffers scope to do great work.\\n\\nIn
+      practice you don't have to worry much about the third criterion.\\nAmbitious
+      people are if anything already too conservative about it.\\nSo all you need
+      to do is find something you have an aptitude for\\nand great interest in.\\n[1]\\n\\nThat
+      sounds straightforward, but it's often quite difficult. When\\nyou're young
+      you don't know what you're good at or what different\\nkinds of work are like.
+      Some kinds of work you end up doing may not\\neven exist yet. So while some
+      people know what they want to do at\\n14, most have to figure it out.\\n\\nThe
+      way to figure out what to work on is by working. If you're not\\nsure what to
+      work on, guess. But pick something and get going.\\nYou'll probably guess wrong
+      some of the time, but that's fine. It's\\ngood to know about multiple things;
+      some of the biggest discoveries\\ncome from noticing connections between different
+      fields.\\n\\nDevelop a habit of working on your own projects. Don't let \\\"work\\\"\\nmean
+      something other people tell you to do. If you do manage to do\\ngreat work one
+      day, it will probably be on a project of your own.\\nIt may be within some bigger
+      project, but you'll be driving your\\npart of it.\\n\\nWhat should your projects
+      be? Whatever seems to you excitingly\\nambitious. As you grow older and your
+      taste in projects evolves,\\nexciting and important will converge. At 7 it may
+      seem excitingly\\nambitious to build huge things out of Lego, then at 14 to
+      teach\\nyourself calculus, till at 21 you're starting to explore unanswered\\nquestions
+      in physics. But always preserve excitingness.\\n\\nThere's a kind of excited
+      curiosity that's both the engine and the\\nrudder of great work. It will not
+      only drive you, but if you let\\nit have its way, will also show you what to
+      work on.\\n\\nWhat are you excessively curious about \u2014 curious to a degree
+      that\\nwould bore most other people? That's what you're looking for.\\n\\nOnce
+      you've found something you're excessively interested in, the\\nnext step is
+      to learn enough about it to get you to one of the\\nfrontiers of knowledge.
+      Knowledge expands fractally, and from a\\ndistance its edges look smooth, but
+      once you learn enough to get\\nclose to one, they turn out to be full of gaps.\\n\\nThe
+      next step is to notice them. This takes some skill, because\\nyour brain wants
+      to ignore such gaps in order to make a simpler\\nmodel of the world. Many discoveries
+      have come from asking questions\\nabout things that everyone else took for granted.
+      \\n[2]\\n\\nIf the answers seem strange, so much the better. Great work often\\nhas
+      a tincture of strangeness. You see this from painting to math.\\nIt would be
+      affected to try to manufacture it, but if it appears,\\nembrace it.\\n\\nBoldly
+      chase outlier ideas, even if other people aren't interested\\nin them \u2014
+      in fact, especially if they aren't. If you're excited\\nabout some possibility
+      that everyone else ignores, and you have\\nenough expertise to say precisely
+      what they're all overlooking,\\nthat's as good a bet as you'll find.\\n[3]\\n\\nFour
+      steps: choose a field, learn enough to get to the frontier,\\nnotice gaps, explore
+      promising ones. This is how practically everyone\\nwho's done great work has
+      done it, from painters to physicists.\\n\\nSteps two and four will require hard
+      work. It may not be possible\\nto prove that you have to work hard to do great
+      things, but the\\nempirical evidence is on the scale of the evidence for mortality.\\nThat's
+      why it's essential to work on something you're deeply\\ninterested in. Interest
+      will drive you to work harder than mere\\ndiligence ever could.\\n\\nThe three
+      most powerful motives are curiosity, delight, and the\\ndesire to do something
+      impressive. Sometimes they converge, and\\nthat combination is the most powerful
+      of all.\\n\\nThe big prize is to discover a new fractal bud. You notice a crack\\nin
+      the surface of knowledge, pry it open, and there's a whole world\\ninside.\\n\\nLet's
+      talk a little more about the complicated business of figuring\\nout what to
+      work on. The main reason it's hard is that you can't\\ntell what most kinds
+      of work are like except by doing them. Which\\nmeans the four steps overlap:
+      you may have to work at something for\\nyears before you know how much you like
+      it or how good you are at\\nit. And in the meantime you're not doing, and thus
+      not learning\\nabout, most other kinds of work. So in the worst case you choose\\nlate
+      based on very incomplete information.\\n[4]\\n\\nThe nature of ambition exacerbates
+      this problem. Ambition comes in\\ntwo forms, one that precedes interest in the
+      subject and one that\\ngrows out of it. Most people who do great work have a
+      mix, and the\\nmore you have of the former, the harder it will be to decide
+      what\\nto do.\\n\\nThe educational systems in most countries pretend it's easy.
+      They\\nexpect you to commit to a field long before you could know what\\nit's
+      really like. And as a result an ambitious person on an optimal\\ntrajectory
+      will often read to the system as an instance of breakage.\\n\\nIt would be better
+      if they at least admitted it \u2014 if they admitted\\nthat the system not only
+      can't do much to help you figure out what\\nto work on, but is designed on the
+      assumption that you'll somehow\\nmagically guess as a teenager. They don't tell
+      you, but I will:\\nwhen it comes to figuring out what to work on, you're on
+      your own.\\nSome people get lucky and do guess correctly, but the rest will\\nfind
+      themselves scrambling diagonally across tracks laid down on\\nthe assumption
+      that everyone does.\\n\\nWhat should you do if you're young and ambitious but
+      don't know\\nwhat to work on? What you should not do is drift along passively,\\nassuming
+      the problem will solve itself. You need to take action.\\nBut there is no systematic
+      procedure you can follow. When you read\\nbiographies of people who've done
+      great work, it's remarkable how\\nmuch luck is involved. They discover what
+      to work on as a result\\nof a chance meeting, or by reading a book they happen
+      to pick up.\\nSo you need to make yourself a big target for luck, and the way
+      to\\ndo that is to be curious. Try lots of things, meet lots of people,\\nread
+      lots of books, ask lots of questions.\\n[5]\\n\\nWhen in doubt, optimize for
+      interestingness. Fields change as you\\nlearn more about them. What mathematicians
+      do, for example, is very\\ndifferent from what you do in high school math classes.
+      So you need\\nto give different types of work a chance to show you what they're\\nlike.
+      But a field should become increasingly interesting as you\\nlearn more about
+      it. If it doesn't, it's probably not for you.\\n\\nDon't worry if you find you're
+      interested in different things than\\nother people. The stranger your tastes
+      in interestingness, the\\nbetter. Strange tastes are often strong ones, and
+      a strong taste\\nfor work means you'll be productive. And you're more likely
+      to find\\nnew things if you're looking where few have looked before.\\n\\nOne
+      sign that you're suited for some kind of work is when you like\\neven the parts
+      that other people find tedious or frightening.\\n\\nBut fields aren't people;
+      you don't owe them any loyalty. If in the\\ncourse of working on one thing you
+      discover another that's more\\nexciting, don't be afraid to switch.\\n\\nIf
+      you're making something for people, make sure it's something\\nthey actually
+      want. The best way to do this is to make something\\nyou yourself want. Write
+      the story you want to read; build the tool\\nyou want to use. Since your friends
+      probably have similar interests,\\nthis will also get you your initial audience.\\n\\nThis
+      should follow from the excitingness rule. Obviously the most\\nexciting story
+      to write will be the one you want to read. The reason\\nI mention this case
+      explicitly is that so many people get it wrong.\\nInstead of making what they
+      want, they try to make what some\\nimaginary, more sophisticated audience wants.
+      And once you go down\\nthat route, you're lost.\\n[6]\\n\\nThere are a lot of
+      forces that will lead you astray when you're\\ntrying to figure out what to
+      work on. Pretentiousness, fashion,\\nfear, money, politics, other people's wishes,
+      eminent frauds. But\\nif you stick to what you find genuinely interesting, you'll
+      be proof\\nagainst all of them. If you're interested, you're not astray.\\n\\nFollowing
+      your interests may sound like a rather passive strategy,\\nbut in practice it
+      usually means following them past all sorts of\\nobstacles. You usually have
+      to risk rejection and failure. So it\\ndoes take a good deal of boldness.\\n\\nBut
+      while you need boldness, you don't usually need much planning.\\nIn most cases
+      the recipe for doing great work is simply: work hard\\non excitingly ambitious
+      projects, and something good will come of\\nit. Instead of making a plan and
+      then executing it, you just try\\nto preserve certain invariants.\\n\\nThe trouble
+      with planning is that it only works for achievements\\nyou can describe in advance.
+      You can win a gold medal or get rich\\nby deciding to as a child and then tenaciously
+      pursuing that goal,\\nbut you can't discover natural selection that way.\\n\\nI
+      think for most people who want to do great work, the right strategy\\nis not
+      to plan too much. At each stage do whatever seems most\\ninteresting and gives
+      you the best options for the future. I call\\nthis approach \\\"staying upwind.\\\"
+      This is how most people who've done\\ngreat work seem to have done it.\\n\\nEven
+      when you've found something exciting to work on, working on\\nit is not always
+      straightforward. There will be times when some new\\nidea makes you leap out
+      of bed in the morning and get straight to\\nwork. But there will also be plenty
+      of times when things aren't\\nlike that.\\n\\nYou don't just put out your sail
+      and get blown forward by inspiration.\\nThere are headwinds and currents and
+      hidden shoals. So there's a\\ntechnique to working, just as there is to sailing.\\n\\nFor
+      example, while you must work hard, it's possible to work too\\nhard, and if
+      you do that you'll find you get diminishing returns:\\nfatigue will make you
+      stupid, and eventually even damage your health.\\nThe point at which work yields
+      diminishing returns depends on the\\ntype. Some of the hardest types you might
+      only be able to do for\\nfour or five hours a day.\\n\\nIdeally those hours
+      will be contiguous. To the extent you can, try\\nto arrange your life so you
+      have big blocks of time to work in.\\nYou'll shy away from hard tasks if you
+      know you might be interrupted.\\n\\nIt will probably be harder to start working
+      than to keep working.\\nYou'll often have to trick yourself to get over that
+      initial\\nthreshold. Don't worry about this; it's the nature of work, not a\\nflaw
+      in your character. Work has a sort of activation energy, both\\nper day and
+      per project. And since this threshold is fake in the\\nsense that it's higher
+      than the energy required to keep going, it's\\nok to tell yourself a lie of
+      corresponding magnitude to get over\\nit.\\n\\nIt's usually a mistake to lie
+      to yourself if you want to do great\\nwork, but this is one of the rare cases
+      where it isn't. When I'm\\nreluctant to start work in the morning, I often trick
+      myself by\\nsaying \\\"I'll just read over what I've got so far.\\\" Five minutes\\nlater
+      I've found something that seems mistaken or incomplete, and\\nI'm off.\\n\\nSimilar
+      techniques work for starting new projects. It's ok to lie\\nto yourself about
+      how much work a project will entail, for example.\\nLots of great things began
+      with someone saying \\\"How hard could it\\nbe?\\\"\\n\\nThis is one case where
+      the young have an advantage. They're more\\noptimistic, and even though one
+      of the sources of their optimism\\nis ignorance, in this case ignorance can
+      sometimes beat knowledge.\\n\\nTry to finish what you start, though, even if
+      it turns out to be\\nmore work than you expected. Finishing things is not just
+      an exercise\\nin tidiness or self-discipline. In many projects a lot of the
+      best\\nwork happens in what was meant to be the final stage.\\n\\nAnother permissible
+      lie is to exaggerate the importance of what\\nyou're working on, at least in
+      your own mind. If that helps you\\ndiscover something new, it may turn out not
+      to have been a lie after\\nall.\\n[7]\\n\\nSince there are two senses of starting
+      work \u2014 per day and per\\nproject \u2014 there are also two forms of procrastination.
+      Per-project\\nprocrastination is far the more dangerous. You put off starting\\nthat
+      ambitious project from year to year because the time isn't\\nquite right. When
+      you're procrastinating in units of years, you can\\nget a lot not done.\\n[8]\\n\\nOne
+      reason per-project procrastination is so dangerous is that it\\nusually camouflages
+      itself as work. You're not just sitting around\\ndoing nothing; you're working
+      industriously on something else. So\\nper-project procrastination doesn't set
+      off the alarms that per-day\\nprocrastination does. You're too busy to notice
+      it.\\n\\nThe way to beat it is to stop occasionally and ask yourself: Am I\\nworking
+      on what I most want to work on? When you're young it's ok\\nif the answer is
+      sometimes no, but this gets increasingly dangerous\\nas you get older.\\n[9]\\n\\nGreat
+      work usually entails spending what would seem to most people\\nan unreasonable
+      amount of time on a problem. You can't think of\\nthis time as a cost, or it
+      will seem too high. You have to find the\\nwork sufficiently engaging as it's
+      happening.\\n\\n</text>\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"summary\":{\"type\":\"object\",\"properties\":{\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"domain\":{\"type\":\"string\",\"enum\":[\"AI\",\"Macro\",\"Crypto\",\"Startups\",\"Finance\",\"Tech\",\"History\",\"Security\",\"Sports\",\"Other\"]},\"topic\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"concepts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"is_educational\":{\"type\":\"boolean\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"}},\"required\":[\"kind\",\"question\",\"answer\"],\"additionalProperties\":false}}},\"required\":[\"summary\",\"domain\",\"topic\",\"tags\",\"concepts\",\"is_educational\",\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
+      process sources for a personal learning app. A source is an article, an X post
+      or thread, or an episode (podcast or video) that the user consumed or plans
+      to. The user wants \\\"level 2\\\" knowledge of its subject: enough to hold
+      a real conversation about it, including the vocabulary, how things work, the
+      key players, rough numbers, and the current debates.\\n\\nFrom the text, produce:\\n-
+      summary: the gist in 2-3 sentences, the key ideas, and the numbers worth remembering.
+      Where the text has timestamps like [mm:ss] or [h:mm:ss], cite the one where
+      each idea or number comes up; when it has none, set the timestamp to null. Skip
+      ads and sponsor reads.\\n- domain: the one broad domain the source belongs to.\\n-
+      topic: a short, reusable topic name under that domain (e.g. \\\"Stablecoins\\\",
+      \\\"Fed policy\\\", \\\"NFL quarterbacks\\\").\\n- tags: 3-8 short tags.\\n-
+      concepts: the key concepts the source relies on or teaches, as short noun phrases.\\n-
+      is_educational: true when the source teaches something worth remembering (how
+      things work, history, ideas, numbers). false for pure entertainment such as
+      banter, sports chat, jokes or gossip. A mostly entertaining source with real
+      teaching in it (e.g. how a contract works, why a play scheme succeeds) is still
+      true.\\n- cards: when is_educational is true, 3-5 open-recall review cards of
+      kind concept, mechanism (\\\"why does X cause Y\\\") or number (a rough figure
+      worth knowing). Each card asks ONE focused question, never a compound one with
+      several parts. Each answer is what a good response would cover in 1-3 sentences.
+      Avoid trivia that only matters to this one source. When is_educational is false,
+      cards is an empty list.\\n\\nWrite in plain, conversational English for a smart
+      reader who is new to the subject. Short sentences. Define any jargon the first
+      time it appears. Prefer concrete examples and rough numbers (\\\"~1 GW\\\",
+      not \\\"1.07 GW\\\").\"}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '17320'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"type":"error","error":{"type":"authentication_error","message":"invalid
+        api key"},"request_id":"req_redacted"}'
+    headers:
+      cache-control:
+      - no-store
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a54f44b41da5b165-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '130'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Tue, 03 Nov 2026 23:48:11 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=
+      x-robots-tag:
+      - none
+      x-should-retry:
+      - 'false'
+    status:
+      code: 401
+      message: Unauthorized
+version: 1

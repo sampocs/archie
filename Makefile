@@ -74,6 +74,10 @@ start-api-local: migrate-local
 	@DATABASE_URL=$(LOCAL_DATABASE_URL) ARCHIE_ENV=dev $(UV_RUN) uvicorn archie_api.main:app --host 0.0.0.0 --port 8000 --reload
 
 start-worker-local: migrate-local
-	@DATABASE_URL=$(LOCAL_DATABASE_URL) ARCHIE_ENV=dev $(UV_RUN) python -m archie_worker.main
+	@DATABASE_URL=$(LOCAL_DATABASE_URL) ARCHIE_ENV=dev $(UV_RUN) archie-worker
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local start-api-local start-worker-local
+# Both processes, as the container runs them (Ctrl-C stops both).
+start-local: migrate-local
+	@DATABASE_URL=$(LOCAL_DATABASE_URL) ARCHIE_ENV=dev $(UV_RUN) archie-launch
+
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local start-api-local start-worker-local start-local

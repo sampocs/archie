@@ -14,8 +14,8 @@ from collections.abc import Callable, Iterator
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-import vcr as vcr_module
 from archie_db import changes, jobs, models, session
+from archie_testing import recording
 from archie_worker import errors, handlers, loop
 
 pytestmark = pytest.mark.postgres
@@ -47,13 +47,7 @@ def replay(request: pytest.FixtureRequest) -> Replay:
 
     Replay-only unless pytest is given `--record-mode`, so a normal run can never reach the network.
     """
-    recorder = vcr_module.VCR(
-        cassette_library_dir=str(CASSETTE_DIR),
-        record_mode=request.config.getoption("--record-mode") or "none",
-        # Keep recordings small, readable and free of per-request noise.
-        filter_headers=["authorization", "cookie", "set-cookie"],
-        decode_compressed_response=True,
-    )
+    recorder = recording.vcr_for(request, cassette_dir=CASSETTE_DIR)
     # A recorded failure may replay on every retry of a job.
     return lambda name: recorder.use_cassette(f"{name}.yaml", allow_playback_repeats=True)
 

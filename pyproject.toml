@@ -10,7 +10,12 @@ dev = [
   "ruff==0.14.1",
   "mypy==1.18.2",
   "httpx>=0.28",
+  "archie-testing",
 ]
+
+# Dev-only: the e2e harness must never become a runtime dependency of a service.
+[tool.uv.sources]
+archie-testing = { workspace = true }
 
 # Ruff, Mypy, and Pytest are configured once at the root and apply to every member, so the house
 # style can't drift between packages. The Expo app, Maestro flows, and spikes are not workspace code.

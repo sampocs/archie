@@ -9,10 +9,10 @@ from __future__ import annotations
 import fastapi
 import pydantic
 import sqlalchemy
-from archie_db import session
 from archie_shared import config, logging
 
-from archie_api.routes import sources
+from archie_api import deps, test_routes
+from archie_api.auth import routes as auth_routes
 
 
 class HealthView(pydantic.BaseModel):
@@ -27,7 +27,11 @@ def create_app() -> fastapi.FastAPI:
     logging.configure()
     app = fastapi.FastAPI(title="Archie")
     app.add_api_route("/health", health, methods=["GET"])
-    app.include_router(sources.router)
+    app.include_router(auth_routes.router)
+
+    # Test-only sign-in must never exist in production.
+    if config.get_settings().env() is not config.ArchieEnv.PROD:
+        app.include_router(test_routes.router)
     return app
 
 
@@ -37,20 +41,16 @@ def health() -> HealthView:
 
 
 def _database_reachable() -> bool:
-    database_url = config.get_settings().database_url
-    if not database_url:
+    if not config.get_settings().database_url:
         return False
 
-    engine = session.engine_for(database_url)
     try:
-        with engine.connect() as connection:
+        with deps.get_engine().connect() as connection:
             connection.execute(sqlalchemy.text("SELECT 1"))
         return True
     except sqlalchemy.exc.OperationalError:
         # An unreachable database is the answer this endpoint exists to report, not a server error.
         return False
-    finally:
-        engine.dispose()
 
 
 app = create_app()

@@ -7,11 +7,13 @@ members = [
     "archie-api",
     "archie-db",
     "archie-shared",
+    "archie-testing",
     "archie-worker",
 ]
 
 [manifest.dependency-groups]
 dev = [
+    { name = "archie-testing", editable = "packages/archie-testing" },
     { name = "httpx", specifier = ">=0.28" },
     { name = "mypy", specifier = "==1.18.2" },
     { name = "pytest", specifier = ">=8.0.0" },
@@ -111,6 +113,29 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "pydantic-settings", specifier = ">=2.6" }]
+
+[[package]]
+name = "archie-testing"
+version = "0.1.0"
+source = { editable = "packages/archie-testing" }
+dependencies = [
+    { name = "archie-api" },
+    { name = "archie-db" },
+    { name = "archie-shared" },
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "uvicorn" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "archie-api", editable = "services/api" },
+    { name = "archie-db", editable = "packages/archie-db" },
+    { name = "archie-shared", editable = "packages/archie-shared" },
+    { name = "httpx", specifier = ">=0.28" },
+    { name = "pytest", specifier = ">=8.0.0" },
+    { name = "uvicorn", specifier = ">=0.32" },
+]
 
 [[package]]
 name = "archie-worker"

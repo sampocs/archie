@@ -1,0 +1,38 @@
+"""Auth through the real API: a session key works until logout, and nothing works without one."""
+
+import pytest
+from archie_testing.harness import LiveStack
+
+pytestmark = pytest.mark.postgres
+
+
+def test_a_valid_session_key_is_accepted(live_stack: LiveStack) -> None:
+    """The key from sign-in reaches a protected route as the same user each time."""
+    authed = live_stack.authed(live_stack.sign_in(apple_sub="alice"))
+
+    first = authed.get("/me")
+    second = live_stack.authed(live_stack.sign_in(apple_sub="alice")).get("/me")
+
+    assert first.status_code == 200
+    assert second.json() == first.json()
+
+
+def test_requests_without_a_session_key_are_rejected(live_stack: LiveStack) -> None:
+    """A protected route returns 401 with no header, a non-Bearer scheme, a token-less Bearer, and an unknown key."""
+    session_key = live_stack.sign_in()
+
+    assert live_stack.client.get("/me").status_code == 401
+    assert live_stack.client.get("/me", headers={"Authorization": f"Basic {session_key}"}).status_code == 401
+    assert live_stack.client.get("/me", headers={"Authorization": "Bearer"}).status_code == 401
+    assert live_stack.authed("not-a-real-key").get("/me").status_code == 401
+
+
+def test_logout_revokes_the_session_key(live_stack: LiveStack) -> None:
+    """After logout, the same key is rejected, but another session of the same user still works."""
+    session_key = live_stack.sign_in()
+    other_session = live_stack.authed(live_stack.sign_in())
+    authed = live_stack.authed(session_key)
+
+    assert authed.post("/auth/logout").status_code == 204
+    assert authed.get("/me").status_code == 401
+    assert other_session.get("/me").status_code == 200

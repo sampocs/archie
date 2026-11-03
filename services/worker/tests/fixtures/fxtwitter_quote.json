@@ -1,0 +1,368 @@
+{
+ "status": {
+  "type": "status",
+  "url": "https://x.com/hwchase17/status/2116230499140251964",
+  "id": "2116230499140251964",
+  "text": "if you can define what good looks like for an agent for a particular domain, you will best positioned to win that domain\n\nthats why im so bullish on benchling for bio",
+  "raw_text": {
+   "text": "if you can define what good looks like for an agent for a particular domain, you will best positioned to win that domain\n\nthats why im so bullish on benchling for bio",
+   "display_text_range": [
+    0,
+    166
+   ],
+   "facets": []
+  },
+  "author": {
+   "screen_name": "hwchase17",
+   "url": "https://x.com/hwchase17",
+   "id": "2728439146",
+   "followers": 138222,
+   "following": 600,
+   "likes": 17085,
+   "media_count": 700,
+   "statuses": 17795,
+   "name": "Harrison Chase",
+   "description": "@LangChain\n\nAlways hiring: https://www.langchain.com/careers",
+   "raw_description": {
+    "text": "@LangChain\n\nAlways hiring: https://t.co/D5Ut3loFO7",
+    "facets": [
+     {
+      "type": "url",
+      "indices": [
+       27,
+       50
+      ],
+      "original": "https://t.co/D5Ut3loFO7",
+      "replacement": "https://www.langchain.com/careers",
+      "display": "langchain.com/careers"
+     }
+    ]
+   },
+   "location": "",
+   "banner_url": "",
+   "avatar_url": "https://pbs.twimg.com/profile_images/1569345624935485442/R67C4wCQ_200x200.jpg",
+   "joined": "Tue Jul 29 19:22:50 +0000 2014",
+   "protected": false,
+   "website": null,
+   "verification": {
+    "verified": true,
+    "verified_at": null,
+    "type": "individual"
+   },
+   "type": "profile"
+  },
+  "replies": 81,
+  "reposts": 2,
+  "likes": 56,
+  "bookmarks": 21,
+  "quotes": 4,
+  "embed_card": "summary_large_image",
+  "created_at": "Fri Oct 30 18:07:23 +0000 2026",
+  "created_timestamp": 1793383643,
+  "views": 6046,
+  "is_note_tweet": false,
+  "community_note": null,
+  "lang": "en",
+  "replying_to": null,
+  "media": {},
+  "quote": {
+   "type": "status",
+   "url": "https://x.com/nlarusstone/status/2116199344521253114",
+   "id": "2116199344521253114",
+   "text": "I hate to rain on everyone's parade, but unfortunately LLMs are still not that good at biology :(. Even basic molecular cloning tasks are beyond the reach of frontier models",
+   "raw_text": {
+    "text": "I hate to rain on everyone's parade, but unfortunately LLMs are still not that good at biology :(. Even basic molecular cloning tasks are beyond the reach of frontier models https://t.co/4rtzSMAWmP",
+    "display_text_range": [
+     0,
+     173
+    ],
+    "facets": [
+     {
+      "type": "media",
+      "indices": [
+       174,
+       197
+      ],
+      "id": "2116198965742034944",
+      "display": "pic.x.com/4rtzSMAWmP",
+      "original": "https://t.co/4rtzSMAWmP",
+      "replacement": "https://x.com/nlarusstone/status/2116199344521253114/photo/1"
+     }
+    ]
+   },
+   "author": {
+    "screen_name": "nlarusstone",
+    "url": "https://x.com/nlarusstone",
+    "id": "402813996",
+    "followers": 3545,
+    "following": 1476,
+    "likes": 3710,
+    "media_count": 109,
+    "statuses": 1637,
+    "name": "Nicholas Larus-Stone",
+    "description": "AI for science @benchling",
+    "raw_description": {
+     "text": "AI for science @benchling",
+     "facets": []
+    },
+    "location": "",
+    "banner_url": "",
+    "avatar_url": "https://pbs.twimg.com/profile_images/1297229581003431939/-j7tVAZK_200x200.jpg",
+    "joined": "Tue Nov 01 16:22:26 +0000 2011",
+    "protected": false,
+    "website": {
+     "url": "https://nlarusstone.com/",
+     "display_url": "nlarusstone.com"
+    },
+    "verification": {
+     "verified": true,
+     "verified_at": null,
+     "type": "individual"
+    },
+    "type": "profile"
+   },
+   "replies": 42,
+   "reposts": 25,
+   "likes": 271,
+   "bookmarks": 102,
+   "quotes": 10,
+   "embed_card": "summary_large_image",
+   "created_at": "Fri Oct 30 16:03:35 +0000 2026",
+   "created_timestamp": 1793376215,
+   "possibly_sensitive": false,
+   "views": 28083,
+   "is_note_tweet": false,
+   "community_note": null,
+   "lang": "en",
+   "replying_to": null,
+   "media": {
+    "all": [
+     {
+      "type": "photo",
+      "id": "2116198965742034944",
+      "url": "https://pbs.twimg.com/media/HV4_v0saYAAwybe.jpg?name=orig",
+      "width": 4096,
+      "height": 2787
+     }
+    ],
+    "photos": [
+     {
+      "type": "photo",
+      "id": "2116198965742034944",
+      "url": "https://pbs.twimg.com/media/HV4_v0saYAAwybe.jpg?name=orig",
+      "width": 4096,
+      "height": 2787
+     }
+    ]
+   },
+   "provider": "twitter",
+   "reposted_by": null
+  },
+  "provider": "twitter",
+  "reposted_by": null
+ },
+ "thread": [
+  {
+   "type": "status",
+   "url": "https://x.com/hwchase17/status/2116230499140251964",
+   "id": "2116230499140251964",
+   "text": "if you can define what good looks like for an agent for a particular domain, you will best positioned to win that domain\n\nthats why im so bullish on benchling for bio",
+   "raw_text": {
+    "text": "if you can define what good looks like for an agent for a particular domain, you will best positioned to win that domain\n\nthats why im so bullish on benchling for bio",
+    "display_text_range": [
+     0,
+     166
+    ],
+    "facets": []
+   },
+   "author": {
+    "screen_name": "hwchase17",
+    "url": "https://x.com/hwchase17",
+    "id": "2728439146",
+    "followers": 138222,
+    "following": 600,
+    "likes": 17085,
+    "media_count": 700,
+    "statuses": 17795,
+    "name": "Harrison Chase",
+    "description": "@LangChain\n\nAlways hiring: https://www.langchain.com/careers",
+    "raw_description": {
+     "text": "@LangChain\n\nAlways hiring: https://t.co/D5Ut3loFO7",
+     "facets": [
+      {
+       "type": "url",
+       "indices": [
+        27,
+        50
+       ],
+       "original": "https://t.co/D5Ut3loFO7",
+       "replacement": "https://www.langchain.com/careers",
+       "display": "langchain.com/careers"
+      }
+     ]
+    },
+    "location": "",
+    "banner_url": "",
+    "avatar_url": "https://pbs.twimg.com/profile_images/1569345624935485442/R67C4wCQ_200x200.jpg",
+    "joined": "Tue Jul 29 19:22:50 +0000 2014",
+    "protected": false,
+    "website": null,
+    "verification": {
+     "verified": true,
+     "verified_at": null,
+     "type": "individual"
+    },
+    "type": "profile"
+   },
+   "replies": 81,
+   "reposts": 2,
+   "likes": 56,
+   "bookmarks": 21,
+   "quotes": 4,
+   "embed_card": "summary_large_image",
+   "created_at": "Fri Oct 30 18:07:23 +0000 2026",
+   "created_timestamp": 1793383643,
+   "views": 6046,
+   "is_note_tweet": false,
+   "community_note": null,
+   "lang": "en",
+   "replying_to": null,
+   "media": {},
+   "quote": {
+    "type": "status",
+    "url": "https://x.com/nlarusstone/status/2116199344521253114",
+    "id": "2116199344521253114",
+    "text": "I hate to rain on everyone's parade, but unfortunately LLMs are still not that good at biology :(. Even basic molecular cloning tasks are beyond the reach of frontier models",
+    "raw_text": {
+     "text": "I hate to rain on everyone's parade, but unfortunately LLMs are still not that good at biology :(. Even basic molecular cloning tasks are beyond the reach of frontier models https://t.co/4rtzSMAWmP",
+     "display_text_range": [
+      0,
+      173
+     ],
+     "facets": [
+      {
+       "type": "media",
+       "indices": [
+        174,
+        197
+       ],
+       "id": "2116198965742034944",
+       "display": "pic.x.com/4rtzSMAWmP",
+       "original": "https://t.co/4rtzSMAWmP",
+       "replacement": "https://x.com/nlarusstone/status/2116199344521253114/photo/1"
+      }
+     ]
+    },
+    "author": {
+     "screen_name": "nlarusstone",
+     "url": "https://x.com/nlarusstone",
+     "id": "402813996",
+     "followers": 3545,
+     "following": 1476,
+     "likes": 3710,
+     "media_count": 109,
+     "statuses": 1637,
+     "name": "Nicholas Larus-Stone",
+     "description": "AI for science @benchling",
+     "raw_description": {
+      "text": "AI for science @benchling",
+      "facets": []
+     },
+     "location": "",
+     "banner_url": "",
+     "avatar_url": "https://pbs.twimg.com/profile_images/1297229581003431939/-j7tVAZK_200x200.jpg",
+     "joined": "Tue Nov 01 16:22:26 +0000 2011",
+     "protected": false,
+     "website": {
+      "url": "https://nlarusstone.com/",
+      "display_url": "nlarusstone.com"
+     },
+     "verification": {
+      "verified": true,
+      "verified_at": null,
+      "type": "individual"
+     },
+     "type": "profile"
+    },
+    "replies": 42,
+    "reposts": 25,
+    "likes": 271,
+    "bookmarks": 102,
+    "quotes": 10,
+    "embed_card": "summary_large_image",
+    "created_at": "Fri Oct 30 16:03:35 +0000 2026",
+    "created_timestamp": 1793376215,
+    "possibly_sensitive": false,
+    "views": 28083,
+    "is_note_tweet": false,
+    "community_note": null,
+    "lang": "en",
+    "replying_to": null,
+    "media": {
+     "all": [
+      {
+       "type": "photo",
+       "id": "2116198965742034944",
+       "url": "https://pbs.twimg.com/media/HV4_v0saYAAwybe.jpg?name=orig",
+       "width": 4096,
+       "height": 2787
+      }
+     ],
+     "photos": [
+      {
+       "type": "photo",
+       "id": "2116198965742034944",
+       "url": "https://pbs.twimg.com/media/HV4_v0saYAAwybe.jpg?name=orig",
+       "width": 4096,
+       "height": 2787
+      }
+     ]
+    },
+    "provider": "twitter",
+    "reposted_by": null
+   },
+   "provider": "twitter",
+   "reposted_by": null
+  }
+ ],
+ "author": {
+  "screen_name": "hwchase17",
+  "url": "https://x.com/hwchase17",
+  "id": "2728439146",
+  "followers": 138222,
+  "following": 600,
+  "likes": 17085,
+  "media_count": 700,
+  "statuses": 17795,
+  "name": "Harrison Chase",
+  "description": "@LangChain\n\nAlways hiring: https://www.langchain.com/careers",
+  "raw_description": {
+   "text": "@LangChain\n\nAlways hiring: https://t.co/D5Ut3loFO7",
+   "facets": [
+    {
+     "type": "url",
+     "indices": [
+      27,
+      50
+     ],
+     "original": "https://t.co/D5Ut3loFO7",
+     "replacement": "https://www.langchain.com/careers",
+     "display": "langchain.com/careers"
+    }
+   ]
+  },
+  "location": "",
+  "banner_url": "",
+  "avatar_url": "https://pbs.twimg.com/profile_images/1569345624935485442/R67C4wCQ_200x200.jpg",
+  "joined": "Tue Jul 29 19:22:50 +0000 2014",
+  "protected": false,
+  "website": null,
+  "verification": {
+   "verified": true,
+   "verified_at": null,
+   "type": "individual"
+  },
+  "type": "profile"
+ },
+ "code": 200
+}

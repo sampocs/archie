@@ -122,6 +122,7 @@ def go_deeper(db: orm.Session, *, user: models.User, payload: dict[str, object])
         return _NOT_READY
 
     source.state = models.SourceState.CONSUMED.value
+    source.snoozed_until = None
     source.read_at = source.read_at or sqlalchemy.func.now()
     pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
     pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.ANALYZE, models.JobKind.PRIMER])

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import html.parser
 import time
+import urllib.parse
 import uuid
 from collections.abc import Mapping
 
@@ -23,6 +24,9 @@ _FETCH_TIMEOUT_SECONDS = 10
 _MAX_BODY_BYTES = 1_000_000
 _MAX_TITLE_LENGTH = 500
 _OG_TITLE_PROPERTY = "og:title"
+_OG_IMAGE_PROPERTY = "og:image"
+_MAX_IMAGE_URL_LENGTH = 2048
+_IMAGE_SCHEMES = frozenset({"http", "https"})
 # Postgres text columns reject NUL, so a page containing one would fail the job forever.
 _NUL = "\x00"
 
@@ -30,11 +34,12 @@ _logger = logging.get_logger(logging.LoggerName.WORKER, "fetch_title")
 
 
 class _TitleParser(html.parser.HTMLParser):
-    """Collects the page's `og:title` and the text of its first `<title>`."""
+    """Collects the page's `og:title`, first `og:image` and the text of its first `<title>`."""
 
     def __init__(self) -> None:
         super().__init__()
         self.og_title: str | None = None
+        self.og_image: str | None = None
         self.title_text = ""
         self._in_title = False
         self._title_done = False
@@ -45,11 +50,16 @@ class _TitleParser(html.parser.HTMLParser):
             self._in_title = True
             return
 
-        if tag != "meta" or self.og_title is not None:
+        if tag != "meta":
             return
         attributes = dict(attrs)
-        if attributes.get("property") == _OG_TITLE_PROPERTY and attributes.get("content") is not None:
-            self.og_title = attributes["content"]
+        content = attributes.get("content")
+        if content is None:
+            return
+        if attributes.get("property") == _OG_TITLE_PROPERTY and self.og_title is None:
+            self.og_title = content
+        if attributes.get("property") == _OG_IMAGE_PROPERTY and self.og_image is None:
+            self.og_image = content
 
     def handle_endtag(self, tag: str) -> None:
         """Close the first `<title>`."""
@@ -75,8 +85,9 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     db.commit()
     page = fetch_page(url=url, timeout_seconds=_FETCH_TIMEOUT_SECONDS, max_bytes=_MAX_BODY_BYTES)
     title = extract_title(page=page)
-    if title is None:
-        _logger.info("No title found for source %s", source_id)
+    image_url = extract_image(page=page, base_url=url)
+    if title is None and image_url is None:
+        _logger.info("No title or image found for source %s", source_id)
         return
 
     # The user may have deleted the link during the fetch; the lock makes the refreshed state final.
@@ -85,7 +96,10 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     if source.deleted_at is not None:
         return
 
-    source.title = title
+    if title is not None:
+        source.title = title
+    if image_url is not None and not source.image_url:
+        source.image_url = image_url
     source.updated_at = sqlalchemy.func.now()
     source.change_seq = changes.next_change_seq()
 
@@ -103,6 +117,20 @@ def extract_title(*, page: str) -> str | None:
     candidates = (" ".join(raw_title.replace(_NUL, "").split()) for raw_title in raw_titles)
     title = next((candidate for candidate in candidates if candidate), None)
     return title[:_MAX_TITLE_LENGTH] if title else None
+
+
+def extract_image(*, page: str, base_url: str) -> str | None:
+    """The page's first `og:image` made absolute against `base_url`; None unless it is a sane http(s) URL."""
+    parser = _TitleParser()
+    parser.feed(page)
+    parser.close()
+    if not parser.og_image:
+        return None
+
+    absolute = urllib.parse.urljoin(base_url, parser.og_image.strip()).replace(_NUL, "")
+    if urllib.parse.urlparse(absolute).scheme not in _IMAGE_SCHEMES or len(absolute) > _MAX_IMAGE_URL_LENGTH:
+        return None
+    return absolute
 
 
 def fetch_page(*, url: str, timeout_seconds: float, max_bytes: int, headers: Mapping[str, str] | None = None) -> str:

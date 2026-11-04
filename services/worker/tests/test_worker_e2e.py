@@ -155,12 +155,12 @@ def test_a_job_that_failed_once_succeeds_on_retry(engine: sqlalchemy.Engine, rep
 
 
 def test_only_jobs_running_too_long_are_requeued(engine: sqlalchemy.Engine) -> None:
-    """A job orphaned by a crash (running for 11 minutes) is re-queued; one running 5 minutes is left alone."""
+    """A job past STALE_AFTER is re-queued; one running 11 minutes (a two-timeout primer step) is left alone."""
     now = datetime.datetime.now(datetime.UTC)
     user_id = _add_user(engine)
     with sqlalchemy.orm.Session(engine) as db:
-        stale = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(minutes=11))
-        fresh = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(minutes=5))
+        stale = _running_job(db, user_id=user_id, started_at=now - loop.STALE_AFTER - datetime.timedelta(minutes=1))
+        fresh = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(minutes=11))
         db.commit()
         stale_id, fresh_id = stale.id, fresh.id
 
@@ -178,7 +178,7 @@ def test_a_crashed_job_out_of_attempts_fails_instead_of_looping(engine: sqlalche
     now = datetime.datetime.now(datetime.UTC)
     user_id = _add_user(engine)
     with sqlalchemy.orm.Session(engine) as db:
-        job = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(minutes=11))
+        job = _running_job(db, user_id=user_id, started_at=now - loop.STALE_AFTER - datetime.timedelta(minutes=1))
         job.attempts = job.max_attempts = 3
         db.commit()
 

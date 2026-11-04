@@ -1,6 +1,6 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { db } from "@/db/client";
@@ -11,7 +11,7 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { Markdown } from "@/ui/Markdown";
 import { ProcessingLine } from "@/ui/ProcessingLine";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 type TimedItem = { timestamp: string | null };
 type SummaryContent = {
@@ -24,6 +24,7 @@ const REACTION_LABELS: Record<string, string> = { easy: "Easy", mostly: "Mostly 
 
 export default function SourceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const { data: sources } = useLiveQuery(db.select().from(schema.sources).where(eq(schema.sources.id, id)), [id]);
   const { data: artifacts } = useLiveQuery(
     db
@@ -42,7 +43,14 @@ export default function SourceScreen() {
   );
 
   const source = sources[0];
-  if (!source) return <Screen title="Source" />;
+  const mergedIntoId = source?.deletedAt ? source.mergedIntoId : null;
+
+  // A duplicate share is tombstoned and points at the source that won; follow it instead of showing the dead row.
+  useEffect(() => {
+    if (mergedIntoId) router.replace(`/source/${mergedIntoId}`);
+  }, [mergedIntoId, router]);
+
+  if (!source || source.deletedAt) return <Screen title="Source" />;
 
   const summary = artifacts.find((artifact) => artifact.kind === "summary");
   const primer = artifacts.find((artifact) => artifact.kind === "primer");

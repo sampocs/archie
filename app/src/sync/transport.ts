@@ -109,6 +109,7 @@ export function createDbSyncStore(db: AppDb, runEpoch: number = getSessionEpoch(
             note: source.note,
             prepMe: source.prep_me ? 1 : 0,
             mergedIntoId: source.merged_into_id,
+            sender: source.sender,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })

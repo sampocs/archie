@@ -12,12 +12,18 @@ from archie_worker import content
 from archie_worker.content import episode as episode_content
 
 _MAX_TITLE_LENGTH = 500
+_MAX_IMAGE_URL_LENGTH = 2048
 
 
 def store_text(
-    db: sqlalchemy.orm.Session, *, source: models.Source, text_content: dict[str, Any], title: str | None
+    db: sqlalchemy.orm.Session,
+    *,
+    source: models.Source,
+    text_content: dict[str, Any],
+    title: str | None,
+    image_url: str | None = None,
 ) -> None:
-    """Store `text_content` as the current `text` artifact, title the source if untitled, and queue its next steps.
+    """Store `text_content` as the current `text` artifact, fill an empty title and image, and queue its next steps.
 
     Takes the user's write lock and re-reads the source first: the user may have deleted it during the outside call,
     in which case nothing is written.
@@ -29,17 +35,19 @@ def store_text(
         db, source=source, kind=models.ArtifactKind.TEXT, content=text_content, model=None, prompt_version=None
     )
     _set_title_if_empty(source, title=title)
+    _set_image_if_empty(source, image_url=image_url)
     pipeline.enqueue_steps(db, source=source, steps=pipeline.steps_after_text(models.SourceKind(source.kind)))
 
 
 def enqueue_transcribe(
     db: sqlalchemy.orm.Session, *, source: models.Source, episode: episode_content.PodcastEpisode
 ) -> None:
-    """Queue a `transcribe` job for the resolved episode and title the source if untitled; it stays `processing`."""
+    """Queue a `transcribe` job for the resolved episode and fill an empty title and image; it stays `processing`."""
     if not _lock_live(db, source=source):
         return
 
     _set_title_if_empty(source, title=episode.title)
+    _set_image_if_empty(source, image_url=episode.image_url)
     jobs.enqueue(
         db,
         kind=models.JobKind.TRANSCRIBE,
@@ -62,5 +70,13 @@ def _set_title_if_empty(source: models.Source, *, title: str | None) -> None:
         return
 
     source.title = cleaned
-    source.updated_at = sqlalchemy.func.now()
-    source.change_seq = changes.next_change_seq()
+    changes.touch(source)
+
+
+def _set_image_if_empty(source: models.Source, *, image_url: str | None) -> None:
+    # A cut-off URL would point nowhere, so an overlong one means no image.
+    if source.image_url or not image_url or len(image_url) > _MAX_IMAGE_URL_LENGTH:
+        return
+
+    source.image_url = image_url
+    changes.touch(source)

@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import jwt
 import sqlalchemy
-from archie_db import models
+from archie_db import changes, models, user_topics
 from sqlalchemy import orm
 
 APPLE_ISSUER = "https://appleid.apple.com"
@@ -67,4 +67,9 @@ def upsert_apple_user(db: orm.Session, *, identity: AppleIdentity, owner_emails:
     user.is_whitelisted = user.email is not None and user.email.lower() in owner_emails
 
     db.flush()
+
+    # Whitelisting is exactly "email in OWNER_EMAILS", so this seeds the owner's topics and nobody else's.
+    if user.is_whitelisted:
+        changes.lock_user_writes(db, user.id)
+        user_topics.seed_owner_topics(db, user=user)
     return user

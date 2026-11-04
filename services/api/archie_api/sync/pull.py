@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
+from collections.abc import Mapping, Sequence
+from enum import StrEnum
 from typing import Protocol
 
 import sqlalchemy
@@ -19,68 +21,71 @@ class _Positioned(Protocol):
     def change_seq(self) -> int: ...
 
 
+class PulledTable(StrEnum):
+    """The synced tables a pull page carries, keyed as on the wire."""
+
+    SOURCES = "sources"
+    ARTIFACTS = "artifacts"
+    CARDS = "cards"
+    TOPICS = "topics"
+    TOPIC_PRIMERS = "topic_primers"
+
+
 @dataclasses.dataclass(frozen=True)
-class MergedPage[SourceT: _Positioned, ArtifactT: _Positioned, CardT: _Positioned]:
+class MergedPage[RowT: _Positioned]:
     """The rows one pull page keeps from each table, and where the phone should resume."""
 
-    sources: list[SourceT]
-    artifacts: list[ArtifactT]
-    cards: list[CardT]
+    rows: dict[str, list[RowT]]
     position: int
     more: bool
 
 
 def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL_PAGE_SIZE) -> schemas.PullResponse:
-    """Rows (deleted ones included) from sources, artifacts and cards with a position above `since`, oldest first."""
-    page = merge_page(
-        sources=_changed_rows(db, models.Source, user_id=user_id, since=since, limit=limit),
-        artifacts=_changed_rows(
-            db,
-            models.SourceArtifact,
-            models.SourceArtifact.kind.in_([kind.value for kind in models.SYNCED_ARTIFACT_KINDS]),
-            user_id=user_id,
-            since=since,
-            limit=limit,
+    """Rows (deleted ones included) from the five synced tables with a position above `since`, oldest first."""
+    artifact_kinds = models.SourceArtifact.kind.in_([kind.value for kind in models.SYNCED_ARTIFACT_KINDS])
+    tables: dict[str, Sequence[_Positioned]] = {
+        PulledTable.SOURCES: _changed_rows(db, models.Source, user_id=user_id, since=since, limit=limit),
+        PulledTable.ARTIFACTS: _changed_rows(
+            db, models.SourceArtifact, artifact_kinds, user_id=user_id, since=since, limit=limit
         ),
-        cards=_changed_rows(db, models.Card, user_id=user_id, since=since, limit=limit),
-        since=since,
-        limit=limit,
-    )
+        PulledTable.CARDS: _changed_rows(db, models.Card, user_id=user_id, since=since, limit=limit),
+        PulledTable.TOPICS: _changed_rows(db, models.Topic, user_id=user_id, since=since, limit=limit),
+        PulledTable.TOPIC_PRIMERS: _changed_rows(db, models.TopicPrimer, user_id=user_id, since=since, limit=limit),
+    }
+    page = merge_page(tables=tables, since=since, limit=limit)
 
     return schemas.PullResponse(
         rows=schemas.PulledRows(
-            sources=[schemas.SourceOut.model_validate(row) for row in page.sources],
-            artifacts=[schemas.ArtifactOut.model_validate(row) for row in page.artifacts],
-            cards=[schemas.CardOut.model_validate(row) for row in page.cards],
+            sources=[schemas.SourceOut.model_validate(row) for row in page.rows[PulledTable.SOURCES]],
+            artifacts=[schemas.ArtifactOut.model_validate(row) for row in page.rows[PulledTable.ARTIFACTS]],
+            cards=[schemas.CardOut.model_validate(row) for row in page.rows[PulledTable.CARDS]],
+            topics=[schemas.TopicOut.model_validate(row) for row in page.rows[PulledTable.TOPICS]],
+            topic_primers=[schemas.TopicPrimerOut.model_validate(row) for row in page.rows[PulledTable.TOPIC_PRIMERS]],
         ),
         position=page.position,
         more=page.more,
     )
 
 
-def merge_page[SourceT: _Positioned, ArtifactT: _Positioned, CardT: _Positioned](
-    *, sources: list[SourceT], artifacts: list[ArtifactT], cards: list[CardT], since: int, limit: int
-) -> MergedPage[SourceT, ArtifactT, CardT]:
-    """Keep the `limit` lowest positions across the three tables' rows (each table already holds its own lowest).
+def merge_page[RowT: _Positioned](*, tables: Mapping[str, Sequence[RowT]], since: int, limit: int) -> MergedPage[RowT]:
+    """Keep the `limit` lowest positions across the tables' rows (each table already holds its own lowest).
 
     Positions come from one sequence, so they are unique across tables. The phone resumes from the last kept
     position, so every cut row sits above it and is returned by the next pull. `more` is set when rows were cut
     or a table filled its own query, since that table may hold further rows the others' positions hide.
     """
-    all_rows: list[_Positioned] = [*sources, *artifacts, *cards]
+    all_rows = [row for rows in tables.values() for row in rows]
     kept_positions = sorted(row.change_seq for row in all_rows)[:limit]
     position = kept_positions[-1] if kept_positions else since
 
     return MergedPage(
-        sources=[row for row in sources if row.change_seq <= position],
-        artifacts=[row for row in artifacts if row.change_seq <= position],
-        cards=[row for row in cards if row.change_seq <= position],
+        rows={name: [row for row in rows if row.change_seq <= position] for name, rows in tables.items()},
         position=position,
-        more=len(all_rows) > limit or limit in (len(sources), len(artifacts), len(cards)),
+        more=len(all_rows) > limit or any(len(rows) == limit for rows in tables.values()),
     )
 
 
-def _changed_rows[RowT: (models.Source, models.SourceArtifact, models.Card)](
+def _changed_rows[RowT: (models.Source, models.SourceArtifact, models.Card, models.Topic, models.TopicPrimer)](
     db: orm.Session, model: type[RowT], *criteria: sqlalchemy.ColumnElement[bool], user_id: int, since: int, limit: int
 ) -> list[RowT]:
     """The user's `limit` oldest `model` rows above `since` that match `criteria`."""

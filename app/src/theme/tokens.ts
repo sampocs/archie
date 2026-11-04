@@ -1,6 +1,8 @@
 // Design tokens from docs/superpowers/specs/2026-10-29-ux-and-brand-design.md ("Color tokens").
 // Graphite (chrome) is the UI; color appears only as a signal.
 
+import type { DomainName } from "@/topics/domains";
+
 export type ColorScheme = "light" | "dark";
 
 export type ColorTokens = {
@@ -13,6 +15,9 @@ export type ColorTokens = {
   press: string;
   chrome: string;
   onChrome: string;
+  unread: string;
+  // Text on a domain-colored tile.
+  onDomain: string;
 };
 
 export const colors: Record<ColorScheme, ColorTokens> = {
@@ -26,6 +31,8 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     press: "#EFEDE6",
     chrome: "#1C1B18",
     onChrome: "#FFFFFF",
+    unread: "#3D7BF2",
+    onDomain: "#FFFFFF",
   },
   dark: {
     bg: "#151412",
@@ -38,27 +45,43 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     chrome: "#F1EFE9",
     // Text on chrome flips in dark mode.
     onChrome: "#141311",
+    unread: "#6EA1FF",
+    onDomain: "#151412",
   },
 };
 
-export type Domain = "macro" | "ai" | "crypto" | "startups" | "finance" | "history";
+export type Domain = DomainName;
 
 export const domainColors: Record<ColorScheme, Record<Domain, string>> = {
   light: {
-    macro: "#3F7262",
-    ai: "#6A5A9C",
-    crypto: "#A8613A",
-    startups: "#3D6690",
-    finance: "#8A7533",
-    history: "#8E5468",
+    Macro: "#3F7262",
+    Finance: "#8A7533",
+    Trading: "#4F6F8A",
+    Crypto: "#A8613A",
+    Startups: "#3D6690",
+    AI: "#6A5A9C",
+    Politics: "#8A4F4F",
+    Geopolitics: "#5E6B3A",
+    Sports: "#3A7A7A",
+    Geography: "#7A6248",
+    History: "#8E5468",
+    "Software engineering": "#5A5F6E",
+    Other: "#77736A",
   },
   dark: {
-    macro: "#79B39E",
-    ai: "#A898DE",
-    crypto: "#DC9867",
-    startups: "#7FA7D9",
-    finance: "#CDB46A",
-    history: "#C98BA0",
+    Macro: "#79B39E",
+    Finance: "#CDB46A",
+    Trading: "#8FB0CC",
+    Crypto: "#DC9867",
+    Startups: "#7FA7D9",
+    AI: "#A898DE",
+    Politics: "#D58E8E",
+    Geopolitics: "#A9B77A",
+    Sports: "#7CC2C2",
+    Geography: "#C7A783",
+    History: "#C98BA0",
+    "Software engineering": "#A3A8B8",
+    Other: "#A9A59B",
   },
 };
 

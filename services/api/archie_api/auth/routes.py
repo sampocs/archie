@@ -7,7 +7,7 @@ from typing import Annotated
 import fastapi
 import jwt
 import pydantic
-from archie_db import models
+from archie_db import changes, models, user_topics
 from archie_shared import config
 from sqlalchemy import orm
 
@@ -22,14 +22,25 @@ class MeView(pydantic.BaseModel):
 
     user_id: int
     ingest_address: str | None
+    # False until the user finished the topic picker; the app shows the picker while it is false.
+    topics_chosen: bool
 
 
 @router.get("/me")
-def me(user: Annotated[models.User, fastapi.Depends(deps.current_user)]) -> MeView:
-    """Return the signed-in user; 401 means the app must sign in again."""
-    domain = config.get_settings().ingest_email_domain
+def me(
+    db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
+    user: Annotated[models.User, fastapi.Depends(deps.current_user)],
+) -> MeView:
+    """Return the signed-in user (seeding the owner's topics on first sight); 401 means sign in again."""
+    settings = config.get_settings()
+    if user.email is not None and user.email.lower() in settings.owner_email_set():
+        changes.lock_user_writes(db, user.id)
+        user_topics.seed_owner_topics(db, user=user)
+        db.commit()
+
+    domain = settings.ingest_email_domain
     ingest_address = f"{user.ingest_token}@{domain}" if domain else None
-    return MeView(user_id=user.id, ingest_address=ingest_address)
+    return MeView(user_id=user.id, ingest_address=ingest_address, topics_chosen=user.topics_chosen_at is not None)
 
 
 class AppleSignInRequest(pydantic.BaseModel):

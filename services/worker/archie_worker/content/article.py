@@ -47,4 +47,8 @@ def extract(*, html: str, url: str) -> content.ExtractedText | None:
 
     metadata = trafilatura.extract_metadata(html, default_url=url)
     title = (metadata.title if metadata is not None else None) or fetch_title.extract_title(page=html)
-    return content.ExtractedText(title=title, text=text[: content.MAX_TEXT_LENGTH])
+    return content.ExtractedText(
+        title=title,
+        text=text[: content.MAX_TEXT_LENGTH],
+        image_url=fetch_title.extract_image(page=html, base_url=url),
+    )

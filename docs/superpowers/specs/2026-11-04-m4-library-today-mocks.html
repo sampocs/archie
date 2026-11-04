@@ -1,0 +1,336 @@
+<title>Archie M4 Screens</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of phone mocks, each with a numbered flow note beside it; the page chrome stays quiet so the phones carry the color. */
+:root {
+  --page: #E9E6DE; --page-ink: #1C1B18; --page-ink-2: #5E5B54; --page-line: #D6D2C8; --note-bg: #F7F5F0;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+  --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+  --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533; --k-history: #8E5468;
+  --k-trading: #4F6F8A; --k-geo: #5E6B3A; --k-sports: #3A7A7A; --k-eng: #5A5F6E; --unread: #3D6690;
+  --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --review: #3F7262;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark }
+body { background: var(--page); color: var(--page-ink); font-family: var(--sans); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 40px; }
+.intro h1 { font-size: 34px; letter-spacing: -.04em; margin: 0 0 8px; text-wrap: balance; }
+.intro p { color: var(--page-ink-2); line-height: 1.55; max-width: 70ch; margin: 0; }
+.legend-k { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink-2); }
+.scene { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 28px; align-items: start; border-top: 1px solid var(--page-line); padding-top: 32px; }
+@media (max-width: 860px) { .scene { grid-template-columns: minmax(0, 1fr); } .phone { margin: 0 auto; } }
+.note { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.note .num { font: 500 12px var(--mono); color: var(--page-ink-2); letter-spacing: .05em; }
+.note h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+.note p, .note li { color: var(--page-ink-2); line-height: 1.55; font-size: 15px; max-width: 64ch; }
+.note p { margin: 0; }
+.note ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.note b { color: var(--page-ink); font-weight: 600; }
+.ask { background: var(--note-bg); border: 1px solid var(--page-line); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--page-ink-2); line-height: 1.5; }
+.ask strong { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink); display: block; margin-bottom: 4px; }
+
+/* ---------- Phone ---------- */
+.phone { width: 360px; max-width: 100%; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 24px 60px rgba(0,0,0,.28); flex: none; box-sizing: border-box; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--sans); color-scheme: light; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, sans-serif; color: var(--ink); }
+.view { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; padding: 58px 0 110px; }
+.view::-webkit-scrollbar { display: none; }
+.hdr { padding: 6px 22px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.hdr .title { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; }
+.hdr .date { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; margin-bottom: 7px; }
+.toggle { display: flex; background: var(--press); border-radius: 9px; padding: 2px; margin-bottom: 4px; }
+.toggle div { font-size: 12.5px; font-weight: 600; padding: 6px 10px; border-radius: 7px; color: var(--ink3); }
+.toggle div.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { margin: 14px 16px 0; height: 40px; border-radius: 12px; background: var(--press); display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--ink3); font-size: 15px; }
+.fchips { display: flex; gap: 6px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+.fchips div { flex: none; font-size: 13px; font-weight: 550; padding: 7px 12px; border-radius: 999px; background: var(--surface); color: var(--ink2); box-shadow: var(--card-shadow); }
+.fchips div.on { background: var(--chrome); color: #fff; box-shadow: none; }
+.fchips .n { opacity: .55; margin-left: 3px; font-weight: 500; }
+.sec { padding: 0 16px; margin-top: 22px; }
+.sec-label { padding: 0 6px; margin-bottom: 9px; font: 500 11px/1 var(--mono); color: var(--ink3); text-transform: uppercase; letter-spacing: .02em; display: flex; justify-content: space-between; }
+.sec-label a { color: var(--ink2); text-decoration: none; text-transform: none; font-family: var(--sans); font-size: 12.5px; font-weight: 600; letter-spacing: 0; }
+.group { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--card-shadow); }
+.row { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.art { width: 46px; height: 46px; border-radius: 10px; flex: none; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); display: grid; place-items: center; font: 700 18px/1 var(--sans); color: rgba(255,255,255,.92); }
+.art.person { border-radius: 50%; }
+.unread-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--unread); box-shadow: 0 0 0 2px var(--surface); }
+.meta { flex: 1; min-width: 0; }
+.meta .k { font: 600 10px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 4px; }
+.meta b { display: -webkit-box; font-size: 14.5px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.3; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.meta span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+.status { flex: none; font-size: 11px; font-weight: 600; padding: 4px 7px; border-radius: 6px; color: var(--ink2); background: var(--press); }
+.status.unread { background: color-mix(in srgb, var(--unread) 12%, transparent); color: var(--unread); }
+.status.proc { color: var(--ink3); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.prep { flex: none; font-size: 12px; font-weight: 600; padding: 6px 9px; border-radius: 8px; background: var(--press); color: var(--ink2); }
+.prep.on { background: color-mix(in srgb, var(--got) 14%, var(--surface)); color: var(--got); }
+.dom { padding: 14px 16px; border-top: 1px solid var(--line); }
+.dom:first-child { border-top: 0; }
+.dom .top { display: flex; align-items: center; gap: 10px; }
+.dom .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--k); }
+.dom .name { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; flex: 1; }
+.dom .cnt { font: 500 12px/1 var(--mono); color: var(--ink3); }
+.dom .bar { height: 4px; border-radius: 2px; background: var(--press); margin: 10px 0 8px 20px; display: flex; overflow: hidden; gap: 2px; }
+.dom .bar i { display: block; height: 100%; background: var(--k); opacity: .85; }
+.dom .bar i:nth-child(2) { opacity: .5; } .dom .bar i:nth-child(3) { opacity: .25; }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 20px; }
+.topics div { font-size: 12.5px; font-weight: 500; padding: 5px 9px; border-radius: 7px; color: var(--ink2); background: var(--press); }
+.topics .n { color: var(--ink3); margin-left: 4px; font-family: var(--mono); font-size: 11px; }
+.topics div.mine { background: transparent; box-shadow: inset 0 0 0 1px var(--ink3); }
+.add-topic { font-size: 14px; color: var(--ink2); padding: 13px 16px; border-top: 1px solid var(--line); }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 14px 0; display: flex; justify-content: space-around; z-index: 30; background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 56px; }
+.tab i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid currentColor; box-sizing: border-box; }
+.tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+.tab .pl { width: 36px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 20px; }
+/* Item page */
+.navbar { position: absolute; top: 0; left: 0; right: 0; z-index: 10; height: 96px; padding: 54px 12px 0; display: flex; justify-content: space-between; align-items: flex-start; box-sizing: border-box; }
+.navbtn { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 550; color: var(--chrome); background: var(--surface); box-shadow: var(--card-shadow); box-sizing: border-box; justify-content: center; }
+.item { padding: 100px 0 40px; }
+.ihead { display: flex; gap: 14px; padding: 0 22px; align-items: flex-end; }
+.cover { width: 92px; height: 92px; border-radius: 14px; flex: none; display: grid; place-items: center; font: 700 34px var(--sans); color: rgba(255,255,255,.92); }
+.ihead .k { font: 600 10.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); }
+.ihead .by { font-size: 13px; color: var(--ink2); margin-top: 5px; line-height: 1.35; }
+.chiprow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 7px; background: var(--press); color: var(--ink2); }
+.pill.topic { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.pill.verdict { color: var(--partly); background: color-mix(in srgb, var(--partly) 12%, transparent); }
+.ititle { font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.12; padding: 0 22px; margin-top: 14px; text-wrap: balance; }
+.actions { display: flex; gap: 8px; padding: 16px 22px 0; }
+.btn { height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 15px; font-weight: 600; padding: 0 16px; }
+.btn.primary { background: var(--chrome); color: #fff; flex: 1; }
+.btn.secondary { background: var(--surface); color: var(--ink); box-shadow: var(--card-shadow); }
+.btn.secondary.on { color: var(--got); }
+.isec { padding: 0 22px; margin-top: 24px; }
+.isec .sec-label { padding: 0; }
+.isec p { font-size: 16px; line-height: 1.62; margin: 0; color: var(--ink); }
+.ideas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: i; }
+.ideas li { display: flex; gap: 10px; font-size: 15px; line-height: 1.5; }
+.ideas li::before { counter-increment: i; content: counter(i); font: 500 12px/1.9 var(--mono); color: var(--ink3); width: 14px; flex: none; }
+.ts { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 5px; background: var(--press); color: var(--ink2); white-space: nowrap; }
+.nums { display: flex; flex-direction: column; gap: 8px; }
+.nums div { display: flex; justify-content: space-between; gap: 10px; font: 500 13.5px/1.45 var(--mono); }
+.collapsed { background: var(--surface); border-radius: 14px; box-shadow: var(--card-shadow); padding: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; }
+.collapsed span { font: 500 12px var(--mono); color: var(--ink3); }
+.empty-cards { font-size: 14px; color: var(--ink3); line-height: 1.5; }
+/* Sheet */
+.dim { position: absolute; inset: 0; background: rgba(10,10,8,.32); z-index: 40; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; background: var(--bg); border-radius: 26px 26px 0 0; padding: 10px 20px 34px; display: flex; flex-direction: column; gap: 16px; }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 4px; }
+.sheet h3 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+.verdicts { display: flex; flex-direction: column; gap: 8px; }
+.verdicts div { height: 46px; border-radius: 14px; display: flex; align-items: center; padding: 0 14px; font-weight: 600; font-size: 15px; background: var(--surface); box-shadow: var(--card-shadow); color: var(--v); }
+.verdicts div.on { background: color-mix(in srgb, var(--v) 14%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--v); }
+.field { min-height: 70px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; color: var(--ink3); font-size: 15px; display: flex; justify-content: space-between; }
+.sheet .btn.primary { flex: none; }
+.small { font-size: 13px; color: var(--ink3); line-height: 1.45; }
+.primer-card { background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.primer-card b { font-size: 15px; }
+.primer-card span { font-size: 13px; color: var(--ink3); }
+.handle { flex: none; color: var(--ink3); font-size: 16px; letter-spacing: -2px; padding-left: 2px; }
+.swipe { position: relative; overflow: hidden; border-top: 1px solid var(--line); }
+.swipe .acts { position: absolute; inset: 0; display: flex; justify-content: flex-end; }
+.swipe .acts div { width: 78px; display: grid; place-items: center; color: #fff; font-size: 12.5px; font-weight: 600; }
+.swipe .row { background: var(--surface); transform: translateX(-156px); border-top: 0; }
+.back { flex: none; font: 500 11px var(--mono); color: var(--ink3); }
+.opts { display: flex; flex-direction: column; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); overflow: hidden; }
+.opts div { display: flex; justify-content: space-between; align-items: center; padding: 13px 14px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 550; }
+.opts div:first-child { border-top: 0; }
+.opts span { font: 500 12px var(--mono); color: var(--ink3); }
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <span class="legend-k">Milestone 4 · draft for review</span>
+    <h1>Today, Library and the item page</h1>
+    <p>Seven screens covering how items move between Queued, Inbox and Consumed, and where domains, topics and primers show up. Sections that belong to later milestones (Pulse, the Review card, card due dates, Related, the Ask bar) are left out on purpose rather than shown as placeholders. Each screen has notes on what tapping does, and the open questions are in the boxes.</p>
+  </header>
+  <div id="scenes" style="display:flex;flex-direction:column;gap:40px"></div>
+</div>
+
+<script>
+const TABS = active => `<div class="tabbar">${["Today","Library","+","Review","Ask"].map(t => t === "+" ? `<div class="tab"><div class="pl">+</div></div>` : `<div class="tab ${t === active ? "on" : ""}"><i></i><span>${t}</span></div>`).join("")}</div>`;
+const SHELL = (inner, tabs = "") => `<div class="phone"><div class="screen"><div class="island"></div><div class="statusbar"><span>9:41</span><span>●●●</span></div>${inner}${tabs}</div></div>`;
+const row = r => `<div class="row"><div class="art ${r.person ? "person" : ""}" style="background:var(--k-${r.d})">${r.txt || ""}${r.unread ? '<i class="unread-dot"></i>' : ""}</div><div class="meta" style="--k:var(--k-${r.d})"><div class="k">${r.dn}</div><b>${r.t}</b><span>${r.m}</span></div>${r.end || ""}</div>`;
+
+const today = SHELL(`<div class="view">
+  <div class="hdr"><div class="title">Today</div><div class="date">Wed · Nov 4</div></div>
+  <div class="sec"><div class="sec-label"><span>Primers ready</span></div>
+    <div class="group">
+      ${row({ d: "macro", dn: "Macro · Topic primer", t: "How the Fed works", m: "You added this topic · 7 min", txt: "◆", unread: true })}
+      ${row({ d: "finance", dn: "Finance · Background", t: "The repo market, for the Odd Lots episode", m: "You said parts lost you · 6 min", txt: "◆", unread: true })}
+    </div></div>
+  <div class="sec"><div class="sec-label"><span>Up next</span><a>See all 9 ›</a></div>
+    <div class="group">
+      ${row({ d: "ai", dn: "AI", t: "Dwarkesh: Dylan Patel on the data center buildout", m: "Podcast · 2h 41m", txt: "D", end: '<div class="prep on">Prepping</div>' })}
+      ${row({ d: "crypto", dn: "Crypto", t: "Bankless: Is restaking a systemic risk?", m: "Podcast · 1h 12m", txt: "B", end: '<div class="prep">Prep me</div>' })}
+      ${row({ d: "sports", dn: "Sports", t: "Why the Ravens run so much play action", m: "YouTube · 18 min", txt: "▶", end: '<div class="prep">Prep me</div>' })}
+    </div></div>
+  <div class="sec"><div class="sec-label"><span>Newsletters</span></div>
+    <div class="group">
+      ${row({ d: "finance", dn: "Inbox", t: "6 newsletters waiting for your brief", m: "Morning Brew, ByteByteGo · since Mon", txt: "✉", end: '<div class="status">›</div>' })}
+    </div></div>
+</div>`, TABS("Today"));
+
+const libList = SHELL(`<div class="view">
+  <div class="hdr"><div class="title">Library</div><div class="toggle"><div class="on">List</div><div>Domains</div></div></div>
+  <div class="search">⌕ Search your library</div>
+  <div class="fchips"><div class="on">All</div><div>Queued<span class="n">9</span></div><div>Done<span class="n">31</span></div><div>Inbox<span class="n">2</span></div><div>Primers<span class="n">14</span></div></div>
+  <div class="sec"><div class="sec-label"><span>This week</span></div>
+    <div class="group">
+      ${row({ d: "finance", dn: "Finance", t: "☕ Blue tsunami", m: "Newsletter · Morning Brew", txt: "M", unread: true, end: '<div class="status unread">Unread</div>' })}
+      ${row({ d: "ai", dn: "AI", t: "Dwarkesh: Dylan Patel on the data center buildout", m: "Podcast · saved Mon", txt: "D", end: '<div class="status">Queued</div>' })}
+      ${row({ d: "startups", dn: "Startups", t: "Hackers and Painters", m: "Article · Paul Graham", txt: "P", end: '<div class="status">Done</div>' })}
+      ${row({ d: "macro", dn: "Macro", t: "Odd Lots: What's really going on in repo", m: "Podcast · transcribing", txt: "O", end: '<div class="status proc">Processing</div>' })}
+    </div></div>
+  <div class="sec"><div class="sec-label"><span>Earlier</span></div>
+    <div class="group">
+      ${row({ d: "crypto", dn: "Crypto", t: "@cobie on why most L2 tokens go to zero", m: "X post", person: true, txt: "C", end: '<div class="status">Done</div>' })}
+      ${row({ d: "macro", dn: "Macro · Topic primer", t: "How the Fed works", m: "Primer · 7 min", txt: "◆", end: '<div class="status">Primer</div>' })}
+    </div></div>
+</div>`, TABS("Library"));
+
+const dom = (d, n, cnt, bar, topics) => `<div class="dom" style="--k:var(--k-${d})"><div class="top"><div class="dot"></div><div class="name">${n}</div><div class="cnt">${cnt}</div></div><div class="bar">${bar.map(w => `<i style="width:${w}%"></i>`).join("")}</div><div class="topics">${topics.map(([t, c, mine]) => `<div class="${mine ? "mine" : ""}">${t}${c ? `<span class="n">${c}</span>` : ""}</div>`).join("")}</div></div>`;
+const libDomains = SHELL(`<div class="view">
+  <div class="hdr"><div class="title">Library</div><div class="toggle"><div>List</div><div class="on">Domains</div></div></div>
+  <div class="search">⌕ Search your library</div>
+  <div class="sec"><div class="group">
+    ${dom("crypto", "Crypto", "12", [60, 25, 0], [["Staking & restaking", 4], ["Stablecoins", 3], ["Rollups & L2s", 3], ["DeFi", 2]])}
+    ${dom("macro", "Macro", "8", [50, 25, 12], [["Fed & monetary policy", 4], ["Liquidity & the Fed's balance sheet", 2], ["Dollar & currencies", 2], ["How the Fed works", 0, true]])}
+    ${dom("ai", "AI", "7", [40, 45, 0], [["Data centers & hyperscalers", 3], ["Chips & Nvidia", 2], ["AI products & agents", 2]])}
+    ${dom("startups", "Startups", "5", [100, 0, 0], [["Founder lessons", 3], ["Product-market fit", 2]])}
+    ${dom("sports", "Sports", "2", [50, 50, 0], [["NFL play schemes", 2]])}
+    <div class="add-topic">＋ Add a topic you want to understand</div>
+  </div></div>
+</div>`, TABS("Library"));
+
+const itemQueued = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div>
+<div class="view item">
+  <div class="ihead" style="--k:var(--k-ai)"><div class="cover" style="background:var(--k-ai)">D</div>
+    <div><div class="k">AI · Podcast</div><div class="by">Dwarkesh Podcast · 2h 41m<br>Saved Mon · Queued</div>
+      <div class="chiprow"><span class="pill topic">Data centers & hyperscalers</span></div></div></div>
+  <div class="ititle">Dylan Patel on the data center buildout</div>
+  <div class="actions"><div class="btn primary">I finished it</div><div class="btn secondary on">✓ Prepping</div></div>
+  <div class="isec"><div class="sec-label">Gist</div><p>The AI buildout is now limited by power and grid hookups, not chips. Patel walks through why hyperscalers are signing nuclear deals and building their own gas plants.</p></div>
+  <div class="isec"><div class="sec-label">Key ideas</div><ol class="ideas"><li>Power, not GPUs, now sets the pace of new capacity. <span class="ts">12:40</span></li><li>Interconnect queues run 4 to 7 years in most US grids. <span class="ts">31:05</span></li><li>Gas turbines are the fastest bridge, and they're sold out. <span class="ts">58:22</span></li></ol></div>
+  <div class="isec"><div class="sec-label">Rough numbers</div><div class="nums"><div><span>~5 GW for one frontier campus</span><span class="ts">44:10</span></div><div><span>~$50B a year per hyperscaler</span><span class="ts">1:02:30</span></div></div></div>
+  <div class="isec"><div class="collapsed">Background you might need<span>6 min ›</span></div></div>
+  <div class="isec"><div class="sec-label">Cards from this</div><p class="empty-cards">Cards are written when you finish it.</p></div>
+</div>`);
+
+const finishSheet = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div>
+<div class="view item" style="filter:saturate(.9)">
+  <div class="ihead" style="--k:var(--k-ai)"><div class="cover" style="background:var(--k-ai)">D</div><div><div class="k">AI · Podcast</div><div class="by">Dwarkesh Podcast · 2h 41m</div></div></div>
+  <div class="ititle">Dylan Patel on the data center buildout</div>
+</div>
+<div class="dim"></div>
+<div class="sheet"><div class="grabber"></div>
+  <h3>How'd it go?</h3>
+  <div class="verdicts"><div style="--v:var(--got)">Easy</div><div style="--v:var(--partly)" class="on">Mostly followed</div><div style="--v:var(--missed)">Parts lost me</div></div>
+  <div class="field"><span>Anything confusing? (optional)</span><span>🎙</span></div>
+  <div class="btn primary">Save</div>
+  <div class="small">Both are optional: Save alone marks it done.</div>
+</div>`);
+
+const itemNewsletter = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div>
+<div class="view item">
+  <div class="ihead" style="--k:var(--k-finance)"><div class="cover" style="background:var(--k-finance)">M</div>
+    <div><div class="k">Finance · Newsletter</div><div class="by">Morning Brew · Nov 4<br>Inbox · read</div>
+      <div class="chiprow"><span class="pill topic">Stocks & public markets</span></div></div></div>
+  <div class="ititle">☕ Blue tsunami</div>
+  <div class="actions"><div class="btn primary">Go deeper</div><div class="btn secondary">Read later</div></div>
+  <div class="isec"><div class="sec-label">Gist</div><p>Democrats swept the off-year elections, markets shrugged, and Nvidia's earnings are the week's real event.</p></div>
+  <div class="isec"><div class="sec-label">Key ideas</div><ol class="ideas"><li>Election results moved bond yields more than stocks.</li><li>Nvidia reports Wednesday; options price a ~7% move.</li><li>Holiday retail forecasts were cut again.</li></ol></div>
+  <div class="isec"><div class="sec-label">Original</div><p class="empty-cards">Open the full email ›</p></div>
+</div>`);
+
+const topicPage = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div>
+<div class="view item">
+  <div class="ihead" style="--k:var(--k-macro)"><div><div class="k">Macro · Topic</div><div class="ititle" style="padding:0;margin-top:6px">Fed & monetary policy</div><div class="by">4 items · 2 done · 2 queued</div></div></div>
+  <div class="isec"><div class="sec-label">Primer</div><div class="primer-card"><b>Write a primer on this topic</b><span>The general background, about 6 minutes to read. Ready in a minute or two.</span></div></div>
+  <div class="sec" style="margin-top:24px"><div class="sec-label"><span>Items</span></div>
+    <div class="group">
+      ${row({ d: "macro", dn: "Macro", t: "Odd Lots: What's really going on in repo", m: "Podcast · Done", txt: "O" })}
+      ${row({ d: "macro", dn: "Macro", t: "Powell's press conference, explained", m: "YouTube · Queued", txt: "▶" })}
+      ${row({ d: "macro", dn: "Macro", t: "The Fed's balance sheet is shrinking again", m: "Newsletter · Read", txt: "M" })}
+    </div></div>
+</div>`);
+
+const queueList = SHELL(`<div class="view">
+  <div class="hdr"><div class="title">Library</div><div class="toggle"><div class="on">List</div><div>Domains</div></div></div>
+  <div class="search">⌕ Search your library</div>
+  <div class="fchips"><div>All</div><div class="on">Queued<span class="n">9</span></div><div>Done<span class="n">31</span></div><div>Inbox<span class="n">6</span></div><div>Primers<span class="n">14</span></div></div>
+  <div class="sec"><div class="sec-label"><span>Your queue · drag to reorder</span></div>
+    <div class="group">
+      ${row({ d: "ai", dn: "AI", t: "Dwarkesh: Dylan Patel on the data center buildout", m: "Podcast · 2h 41m", txt: "D", end: '<div class="handle">≡</div>' })}
+      <div class="swipe"><div class="acts"><div style="background:#8A867C">Snooze</div><div style="background:var(--got)">Finished</div></div>${row({ d: "crypto", dn: "Crypto", t: "Bankless: Is restaking a systemic risk?", m: "Podcast · 1h 12m", txt: "B", end: '<div class="handle">≡</div>' })}</div>
+      ${row({ d: "sports", dn: "Sports", t: "Why the Ravens run so much play action", m: "YouTube · 18 min", txt: "▶", end: '<div class="handle">≡</div>' })}
+      ${row({ d: "history", dn: "History", t: "Dan Carlin: Supernova in the East, part 1", m: "Podcast · 4h 40m", txt: "H", end: '<div class="handle">≡</div>' })}
+    </div></div>
+  <div class="sec"><div class="sec-label"><span>Snoozed · 2</span></div>
+    <div class="group">
+      ${row({ d: "macro", dn: "Macro", t: "Powell's press conference, explained", m: "YouTube · 42 min", txt: "▶", end: '<div class="back">Sat 9 AM</div>' })}
+      ${row({ d: "startups", dn: "Startups", t: "Acquired: Costco", m: "Podcast · 3h 05m", txt: "A", end: '<div class="back">Mon 9 AM</div>' })}
+    </div></div>
+</div>`, TABS("Library"));
+
+const snoozeSheet = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div>
+<div class="view item">
+  <div class="ihead" style="--k:var(--k-crypto)"><div class="cover" style="background:var(--k-crypto)">B</div><div><div class="k">Crypto · Podcast</div><div class="by">Bankless · 1h 12m</div></div></div>
+  <div class="ititle">Is restaking a systemic risk?</div>
+</div>
+<div class="dim"></div>
+<div class="sheet"><div class="grabber"></div>
+  <h3>Remind me later</h3>
+  <div class="opts"><div>Tonight<span>6 PM</span></div><div>Tomorrow<span>Thu 9 AM</span></div><div>This weekend<span>Sat 9 AM</span></div><div>Next week<span>Mon 9 AM</span></div><div>Pick a date…<span>›</span></div></div>
+  <div class="small">It leaves Up next and comes back at the top of your queue then. No notification.</div>
+</div>`);
+
+const SCENES = [
+  ["Today", today, `<p>The top of the app. In M4 it has three sections, each hidden when empty. Pulse (M7) and the Review card (M5) slot in above them later.</p>
+    <ul><li><b>Primers ready.</b> Primers for topics you added, items where you tapped Prep me, and items you finished with "Parts lost me". Each one leaves this list once you open it, and nothing expires by date.</li>
+    <li><b>Up next.</b> Your newest 3 queued items, each with a Prep me chip. Tapping the chip asks for its primer, and it shows up under Primers ready when it's done. "See all" opens the Library filtered to Queued.</li>
+    <li><b>Newsletters.</b> One quiet row counting what's waiting for your brief (the brief itself is the next milestone). Tapping it opens the Library's Inbox filter.</li>
+    <li><b>Unread dots</b> mark primers you haven't opened. Up next follows the order you set by dragging in the Queued list, and snoozed items stay hidden until their time.</li></ul>`, ""],
+  ["Library · List", libList, `<p>Everything in one list, grouped by time, newest first. The colored label above each title is the domain, and the line under it is the type plus where it came from.</p>
+    <ul><li><b>Status tag:</b> Queued, Done, Unread (blue, with a dot on the artwork), Read, Primer, or Processing while the pipeline runs.</li>
+    <li><b>Filter chips:</b> All · Queued · Done · Inbox · Primers. The spec's Books chip waits until books exist.</li>
+    <li><b>Search</b> matches titles, newsletter senders, domains, topics and the gist and key ideas, on the phone, offline.</li>
+    <li><b>Topic primers</b> are rows in the list too, with a ◆ tile, so they're searchable like anything else.</li></ul>`, ""],
+  ["Library · Domains", libDomains, `<p>One row per domain that has items, sorted by how many. The thin bar shows done / queued / inbox.</p>
+    <ul><li><b>Topic chips</b> appear only once a topic has items, so the 70-odd starting topics stay out of sight. Topics you added show even when empty, with an outline.</li>
+    <li><b>Tapping a chip</b> opens the topic page (screen 7).</li>
+    <li><b>Long-pressing a chip</b> gives Rename, Merge into… and Remove. Removing a topic re-files its items, blocks the name, and lists it under Removed topics in Settings, where you can restore it.</li>
+    <li><b>＋ Add a topic</b> asks for a name and a domain, then writes its primer.</li></ul>`,
+   `<strong>Open question</strong>Long-press is quick but hidden. The alternative is an Edit button on the topic page, which is easier to find but one more screen. My suggestion is to do both.`],
+  ["Item page · queued", itemQueued, `<p>The source page from the UX spec: cover beside the kicker and by-line, then the title, then the sections. The Related row and the Ask bar come in M6.</p>
+    <ul><li><b>I finished it</b> opens the sheet on the next screen.</li>
+    <li><b>Prep me</b> toggles in place. Once on, it shows "✓ Prepping" and the primer appears on Today when it's ready.</li>
+    <li><b>The topic chip</b> opens the topic page. In the ••• menu, <b>Change topic</b> lets you re-file the item, and <b>Wrong episode?</b> lets you fix a podcast match.</li>
+    <li><b>Timestamp chips</b> open the episode at that moment in Spotify, Apple Podcasts or YouTube.</li>
+    <li><b>Cards from this</b> stays empty for queued items, with a line saying when cards come.</li></ul>`, ""],
+  ["Finishing an item", finishSheet, `<p>The same "How'd it go?" step as the share sheet's Finished path, as a sheet over the item page. Save marks it Consumed and queues its cards. "Parts lost me" also sends its primer to Primers ready.</p>
+    <ul><li><b>A swipe on a Queued row</b> in the Library does the same thing (swipe right → Finished), and opens this sheet.</li>
+    <li><b>Once done</b>, the reaction shows as a colored chip in the item header, as in the UX spec.</li></ul>`, ""],
+  ["Item page · newsletter", itemNewsletter, `<p>Newsletters arrive in Inbox with a summary only. Opening the page marks the newsletter read.</p>
+    <ul><li><b>Go deeper</b> makes it Consumed: Archie writes its primer and cards. Your reaction isn't asked for, because you haven't really read it yet.</li>
+    <li><b>Read later</b> moves it to Queued, so it shows in Up next, and you finish it like any other item.</li>
+    <li><b>Open the full email</b> shows the original email, rendered from the stored text.</li></ul>`,
+   `<strong>Open question</strong>Should Go deeper also ask "How'd it go?", like finishing? I've left it out because Go deeper usually means "I want to learn this", not "I just finished it".`],
+  ["Your queue", queueList, `<p>The Queued filter is your queue, in the order you set. Up next on Today shows its top 3.</p>
+    <ul><li><b>Drag the ≡ handle</b> to reorder. New saves go to the top.</li>
+    <li><b>Swipe left</b> for Snooze and Finished. Finished opens the "How'd it go?" sheet. The same swipe on a newsletter or primer gives Snooze and Mark unread (or Mark read).</li>
+    <li><b>Snoozed items</b> sit in their own section below, each with the time it comes back. Tapping one opens it, and the ••• menu has Unsnooze.</li></ul>`, ""],
+  ["Remind me later", snoozeSheet, `<p>Snooze, from a swipe or the item page's ••• menu. The times follow the Superhuman pattern.</p>
+    <ul><li><b>Tonight</b> is 6 PM, or it's hidden after 5 PM. <b>Tomorrow</b> and the others are 9 AM.</li>
+    <li><b>When it's due</b>, the item returns to the top of the queue (or to Primers ready, or the Inbox count). The phone works this out itself, so it works offline.</li>
+    <li><b>Snoozing a newsletter</b> also leaves it out of your brief until it comes back.</li></ul>`, ""],
+  ["Topic page", topicPage, `<p>What a topic chip opens: the topic's primer and its items, newest first.</p>
+    <ul><li><b>Write a primer</b> appears when the topic has none yet. Topics you added get one automatically, and once written it replaces this card.</li>
+    <li><b>The ••• menu</b> has Rename, Merge into… and Remove, the same actions as long-pressing the chip.</li></ul>`, ""],
+];
+document.getElementById("scenes").innerHTML = SCENES.map(([title, phone, body, ask], i) => `<section class="scene">${phone}<div class="note"><span class="num">${String(i + 1).padStart(2, "0")}</span><h2>${title}</h2>${body}${ask ? `<div class="ask">${ask}</div>` : ""}</div></section>`).join("");
+</script>

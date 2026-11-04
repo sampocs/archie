@@ -27,21 +27,8 @@ jest.mock("@/api/client", () => ({
   }),
 }));
 jest.mock("@/db/client", () => {
-  const sqlite = new (require("better-sqlite3"))(":memory:");
-  sqlite.exec(`
-    CREATE TABLE sources (id text PRIMARY KEY NOT NULL, url text NOT NULL, title text, kind text NOT NULL, state text NOT NULL,
-      intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text,
-      processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
-      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text, sender text);
-    CREATE TABLE artifacts (id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, version integer NOT NULL,
-      content text NOT NULL, is_current integer NOT NULL, created_at text NOT NULL);
-    CREATE TABLE cards (id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, question text NOT NULL,
-      answer text NOT NULL, created_at text NOT NULL, deleted_at text);
-    CREATE TABLE outbox (id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
-      status text NOT NULL, error text);
-    CREATE TABLE sync_state (id integer PRIMARY KEY NOT NULL, position integer NOT NULL, last_push_failed integer NOT NULL);
-  `);
-  const testDb = require("drizzle-orm/better-sqlite3").drizzle(sqlite, { schema: require("@/db/schema") });
+  // The app's real schema; makeTestDb only imports the client's type, so requiring it here doesn't recurse.
+  const testDb = require("@/db/testDb").makeTestDb();
   return {
     db: testDb,
     seedSyncState: () => testDb.insert(require("@/db/schema").syncState).values({ id: 1, position: 0, lastPushFailed: 0 }).run(),
@@ -128,6 +115,8 @@ describe("clearSession", () => {
     db.insert(schema.sources).values({ id: "s1", url: "u", kind: "link", state: "queued", intent: "queue", createdAt: "x", updatedAt: "x" }).run();
     db.insert(schema.artifacts).values({ id: "a1", sourceId: "s1", kind: "summary", version: 1, content: "{}", isCurrent: 1, createdAt: "x" }).run();
     db.insert(schema.cards).values({ id: "c1", sourceId: "s1", kind: "qa", question: "q", answer: "a", createdAt: "x" }).run();
+    db.insert(schema.topics).values({ id: "t1", domain: "AI", name: "Evals", origin: "user", createdAt: "x", updatedAt: "x" }).run();
+    db.insert(schema.topicPrimers).values({ id: "p1", topicId: "t1", version: 1, isCurrent: 1, content: "{}", createdAt: "x" }).run();
   });
 
   it("bumps the epoch, revokes the session with the current key, then deletes the keychain item and wipes", async () => {
@@ -141,6 +130,9 @@ describe("clearSession", () => {
     expect(db.select().from(schema.sources).all()).toEqual([]);
     expect(db.select().from(schema.artifacts).all()).toEqual([]);
     expect(db.select().from(schema.cards).all()).toEqual([]);
+    // Topics too: the next account's picker gate reads an empty local topics table.
+    expect(db.select().from(schema.topics).all()).toEqual([]);
+    expect(db.select().from(schema.topicPrimers).all()).toEqual([]);
     expect(db.select().from(schema.syncState).get()).toMatchObject({ position: 0 });
   });
 

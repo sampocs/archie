@@ -1,84 +1,69 @@
-import { desc, isNull } from "drizzle-orm";
-import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { useState } from "react";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { db } from "@/db/client";
-import * as schema from "@/db/schema";
-import { Card } from "@/theme/components/Card";
+import { DomainsView } from "@/library/DomainsView";
+import { LibraryList } from "@/library/LibraryList";
+import { isLibraryFilter, type LibraryFilter } from "@/library/sections";
+import { useLibraryData } from "@/library/useLibraryData";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
-import { ProcessingLine } from "@/ui/ProcessingLine";
-import { sourceByline, stateLabel } from "@/ui/sourceLabels";
+import { TextField } from "@/theme/components/TextField";
 import { useTheme } from "@/theme/useTheme";
+import { haptic } from "@/ui/haptics";
 
-type SourceRow = typeof schema.sources.$inferSelect;
+type Mode = "list" | "domains";
+
+const MODES: { mode: Mode; label: string }[] = [
+  { mode: "list", label: "List" },
+  { mode: "domains", label: "Domains" },
+];
 
 export default function LibraryScreen() {
-  const { data: sources } = useLiveQuery(
-    db.select().from(schema.sources).where(isNull(schema.sources.deletedAt)).orderBy(desc(schema.sources.createdAt)),
-  );
+  const theme = useTheme();
+  const data = useLibraryData();
+  const params = useLocalSearchParams<{ filter?: string; at?: string }>();
+  const [mode, setMode] = useState<Mode>("list");
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<LibraryFilter>(isLibraryFilter(params.filter) ? params.filter : "all");
+
+  // Today links here with a filter (and a fresh `at`, so the same link works twice) while the tab may be mounted.
+  useEffect(() => {
+    if (!isLibraryFilter(params.filter)) return;
+    setMode("list");
+    setFilter(params.filter);
+    setQuery("");
+  }, [params.filter, params.at]);
+
+  const showList = mode === "list" || query.trim() !== "";
 
   return (
     <Screen title="Library">
-      {sources.length === 0 ? (
-        <Text tone="ink2">Nothing here yet. Paste a link in ＋.</Text>
-      ) : (
-        sources.map((source) => <SourceItem key={source.id} source={source} />)
-      )}
-    </Screen>
-  );
-}
-
-function SourceItem({ source }: { source: SourceRow }) {
-  const theme = useTheme();
-  const router = useRouter();
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <Pressable onPress={() => router.push({ pathname: "/source/[id]", params: { id: source.id } })}>
-    <Card testID={`source-${source.id}`} style={{ gap: theme.spacing.sm }}>
-      <Text variant="headline" tone={source.title ? "ink" : "ink3"} numberOfLines={2}>
-        {source.title ?? source.url}
-      </Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.sm }}>
-        <View
-          style={{
-            backgroundColor: theme.colors.press,
-            borderRadius: theme.radii.chipSmall,
-            paddingHorizontal: theme.spacing.sm,
-            paddingVertical: theme.spacing.xs,
-          }}
-        >
-          <Text variant="monoLabel" tone="ink2">
-            {stateLabel(source.state)}
-          </Text>
-        </View>
-        {source.kind === "newsletter" ? (
-          <Text testID={`source-sender-${source.id}`} variant="secondary" tone="ink3" numberOfLines={1} style={{ flexShrink: 1 }}>
-            {sourceByline(source)}
-          </Text>
-        ) : (
-          <Text variant="secondary" tone="ink3">
-            {source.kind}
-          </Text>
-        )}
-        {source.syncError ? (
-          <Pressable testID={`source-error-${source.id}`} onPress={() => setExpanded((open) => !open)} hitSlop={8}>
-            <Text variant="secondary" style={{ color: theme.signals.missed }}>
-              ⚠ Not synced
+      <View style={{ flexDirection: "row", backgroundColor: theme.colors.press, borderRadius: theme.radii.chip, padding: 3 }}>
+        {MODES.map((option) => (
+          <Pressable
+            key={option.mode}
+            testID={`library-mode-${option.mode}`}
+            onPress={() => {
+              haptic("selection");
+              setMode(option.mode);
+            }}
+            style={{
+              flex: 1,
+              alignItems: "center",
+              paddingVertical: theme.spacing.sm,
+              borderRadius: theme.radii.chip - 3,
+              backgroundColor: mode === option.mode ? theme.colors.surface : "transparent",
+            }}
+          >
+            <Text variant="secondary" tone={mode === option.mode ? "ink" : "ink2"}>
+              {option.label}
             </Text>
           </Pressable>
-        ) : null}
+        ))}
       </View>
-      {source.syncError && expanded ? (
-        <Text variant="secondary" tone="ink2">
-          {source.syncError}
-        </Text>
-      ) : null}
-      <ProcessingLine source={source} />
-    </Card>
-    </Pressable>
+      <TextField testID="library-search" placeholder="Search your library" value={query} onChangeText={setQuery} />
+      {showList ? <LibraryList data={data} query={query} filter={filter} onFilterChange={setFilter} /> : <DomainsView data={data} />}
+    </Screen>
   );
 }

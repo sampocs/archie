@@ -79,6 +79,8 @@ export async function clearSession(): Promise<void> {
       tx.delete(schema.sources).run();
       tx.delete(schema.artifacts).run();
       tx.delete(schema.cards).run();
+      tx.delete(schema.topics).run();
+      tx.delete(schema.topicPrimers).run();
       tx.delete(schema.outbox).run();
       tx.delete(schema.syncState).run();
       seedSyncState();

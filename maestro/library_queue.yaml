@@ -1,0 +1,71 @@
+appId: com.sampocs.archie
+---
+# Free to run: the dev test user isn't whitelisted, so both sources fail at analyze but keep their titles.
+# Two queued links, newest on top; dragging the top row's handle down swaps them; a swipe snoozes the new top row.
+- runFlow: login.yaml
+- tapOn:
+    id: "tab-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://example.com/"
+- tapOn:
+    id: "intent-queue"
+- tapOn:
+    id: "add-save"
+- tapOn:
+    id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://example.org/"
+- tapOn:
+    id: "intent-queue"
+- tapOn:
+    id: "add-save"
+- tapOn:
+    id: "tab-library"
+- tapOn:
+    id: "filter-queued"
+# Rows show the site in their meta line ("Article · example.org"), even once both titles read "Example Domain".
+- assertVisible:
+    text: ".*example\\.org.*"
+    above:
+      text: ".*example\\.com.*"
+- swipe:
+    from:
+      id: "queue-handle-0"
+    direction: DOWN
+    duration: 1500
+- assertVisible:
+    text: ".*example\\.com.*"
+    above:
+      text: ".*example\\.org.*"
+- swipe:
+    from:
+      id: "queue-row-0"
+    direction: LEFT
+# Every queued row has a Snooze button behind it; the first in the tree belongs to the row just swiped open.
+- tapOn:
+    id: "swipe-snooze-.*"
+    index: 0
+- tapOn:
+    id: "snooze-tomorrow"
+- assertVisible:
+    id: "library-snoozed"
+# Section labels render upper-cased, so match either case.
+- assertVisible: "(?i)Snoozed · 1"

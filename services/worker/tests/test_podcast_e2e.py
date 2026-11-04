@@ -31,6 +31,9 @@ AUDIO_SUFFIXES = (".mp3", ".m4a")
 MIN_TRANSCRIPT_WORDS = 200
 SPOTIFY_SHOW_ITUNES_ID = 1680976721
 GONE_FEED_URL = "https://feeds.libsyn.com/464601/archie-no-such-feed"
+# The feed item right after "182: Blackshades" ("181: Ricky"), read from the `podcast_apple_transcript` cassette's feed.
+NEXT_EPISODE_GUID = "prx_7057_88c4d72a-2377-4fef-9dac-3cd23529b881"
+NEXT_EPISODE_TITLE = "Ricky"
 
 
 @pytest.fixture
@@ -68,6 +71,7 @@ def test_an_apple_episode_with_a_published_transcript_becomes_timed_text(
     assert artifact.content["episode"]["feed_url"]
     assert artifact.content["episode"]["audio_url"]
     assert source.title == artifact.content["episode"]["title"]
+    assert (source.image_url or "").startswith("https://")
     assert media.APPLE_TRANSCRIPT_EPISODE_TITLE in source.title
     assert source.processing == models.ProcessingStatus.PROCESSING
     assert _queued_kinds(engine) == [models.JobKind.ANALYZE, models.JobKind.PRIMER]
@@ -156,6 +160,44 @@ def test_a_spotify_exclusive_episode_fails_without_a_retry_or_a_registered_show(
     assert _shows(engine) == []
 
 
+def test_a_chosen_guid_replaces_the_episode_apple_matched(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """With the source's `episode_guid` set, the feed item with that guid is used instead of Lookup's episode."""
+    source_id = _add_source(engine, url=media.APPLE_TRANSCRIPT_EPISODE_URL, episode_guid=NEXT_EPISODE_GUID)
+
+    with replay("podcast_apple_chosen_episode"):
+        assert loop.run_one(engine, handlers=handlers.HANDLERS) is True
+
+    source = _source(engine, source_id)
+    assert NEXT_EPISODE_TITLE in (source.title or "")
+    assert (source.image_url or "").startswith("https://")
+    assert _chosen_episode(engine, source_id).guid == NEXT_EPISODE_GUID
+
+
+def test_a_chosen_guid_missing_from_the_feed_fails_as_episode_not_found(
+    engine: sqlalchemy.Engine, replay: Replay
+) -> None:
+    """No item has the guid, so the job fails at once and nothing beyond Lookup and the feed is requested."""
+    source_id = _add_source(engine, url=media.APPLE_TRANSCRIPT_EPISODE_URL, episode_guid="no-such-guid")
+
+    with replay("podcast_apple_chosen_episode") as cassette:
+        assert loop.run_one(engine, handlers=handlers.HANDLERS) is True
+
+    # Lookup and the feed; the cassette also holds the chosen episode's transcript request, which must stay unplayed.
+    assert cassette.play_count == 2
+    source = _source(engine, source_id)
+    assert source.processing == models.ProcessingStatus.FAILED
+    assert source.processing_error == errors.FailureReason.EPISODE_NOT_FOUND
+    assert _artifacts(engine, source_id) == []
+
+
+def _chosen_episode(engine: sqlalchemy.Engine, source_id: uuid.UUID) -> episode_content.PodcastEpisode:
+    """The episode stored on the text artifact, else the one carried by the queued `transcribe` job."""
+    artifacts = _artifacts(engine, source_id)
+    if artifacts:
+        return episode_content.PodcastEpisode.from_payload(artifacts[0].content[episode_content.EPISODE_KEY])
+    return episode_content.PodcastEpisode.from_payload(_transcribe_payload(engine)[episode_content.EPISODE_KEY])
+
+
 def _assert_transcription_queued(engine: sqlalchemy.Engine, source_id: uuid.UUID) -> None:
     source = _source(engine, source_id)
     assert _artifacts(engine, source_id) == []
@@ -169,9 +211,11 @@ def _assert_transcription_queued(engine: sqlalchemy.Engine, source_id: uuid.UUID
     assert episode.title == media.SPOTIFY_EPISODE_TITLE
     assert episode.show_name == media.SPOTIFY_SHOW_NAME
     assert payload[pipeline.SOURCE_ID_KEY] == str(source_id)
+    assert (episode.image_url or "").startswith("https://")
+    assert (_source(engine, source_id).image_url or "").startswith("https://")
 
 
-def _add_source(engine: sqlalchemy.Engine, *, url: str) -> uuid.UUID:
+def _add_source(engine: sqlalchemy.Engine, *, url: str, episode_guid: str | None = None) -> uuid.UUID:
     """A user's podcast source and its queued `fetch_content` job, as the sync push creates them."""
     source_id = uuid.uuid4()
     with sqlalchemy.orm.Session(engine) as db:
@@ -189,6 +233,7 @@ def _add_source(engine: sqlalchemy.Engine, *, url: str) -> uuid.UUID:
                 kind=models.SourceKind.PODCAST.value,
                 state=models.SourceState.INBOX.value,
                 intent=models.SourceIntent.QUEUE.value,
+                episode_guid=episode_guid,
                 change_seq=changes.next_change_seq(),
             )
         )

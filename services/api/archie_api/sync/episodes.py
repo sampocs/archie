@@ -25,7 +25,8 @@ class _ChooseEpisodePayload(pydantic.BaseModel):
 
 def choose_episode(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
     """Replace the matched episode: retire the source's text, summary, primer and cards, drop its transcript chunks,
-    and fetch again with the chosen feed guid."""
+    and fetch again with the chosen feed guid. The source is also unfiled and its primer unread, so the new episode
+    is filed from its own summary."""
     parsed = rows.parse(_ChooseEpisodePayload, payload)
     if parsed is None:
         return rows.MALFORMED
@@ -45,6 +46,11 @@ def choose_episode(db: orm.Session, *, user: models.User, payload: dict[str, obj
     source.episode_guid = parsed.guid
     source.title = None
     source.image_url = None
+
+    # Analyze queues `file_topic` only while `domain` is null, and the new primer hasn't been read.
+    source.domain = None
+    source.topic_id = None
+    source.primer_opened_at = None
     pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
     pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.FETCH_CONTENT])
     return None

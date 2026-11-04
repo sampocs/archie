@@ -17,8 +17,9 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_api.sources import routes
-from archie_db import changes, models, session
+from archie_db import changes, models, session, user_topics
 from archie_shared import podcast_feed
+from archie_shared.domains import Domain
 from archie_testing import recording
 from archie_testing.harness import LiveStack
 
@@ -47,6 +48,21 @@ def test_episodes_near_are_within_the_window_newest_first_with_one_current() -> 
     assert all(abs(day - middle.published) <= WINDOW for day in published)
     assert published == sorted(published, reverse=True)
     assert [episode.guid for episode in near if episode.is_current] == [middle.guid]
+
+
+def test_episodes_without_audio_are_left_out() -> None:
+    """The choose flow needs an audio url, so an item without one is not offered."""
+    day = datetime.date(2026, 10, 1)
+    with_audio = podcast_feed.FeedItem(
+        title="a", published=day, guid="a", audio_url="https://x/a.mp3", duration_s=None, description="", transcripts=[]
+    )
+    without_audio = podcast_feed.FeedItem(
+        title="b", published=day, guid="b", audio_url=None, duration_s=None, description="", transcripts=[]
+    )
+
+    near = routes.episodes_near(items=[with_audio, without_audio], current_guid="a", fallback_date=day)
+
+    assert [episode.guid for episode in near] == ["a"]
 
 
 def test_an_unknown_guid_centres_the_window_on_the_fallback_date() -> None:
@@ -87,6 +103,22 @@ def test_the_episode_list_has_the_matched_episode_current_within_30_days_newest_
 
 
 @pytest.mark.postgres
+def test_the_episode_list_still_works_after_choosing_an_episode(
+    live_stack: LiveStack, request: pytest.FixtureRequest
+) -> None:
+    """Choosing retires the current text, but the user can still list episodes and pick again."""
+    authed = live_stack.authed(live_stack.sign_in())
+    source_id = _insert_podcast(live_stack, user_id=_user_id(authed), episode_guid=CURRENT_GUID, with_outputs=True).id
+    assert _choose(authed, source_id=source_id, guid=CHOSEN_GUID)["result"] == "applied"
+
+    with _replay(request, "episodes_darknet"):
+        response = authed.get(f"/sources/{source_id}/episodes")
+
+    assert response.status_code == 200
+    assert response.json()["episodes"]
+
+
+@pytest.mark.postgres
 def test_the_episode_list_is_not_found_for_other_users_articles_and_podcasts_without_text(
     live_stack: LiveStack,
 ) -> None:
@@ -108,7 +140,9 @@ def test_the_episode_list_is_not_found_for_other_users_articles_and_podcasts_wit
 def test_choosing_an_episode_retires_the_outputs_and_fetches_again(live_stack: LiveStack) -> None:
     """Text, summary and primer stop being current, cards are deleted, chunks go, and one fetch_content job queues."""
     authed = live_stack.authed(live_stack.sign_in())
-    source = _insert_podcast(live_stack, user_id=_user_id(authed), episode_guid=CURRENT_GUID, with_outputs=True)
+    user_id = _user_id(authed)
+    source = _insert_podcast(live_stack, user_id=user_id, episode_guid=CURRENT_GUID, with_outputs=True)
+    _file_and_open_primer(live_stack, user_id=user_id, source_id=source.id)
 
     result = _choose(authed, source_id=source.id, guid=CHOSEN_GUID)
 
@@ -116,6 +150,8 @@ def test_choosing_an_episode_retires_the_outputs_and_fetches_again(live_stack: L
     pulled = authed.get("/sync/pull", params={"since": 0}).json()["rows"]
     row = next(row for row in pulled["sources"] if row["id"] == str(source.id))
     assert (row["processing"], row["title"], row["image_url"]) == ("processing", None, None)
+    # Filed and read again from the new episode.
+    assert (row["domain"], row["topic_id"], row["primer_opened_at"]) == (None, None, None)
     assert "episode_guid" not in row
     assert pulled["artifacts"] and not any(artifact["is_current"] for artifact in pulled["artifacts"])
     assert pulled["cards"] and all(card["deleted_at"] is not None for card in pulled["cards"])
@@ -165,6 +201,22 @@ def test_choosing_an_episode_is_rejected_for_an_article_a_busy_source_and_anothe
     engine.dispose()
     assert guids[article.id] is None and guids[busy.id] is None
     assert guids[ready.id] == CHOSEN_GUID
+
+
+def _file_and_open_primer(live_stack: LiveStack, *, user_id: int, source_id: uuid.UUID) -> None:
+    """Give the source a domain, a topic and an opened primer, as after filing and reading."""
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+        topic = user_topics.create_topic(
+            db, user_id=user_id, domain=Domain.CRYPTO, name="Bitcoin", origin=models.TopicOrigin.ARCHIE
+        )
+        source = db.get_one(models.Source, source_id)
+        source.domain = topic.domain
+        source.topic_id = topic.id
+        source.primer_opened_at = sqlalchemy.func.now()
+        db.commit()
+    engine.dispose()
 
 
 def _choose(authed: httpx.Client, *, source_id: uuid.UUID, guid: str, action_id: str | None = None) -> dict[str, Any]:

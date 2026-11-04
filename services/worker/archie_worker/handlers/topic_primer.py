@@ -125,7 +125,9 @@ def _prepare(db: sqlalchemy.orm.Session, job: models.Job) -> _PrimerRun | None:
         user_id=topic.user_id,
         context=llm.CallContext(user_id=topic.user_id, source_id=None, job_id=job.id, step=models.JobKind.TOPIC_PRIMER),
         api_key=api_key,
-        user_message=prompts.topic_primer_message(domain=topic.domain, topic=topic.name, source_titles=list(titles)),
+        user_message=prompts.topic_primer_message(
+            domain=topic.domain, topic=topic.name, source_titles=[title for title in titles if title]
+        ),
     )
     db.commit()
     return run

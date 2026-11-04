@@ -62,6 +62,7 @@ def test_captions_become_timed_text_titled_from_the_watch_page(
     assert len(starts) > 5
     assert starts == sorted(starts)
     assert source.title and source.title != media.YOUTUBE_VIDEO_URL
+    assert source.image_url == "https://i.ytimg.com/vi/e0gVE3YxZs8/hqdefault.jpg"
     assert source.processing == models.ProcessingStatus.PROCESSING
     assert queued == sorted([models.JobKind.ANALYZE, models.JobKind.PRIMER])
 

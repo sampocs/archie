@@ -84,6 +84,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         source=source,
         text_content={content.TEXT_KEY: content.strip_nul(extracted.text)},
         title=extracted.title,
+        image_url=extracted.image_url,
     )
 
 
@@ -186,4 +187,10 @@ def _fetch_youtube(db: sqlalchemy.orm.Session, *, source: models.Source, source_
         raise errors.PermanentJobError(errors.FailureReason.NO_CAPTIONS)
 
     title = None if has_title else youtube.fetch_title(video_id=video_id)
-    _text.store_text(db, source=source, text_content=content.timed_text_content(segments=segments), title=title)
+    _text.store_text(
+        db,
+        source=source,
+        text_content=content.timed_text_content(segments=segments),
+        title=title,
+        image_url=youtube.thumbnail_url(video_id),
+    )

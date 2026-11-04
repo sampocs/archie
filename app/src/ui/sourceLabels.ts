@@ -15,3 +15,17 @@ export function stateLabel(state: string): string {
   if (state === "consumed") return "Done";
   return state.charAt(0).toUpperCase() + state.slice(1);
 }
+
+export function kindLabel(kind: string): string {
+  if (kind === "podcast") return "Podcast";
+  if (kind === "youtube") return "YouTube";
+  if (kind === "article") return "Article";
+  if (kind === "x") return "X post";
+  if (kind === "newsletter") return "Newsletter";
+  return "Link";
+}
+
+/** The one-line meta under a row's title: "Podcast · open.spotify.com". */
+export function sourceMeta(source: BylineSource): string {
+  return `${kindLabel(source.kind)} · ${sourceByline(source)}`;
+}

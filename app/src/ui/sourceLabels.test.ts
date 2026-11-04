@@ -1,4 +1,4 @@
-import { sourceByline, stateLabel } from "./sourceLabels";
+import { kindLabel, sourceByline, sourceMeta, stateLabel } from "./sourceLabels";
 
 describe("sourceByline", () => {
   it("uses a newsletter's sender, or 'Newsletter' without one", () => {
@@ -25,5 +25,24 @@ describe("stateLabel", () => {
     expect(stateLabel("queued")).toBe("Queued");
     expect(stateLabel("consumed")).toBe("Done");
     expect(stateLabel("archived")).toBe("Archived");
+  });
+});
+
+describe("kindLabel and sourceMeta", () => {
+  it("labels each kind, defaulting to Link", () => {
+    expect(["podcast", "youtube", "article", "x", "newsletter", "other"].map(kindLabel)).toEqual([
+      "Podcast",
+      "YouTube",
+      "Article",
+      "X post",
+      "Newsletter",
+      "Link",
+    ]);
+  });
+
+  it("joins the label and byline", () => {
+    expect(sourceMeta({ kind: "newsletter", url: "https://x.test", sender: "Morning Brew" })).toBe(
+      "Newsletter · Morning Brew",
+    );
   });
 });

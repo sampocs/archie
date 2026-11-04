@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import datetime
 import pathlib
+import re
 
 import httpx
 import pytest
@@ -109,6 +110,26 @@ def test_the_feed_gives_titles_dates_enclosures_durations_and_transcripts() -> N
     assert [(link.mime_type, link.url.endswith(".vtt")) for link in blackshades.transcripts] == [("text/vtt", True)]
     assert 0 < len(blackshades.description) <= 2000
     assert "<" not in blackshades.description
+
+
+def test_every_item_has_artwork_and_a_bare_item_falls_back_to_the_channels() -> None:
+    """Items carry their own artwork; a bare one gets the channel's `itunes:image`, else its `<image><url>`."""
+    feed = (FIXTURES / "darknet_diaries_feed.xml").read_text(encoding="utf-8")
+    items = podcast_feed.parse_feed(feed.encode())
+    assert all(item.image_url and item.image_url.startswith("https://") for item in items)
+
+    item_image = re.compile(r'\s*<itunes:image href="[^"]*Ep182_BlackshadesSquare.jpg" />')
+    assert item_image.search(feed)
+    bare = podcast_feed.parse_feed(item_image.sub("", feed).encode())
+    channel_href = re.search(r'<itunes:image href="([^"]+)"', feed)
+    assert channel_href is not None
+    assert bare[0].image_url == channel_href.group(1)
+    assert bare[1].image_url != bare[0].image_url
+
+    channel_url = re.search(r"<image>\s*<url>([^<]+)</url>", feed)
+    assert channel_url is not None
+    without_channel_itunes_image = re.sub(r'\n    <itunes:image href="[^"]*68ff[^"]*" />', "", item_image.sub("", feed))
+    assert podcast_feed.parse_feed(without_channel_itunes_image.encode())[0].image_url == channel_url.group(1)
 
 
 def test_durations_are_read_as_seconds_or_clock_times() -> None:

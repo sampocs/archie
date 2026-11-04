@@ -46,6 +46,7 @@ class _SourceInput:
     kind: str
     capture_title: str | None
     capture_text: str | None
+    episode_guid: str | None
 
 
 def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
@@ -95,7 +96,7 @@ def _fetch_podcast(db: sqlalchemy.orm.Session, *, source: models.Source, source_
 
     engine = db.get_bind()
     assert isinstance(engine, sqlalchemy.Engine)
-    resolved = podcast.resolve(engine, link=link)
+    resolved = podcast.resolve(engine, link=link, episode_guid=source_input.episode_guid)
     published = transcripts.fetch_best(resolved.transcripts)
     if published is None:
         _text.enqueue_transcribe(db, source=source, episode=resolved.episode)
@@ -107,7 +108,13 @@ def _fetch_podcast(db: sqlalchemy.orm.Session, *, source: models.Source, source_
         if published.segments
         else {content.TEXT_KEY: content.strip_nul(published.text), **episode_extra}
     )
-    _text.store_text(db, source=source, text_content=text_content, title=resolved.episode.title)
+    _text.store_text(
+        db,
+        source=source,
+        text_content=text_content,
+        title=resolved.episode.title,
+        image_url=resolved.episode.image_url,
+    )
 
 
 def _start_processing(db: sqlalchemy.orm.Session, *, source: models.Source) -> _SourceInput | None:
@@ -123,6 +130,7 @@ def _start_processing(db: sqlalchemy.orm.Session, *, source: models.Source) -> _
         kind=source.kind,
         capture_title=capture.title if capture else None,
         capture_text=capture.text if capture else None,
+        episode_guid=source.episode_guid,
     )
 
     changes.lock_user_writes(db, source_input.user_id)

@@ -1,0 +1,30 @@
+# Shares a Safari page to Archie and checks the share sheet actually draws: the accessibility tree
+# alone can't tell, since text that measures zero high still shows up in it.
+appId: com.apple.mobilesafari
+---
+# A fresh Safari each run, so the sheet opens at the same size as the reference screenshot.
+- stopApp
+- openLink:
+    link: https://paulgraham.com/ds.html
+    browser: true
+- extendedWaitUntil:
+    visible: "Do Things that Don't Scale"
+    timeout: 20000
+- tapOn: "More"
+- tapOn: "Share"
+- extendedWaitUntil:
+    visible: "Archie"
+    timeout: 10000
+# The extension's cell is tapped by point: its label isn't hittable as an element.
+- tapOn:
+    point: "61%,75%"
+- extendedWaitUntil:
+    visible: "https://paulgraham.com/ds.html"
+    timeout: 15000
+# The sheet slides up; comparing mid-animation fails spuriously.
+- waitForAnimationToEnd
+- assertScreenshot:
+    path: screenshots/share_sheet.png
+    cropOn:
+      id: share-sheet
+    thresholdPercentage: 99.5

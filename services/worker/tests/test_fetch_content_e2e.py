@@ -30,6 +30,13 @@ ARTICLE_URL = "https://www.paulgraham.com/greatwork.html"
 ARTICLE_TITLE = "How to Do Great Work"
 # example.com has about 20 words, under the 50 an article needs.
 SHORT_PAGE_URL = "https://example.com/"
+OG_IMAGE_ARTICLE_URL = "https://blog.bytebytego.com/p/how-netflix-uses-ai-agents-for-performance"
+OG_IMAGE_ARTICLE_IMAGE = (
+    "https://substackcdn.com/image/fetch/$s_!uk-_!,w_1200,h_675,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/"
+    "https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F"
+    "aa461266-54bb-4caa-87bd-44e62109da52_2432x2038.png"
+)
+SAMA_AVATAR_URL = "https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg"
 SAMA_THREAD_URL = "https://x.com/sama/status/2107691261776052633"
 SAMA_THREAD_TEXT = "\n\n".join(
     [
@@ -81,10 +88,21 @@ def test_an_article_page_becomes_a_text_artifact_and_queues_analysis(engine: sql
     assert len(artifact.content["text"].split()) > 5000
     assert "If you collected lists of techniques for doing great work" in artifact.content["text"]
     assert source.title == ARTICLE_TITLE
+    assert source.image_url is None
     assert source.processing == models.ProcessingStatus.PROCESSING
     assert source.change_seq > seq_before
     assert _queued_kinds(engine) == [models.JobKind.ANALYZE, models.JobKind.PRIMER]
     assert _job(engine, models.JobKind.FETCH_CONTENT).status == models.JobStatus.DONE
+
+
+def test_an_article_with_og_image_gets_artwork(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """The page's og:image becomes the source's absolute image_url."""
+    source_id = _add_source(engine, url=OG_IMAGE_ARTICLE_URL, kind=models.SourceKind.ARTICLE)
+
+    with replay("article_og_image"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert _source(engine, source_id).image_url == OG_IMAGE_ARTICLE_IMAGE
 
 
 def test_an_existing_title_is_kept(engine: sqlalchemy.Engine, replay: Replay) -> None:
@@ -158,6 +176,7 @@ def test_an_x_thread_keeps_every_post_of_the_author_in_order(engine: sqlalchemy.
         loop.run_one(engine, handlers=handlers.HANDLERS)
 
     assert _only_artifact(engine, source_id).content["text"] == SAMA_THREAD_TEXT
+    assert _source(engine, source_id).image_url == SAMA_AVATAR_URL
     # The first 80 characters of the first post, with its line breaks collapsed like any title's.
     assert (
         _source(engine, source_id).title

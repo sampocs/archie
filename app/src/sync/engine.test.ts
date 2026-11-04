@@ -69,7 +69,13 @@ function makeEntries(count: number): OutboxEntry[] {
 }
 
 const emptyPage = (position: number, more = false): PullPage => ({
-  rows: { sources: [], artifacts: [], cards: [], topics: [], topic_primers: [] },
+  rows: {
+    sources: [],
+    artifacts: [],
+    cards: [],
+    topics: [],
+    topic_primers: [],
+  },
   position,
   more,
 });
@@ -409,7 +415,9 @@ describe("database SyncStore", () => {
       position: 1,
       more: false,
     });
-    const senderOf = () => db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get()?.sender;
+    const senderOf = () =>
+      db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get()
+        ?.sender;
 
     await store.applyPage(page("Ben Thompson <ben@stratechery.com>"));
     expect(senderOf()).toBe("Ben Thompson <ben@stratechery.com>");
@@ -595,7 +603,12 @@ describe("database SyncStore", () => {
   it("a rejected retry_source puts the source back to failed, undoing the optimistic processing", async () => {
     const { db, store } = makeDbStore();
     db.insert(schema.sources)
-      .values({ ...pulledSource({ id: "src-1" }), processing: "processing", createdAt: "x", updatedAt: "x" })
+      .values({
+        ...pulledSource({ id: "src-1" }),
+        processing: "processing",
+        createdAt: "x",
+        updatedAt: "x",
+      })
       .run();
     db.insert(schema.outbox)
       .values({
@@ -609,8 +622,15 @@ describe("database SyncStore", () => {
 
     await store.rejectAction("retry", "source is not failed");
 
-    const source = db.select().from(schema.sources).where(eq(schema.sources.id, "src-1")).get();
-    expect(source).toMatchObject({ processing: "failed", syncError: "source is not failed" });
+    const source = db
+      .select()
+      .from(schema.sources)
+      .where(eq(schema.sources.id, "src-1"))
+      .get();
+    expect(source).toMatchObject({
+      processing: "failed",
+      syncError: "source is not failed",
+    });
   });
 });
 
@@ -626,7 +646,9 @@ const pulledTopic = (overrides: Partial<PulledTopic>): PulledTopic => ({
   ...overrides,
 });
 
-const pulledTopicPrimer = (overrides: Partial<PulledTopicPrimer>): PulledTopicPrimer => ({
+const pulledTopicPrimer = (
+  overrides: Partial<PulledTopicPrimer>,
+): PulledTopicPrimer => ({
   id: "p1",
   topic_id: "t1",
   version: 1,
@@ -638,19 +660,34 @@ const pulledTopicPrimer = (overrides: Partial<PulledTopicPrimer>): PulledTopicPr
   ...overrides,
 });
 
-const topicsPage = (topics: PulledTopic[], topicPrimers: PulledTopicPrimer[] = []): PullPage => ({
-  rows: { sources: [], artifacts: [], cards: [], topics, topic_primers: topicPrimers },
+const topicsPage = (
+  topics: PulledTopic[],
+  topicPrimers: PulledTopicPrimer[] = [],
+): PullPage => ({
+  rows: {
+    sources: [],
+    artifacts: [],
+    cards: [],
+    topics,
+    topic_primers: topicPrimers,
+  },
   position: 3,
   more: false,
 });
 
-const topicById = (db: AppDb, id: string) => db.select().from(schema.topics).where(eq(schema.topics.id, id)).get();
+const topicById = (db: AppDb, id: string) =>
+  db.select().from(schema.topics).where(eq(schema.topics.id, id)).get();
 
 describe("database SyncStore: library rows", () => {
   it("stores pulled topics and topic primers (content as JSON text)", async () => {
     const { db, store } = makeDbStore();
 
-    await store.applyPage(topicsPage([pulledTopic({ removed_at: "2026-11-03T00:00:00Z" })], [pulledTopicPrimer({})]));
+    await store.applyPage(
+      topicsPage(
+        [pulledTopic({ removed_at: "2026-11-03T00:00:00Z" })],
+        [pulledTopicPrimer({})],
+      ),
+    );
 
     expect(topicById(db, "t1")).toMatchObject({
       domain: "Crypto",
@@ -660,14 +697,22 @@ describe("database SyncStore: library rows", () => {
       mergedIntoId: null,
     });
     const primer = db.select().from(schema.topicPrimers).get();
-    expect(primer).toMatchObject({ topicId: "t1", version: 1, isCurrent: 1, openedAt: null });
+    expect(primer).toMatchObject({
+      topicId: "t1",
+      version: 1,
+      isCurrent: 1,
+      openedAt: null,
+    });
     expect(JSON.parse(primer!.content)).toEqual({ markdown: "# Bitcoin" });
   });
 
   it("keeps a topic's local copy while an action on it is unsent", async () => {
     const { db, store } = makeDbStore();
     await store.applyPage(topicsPage([pulledTopic({})]));
-    db.update(schema.topics).set({ name: "BTC" }).where(eq(schema.topics.id, "t1")).run();
+    db.update(schema.topics)
+      .set({ name: "BTC" })
+      .where(eq(schema.topics.id, "t1"))
+      .run();
     db.insert(schema.outbox)
       .values({
         id: "o1",
@@ -686,17 +731,30 @@ describe("database SyncStore: library rows", () => {
   it("never clears the phone-only primerRequestedAt on a later pull", async () => {
     const { db, store } = makeDbStore();
     await store.applyPage(topicsPage([pulledTopic({})]));
-    db.update(schema.topics).set({ primerRequestedAt: "2026-11-04T00:00:00Z" }).where(eq(schema.topics.id, "t1")).run();
+    db.update(schema.topics)
+      .set({ primerRequestedAt: "2026-11-04T00:00:00Z" })
+      .where(eq(schema.topics.id, "t1"))
+      .run();
 
     await store.applyPage(topicsPage([pulledTopic({ name: "Bitcoin!" })]));
 
-    expect(topicById(db, "t1")).toMatchObject({ name: "Bitcoin!", primerRequestedAt: "2026-11-04T00:00:00Z" });
+    expect(topicById(db, "t1")).toMatchObject({
+      name: "Bitcoin!",
+      primerRequestedAt: "2026-11-04T00:00:00Z",
+    });
   });
 
   it("deletes the optimistic topic when its add_topic is rejected", async () => {
     const { db, store } = makeDbStore();
     db.insert(schema.topics)
-      .values({ id: "t1", domain: "AI", name: "Evals", origin: "user", createdAt: "x", updatedAt: "x" })
+      .values({
+        id: "t1",
+        domain: "AI",
+        name: "Evals",
+        origin: "user",
+        createdAt: "x",
+        updatedAt: "x",
+      })
       .run();
     db.insert(schema.outbox)
       .values({
@@ -717,6 +775,75 @@ describe("database SyncStore: library rows", () => {
     });
   });
 
+  const queueRejectable = (db: AppDb, type: string, payload: object) => {
+    db.insert(schema.outbox)
+      .values({
+        id: "o1",
+        type,
+        payload: JSON.stringify(payload),
+        createdAt: "x",
+        status: "pending",
+      })
+      .run();
+    db.update(schema.syncState).set({ position: 7 }).where(eq(schema.syncState.id, 1)).run();
+  };
+  const position = (db: AppDb) =>
+    db.select().from(schema.syncState).get()?.position;
+
+  it("deletes every optimistic topic when its choose_topics is rejected", async () => {
+    const { db, store } = makeDbStore();
+    for (const id of ["t1", "t2"]) {
+      db.insert(schema.topics)
+        .values({
+          id,
+          domain: "AI",
+          name: id,
+          origin: "starter",
+          createdAt: "x",
+          updatedAt: "x",
+        })
+        .run();
+    }
+    queueRejectable(db, "choose_topics", {
+      topics: [{ id: "t1" }, { id: "t2" }],
+    });
+
+    await store.rejectAction("o1", "bad topics");
+
+    expect(db.select().from(schema.topics).all()).toEqual([]);
+  });
+
+  it("rewinds the position to 0 when a rename_topic is rejected", async () => {
+    const { db, store } = makeDbStore();
+    queueRejectable(db, "rename_topic", { id: "t1", name: "x" });
+
+    await store.rejectAction("o1", "name taken");
+
+    expect(position(db)).toBe(0);
+  });
+
+  it("rewinds the position to 0 when a topic_primer snooze is rejected", async () => {
+    const { db, store } = makeDbStore();
+    queueRejectable(db, "snooze", {
+      target: "topic_primer",
+      id: "t1",
+      until: null,
+    });
+
+    await store.rejectAction("o1", "nope");
+
+    expect(position(db)).toBe(0);
+  });
+
+  it("leaves the position alone when a source action is rejected", async () => {
+    const { db, store } = makeDbStore();
+    queueRejectable(db, "snooze", { target: "source", id: "s1", until: null });
+
+    await store.rejectAction("o1", "nope");
+
+    expect(position(db)).toBe(7);
+  });
+
   it("stores a pulled source's filing, artwork and reading fields", async () => {
     const { db, store } = makeDbStore();
     const fields = {
@@ -731,7 +858,13 @@ describe("database SyncStore: library rows", () => {
     };
 
     await store.applyPage({
-      rows: { sources: [pulledSource(fields)], artifacts: [], cards: [], topics: [], topic_primers: [] },
+      rows: {
+        sources: [pulledSource(fields)],
+        artifacts: [],
+        cards: [],
+        topics: [],
+        topic_primers: [],
+      },
       position: 1,
       more: false,
     });

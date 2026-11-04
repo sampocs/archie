@@ -81,7 +81,8 @@ export type PullPage = {
 export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;
   removeActions(ids: string[]): Promise<void>;
-  // Also sets sources.syncError for that action's source; a rejected add_topic deletes its optimistic topic.
+  // Also sets sources.syncError for that action's source. A rejected add_topic / choose_topics deletes its optimistic
+  // topics; any other rejected topic or topic-primer action rewinds the position so the next pull restores the server copy.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
   // Upserts rows and saves the position in one transaction.

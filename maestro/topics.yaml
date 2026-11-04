@@ -1,0 +1,42 @@
+appId: com.sampocs.archie
+---
+# Free: the new topic's primer job fails without the owner's key, which is fine here.
+- runFlow: login.yaml
+- tapOn:
+    id: "tab-library"
+- tapOn:
+    id: "library-mode-domains"
+- tapOn:
+    id: "add-topic"
+- tapOn:
+    id: "add-topic-domain-macro"
+- tapOn:
+    id: "add-topic-name"
+- inputText: "Monetary plumbing"
+- tapOn:
+    id: "add-topic-save"
+- assertVisible:
+    id: "topic-chip-monetary-plumbing"
+- longPressOn:
+    id: "topic-chip-monetary-plumbing"
+- tapOn:
+    id: "topic-menu-remove"
+- assertNotVisible:
+    id: "topic-chip-monetary-plumbing"
+- tapOn:
+    id: "tab-today"
+- tapOn:
+    id: "account-button"
+- tapOn:
+    id: "removed-topics-link"
+# The owner's three removed starter topics stay listed, so the screen is never empty here.
+- tapOn:
+    id: "restore-monetary-plumbing"
+- assertNotVisible:
+    id: "restore-monetary-plumbing"
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "tab-library"
+- assertVisible:
+    id: "topic-chip-monetary-plumbing"

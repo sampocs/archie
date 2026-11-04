@@ -96,13 +96,11 @@ class Settings(BaseSettings):
         if not self.ingest_aliases:
             return {}
 
-        aliases: dict[str, str] = {}
-        for entry in self.ingest_aliases.split(","):
-            alias, separator, email = entry.partition("=")
-            alias, email = alias.strip().lower(), email.strip().lower()
-            if separator and alias and email:
-                aliases[alias] = email
-        return aliases
+        parsed_entries = (
+            (alias.strip().lower(), separator, email.strip().lower())
+            for alias, separator, email in (entry.partition("=") for entry in self.ingest_aliases.split(","))
+        )
+        return {alias: email for alias, separator, email in parsed_entries if separator and alias and email}
 
     def env(self) -> ArchieEnv:
         """The deployment this process runs as, defaulting to `DEV` when `ARCHIE_ENV` is unset."""

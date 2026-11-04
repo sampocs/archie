@@ -109,7 +109,7 @@ def test_podcast_link_spotify_episode_ignores_share_noise() -> None:
     """A Spotify episode link yields its id and no show id."""
     link = urls.podcast_link("https://open.spotify.com/episode/abc?si=123")
 
-    assert link == urls.PodcastLink(urls.PodcastPlatform.SPOTIFY, "abc", None)
+    assert link == urls.PodcastLink(platform=urls.PodcastPlatform.SPOTIFY, episode_id="abc", show_id=None)
 
 
 def test_podcast_link_spotify_show_is_none() -> None:
@@ -121,7 +121,9 @@ def test_podcast_link_apple_episode() -> None:
     """An Apple link with `?i=` yields the episode id and the show id after `id`."""
     link = urls.podcast_link("https://podcasts.apple.com/us/podcast/darknet-diaries/id1296350485?i=1000712345678")
 
-    assert link == urls.PodcastLink(urls.PodcastPlatform.APPLE, "1000712345678", "1296350485")
+    assert link == urls.PodcastLink(
+        platform=urls.PodcastPlatform.APPLE, episode_id="1000712345678", show_id="1296350485"
+    )
 
 
 def test_podcast_link_apple_without_episode_is_none() -> None:

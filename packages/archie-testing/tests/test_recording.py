@@ -67,6 +67,14 @@ def test_chunk_matcher_leaves_other_hosts_to_their_own_matcher() -> None:
     assert recording._transcription_chunks_match(first, second)
 
 
+def test_prompt_matcher_skips_bodies_of_other_hosts() -> None:
+    """An Anthropic call compared with a recorded multipart upload doesn't try to parse the upload as JSON."""
+    anthropic_call = vcr_request.Request("POST", ANTHROPIC_URL, b'{"model": "claude", "system": "s"}', {})
+
+    assert recording._anthropic_prompts_match(_upload(filename="chunk_001.mp3"), anthropic_call)
+    assert recording._anthropic_prompts_match(anthropic_call, _upload(filename="chunk_001.mp3"))
+
+
 def test_chunk_matcher_rejects_unparseable_transcription_bodies() -> None:
     """Transcription requests without a model or filename never match, even each other."""
     first = vcr_request.Request("POST", GROQ_URL, b"not multipart", {})

@@ -8,6 +8,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `source_page.yaml` | Dev login as the owner's user, add a finished article with a reaction, open it from Library, wait for the primer, read it |
 | `sign_out.yaml` | Dev login, Today tab, account button, Sign out, back on the Apple sign-in screen |
 | `offline_*.yaml` + `run_offline.sh` | Add a link with the backend down ("1 change waiting"), restart it, the change syncs and the title arrives |
+| `share_sheet.yaml` | Safari → Share → Archie opens the share sheet, and a screenshot of it matches `screenshots/share_sheet.png` (text drawn, Cancel on screen) |
 | `login.yaml` | Shared preamble (fresh install + dev login, lands on Library); other flows `runFlow` it, it is not run on its own |
 
 ## One-time setup
@@ -25,6 +26,14 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 Both targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
 
 ## Notes
+
+- `share_sheet.yaml` needs a **Release** build on the simulator (the debug extension loads its bundle from Metro):
+  `cd app && EXPO_PUBLIC_API_URL=https://archie-production-4856.up.railway.app npx expo run:ios --configuration Release`.
+  Run it from the repo root (`maestro test maestro/share_sheet.yaml`): Maestro only finds the reference screenshot
+  relative to a flow path that has a directory. It checks pixels, not just the accessibility tree, because text that
+  measures zero high still shows up in the tree. When the sheet's look changes on purpose, retake the reference with
+  a `takeScreenshot` cropped on `id: share-sheet` and replace the PNG. It taps Archie's share cell by position, so a
+  different simulator model or share-sheet layout needs the point updated.
 
 - `source_page.yaml` calls Anthropic for real (a few cents per run): it signs in with `archie://dev/login?whitelisted=1`, so the worker uses the owner's `ANTHROPIC_API_KEY` from `.env`, and it waits up to 3 minutes for the primer. The local backend has no replay mode yet, so it only works when the owner runs it with real keys. It uses a single `extendedWaitUntil` because Maestro shares one timeout budget across consecutive waits.
 

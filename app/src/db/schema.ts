@@ -11,6 +11,34 @@ export const sources = sqliteTable("sources", {
   updatedAt: text("updated_at").notNull(),
   deletedAt: text("deleted_at"),
   syncError: text("sync_error"),
+  // Server-derived pipeline status (pending, processing, ready, failed, unsupported).
+  processing: text("processing").notNull().default("pending"),
+  processingError: text("processing_error"),
+  reaction: text("reaction"),
+  note: text("note"),
+  prepMe: integer("prep_me").notNull().default(0),
+  mergedIntoId: text("merged_into_id"),
+});
+
+export const artifacts = sqliteTable("artifacts", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  kind: text("kind").notNull(),
+  version: integer("version").notNull(),
+  // JSON-encoded content object.
+  content: text("content").notNull(),
+  isCurrent: integer("is_current").notNull(),
+  createdAt: text("created_at").notNull(),
+});
+
+export const cards = sqliteTable("cards", {
+  id: text("id").primaryKey(),
+  sourceId: text("source_id").notNull(),
+  kind: text("kind").notNull(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  createdAt: text("created_at").notNull(),
+  deletedAt: text("deleted_at"),
 });
 
 export const outbox = sqliteTable("outbox", {

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import datetime
 import uuid
+from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
@@ -32,6 +33,44 @@ class SourceKind(StrEnum):
     """What a source points at."""
 
     LINK = "link"
+    ARTICLE = "article"
+    X = "x"
+    YOUTUBE = "youtube"
+    PODCAST = "podcast"
+
+
+class ProcessingStatus(StrEnum):
+    """Where a source stands in the capture pipeline, separate from the user's reading `SourceState`."""
+
+    PENDING = "pending"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
+    UNSUPPORTED = "unsupported"
+
+
+class Reaction(StrEnum):
+    """How the user says the material landed, which tunes later primers."""
+
+    EASY = "easy"
+    MOSTLY = "mostly"
+    LOST = "lost"
+
+
+class ArtifactKind(StrEnum):
+    """What a stored artifact holds; only the summary and primer reach the phone."""
+
+    TEXT = "text"
+    SUMMARY = "summary"
+    PRIMER = "primer"
+
+
+class CardKind(StrEnum):
+    """The shape of a spaced-repetition card."""
+
+    CONCEPT = "concept"
+    MECHANISM = "mechanism"
+    NUMBER = "number"
 
 
 class SourceState(StrEnum):
@@ -56,6 +95,9 @@ class JobKind(StrEnum):
     """The kinds of background work the worker knows how to run."""
 
     FETCH_TITLE = "fetch_title"
+    FETCH_CONTENT = "fetch_content"
+    ANALYZE = "analyze"
+    PRIMER = "primer"
 
 
 class JobStatus(StrEnum):
@@ -73,6 +115,10 @@ class ActionResult(StrEnum):
     APPLIED = "applied"
     DUPLICATE = "duplicate"
     REJECTED = "rejected"
+
+
+# Artifact kinds the phone syncs; the raw text stays on the server.
+SYNCED_ARTIFACT_KINDS = frozenset({ArtifactKind.SUMMARY, ArtifactKind.PRIMER})
 
 
 class User(Base):
@@ -104,7 +150,10 @@ class Source(Base):
     """One captured item. The id is generated on the phone so an offline-created row keeps its identity."""
 
     __tablename__ = "sources"
-    __table_args__ = (sqlalchemy.Index("ix_sources_user_id_change_seq", "user_id", "change_seq"),)
+    __table_args__ = (
+        sqlalchemy.Index("ix_sources_user_id_change_seq", "user_id", "change_seq"),
+        sqlalchemy.Index("ix_sources_user_id_normalized_url", "user_id", "normalized_url"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
     user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
@@ -116,8 +165,118 @@ class Source(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    processing: Mapped[str] = mapped_column(sqlalchemy.String(16), server_default=ProcessingStatus.PENDING)
+    processing_error: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    reaction: Mapped[str | None] = mapped_column(sqlalchemy.String(16))
+    note: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    prep_me: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
+    # What duplicate detection compares: the URL with tracking noise removed (see archie_shared.urls).
+    normalized_url: Mapped[str] = mapped_column(sqlalchemy.String(2048))
+    # Set when this capture duplicated another source and was folded into it.
+    merged_into_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id")
+    )
     # Always assigned via changes.next_change_seq() under changes.lock_user_writes(); see changes.py for why.
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class SourceCapture(Base):
+    """The text the phone or the fetcher captured for a source; the pipeline's input, kept on the server only."""
+
+    __tablename__ = "source_captures"
+
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="CASCADE"), primary_key=True
+    )
+    title: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    text: Mapped[str] = mapped_column(sqlalchemy.Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+
+
+class SourceArtifact(Base):
+    """One version of something generated for a source (text, summary, primer); regenerating adds a version.
+
+    Exactly one version per (source, kind) is current, which the partial unique index enforces.
+    """
+
+    __tablename__ = "source_artifacts"
+    __table_args__ = (
+        sqlalchemy.UniqueConstraint("source_id", "kind", "version", name="uq_source_artifacts_version"),
+        sqlalchemy.Index(
+            "uq_source_artifacts_current",
+            "source_id",
+            "kind",
+            unique=True,
+            postgresql_where=sqlalchemy.text("is_current"),
+        ),
+        sqlalchemy.Index("ix_source_artifacts_user_id_change_seq", "user_id", "change_seq"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="CASCADE")
+    )
+    kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    version: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    content: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB)
+    is_current: Mapped[bool] = mapped_column(sqlalchemy.Boolean)
+    model: Mapped[str | None] = mapped_column(sqlalchemy.String(64))
+    prompt_version: Mapped[str | None] = mapped_column(sqlalchemy.String(32))
+    # The artifact this one was regenerated from, and the user's instruction for the change.
+    derived_from_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("source_artifacts.id")
+    )
+    instruction: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class Card(Base):
+    """A spaced-repetition question and answer generated from a source's summary artifact."""
+
+    __tablename__ = "cards"
+    __table_args__ = (sqlalchemy.Index("ix_cards_user_id_change_seq", "user_id", "change_seq"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    source_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="CASCADE")
+    )
+    artifact_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("source_artifacts.id")
+    )
+    kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    question: Mapped[str] = mapped_column(sqlalchemy.Text)
+    answer: Mapped[str] = mapped_column(sqlalchemy.Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class LlmCall(Base):
+    """One model call and what it cost, kept so spend can be audited per user and per source."""
+
+    __tablename__ = "llm_calls"
+    __table_args__ = (sqlalchemy.Index("ix_llm_calls_user_id_created_at", "user_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    source_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="SET NULL")
+    )
+    job_id: Mapped[int | None] = mapped_column(
+        sqlalchemy.BigInteger, sqlalchemy.ForeignKey("jobs.id", ondelete="SET NULL")
+    )
+    step: Mapped[str] = mapped_column(sqlalchemy.String(32))
+    provider: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    model: Mapped[str] = mapped_column(sqlalchemy.String(64))
+    input_tokens: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    output_tokens: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    cost_usd: Mapped[Decimal] = mapped_column(sqlalchemy.Numeric(12, 6))
+    stop_reason: Mapped[str | None] = mapped_column(sqlalchemy.String(32))
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
 
 
 class AppliedAction(Base):

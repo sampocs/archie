@@ -1,0 +1,104 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - httpbin.org
+      user-agent:
+      - archie-worker/0.1
+    method: GET
+    uri: https://httpbin.org/json?post=2107691261776052633
+  response:
+    body:
+      string: "{\n  \"slideshow\": {\n    \"author\": \"Yours Truly\", \n    \"date\":
+        \"date of publication\", \n    \"slides\": [\n      {\n        \"title\":
+        \"Wake up to WonderWidgets!\", \n        \"type\": \"all\"\n      }, \n      {\n
+        \       \"items\": [\n          \"Why <em>WonderWidgets</em> are great\",
+        \n          \"Who <em>buys</em> WonderWidgets\"\n        ], \n        \"title\":
+        \"Overview\", \n        \"type\": \"all\"\n      }\n    ], \n    \"title\":
+        \"Sample Slide Show\"\n  }\n}\n"
+    headers:
+      access-control-allow-credentials:
+      - 'true'
+      access-control-allow-origin:
+      - '*'
+      access-control-expose-headers:
+      - Retry-After, RateLimit, RateLimit-Policy
+      content-length:
+      - '429'
+      content-type:
+      - application/json
+      date:
+      - Tue, 03 Nov 2026 23:50:29 GMT
+      x-content-type-options:
+      - nosniff
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - api.vxtwitter.com
+      user-agent:
+      - archie-worker/0.1
+    method: GET
+    uri: https://api.vxtwitter.com/i/status/2107691261776052633
+  response:
+    body:
+      string: '{"allSameType":true,"article":null,"combinedMediaUrl":null,"communityNote":null,"conversationID":"2107691261776052633","date":"Wed
+        Oct 07 04:35:30 +0000 2026","date_epoch":1791347730,"fetched_on":1793749393,"hasMedia":false,"hashtags":[],"lang":"en","likes":12695,"mediaURLs":[],"media_extended":[],"pollData":null,"possibly_sensitive":false,"qrt":null,"qrtURL":null,"replies":1225,"replyingTo":null,"replyingToID":null,"retweet":null,"retweetURL":null,"retweets":674,"text":"looking
+        up at the stars with extra awe tonight.\n\n\"thy sea is so great and my boat
+        is so small.\"","translation":null,"tweetID":"2107691261776052633","tweetURL":"https://twitter.com/sama/status/2107691261776052633","user_name":"Sam
+        Altman","user_profile_image_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_normal.jpg","user_screen_name":"sama"}
+
+        '
+    headers:
+      access-control-allow-origin:
+      - '*'
+      age:
+      - '436'
+      alt-svc:
+      - h3=":443"; ma=86400
+      apigw-requestid:
+      - GSauvjgBIAMEbFQ=
+      cache-control:
+      - max-age=86400
+      cf-cache-status:
+      - HIT
+      cf-ray:
+      - a54f4813c891634a-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '849'
+      content-type:
+      - application/json
+      date:
+      - Tue, 03 Nov 2026 23:50:29 GMT
+      last-modified:
+      - Tue, 03 Nov 2026 23:43:13 GMT
+      nel:
+      - '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}'
+      report-to:
+      - '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=YDCSVkV%2BcOyOglWgz%2BrGzh3Txdvqn68CAj3JRZ2PTj6PUe6smouwsBstRbjWcT3omGklc6KvSOSlVlk7a%2BFuu8tbcut%2BXneYsCf0oMY4k%2FJ3u%2FMnLeerj2yuLTWE6FUTO2CRjj03yFyz29Qf3PmU"}]}'
+      server:
+      - cloudflare
+      transfer-encoding:
+      - chunked
+    status:
+      code: 200
+      message: OK
+version: 1

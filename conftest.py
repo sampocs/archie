@@ -32,7 +32,7 @@ _SECRET_ENV_VARS = (
     config.OWNER_EMAILS_ENV,
     config.APPLE_AUDIENCE_ENV,
     config.ARCHIE_ENV_ENV,
-    "ANTHROPIC_API_KEY",
+    config.ANTHROPIC_API_KEY_ENV,
     "OPENAI_API_KEY",
     "GROQ_API_KEY",
 )
@@ -86,7 +86,17 @@ def test_database_url(request: pytest.FixtureRequest) -> str:
 
 
 # Emptied after every Postgres test so tests never see each other's rows.
-_TRUNCATE_TABLES = ("applied_actions", "jobs", "sources", "sessions", "users")
+_TRUNCATE_TABLES = (
+    "source_captures",
+    "source_artifacts",
+    "cards",
+    "llm_calls",
+    "applied_actions",
+    "jobs",
+    "sources",
+    "sessions",
+    "users",
+)
 
 
 @pytest.fixture

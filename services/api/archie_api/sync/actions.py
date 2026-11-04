@@ -2,26 +2,12 @@
 
 from __future__ import annotations
 
-import uuid
-from urllib import parse
-
-import pydantic
-import sqlalchemy
-from archie_db import changes, jobs, models
+from archie_db import changes, models
 from sqlalchemy import exc, orm
 
-from archie_api.sync import schemas
+from archie_api.sync import capture, schemas
 
-MAX_URL_LENGTH = 2048
-_ALLOWED_URL_SCHEMES = frozenset({"http", "https"})
-_INVALID_URL = "url is not a valid URL"
 _ACTION_ID_USED = "action id already used"
-
-
-class _AddSourcePayload(pydantic.BaseModel):
-    id: uuid.UUID
-    url: str
-    intent: str
 
 
 def apply_actions(db: orm.Session, *, user: models.User, actions: list[schemas.ActionIn]) -> list[schemas.ActionOut]:
@@ -48,7 +34,7 @@ def _apply_action(db: orm.Session, *, user: models.User, action: schemas.ActionI
 
     try:
         with db.begin_nested():
-            reason = _add_source(db, user=user, action=action)
+            reason = _dispatch(db, user=user, action=action)
             if reason is not None:
                 _record(db, user=user, action=action, result=models.ActionResult.REJECTED, reason=reason)
                 return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason=reason)
@@ -67,58 +53,13 @@ def _apply_action(db: orm.Session, *, user: models.User, action: schemas.ActionI
     return schemas.ActionOut(id=action.id, result=models.ActionResult.APPLIED)
 
 
-def _add_source(db: orm.Session, *, user: models.User, action: schemas.ActionIn) -> str | None:
-    """Insert the source and its title job; returns the rejection reason, or None when applied."""
-    try:
-        payload = _AddSourcePayload.model_validate(action.payload)
-    except pydantic.ValidationError:
-        return "payload needs id, url and intent"
-
-    reason = _validate_add_source(db, payload=payload)
-    if reason is not None:
-        return reason
-
-    finished = payload.intent == models.SourceIntent.FINISHED
-    state = models.SourceState.CONSUMED if finished else models.SourceState.QUEUED
-    db.add(
-        models.Source(
-            id=payload.id,
-            user_id=user.id,
-            url=payload.url,
-            kind=models.SourceKind.LINK.value,
-            state=state.value,
-            intent=payload.intent,
-            change_seq=db.execute(sqlalchemy.select(changes.next_change_seq())).scalar_one(),
-        )
-    )
-    db.flush()
-    jobs.enqueue(db, kind=models.JobKind.FETCH_TITLE, user_id=user.id, payload={"source_id": str(payload.id)})
-    return None
-
-
-def _validate_add_source(db: orm.Session, *, payload: _AddSourcePayload) -> str | None:
-    """The reason this add_source can't be applied, or None."""
-    if len(payload.url) > MAX_URL_LENGTH:
-        return f"url is longer than {MAX_URL_LENGTH} characters"
-
-    # Postgres text can't hold NUL, and urlsplit raises on e.g. an unclosed IPv6 bracket; both are the client's bug.
-    if "\x00" in payload.url:
-        return _INVALID_URL
-    try:
-        parts = parse.urlsplit(payload.url)
-    except ValueError:
-        return _INVALID_URL
-
-    if parts.scheme not in _ALLOWED_URL_SCHEMES or not parts.netloc:
-        return "url must be http or https"
-
-    if payload.intent not in set(models.SourceIntent):
-        return "intent must be finished or queue"
-
-    # Even the caller's own id is refused: a retry carries the same action id, so a new one is a client bug.
-    if db.get(models.Source, payload.id) is not None:
-        return "source id already exists"
-    return None
+def _dispatch(db: orm.Session, *, user: models.User, action: schemas.ActionIn) -> str | None:
+    """Run the action's handler; returns the rejection reason, or None when applied."""
+    match action.type:
+        case schemas.ActionType.ADD_SOURCE:
+            return capture.add_source(db, user=user, payload=action.payload)
+        case schemas.ActionType.RETRY_SOURCE:
+            return capture.retry_source(db, user=user, payload=action.payload)
 
 
 def _record(

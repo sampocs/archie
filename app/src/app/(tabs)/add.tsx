@@ -1,9 +1,10 @@
 import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { View } from "react-native";
 
-import { addSource, Intent } from "@/db/actions";
+import { CaptureOptions } from "@/capture/CaptureOptions";
+import { CaptureChoice, EMPTY_CHOICE } from "@/capture/types";
+import { addSource } from "@/db/actions";
 import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
 import { Button } from "@/theme/components/Button";
@@ -23,17 +24,27 @@ function isHttpUrl(text: string): boolean {
 export default function AddScreen() {
   const router = useRouter();
   const [url, setUrl] = useState("");
-  const canSubmit = isHttpUrl(url);
+  const [choice, setChoice] = useState<CaptureChoice>(EMPTY_CHOICE);
+  const canSave = isHttpUrl(url) && choice.intent !== null;
 
   // Clipboard is read only on this tap, never automatically.
   async function paste(): Promise<void> {
     setUrl(await Clipboard.getStringAsync());
   }
 
-  async function submit(intent: Intent): Promise<void> {
-    await addSource(db, { url: url.trim(), intent });
+  async function save(): Promise<void> {
+    if (!choice.intent) return;
+
+    await addSource(db, {
+      url: url.trim(),
+      intent: choice.intent,
+      reaction: choice.reaction,
+      note: choice.note.trim(),
+      prepMe: choice.prepMe,
+    });
     requestSync();
     setUrl("");
+    setChoice(EMPTY_CHOICE);
     router.navigate("/library");
   }
 
@@ -51,17 +62,9 @@ export default function AddScreen() {
         autoCorrect={false}
         keyboardType="url"
       />
-      <View style={{ gap: 12 }}>
-        <Button testID="add-paste" label="Paste" variant="secondary" onPress={paste} />
-        <Button testID="add-finished" label="Finished" disabled={!canSubmit} onPress={() => submit("finished")} />
-        <Button
-          testID="add-queue"
-          label="Queue it"
-          variant="secondary"
-          disabled={!canSubmit}
-          onPress={() => submit("queue")}
-        />
-      </View>
+      <Button testID="add-paste" label="Paste" variant="secondary" onPress={paste} />
+      <CaptureOptions value={choice} onChange={setChoice} />
+      <Button testID="add-save" label="Save" disabled={!canSave} onPress={save} />
     </Screen>
   );
 }

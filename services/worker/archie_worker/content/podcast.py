@@ -13,6 +13,7 @@ import email.utils
 import html
 import json
 import re
+import xml.etree.ElementTree
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -49,7 +50,7 @@ _MAX_DESCRIPTION_LENGTH = 2000
 # Page statuses that mean the episode is gone; a retry cannot fix them.
 _GONE_STATUSES = frozenset({404, 410})
 
-_PODCAST_NAMESPACE = "{https://podcastindex.org/namespace/1.0}"
+_PODCAST_NAMESPACES = ("{https://podcastindex.org/namespace/1.0}", "{http://podcastindex.org/namespace/1.0}")
 _ITUNES_NAMESPACE = "{http://www.itunes.com/dtds/podcast-1.0.dtd}"
 _CONTENT_NAMESPACE = "{http://purl.org/rss/1.0/modules/content/}"
 _LD_JSON_PATTERN = re.compile(r'<script type="application/ld\+json">(.+?)</script>', re.DOTALL)
@@ -127,19 +128,27 @@ def spotify_episode_from_page(page: str) -> SpotifyEpisode:
         raise ValueError("Spotify page has no ld+json")
 
     document = json.loads(found.group(1))
+    if not isinstance(document, dict):
+        raise ValueError("Spotify page ld+json is not an object")
+
     show = _SHOW_NAME_PATTERN.match(document.get("description", ""))
     if show is None:
         raise ValueError("Spotify page description has no show name")
 
+    name = document.get("name")
+    date_published = document.get("datePublished")
+    if not isinstance(name, str) or not isinstance(date_published, str):
+        raise ValueError("Spotify page ld+json lacks name or datePublished")
+
     return SpotifyEpisode(
-        title=html.unescape(document["name"]),
+        title=html.unescape(name),
         show_name=html.unescape(show.group(1)),
-        published=datetime.date.fromisoformat(document["datePublished"][:10]),
+        published=datetime.date.fromisoformat(date_published[:10]),
     )
 
 
 def parse_feed(feed: bytes) -> list[FeedItem]:
-    """The items of an RSS feed, in feed order; ElementTree errors (malformed XML) propagate."""
+    """The items of an RSS feed, in feed order; malformed or forbidden XML raises ParseError or ValueError."""
     channel = defusedxml.ElementTree.fromstring(feed).find("channel")
     if channel is None:
         raise ValueError("Feed has no channel")
@@ -174,7 +183,7 @@ def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str) -> ResolvedE
         _logger.info("No feed for Spotify show %r", spotify.show_name)
         raise errors.PermanentJobError(errors.FailureReason.SPOTIFY_ONLY)
 
-    items = parse_feed(_fetch_feed(show.feed_url))
+    items = _read_feed(show.feed_url)
     item = best_match(title=spotify.title, published=spotify.published, items=items)
     if item is None:
         _logger.info("Episode %r not found in the feed of %r", spotify.title, spotify.show_name)
@@ -182,7 +191,7 @@ def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str) -> ResolvedE
 
     # Only a matched feed is remembered, so a wrong top search hit never sticks.
     _remember_show(engine, show=show)
-    return _resolved(item, show_name=show.name, feed_url=show.feed_url)
+    return _resolved(item=item, show_name=show.name, feed_url=show.feed_url)
 
 
 def _resolve_apple(*, show_id: str, episode_id: int) -> ResolvedEpisode:
@@ -194,17 +203,24 @@ def _resolve_apple(*, show_id: str, episode_id: int) -> ResolvedEpisode:
         _logger.info("Apple lookup of show %s has no episode %d", show_id, episode_id)
         raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
 
-    items = parse_feed(_fetch_feed(show["feedUrl"]))
-    item = _item_by_guid(items, guid=apple_episode.get("episodeGuid")) or best_match(
-        title=apple_episode["trackName"],
-        published=datetime.date.fromisoformat(apple_episode["releaseDate"][:10]),
+    title = apple_episode.get("trackName")
+    release_date = apple_episode.get("releaseDate")
+    show_name = show.get("collectionName")
+    if not isinstance(title, str) or not isinstance(release_date, str) or not isinstance(show_name, str):
+        _logger.info("Apple lookup of show %s lacks trackName, releaseDate or collectionName", show_id)
+        raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
+
+    items = _read_feed(show["feedUrl"])
+    item = _item_by_guid(items=items, guid=apple_episode.get("episodeGuid")) or best_match(
+        title=title,
+        published=_apple_date(release_date),
         items=items,
     )
     if item is None:
-        _logger.info("Apple episode %r not found in the feed of show %s", apple_episode["trackName"], show_id)
+        _logger.info("Apple episode %r not found in the feed of show %s", title, show_id)
         raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
 
-    return _resolved(item, show_name=show["collectionName"], feed_url=show["feedUrl"])
+    return _resolved(item=item, show_name=show_name, feed_url=show["feedUrl"])
 
 
 def _read_spotify_page(*, episode_id: str) -> SpotifyEpisode:
@@ -276,6 +292,22 @@ def _remember_show(engine: sqlalchemy.Engine, *, show: _Show) -> None:
         db.commit()
 
 
+def _apple_date(release_date: str) -> datetime.date:
+    try:
+        return datetime.date.fromisoformat(release_date[:10])
+    except ValueError as error:
+        raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND) from error
+
+
+def _read_feed(feed_url: str) -> list[FeedItem]:
+    """Fetch and parse a feed; an unparseable or forbidden (DTD/entity) feed can't be fixed by a retry."""
+    try:
+        return parse_feed(_fetch_feed(feed_url))
+    except (xml.etree.ElementTree.ParseError, ValueError) as error:
+        _logger.info("Feed %s unreadable: %s", feed_url, error)
+        raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND) from error
+
+
 def _fetch_feed(feed_url: str) -> bytes:
     return fetch_title.fetch_bytes(
         url=feed_url, timeout_seconds=_FEED_TIMEOUT_SECONDS, max_bytes=_FEED_MAX_BYTES, headers=_HEADERS
@@ -289,13 +321,13 @@ def _fetch_json(*, url: str) -> dict[str, Any]:
     return json.loads(body)
 
 
-def _item_by_guid(items: Sequence[FeedItem], *, guid: str | None) -> FeedItem | None:
+def _item_by_guid(*, items: Sequence[FeedItem], guid: str | None) -> FeedItem | None:
     if not guid:
         return None
     return next((item for item in items if item.guid == guid and item.audio_url), None)
 
 
-def _resolved(item: FeedItem, *, show_name: str, feed_url: str) -> ResolvedEpisode:
+def _resolved(*, item: FeedItem, show_name: str, feed_url: str) -> ResolvedEpisode:
     assert item.audio_url is not None
     episode = episode_content.PodcastEpisode(
         show_name=show_name,
@@ -313,7 +345,7 @@ def _feed_item(item: Any) -> FeedItem:
     enclosure = item.find("enclosure")
     guid = item.findtext("guid")
     return FeedItem(
-        title=html.unescape(item.findtext("title", default="")).strip(),
+        title=item.findtext("title", default="").strip(),
         published=_item_date(item.findtext("pubDate")),
         guid=guid.strip() if guid else None,
         audio_url=enclosure.get("url") if enclosure is not None else None,
@@ -321,7 +353,8 @@ def _feed_item(item: Any) -> FeedItem:
         description=_description(item),
         transcripts=[
             TranscriptLink(url=transcript.get("url"), mime_type=transcript.get("type", ""))
-            for transcript in item.findall(f"{_PODCAST_NAMESPACE}transcript")
+            for namespace in _PODCAST_NAMESPACES
+            for transcript in item.findall(f"{namespace}transcript")
             if transcript.get("url")
         ],
     )

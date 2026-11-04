@@ -1,0 +1,15 @@
+appId: com.sampocs.archie
+---
+# Signs in as the owner's user so the worker pays for the newsletter's summary with the owner's keys.
+- runFlow: login.yaml
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000

@@ -1,0 +1,40 @@
+appId: com.sampocs.archie
+---
+# Free: no summary is needed, only a queued link to finish.
+- runFlow: login.yaml
+- tapOn:
+    id: "tab-add"
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://example.net/"
+# The reaction row can push Save under the keyboard; tapping the screen's hint text dismisses it.
+- tapOn: "Paste a link to save it."
+- tapOn:
+    id: "add-save"
+# Saving lands on Library; open the queued source.
+- tapOn: ".*example\\.net.*"
+- tapOn:
+    id: "item-finish"
+- tapOn:
+    id: "finish-mostly"
+- tapOn:
+    id: "finish-save"
+- assertNotVisible:
+    id: "item-finish"
+- assertVisible: "Mostly followed"
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "filter-done"
+- assertVisible: ".*example\\.net.*"

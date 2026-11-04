@@ -8,8 +8,9 @@ import jwt
 import pytest
 import sqlalchemy
 from archie_api.auth import apple
-from archie_db import models
+from archie_db import models, user_topics
 from archie_db import session as db_session
+from archie_shared import topics
 from cryptography.hazmat.primitives.asymmetric import rsa
 from sqlalchemy import orm
 
@@ -156,3 +157,22 @@ class TestUpsertAppleUser:
 
         assert second.id == first.id
         assert (second.email, second.is_whitelisted) == ("owner@example.com", True)
+
+    def test_first_sign_in_of_an_owner_seeds_their_topics(self, db: orm.Session) -> None:
+        """An owner's first sign in leaves them with live starter topics and marks the picker as done."""
+        identity = apple.AppleIdentity(sub="s4", email="owner@example.com")
+
+        user = apple.upsert_apple_user(db, identity=identity, owner_emails=frozenset({"owner@example.com"}))
+
+        live = user_topics.live_topics(db, user_id=user.id)
+        assert len(live) == sum(len(names) for names in topics.OWNER_TOPICS.values())
+        assert user.topics_chosen_at is not None
+
+    def test_another_email_seeds_nothing(self, db: orm.Session) -> None:
+        """A non-owner gets no topics and has not chosen yet."""
+        identity = apple.AppleIdentity(sub="s5", email="stranger@example.com")
+
+        user = apple.upsert_apple_user(db, identity=identity, owner_emails=frozenset({"owner@example.com"}))
+
+        assert user_topics.live_topics(db, user_id=user.id) == []
+        assert user.topics_chosen_at is None

@@ -12,6 +12,8 @@ from archie_db import changes, jobs, models, pipeline
 from archie_shared import urls
 from sqlalchemy import orm
 
+from archie_api.sync import rows
+
 MAX_URL_LENGTH = 2048
 MAX_NOTE_LENGTH = 2_000
 MAX_CAPTURE_TEXT_LENGTH = 400_000
@@ -193,6 +195,8 @@ def _insert_source(db: orm.Session, *, user: models.User, payload: _AddSourcePay
     start = _start_for(payload.url)
     source = _build_source(user=user, payload=payload, normalized_url=normalized_url, processing=start.processing)
     source.processing_error = start.error
+    if source.state == models.SourceState.QUEUED.value:
+        source.queue_position = rows.top_queue_position(db, user_id=user.id)
     db.add(source)
     db.flush()
     if payload.capture is not None:

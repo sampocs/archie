@@ -112,7 +112,9 @@ def _add_source_columns() -> None:
 
 
 def _backfill_sources() -> None:
-    """Order today's queue oldest first, and treat every existing primer as opened and every newsletter as read.
+    """Rank today's queue newest on top (-1 for the oldest, counting down).
+
+    Treat every existing primer as opened and every newsletter as read.
 
     The phone pulls only rows whose position moved, so every source gets a new `change_seq`.
     """

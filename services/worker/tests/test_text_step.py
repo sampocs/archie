@@ -109,7 +109,7 @@ def test_enqueue_transcribe_queues_one_job_with_the_episode_and_titles_the_sourc
 
 
 def test_store_text_fills_an_empty_image_and_keeps_an_existing_one(db: sqlalchemy.orm.Session) -> None:
-    """The fetcher's artwork lands on an image-less source; a source that has one keeps it, with no new position."""
+    """The fetcher's artwork lands on an image-less source and bumps its change_seq; a source with one keeps both."""
     empty = _source(db, kind=models.SourceKind.ARTICLE)
     kept = _source(db, kind=models.SourceKind.ARTICLE)
     kept.image_url = "https://img.example/kept.jpg"
@@ -117,6 +117,8 @@ def test_store_text_fills_an_empty_image_and_keeps_an_existing_one(db: sqlalchem
     db.flush()
     db.refresh(kept)
     kept_seq = kept.change_seq
+    db.refresh(empty)
+    empty_seq = empty.change_seq
 
     for source in (empty, kept):
         _text.store_text(
@@ -127,6 +129,7 @@ def test_store_text_fills_an_empty_image_and_keeps_an_existing_one(db: sqlalchem
     db.refresh(kept)
 
     assert empty.image_url == "https://img.example/a.jpg"
+    assert empty.change_seq > empty_seq
     assert (kept.image_url, kept.change_seq) == ("https://img.example/kept.jpg", kept_seq)
 
 

@@ -4909,7 +4909,7 @@ interactions:
       b3:
       - 29bbdb481ca942d15b27e5491e04d6ba-d06126efc01f8305
       cache-control:
-      - max-age=86273
+      - max-age=85944
       connection:
       - keep-alive
       content-disposition:
@@ -4919,7 +4919,7 @@ interactions:
       content-type:
       - text/javascript; charset=utf-8
       date:
-      - Wed, 04 Nov 2026 04:21:19 GMT
+      - Wed, 04 Nov 2026 04:26:48 GMT
       server:
       - daiquiri/5
       strict-transport-security:
@@ -4945,10 +4945,10 @@ interactions:
       x-b3-traceid:
       - 29bbdb481ca942d15b27e5491e04d6ba
       x-cache:
-      - TCP_MISS from a23-193-195-69.deploy.akamaitechnologies.com (AkamaiGHost/22.7.0-e687e9264c02f058b1bf8e920219e21f)
+      - TCP_MISS from a23-59-176-72.deploy.akamaitechnologies.com (AkamaiGHost/22.7.0-e687e9264c02f058b1bf8e920219e21f)
         (-)
       x-cache-remote:
-      - TCP_HIT from a23-33-28-202.deploy.akamaitechnologies.com (AkamaiGHost/22.7.0-e687e9264c02f058b1bf8e920219e21f)
+      - TCP_HIT from a23-59-176-77.deploy.akamaitechnologies.com (AkamaiGHost/22.7.0-e687e9264c02f058b1bf8e920219e21f)
         (-)
       x-content-type-options:
       - nosniff
@@ -15690,8 +15690,6 @@ interactions:
         men were captured.</p><p><br></p>]]>\n      </content:encoded>\n    </item>\n
         \ </channel>\n</rss>\n"
     headers:
-      age:
-      - '48'
       alt-svc:
       - h3=":443"; ma=86400
       cache-control:
@@ -15703,7 +15701,7 @@ interactions:
       content-type:
       - application/rss+xml; charset=UTF-8
       date:
-      - Wed, 04 Nov 2026 04:20:32 GMT
+      - Wed, 04 Nov 2026 04:26:49 GMT
       etag:
       - W/"222f50eac66fa084df75474ee028475c"
       last-modified:
@@ -15715,10 +15713,10 @@ interactions:
       vary:
       - Accept-Encoding
       via:
-      - 1.1 d24eea03a85cd432dfd20c2623f3951e.cloudfront.net (CloudFront), 1.1 08e1285c3a51f690f8d82aee6e84773a.cloudfront.net
+      - 1.1 d24eea03a85cd432dfd20c2623f3951e.cloudfront.net (CloudFront), 1.1 f899454bbe1892e27e48190f22a05f36.cloudfront.net
         (CloudFront)
       x-amz-cf-id:
-      - NQSsglyBRmsrCwIi0WwyHuH4HfPUB-U-6XQESj_a2K-J3aX40ZL50A==
+      - YklUt7CfcB5-eXMOPggWjKRQac89ioh_uHBFkDo5fLHGUGV19rWRZQ==
       x-amz-cf-pop:
       - CMH51-P1
       - ORD56-P10
@@ -15729,7 +15727,7 @@ interactions:
       x-amz-version-id:
       - C9LP8XzmDU7Mbwwa.OwpmMS5uU9NJ4BU
       x-cache:
-      - Hit from cloudfront
+      - RefreshHit from cloudfront
     status:
       code: 200
       message: OK
@@ -16751,7 +16749,7 @@ interactions:
       accept-ranges:
       - bytes
       age:
-      - '45075'
+      - '45404'
       cache-control:
       - max-age=86400
       connection:
@@ -16773,9 +16771,9 @@ interactions:
       vary:
       - Accept-Encoding
       via:
-      - 1.1 49a1d09f4f62385521850c60e3bcb9dc.cloudfront.net (CloudFront)
+      - 1.1 cf1b60951243f65a6efda5320587b9ca.cloudfront.net (CloudFront)
       x-amz-cf-id:
-      - C31swEDczSTBGrpyGtcEYO_NJkvxfld8rh9dQQFh4cCr0U6EAyEj4Q==
+      - o2x4Tx4FYfweqBOg9X_mD1GfQNiLaPdP6Ab2V8l2saufAnHNe7_Ctg==
       x-amz-cf-pop:
       - ORD58-P14
       x-amz-replication-status:
@@ -17322,27 +17320,27 @@ interactions:
       numbers, and the current debates.\\n\\nFrom the text, produce:\\n- summary:
       the gist in 2-3 sentences, the key ideas, and the numbers worth remembering.
       The text of an episode may carry markers like [12:14] or [1:02:03] at roughly
-      one-minute intervals; give each key idea and number the marker nearest before
-      where it comes up, copied exactly, and null when the text has no markers. Skip
-      ads and sponsor reads.\\n- domain: the one broad domain the source belongs to.\\n-
-      topic: a short, reusable topic name under that domain (e.g. \\\"Stablecoins\\\",
-      \\\"Fed policy\\\", \\\"NFL quarterbacks\\\").\\n- tags: 3-8 short tags.\\n-
-      concepts: the key concepts the source relies on or teaches, as short noun phrases.\\n-
-      is_educational: true when the source teaches something worth remembering (how
-      things work, history, ideas, numbers). false for pure entertainment such as
-      banter, sports chat, jokes or gossip. A mostly entertaining source with real
-      teaching in it (e.g. how a contract works, why a play scheme succeeds) is still
-      true.\\n- cards: when is_educational is true, 3-5 open-recall review cards of
-      kind concept, mechanism (\\\"why does X cause Y\\\") or number (a rough figure
-      worth knowing). Each card asks ONE focused question, never a compound one with
-      several parts. Each answer is what a good response would cover in 1-3 sentences.
-      Avoid trivia that only matters to this one source. Cards come only from the
-      educational stretches of a source: a mostly entertaining show with one educational
-      segment gets cards for that segment; still 3-5. When is_educational is false,
-      cards is an empty list.\\n\\nWrite in plain, conversational English for a smart
-      reader who is new to the subject. Short sentences. Define any jargon the first
-      time it appears. Prefer concrete examples and rough numbers (\\\"~1 GW\\\",
-      not \\\"1.07 GW\\\").\"}"
+      one-minute intervals; give each key idea and number the time of the marker nearest
+      before where it comes up, copied exactly but without the brackets (12:14, 1:02:03),
+      and null when the text has no markers. Skip ads and sponsor reads.\\n- domain:
+      the one broad domain the source belongs to.\\n- topic: a short, reusable topic
+      name under that domain (e.g. \\\"Stablecoins\\\", \\\"Fed policy\\\", \\\"NFL
+      quarterbacks\\\").\\n- tags: 3-8 short tags.\\n- concepts: the key concepts
+      the source relies on or teaches, as short noun phrases.\\n- is_educational:
+      true when the source teaches something worth remembering (how things work, history,
+      ideas, numbers). false for pure entertainment such as banter, sports chat, jokes
+      or gossip. A mostly entertaining source with real teaching in it (e.g. how a
+      contract works, why a play scheme succeeds) is still true.\\n- cards: when is_educational
+      is true, 3-5 open-recall review cards of kind concept, mechanism (\\\"why does
+      X cause Y\\\") or number (a rough figure worth knowing). Each card asks ONE
+      focused question, never a compound one with several parts. Each answer is what
+      a good response would cover in 1-3 sentences. Avoid trivia that only matters
+      to this one source. Cards come only from the educational stretches of a source:
+      a mostly entertaining show with one educational segment gets cards for that
+      segment; still 3-5. When is_educational is false, cards is an empty list.\\n\\nWrite
+      in plain, conversational English for a smart reader who is new to the subject.
+      Short sentences. Define any jargon the first time it appears. Prefer concrete
+      examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\"}"
     headers:
       accept:
       - application/json
@@ -17353,7 +17351,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '44488'
+      - '44542'
       content-type:
       - application/json
       host:
@@ -17384,124 +17382,137 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-5-5","id":"msg_011CghFK6UnFP4j6PGZ6xgik","type":"message","role":"assistant","content":[{"type":"text","text":"{\"summary\":{\"gist\":\"Darknet
-        Diaries episode on Blackshades, a $40 remote access trojan (RAT) sold openly
-        by Alex Yucel and Michael Hogue from 2010. It let attackers secretly control
-        victims'' computers, watch through webcams, steal passwords, and extort people.
-        Buyers spied on women, and the FBI and police in many countries eventually
-        ran a coordinated takedown in 2014.\",\"key_ideas\":[{\"timestamp\":\"[02:03]\",\"idea\":\"Blackshades
-        was sold as a normal-looking surveillance product, but it was really a remote
-        access trojan (RAT): a tool that lets someone secretly take full control of
-        another person''s computer.\"},{\"timestamp\":\"[03:00]\",\"idea\":\"Legality
-        depends on intent and consent. Monitoring software is legal when the person
-        being watched knows about it, but selling it to criminals or secretly installing
-        it on others is illegal.\"},{\"timestamp\":\"[06:00]\",\"idea\":\"A RAT can
-        read files, record every keystroke, steal logins, and turn on the webcam and
-        mic, all without the victim noticing. Blackshades also had a Spreader feature
-        that used the victim''s accounts to infect their friends, and a ransomware
-        feature.\"},{\"timestamp\":\"[08:01]\",\"idea\":\"Attackers usually needed
-        the victim to install the malware themselves. Common tricks were social engineering
-        (tricking people), fake embarrassing photo or package-delivery messages, pirated
-        software, and USB sticks with autorun enabled on old versions of Windows.\"},{\"timestamp\":\"[16:01]\",\"idea\":\"Blackshades
-        spread through voyeurism communities and was used to spy on exes and women,
-        and also to target Syrian activists during the 2012 civil war.\"},{\"timestamp\":\"[18:02]\",\"idea\":\"Tools
-        are neutral. A tool made for one purpose can be used by either side, and governments
-        like off-the-shelf tools because they are cheap and hard to trace back to
-        them.\"},{\"timestamp\":\"[22:00]\",\"idea\":\"The FBI ran a fake stolen-credit-card
-        marketplace (a honeypot). Michael Hogue submitted Blackshades to it as a vendor,
-        which proved his intent to sell to criminals.\"},{\"timestamp\":\"[23:01]\",\"idea\":\"Operation
-        Card Shop in 2012 led to 24 arrests. Hogue cooperated and avoided prison,
-        but the Blackshades site stayed up and kept selling.\"},{\"timestamp\":\"[29:03]\",\"idea\":\"In
-        May 2014, law enforcement in many countries coordinated raids on Blackshades
-        users. Prosecutors had to build individual cases because a name on a customer
-        list alone is not proof of abuse.\"},{\"timestamp\":\"[34:00]\",\"idea\":\"Malware
-        evolves. Blackshades is now outdated, but newer RATs replaced it. The core
-        problem is an asymmetry of knowledge, where attackers rely on users not knowing
-        how to protect themselves.\"},{\"timestamp\":\"[35:00]\",\"idea\":\"Practical
-        defenses include verifying suspicious messages from friends through another
-        channel, encrypting sensitive data, using fewer apps, unique passwords and
-        emails per account, updated software, and covering cameras.\"}],\"numbers\":[{\"timestamp\":\"[02:03]\",\"fact\":\"Blackshades
-        cost $40 and was sold openly from 2010.\"},{\"timestamp\":\"[19:00]\",\"fact\":\"The
-        FBI found Blackshades had infected more than 500,000 computers in over 100
-        countries and made over $350,000 in sales, with about 6,000 customer accounts.\"},{\"timestamp\":\"[23:01]\",\"fact\":\"Operation
-        Card Shop led to 24 arrests in 8 countries; Hogue got 5 years'' probation
-        and had to forfeit $40,000.\"},{\"timestamp\":\"[30:01]\",\"fact\":\"The May
-        2014 global operation led to 97 arrests and 359 searches in about 19 countries.\"},{\"timestamp\":\"[30:01]\",\"fact\":\"One
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CghFjN44yJ8Ass1XwptvT","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"{\"summary\":{\"gist\":\"This
+        Darknet Diaries episode tells the story of Blackshades, a $40 remote access
+        trojan (RAT) sold openly online from 2010. Its makers marketed it as a surveillance
+        tool, but buyers used it to spy on women through webcams, extort victims,
+        and spread malware, until a long FBI investigation and a 2014 worldwide raid
+        shut much of it down. The episode ends with practical advice on staying safe
+        from malware.\",\"key_ideas\":[{\"timestamp\":\"02:03\",\"idea\":\"Alex Yucel
+        and Michael Hogue began selling Blackshades in 2010. It let an attacker remotely
+        control a victim''s computer, read files, log keystrokes, lock data, and turn
+        on the webcam.\"},{\"timestamp\":\"03:00\",\"idea\":\"Blackshades was marketed
+        as legal monitoring software with a cheerful About Us page, but it was sold
+        on hacker forums to people expected to abuse it. Courts look at intent, so
+        selling it to criminals and using it without consent are both illegal.\"},{\"timestamp\":\"05:02\",\"idea\":\"RAT
+        stands for Remote Access Trojan. It works like legitimate remote support,
+        but the attacker runs it silently and has no one''s permission.\"},{\"timestamp\":\"06:00\",\"idea\":\"Blackshades
+        had a Spreader feature that used a victim''s social media and chat accounts
+        to infect their friends. Its ransomware feature locked files and demanded
+        payment.\"},{\"timestamp\":\"08:01\",\"idea\":\"Attackers needed social engineering
+        to get the malware installed, because no one would knowingly install it. Common
+        tricks included fake embarrassing photo links, fake package delivery emails,
+        pirated games, and infected USB sticks.\"},{\"timestamp\":\"11:01\",\"idea\":\"Old
+        Windows versions had an autorun feature that ran commands from a USB stick
+        as soon as it was plugged in. Attackers used this to infect machines in seconds.
+        Autorun is off by default now.\"},{\"timestamp\":\"13:01\",\"idea\":\"Stefan
+        Rigo of Leeds bought Blackshades and infected his ex-girlfriend''s computer.
+        He then infected more than a dozen women, watching them through their webcams.
+        The camera light was disabled, so victims had no sign they were being watched.\"},{\"timestamp\":\"16:01\",\"idea\":\"Syrian
+        activists were targeted with Blackshades through links sent from compromised
+        Skype accounts. The Syrian government used it to spy on opposition activists
+        during the civil war.\"},{\"timestamp\":\"19:00\",\"idea\":\"Victims received
+        extortion emails demanding Bitcoin or, in worse cases, sexual content. Many
+        victims stayed silent out of embarrassment and fear.\"},{\"timestamp\":\"23:01\",\"idea\":\"In
+        2012 the FBI ran a fake dark web stolen-card marketplace called Operation
+        Card Shop, which led to 24 arrests. Michael Hogue submitted Blackshades to
+        the FBI as a vendor, which was clear evidence of intent. He cooperated and
+        got probation and community service.\"},{\"timestamp\":\"25:00\",\"idea\":\"Cassidy
+        Wolf, Miss Teen USA 2013, was sextorted by a former high school classmate,
+        Jared Abrahams, who had hacked at least two dozen women and girls. He got
+        18 months in federal prison. Wolf later spoke publicly about webcam hacking.\"},{\"timestamp\":\"27:00\",\"idea\":\"The
+        FBI seized Blackshades servers and got a customer list of more than 6,000
+        accounts. It then spent months building individual cases, because buying the
+        tool alone was not proof of crime.\"},{\"timestamp\":\"29:03\",\"idea\":\"On
+        May 19, 2014, law enforcement in many countries carried out a coordinated
+        takedown of Blackshades users. It led to 97 arrests and 359 searches, and
+        the FBI called it one of the largest global cyber operations in history.\"},{\"timestamp\":\"34:00\",\"idea\":\"Blackshades
+        is now mostly obsolete, but malware keeps evolving. The core problem is an
+        asymmetry of knowledge: attackers know more than most users, and malware is
+        designed to stay hidden.\"},{\"timestamp\":\"35:00\",\"idea\":\"Safety tips
+        include verifying suspicious messages from friends through a separate channel,
+        encrypting sensitive files, covering cameras, using a unique password and
+        email per account, keeping software updated, and minimizing installed apps.\"}],\"numbers\":[{\"timestamp\":\"02:03\",\"fact\":\"Blackshades
+        cost about $40 to buy.\"},{\"timestamp\":\"23:01\",\"fact\":\"Michael Hogue
+        got five years of probation, had to forfeit $40,000, and had to do 500 hours
+        of community service.\"},{\"timestamp\":\"25:00\",\"fact\":\"Jared Abrahams
+        hacked at least two dozen women and girls, aged about 16 to the early twenties,
+        and got 18 months in federal prison.\"},{\"timestamp\":\"26:00\",\"fact\":\"By
+        May 2014, Blackshades had reportedly infected over a million computers worldwide.\"},{\"timestamp\":\"27:00\",\"fact\":\"The
+        FBI counted over 500,000 infected computers in more than 100 countries, about
+        $350,000 in sales, and more than 6,000 customer accounts.\"},{\"timestamp\":\"29:03\",\"fact\":\"The
+        May 2014 global takedown led to 97 arrests and 359 searches across many countries.\"},{\"timestamp\":\"30:01\",\"fact\":\"One
         18-year-old in the Netherlands allegedly infected 2,000 computers.\"}]},\"domain\":\"Security\",\"topic\":\"Remote
-        access trojans\",\"tags\":[\"malware\",\"RAT\",\"Blackshades\",\"social engineering\",\"sextortion\",\"cybercrime\",\"FBI\"],\"concepts\":[\"remote
-        access trojan (RAT)\",\"malware\",\"social engineering\",\"phishing\",\"sextortion\",\"ransomware\",\"honeypot
-        sting\",\"intent and legality of hacking tools\",\"autorun\",\"botnet\",\"cooperating
-        witness\",\"operation takedown\"],\"is_educational\":true,\"cards\":[{\"kind\":\"concept\",\"question\":\"What
+        access trojans (RATs)\",\"tags\":[\"malware\",\"Blackshades\",\"social engineering\",\"webcam
+        hacking\",\"sextortion\",\"FBI operations\",\"cybersecurity basics\"],\"concepts\":[\"Remote
+        access trojan (RAT)\",\"Social engineering\",\"Sextortion\",\"Ransomware\",\"Autorun
+        on USB drives\",\"Legal intent in cybercrime\",\"Honeypot sting operation\",\"Botnet\",\"Malware
+        evolution\",\"Operational security for individuals\"],\"is_educational\":true,\"cards\":[{\"kind\":\"concept\",\"question\":\"What
         is a remote access trojan (RAT)?\",\"answer\":\"A RAT is malware that lets
-        an attacker secretly control someone else''s computer from afar. The attacker
-        can see files, record keystrokes, and use the webcam, and the victim usually
-        doesn''t notice. It is like remote IT support, but used maliciously.\"},{\"kind\":\"mechanism\",\"question\":\"Why
-        do attackers usually need a victim to install malware themselves?\",\"answer\":\"Most
-        computers won''t accept unknown software on their own, so attackers trick
-        people into installing it. They use fake messages, pirated downloads, phishing
-        links, or infected USB sticks that look harmless. Exploiting human trust is
-        often easier than exploiting a technical flaw.\"},{\"kind\":\"mechanism\",\"question\":\"How
-        did the FBI catch Blackshades'' co-creator Michael Hogue?\",\"answer\":\"The
-        FBI ran a fake stolen-credit-card marketplace on the dark web and vetted vendors
-        by asking them to send tools. Hogue submitted Blackshades as a credit card
-        scraping tool, which proved he knew it would be used by criminals. That evidence
-        of intent led to his arrest.\"},{\"kind\":\"number\",\"question\":\"Roughly
-        how many computers did Blackshades infect by 2014?\",\"answer\":\"Over 500,000
-        computers in more than 100 countries, according to the FBI. Its sales were
-        over $350,000, and there were about 6,000 customer accounts. The tool cost
-        about $40.\"},{\"kind\":\"concept\",\"question\":\"Why does legality of surveillance
-        software depend on intent and consent?\",\"answer\":\"Monitoring software
-        is legal when the person being watched knows about it and agrees, like a company''s
-        employee monitoring policy. It becomes illegal when it is installed secretly
-        or sold to people planning to abuse it. Courts look at whether the seller
-        or user intended to commit a crime.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":14434,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2079,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+        an attacker take remote control of a victim''s computer without the victim
+        knowing. It works like legitimate remote-support software, but it runs silently
+        and the attacker can see files, keystrokes, passwords, and the webcam.\"},{\"kind\":\"mechanism\",\"question\":\"Why
+        did RAT operators rely on social engineering instead of infecting computers
+        directly?\",\"answer\":\"A RAT cannot install itself on a machine that is
+        not already compromised, and almost no one knowingly installs spyware. Attackers
+        therefore trick the victim into running it, using fake photos, fake delivery
+        emails, pirated software, or infected USB sticks.\"},{\"kind\":\"mechanism\",\"question\":\"Why
+        does intent decide whether selling a tool like Blackshades is illegal?\",\"answer\":\"Many
+        monitoring tools are legal, so courts look at what the seller knew and what
+        the buyers were likely to do. Selling a tool to people who will use it for
+        crimes, or marketing it as a cover for spying, counts as clear intent to facilitate
+        crime.\"},{\"kind\":\"number\",\"question\":\"Roughly how many computers did
+        the FBI count as infected by Blackshades?\",\"answer\":\"The FBI counted over
+        500,000 infected computers in more than 100 countries. The source also reports
+        that by May 2014 the total had reached over a million worldwide, so the exact
+        figure depends on the count used.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":14454,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":3853,"output_tokens_details":{"thinking_tokens":1425},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '9995000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-04T04:21:20Z'
+      - '2026-11-04T04:26:50Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '1998000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-04T04:21:29Z'
+      - '2026-11-04T04:27:06Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-04T04:21:19Z'
+      - '2026-11-04T04:26:49Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11993000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-04T04:21:20Z'
+      - '2026-11-04T04:26:50Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a550d4ce3fb9606c-ORD
+      - a550dcd88eff6cba-ORD
       connection:
       - keep-alive
       content-length:
-      - '6516'
+      - '12935'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Wed, 04 Nov 2026 04:21:29 GMT
+      - Wed, 04 Nov 2026 04:27:06 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=9789
+      - x-originResponse;dur=17292
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-be0ebecdcb491a2917ccb17e4d66ca59-7af3d0cd5ba9fdc0-01
+      - 00-90b4993c2f0ca7628eea0adf6e7c9825-81a73e7d1cb16bf4-01
       transfer-encoding:
       - chunked
       vary:
@@ -18087,159 +18098,158 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: "{\"model\":\"claude-sonnet-5-5\",\"id\":\"msg_011CghFKpQg6EKU91nshgtEW\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"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\"},{\"type\":\"text\",\"text\":\"#
-        Primer: Background for \\\"Blackshades\\\" (Darknet Diaries, Ep. 182)\\n\\nThis
-        episode is a true-crime story about a cheap piece of spyware. The host assumes
-        you know a handful of terms and some world context. Here they are.\\n\\n##
-        The basic vocabulary\\n\\n**Malware** is any software built to harm you or
-        work against your interests. That includes viruses, spyware, and ransomware.
-        The word is short for \\\"malicious software.\\\"\\n\\n**A Trojan** is malware
-        disguised as something harmless. The name comes from the Trojan Horse. You
-        install it yourself because you think it's something else, like a game, a
-        photo, or a document.\\n\\n**A RAT (Remote Access Trojan)** is a Trojan that
-        lets someone else control your computer from far away. Legitimate remote-access
-        tools exist. IT staff use them to fix your laptop from another city. A RAT
-        does the same thing, but secretly and without your permission.\\n\\n**A keylogger**
-        records every key you press. That captures passwords, card numbers, and private
-        messages as you type them.\\n\\n**Ransomware** scrambles (encrypts) your files
-        so you can't open them. The attacker then demands money for the key to unscramble
-        them.\\n\\n**A botnet** is a network of hacked computers that an attacker
-        controls as a group. One common use is a **DDoS attack** (distributed denial
-        of service), where thousands of machines flood a website with traffic until
-        it crashes.\\n\\n**Sextortion** is blackmail using intimate images or video.
-        The attacker threatens to publish them unless the victim pays or sends more
-        material.\\n\\n## How malware gets onto a machine\\n\\nSoftware like this
-        can't usually force its way in. Most of the time you have to be tricked into
-        running it. That trickery is called **social engineering**: manipulating people
-        rather than breaking technology.\\n\\nThe most common form is **phishing**.
-        You get a message that looks legitimate, such as a \\\"missed package\\\"
-        notice or a note from a friend saying \\\"is this you?!\\\" It pushes you
-        to click a link or open a file. The file is the malware.\\n\\nOther routes
-        the episode touches on:\\n\\n- **Bundled software.** Free downloads sometimes
-        ship with extra programs tucked into the installer. Most are just annoying
-        \\\"junkware,\\\" but the same trick can carry something worse.\\n- **Cracked
-        (pirated) software.** Someone removes the payment check from a paid program
-        and shares it free. Criminals often add malware to these copies, because people
-        who want something for free tend to click past warnings.\\n- **USB Autorun.**
-        Older versions of Windows (XP, Vista) would automatically run a specific file
-        on a USB stick the moment you plugged it in. That made quick infections easy
-        for anyone with a few seconds alone with your computer. Newer Windows turned
-        this off by default.\\n\\n## Why the law cares about \\\"intent\\\"\\n\\nA
-        key idea in the episode is that many tools are **dual-use**. A kitchen knife
-        can cook dinner or hurt someone. Parental-control apps and employee-monitoring
-        software are legal and common. They work much like spyware, but the person
-        being watched knows, or has agreed to it.\\n\\nSo the question isn't only
-        \\\"what does the software do?\\\" Courts also ask what the seller and the
-        user meant to do with it. Selling a tool to people you know will break the
-        law with it is treated very differently from selling a general-purpose tool.\\n\\nThe
-        main US law in the story is the **Computer Fraud and Abuse Act (CFAA)**, passed
-        in the 1980s. It makes it a crime to access a computer without authorization
-        or to spread damaging code. \\\"Conspiracy\\\" in a charge means agreeing
-        with others to commit a crime, even if you didn't do every part yourself.\\n\\n##
-        The underground marketplace\\n\\nThe episode mentions **hacker forums** and
-        the **dark web**. Here's the difference:\\n\\n- The **regular web** is what
-        search engines index.\\n- The **dark web** is a part of the internet you reach
-        only with special software, such as Tor, which hides who is connecting to
-        whom. It's used for privacy, but also for illegal markets.\\n\\nA **carding
-        forum** is a marketplace where criminals trade stolen credit card numbers
-        (\\\"carders\\\" are the people who do it). These markets run on a fragile
-        kind of trust, since everyone is a criminal and nobody can sue. Sellers often
-        have to prove their products work before others will buy.\\n\\nA **honeypot**
-        is a trap that looks like a real target or marketplace but is run by defenders
-        to watch and catch attackers. A **sting operation** is any law-enforcement
-        setup where agents pose as criminals to gather evidence. Keep both ideas in
-        mind as you listen.\\n\\n## Law enforcement players\\n\\n- **The FBI** is
-        the main US federal investigative agency. It handles cybercrime among many
-        other things.\\n- **The US Attorney for the Southern District of New York**
-        is the top federal prosecutor for the area around Manhattan. That office has
-        brought many high-profile cybercrime cases.\\n- **A cooperating witness**
-        is a defendant who helps investigators, usually in exchange for a lighter
-        sentence.\\n- **Extradition** is the legal process of sending someone arrested
-        in one country to face charges in another. It can take a long time.\\n- **Sealed
-        indictment** means charges are filed but kept secret, often so a suspect doesn't
-        flee before an arrest.\\n\\nThe host also quotes a \\\"99% conviction rate\\\"
-        for the FBI. That figure comes with a lot of context (most defendants plead
-        guilty), but the point for the story is that prosecutors only bring cases
-        they're confident they can win.\\n\\n## The Syria context\\n\\nOne segment
-        covers Syria, so some history helps.\\n\\nThe **Arab Spring** was a wave of
-        protests against authoritarian governments across the Middle East and North
-        Africa, starting around 2010\u20132011. In Syria, protests against President
-        **Bashar al-Assad** turned into a long and brutal civil war. The government
-        was widely accused of terrible abuses against civilians, including chemical
-        weapons.\\n\\nActivists used Skype and social media to organize, which made
-        their computers valuable targets. Two research groups mentioned in the episode
-        tracked the spyware aimed at them:\\n\\n- **The Electronic Frontier Foundation
-        (EFF)** is a US nonprofit that defends digital rights and civil liberties.\\n-
-        **Citizen Lab** is a research group at the University of Toronto that investigates
-        digital threats against journalists, activists, and dissidents.\\n\\n**Anonymous**
-        is a loose, leaderless collective of online activists known for hacking and
-        disruption campaigns, including some in support of Arab Spring protesters.
-        The episode points out an irony about tools like these being used by both
-        sides.\\n\\n**DarkComet** is a similar RAT mentioned as a predecessor. It
-        also got caught up in Syria.\\n\\n## Smaller references\\n\\n- **\\\"Off-the-shelf\\\"
-        tools** are ready-made programs anyone can buy. Governments sometimes prefer
-        them because using a cheap public tool doesn't expose their own, more secret
-        capabilities.\\n- **Bitcoin** is a digital currency that was a favored way
-        to collect ransoms, since payments are harder to trace than bank transfers.\\n-
-        **Out-of-band verification** is the host's advice to confirm a suspicious
-        message through a different channel. For example, if a friend texts you a
-        weird link, call them instead of replying.\\n- **Attack surface** means all
-        the places an attacker could get in. Fewer apps means fewer openings.\\n\\n##
-        About the show\\n\\n*Darknet Diaries* is a podcast hosted by Jack Rhysider.
-        Each episode tells a true story from the world of hacking and cybercrime.
-        He narrates in a casual, explanatory style and usually ends with practical
-        security tips. That's why the end of this episode turns into a list of advice.\\n\\n##
-        What to listen for\\n\\nAs you listen, notice how often the story comes back
-        to two things. One is how cheap and easy the tool was to use. The other is
-        how much depended on proving what people *meant* to do with it. Those two
-        themes explain most of what happens.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":13009,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":2829,\"output_tokens_details\":{\"thinking_tokens\":358},\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
+      string: "{\"model\":\"claude-sonnet-5-5\",\"id\":\"msg_011CghFkeSLYfTwtB39o5CoY\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"text\",\"text\":\"#
+        Primer: Remote Access Trojans, Dual-Use Software, and How Cybercrime Gets
+        Prosecuted\\n\\nThis primer covers the background behind the Darknet Diaries
+        episode on Blackshades. It explains the ideas the episode treats as common
+        knowledge, so you can follow the story without stopping to look things up.\\n\\n##
+        What is malware, and what is a RAT?\\n\\n**Malware** is any software built
+        to do something harmful or unwanted on your device. The word is short for
+        \\\"malicious software.\\\" Viruses, spyware, and ransomware are all types.\\n\\nA
+        **Trojan** is malware that pretends to be something else. The name comes from
+        the Trojan Horse. You think you're installing a game, a photo, or a document.
+        The harmful program rides along inside it.\\n\\nA **RAT**, or Remote Access
+        Trojan, is a Trojan that lets someone else control your computer from far
+        away. Legitimate remote-access tools exist. IT departments use them to fix
+        your laptop without visiting your desk. A RAT does the same job, but it hides,
+        and you never agreed to it.\\n\\nTypical RAT abilities include:\\n\\n- **Keylogging:**
+        secretly recording every key you press, which captures passwords and messages.\\n-
+        **Screen capture:** taking pictures of what's on your display.\\n- **File
+        access:** browsing, copying, or deleting your files.\\n- **Webcam and microphone
+        hijacking:** switching them on without your knowledge.\\n\\nYou will also
+        hear about **ransomware**, which scrambles your files with encryption and
+        demands payment for the key. And **botnets**, which are large groups of infected
+        computers that an attacker controls together. Botnets are often used for **DDoS
+        attacks** (distributed denial of service), where thousands of machines flood
+        a website with traffic until it crashes.\\n\\n## \\\"Dual-use\\\" software
+        and the problem of intent\\n\\nMany tools can be used for good or harm. Parental-control
+        apps and employee-monitoring software are legal and common. Your employer
+        may well track which apps you open on a work laptop.\\n\\nThe legal difference
+        usually comes down to two things:\\n\\n1. **Consent.** Does the person being
+        monitored know?\\n2. **Intent.** What did the seller or user mean the tool
+        to do?\\n\\nProsecutors have to show intent, which is hard. They can't read
+        minds, so they look for evidence: how the product was advertised, where it
+        was sold, what the seller said in private, and who the customers were. A friendly
+        website with an \\\"About Us\\\" page proves little if the seller is also
+        chatting with criminals on hacker forums.\\n\\nKeep this in mind while listening.
+        Much of the story is about how that gap between the public face and the real
+        purpose gets exposed.\\n\\n## Social engineering: hacking the person, not
+        the machine\\n\\nMost malware can't just reach through the internet and install
+        itself. It needs help. **Social engineering** means tricking a person into
+        doing something that weakens their own security. **Phishing** is the best-known
+        version. It uses a fake email, text, or chat message to get you to click a
+        link or open a file.\\n\\nCommon tricks include:\\n\\n- A message from a \\\"friend\\\"
+        saying \\\"Is this you?!\\\" with a link. The friend's account may have been
+        hijacked.\\n- A fake delivery notice.\\n- **Cracked or pirated software.**
+        These are illegally modified copies of paid programs, often shared on **peer-to-peer
+        (P2P)** networks, where users swap files directly with each other. Cracks
+        are a popular hiding place for malware.\\n- **USB sticks.** Older versions
+        of Windows (XP and Vista) had an **Autorun** feature. When you plugged in
+        a drive, Windows would automatically run a file on it called `autorun.inf`.
+        That made it easy to infect a machine in seconds. Later versions turned this
+        off by default.\\n\\nA related idea: **bundled software**, or \\\"junkware,\\\"
+        which the host opens with. An installer quietly adds extra programs you didn't
+        ask for. Mostly it's an annoyance, but it shows how easily you can end up
+        running software you didn't choose.\\n\\n## Who's who in the story\\n\\n-
+        **Darknet Diaries** is a long-running podcast of true stories about hackers
+        and cybercrime. Host Jack Rhysider tells them in narrative form.\\n- **The
+        FBI** is the main US federal law enforcement agency, and it handles most major
+        cybercrime cases. The episode also mentions the **US Attorney for the Southern
+        District of New York**, a federal prosecutor whose office handles many big
+        fraud and cyber cases.\\n- **The Electronic Frontier Foundation (EFF)** is
+        a digital-rights nonprofit. **Citizen Lab**, at the University of Toronto,
+        studies digital surveillance and its use against activists and journalists.
+        Both investigate malware aimed at people in politically dangerous situations.\\n-
+        **Anonymous** is a loose, leaderless collective of online activists known
+        for hacking and protest operations.\\n- **DarkComet** was an earlier RAT,
+        made by a French programmer. It comes up as a comparison.\\n\\n## Historical
+        context\\n\\n**The Syrian civil war and the Arab Spring.** In 2010\u20132011,
+        protests against authoritarian governments spread across the Middle East and
+        North Africa. This wave is called the **Arab Spring**. In Syria, the protests
+        turned into a civil war. The government of President Bashar al-Assad wanted
+        to find and silence opponents, and activists relied on computers and Skype
+        to organize. That made their machines valuable targets for surveillance.\\n\\n**Why
+        governments use cheap off-the-shelf tools.** Intelligence agencies have their
+        own advanced hacking tools. But using them risks exposing the technique. A
+        $40 commercial tool, by contrast, can't be traced back to the agency that
+        used it. The term for an agency's secret methods is **tradecraft**.\\n\\n**Sextortion.**
+        This is blackmail using intimate images or video, usually demanding more images,
+        money, or sexual acts. It is a serious crime, and the episode describes it
+        in some detail. Be prepared for some of that material to be disturbing.\\n\\n##
+        How stings and \\\"honeypots\\\" work\\n\\nA **honeypot** is a trap that looks
+        like a real target. Police sometimes run fake criminal marketplaces to attract
+        and identify criminals. The FBI did this in 2010 with a fake **carding** forum.
+        \\\"Carding\\\" means buying, selling, and using stolen credit card data.
+        Because criminal forums run on trust, sellers often have to prove their product
+        works before they're allowed in. That vetting step is what made the trap effective.\\n\\n**Operation
+        Card Shop** was the name for the resulting 2012 sting. The charge you'll hear
+        most is under the **Computer Fraud and Abuse Act (CFAA)**. It is the main
+        US federal law against unauthorized computer access and distributing malicious
+        code.\\n\\nTwo other legal ideas come up:\\n\\n- **Cooperating witness:**
+        a defendant who helps prosecutors, often in return for a lighter sentence.\\n-
+        **Extradition:** the formal process of sending a suspect from one country
+        to face charges in another.\\n\\n## Rough numbers to keep in mind\\n\\n- Price
+        of the tool: **~$40**.\\n- Machines infected, by the FBI's count: **500,000+**
+        across **100+ countries**. The episode cites higher figures for later years.\\n-
+        Customer accounts on the seller's list: **~6,000**.\\n- The 2014 global takedown:
+        **~100 arrests**, with law enforcement in **~20 countries** taking part.\\n\\nThe
+        FBI's conviction rate is often quoted at around 99%. That figure is mostly
+        driven by plea deals, in which defendants admit guilt rather than go to trial.
+        It helps explain why investigators are cautious before charging anyone. They
+        want cases they won't lose.\\n\\n## A few listening tips\\n\\n- The host uses
+        plain-language analogies, like comparing the software to a kitchen knife.
+        Watch for how he uses them to explain the legal questions.\\n- The episode
+        ends with practical security advice. A lot of it comes down to one idea: you
+        don't need perfect security, just to be a harder target than the next person.\\n\\nYou
+        now have enough background to follow the story without getting lost in the
+        terminology.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":13009,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":2535,\"output_tokens_details\":{\"thinking_tokens\":0},\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '9995000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-04T04:21:30Z'
+      - '2026-11-04T04:27:07Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '1999000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-04T04:21:58Z'
+      - '2026-11-04T04:27:33Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-04T04:21:29Z'
+      - '2026-11-04T04:27:06Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11994000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-04T04:21:30Z'
+      - '2026-11-04T04:27:07Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a550d50c48c27a44-ORD
+      - a550dd454b7150d3-ORD
       connection:
       - keep-alive
       content-length:
-      - '10562'
+      - '8466'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Wed, 04 Nov 2026 04:21:58 GMT
+      - Wed, 04 Nov 2026 04:27:33 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=29200
+      - x-originResponse;dur=27007
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-8102467883e34930d126d2fcd559a6e7-5e6d30c75c09b4b5-01
+      - 00-829cbf6b0e0f6e4ecc31d59661da0db4-e4de6d309bbc5552-01
       transfer-encoding:
       - chunked
       vary:

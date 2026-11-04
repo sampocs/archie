@@ -52,3 +52,20 @@ def test_model_text_caps_timed_text_at_600000_and_untimed_at_200000() -> None:
     assert prompts.model_text(timed).startswith("[00:00] §")
 
     assert len(prompts.model_text({"text": "§" * 300_000})) == 200_000
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("[02:03]", "02:03"),
+        ("02:03", "02:03"),
+        ("[1:02:03]", "1:02:03"),
+        ("around 2 min", None),
+        ("[02:03", None),
+        ("", None),
+        (None, None),
+    ],
+)
+def test_clean_model_timestamp(raw: str | None, expected: str | None) -> None:
+    """Brackets are stripped; a valid time passes; anything else becomes None."""
+    assert timestamps.clean_model_timestamp(raw) == expected

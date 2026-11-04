@@ -31,7 +31,10 @@ appId: com.sampocs.archie
     timeout: 5000
 - tapOn:
     id: "add-url"
-- inputText: "https://www.paulgraham.com/greatwork.html"
+# Not add_link's article: that one is saved by a non-owner first, and re-sharing it merges into its failed row.
+- inputText: "https://paulgraham.com/ds.html"
+# The reaction row pushes Save under the keyboard; tapping the screen's hint text dismisses it.
+- tapOn: "Paste a link to save it."
 - tapOn:
     id: "intent-finished"
 - tapOn:
@@ -39,15 +42,18 @@ appId: com.sampocs.archie
 - tapOn:
     id: "add-save"
 # Saving lands on Library; open the source (its card shows the URL until the worker's title replaces it).
-- tapOn: ".*(paulgraham|How to Do Great Work).*"
-# One wait only: Maestro shares the timeout across consecutive waits. The primer is written after the summary, so
-# waiting for its toggle also covers the gist.
+- tapOn: ".*(paulgraham|Do Things that Don't Scale).*"
+# One wait only (Maestro shares the timeout across consecutive waits): the header's "Processing…" goes away once
+# both the summary and the primer have synced.
 - extendedWaitUntil:
-    visible:
-      id: "primer-toggle"
+    notVisible: "Processing…"
     timeout: 180000
 - assertVisible:
     id: "source-gist"
+- scrollUntilVisible:
+    element:
+      id: "primer-toggle"
+    timeout: 20000
 - tapOn:
     id: "primer-toggle"
 - assertVisible: "▾ Background you might need"

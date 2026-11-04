@@ -65,8 +65,8 @@ export async function setSessionKey(key: string): Promise<void> {
 
 // Signing out revokes the server session (best effort, so it works offline) and wipes the local copy, so the next
 // person to sign in on this device never sees it. The epoch is bumped first, synchronously, so sync runs already in
-// flight stop writing before anything else happens. The wipe is one transaction (a failure leaves the old data
-// intact, never half-deleted), and the store flips to signedOut in `finally` because the Keychain key is already
+// flight stop writing before anything else happens. The wipe is one transaction covering every synced table, so the
+// next account starts empty (a failure leaves the old data intact, never half-deleted), and the store flips to signedOut in `finally` because the Keychain key is already
 // gone: a local-db failure must not leave the UI signedIn without a key.
 export async function clearSession(): Promise<void> {
   bumpSessionEpoch();
@@ -77,6 +77,8 @@ export async function clearSession(): Promise<void> {
     await SecureStore.deleteItemAsync(KEYCHAIN_KEY, LEGACY_OPTIONS);
     db.transaction((tx) => {
       tx.delete(schema.sources).run();
+      tx.delete(schema.artifacts).run();
+      tx.delete(schema.cards).run();
       tx.delete(schema.outbox).run();
       tx.delete(schema.syncState).run();
       seedSyncState();

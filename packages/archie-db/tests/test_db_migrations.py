@@ -37,7 +37,7 @@ def test_downgrade_then_upgrade_round_trips(test_database_url: str) -> None:
 
 
 def test_0002_backfills_existing_m1_sources(test_database_url: str) -> None:
-    """M1 `link` rows get a normalized_url equal to their url and become `unsupported`, not `pending`."""
+    """M1 `link` rows get a normalized_url equal to their url and become `unsupported`, with a fresh change_seq."""
     migrate.downgrade(test_database_url)
     migrate.upgrade(test_database_url, "0001")
     engine = session.engine_for(test_database_url)
@@ -52,10 +52,13 @@ def test_0002_backfills_existing_m1_sources(test_database_url: str) -> None:
             )
         )
 
+        old_change_seq: int = connection.execute(sqlalchemy.text("SELECT change_seq FROM sources")).scalar_one()
+
     migrate.upgrade(test_database_url)
 
     with engine.connect() as connection:
-        row = connection.execute(sqlalchemy.text("SELECT normalized_url, processing FROM sources")).one()
+        row = connection.execute(sqlalchemy.text("SELECT normalized_url, processing, change_seq FROM sources")).one()
+    assert row.change_seq > old_change_seq
     assert (row.normalized_url, row.processing) == ("https://example.com/old", "unsupported")
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))

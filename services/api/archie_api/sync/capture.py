@@ -219,7 +219,14 @@ def _build_source(
 
 
 def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSourcePayload) -> None:
-    """Fold a duplicate capture into `existing`: state moves forward only, given fields overwrite."""
+    """Fold a duplicate capture into `existing`: state moves forward only, given fields overwrite.
+
+    An M1 `link` row was never classified or processed, so a fresh share of its page classifies it now and starts the
+    pipeline when its kind is one the pipeline handles.
+    """
+    if existing.kind == models.SourceKind.LINK:
+        _reclassify_m1_source(db, existing=existing)
+
     if payload.intent == models.SourceIntent.FINISHED:
         existing.intent = models.SourceIntent.FINISHED.value
         if existing.state == models.SourceState.QUEUED:
@@ -246,6 +253,17 @@ def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSource
     existing.updated_at = sqlalchemy.func.now()
     existing.change_seq = changes.next_change_seq()
     db.flush()
+
+
+def _reclassify_m1_source(db: orm.Session, *, existing: models.Source) -> None:
+    """Give an M1 `link` source its real kind, and start the pipeline if that kind is processed."""
+    url_kind = urls.detect_kind(existing.url)
+    existing.kind = models.SourceKind(url_kind).value
+    if url_kind not in _PROCESSED_KINDS:
+        return
+
+    pipeline.set_processing(db, source=existing, status=models.ProcessingStatus.PENDING)
+    pipeline.enqueue_steps(db, source=existing, steps=[models.JobKind.FETCH_CONTENT])
 
 
 def _add_capture(db: orm.Session, *, source_id: uuid.UUID, capture: _CapturePayload) -> None:

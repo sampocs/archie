@@ -63,9 +63,10 @@ def _upgrade_sources() -> None:
         ),
     )
 
-    # Existing rows are M1 `link` captures the pipeline can't process; their url was never normalized.
+    # Existing rows are M1 `link` captures the pipeline can't process; their url was never normalized. A fresh
+    # change_seq makes phones that already pulled them re-pull, so they replace their local default of 'pending'.
     op.execute("UPDATE sources SET normalized_url = url")
-    op.execute("UPDATE sources SET processing = 'unsupported'")
+    op.execute("UPDATE sources SET processing = 'unsupported', change_seq = nextval('change_seq')")
     op.alter_column("sources", "normalized_url", nullable=False)
     op.create_index("ix_sources_user_id_normalized_url", "sources", ["user_id", "normalized_url"])
 

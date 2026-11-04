@@ -175,21 +175,10 @@ def test_rename_topic(authed: httpx.Client) -> None:
     other_id = _add(authed, "Equities")
     removed_id = _add(authed, "Gold")
     _push(authed, _action("remove_topic", {"id": removed_id}))
-    other_user = str(uuid.uuid4())
+    missing_id = str(uuid.uuid4())
 
-    assert (
-        _push(
-            authed,
-            _action(
-                "rename_topic",
-                {
-                    "id": topic_id,
-                    "name": "BONDS ",
-                },
-            ),
-        )["result"]
-        == "applied"
-    )
+    padded_rename = _action("rename_topic", {"id": topic_id, "name": "BONDS "})
+    assert _push(authed, padded_rename)["result"] == "applied"
     assert _push(authed, _action("rename_topic", {"id": topic_id, "name": "Fixed income"}))["result"] == "applied"
 
     assert _topics_by_id(authed)[topic_id]["name"] == "Fixed income"
@@ -199,7 +188,7 @@ def test_rename_topic(authed: httpx.Client) -> None:
     )
     _rejected(authed, "rename_topic", {"id": topic_id, "name": ""}, "topic name is empty")
     _rejected(authed, "rename_topic", {"id": removed_id, "name": "Silver"}, "topic not found")
-    _rejected(authed, "rename_topic", {"id": other_user, "name": "Silver"}, "topic not found")
+    _rejected(authed, "rename_topic", {"id": missing_id, "name": "Silver"}, "topic not found")
     assert other_id in _topics_by_id(authed)
 
 
@@ -257,6 +246,7 @@ def test_remove_topic_unfiles_its_live_sources_and_queues_filing(live_stack: Liv
 def test_restore_topic_brings_it_back_without_refiling(live_stack: LiveStack, authed: httpx.Client) -> None:
     """Restoring only clears removed_at; it queues no filing."""
     topic_id = _add(authed, "Rates")
+    source_id = _insert_source(live_stack, user_id=_user_id(authed), topic_id=topic_id, domain=FINANCE)
     _rejected(authed, "restore_topic", {"id": topic_id}, "topic is not removed")
     _push(authed, _action("remove_topic", {"id": topic_id}))
 
@@ -264,7 +254,7 @@ def test_restore_topic_brings_it_back_without_refiling(live_stack: LiveStack, au
 
     assert result["result"] == "applied"
     assert _topics_by_id(authed)[topic_id]["removed_at"] is None
-    assert _queued_jobs(live_stack, models.JobKind.FILE_TOPIC) == []
+    assert _queued_jobs(live_stack, models.JobKind.FILE_TOPIC) == [{"source_id": source_id}]
     _rejected(authed, "restore_topic", {"id": str(uuid.uuid4())}, "topic not found")
 
 
@@ -341,6 +331,36 @@ def test_choose_topics_creates_topics_marks_chosen_and_files_analyzed_sources(
     assert filed == set(analyzed)
     assert authed.get("/me").json()["topics_chosen"] is True
     _rejected(authed, "choose_topics", {"topics": chosen}, "topics already chosen")
+
+
+def test_a_second_choose_topics_is_rejected_across_requests_and_within_a_batch(
+    live_stack: LiveStack, authed: httpx.Client
+) -> None:
+    """Only the first picker submit counts: later ones are refused without new topics or filing jobs."""
+    user_id = _user_id(authed)
+    _insert_source(live_stack, user_id=user_id, summary=True)
+    first = [{"id": str(uuid.uuid4()), "domain": FINANCE, "name": "Rates"}]
+    second = [{"id": str(uuid.uuid4()), "domain": FINANCE, "name": "Bonds"}]
+    assert _push(authed, _action("choose_topics", {"topics": first}))["result"] == "applied"
+
+    _rejected(authed, "choose_topics", {"topics": second}, "topics already chosen")
+
+    assert len(_queued_jobs(live_stack, models.JobKind.FILE_TOPIC)) == 1
+
+
+def test_two_choose_topics_in_one_batch_reject_the_second(authed: httpx.Client) -> None:
+    """The in-batch pending timestamp still blocks a second submit."""
+    actions = [
+        _action("choose_topics", {"topics": [{"id": str(uuid.uuid4()), "domain": FINANCE, "name": "Rates"}]}),
+        _action("choose_topics", {"topics": [{"id": str(uuid.uuid4()), "domain": FINANCE, "name": "Bonds"}]}),
+    ]
+
+    response = authed.post("/sync/push", json={"actions": actions})
+    response.raise_for_status()
+
+    results = response.json()["results"]
+    assert [result["result"] for result in results] == ["applied", "rejected"]
+    assert results[1]["reason"] == "topics already chosen"
 
 
 def test_choose_topics_rejections_create_nothing(authed: httpx.Client) -> None:

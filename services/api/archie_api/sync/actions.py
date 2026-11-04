@@ -45,6 +45,10 @@ def apply_actions(db: orm.Session, *, user: models.User, actions: list[schemas.A
     everything before their first write: a handler that returns a reason does not undo what it already wrote.
     """
     changes.lock_user_writes(db, user.id)
+
+    # `user` was loaded before the lock, so a concurrent batch may have set this since; re-read it once here (not in
+    # the handler, where a refresh would overwrite this batch's own pending `func.now()`).
+    db.refresh(user, attribute_names=["topics_chosen_at"])
     results = [_apply_action(db, user=user, action=action) for action in actions]
     db.commit()
     return results

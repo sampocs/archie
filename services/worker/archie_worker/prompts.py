@@ -6,7 +6,7 @@ on every artifact, so old versions stay attributable.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from typing import Any
 
 from archie_db import models
@@ -15,6 +15,7 @@ from archie_worker import content, timestamps
 
 ANALYZE_PROMPT_VERSION = "analyze-v2"
 PRIMER_PROMPT_VERSION = "primer-v1"
+TOPIC_PRIMER_PROMPT_VERSION = "topic-primer-v1"
 
 # The model never sees more than this many characters of the source's text; timed text carries markers, so it gets more.
 MAX_TEXT_CHARACTERS = 200_000
@@ -74,6 +75,17 @@ reader already has, so the source is easy to follow. It is not a summary of the 
 Read the text, work out which concepts, players, history, and numbers the author takes for granted, and explain those. \
 Write for a smart beginner: friendly, no assumed jargon, a 5-8 minute read (roughly 900-1400 words). Use markdown with \
 short sections and a title. Don't reveal the source's own conclusions or story beats.
+
+{READING_VOICE}"""
+
+TOPIC_PRIMER_SYSTEM = f"""You write topic primers for a personal learning app. A topic primer gives the general \
+background on one topic (for example "How the Fed works" for the topic "Fed & monetary policy"): the core concepts, \
+how the machinery works, the key players, a little history, the rough numbers worth knowing, and the live debates. \
+It is about the topic, not about any one source.
+
+The user lists the titles of their own sources on the topic. Use them only to decide what to emphasize, never as \
+material to summarize. Write for a smart beginner: friendly, no assumed jargon, a 5-8 minute read (roughly 900-1400 \
+words). Use markdown with short sections and a title.
 
 {READING_VOICE}"""
 
@@ -145,3 +157,9 @@ def model_text(text_content: Mapping[str, Any]) -> str:
 def user_message(*, kind: models.SourceKind, title: str | None, url: str, text: str) -> str:
     """The source's details above its text (already capped by `model_text`) wrapped in `<text>` tags."""
     return f"Source kind: {kind.value}\nTitle: {title or '(none)'}\nURL: {url}\n\n<text>\n{text}\n</text>"
+
+
+def topic_primer_message(*, domain: str, topic: str, source_titles: Sequence[str]) -> str:
+    """The topic and its domain, then the user's source titles on it (for emphasis only)."""
+    titles = "\n".join(f"- {title}" for title in source_titles) or "- (none yet)"
+    return f"Domain: {domain}\nTopic: {topic}\n\nThe user's sources on this topic (for emphasis only):\n{titles}"

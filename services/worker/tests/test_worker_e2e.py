@@ -14,9 +14,9 @@ from collections.abc import Callable, Iterator
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-import vcr as vcr_module
 from archie_db import changes, jobs, models, session
-from archie_worker import handlers, loop
+from archie_testing import recording
+from archie_worker import errors, handlers, loop
 
 pytestmark = pytest.mark.postgres
 
@@ -47,13 +47,7 @@ def replay(request: pytest.FixtureRequest) -> Replay:
 
     Replay-only unless pytest is given `--record-mode`, so a normal run can never reach the network.
     """
-    recorder = vcr_module.VCR(
-        cassette_library_dir=str(CASSETTE_DIR),
-        record_mode=request.config.getoption("--record-mode") or "none",
-        # Keep recordings small, readable and free of per-request noise.
-        filter_headers=["authorization", "cookie", "set-cookie"],
-        decode_compressed_response=True,
-    )
+    recorder = recording.vcr_for(request, cassette_dir=CASSETTE_DIR)
     # A recorded failure may replay on every retry of a job.
     return lambda name: recorder.use_cassette(f"{name}.yaml", allow_playback_repeats=True)
 
@@ -161,17 +155,17 @@ def test_a_job_that_failed_once_succeeds_on_retry(engine: sqlalchemy.Engine, rep
 
 
 def test_only_jobs_running_too_long_are_requeued(engine: sqlalchemy.Engine) -> None:
-    """A job orphaned by a crash (running for 11 minutes) is re-queued; one running 5 minutes is left alone."""
+    """A job past STALE_AFTER is re-queued; one running 11 minutes (a two-timeout primer step) is left alone."""
     now = datetime.datetime.now(datetime.UTC)
     user_id = _add_user(engine)
     with sqlalchemy.orm.Session(engine) as db:
-        stale = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(minutes=11))
-        fresh = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(minutes=5))
+        stale = _running_job(db, user_id=user_id, started_at=now - loop.STALE_AFTER - datetime.timedelta(minutes=1))
+        fresh = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(minutes=11))
         db.commit()
         stale_id, fresh_id = stale.id, fresh.id
 
     with sqlalchemy.orm.Session(engine) as db:
-        requeued = loop.requeue_stale(db, now=now)
+        requeued = loop.requeue_stale(db, now=now, handlers=handlers.HANDLERS)
 
     assert requeued == 1
     with sqlalchemy.orm.Session(engine) as db:
@@ -184,14 +178,41 @@ def test_a_crashed_job_out_of_attempts_fails_instead_of_looping(engine: sqlalche
     now = datetime.datetime.now(datetime.UTC)
     user_id = _add_user(engine)
     with sqlalchemy.orm.Session(engine) as db:
-        job = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(minutes=11))
+        job = _running_job(db, user_id=user_id, started_at=now - loop.STALE_AFTER - datetime.timedelta(minutes=1))
         job.attempts = job.max_attempts = 3
         db.commit()
 
     with sqlalchemy.orm.Session(engine) as db:
-        loop.requeue_stale(db, now=now)
+        loop.requeue_stale(db, now=now, handlers=handlers.HANDLERS)
 
     assert _only_job(engine).status == models.JobStatus.FAILED.value
+
+
+def test_the_stale_sweep_runs_the_hook_only_for_jobs_it_fails(engine: sqlalchemy.Engine) -> None:
+    """A crash on the last attempt still tells the hook (GAVE_UP); a re-queued job is not final, so no hook."""
+    calls: list[tuple[int, str]] = []
+
+    def record(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+        calls.append((job.id, reason))
+
+    now = datetime.datetime.now(datetime.UTC)
+    user_id = _add_user(engine)
+    with sqlalchemy.orm.Session(engine) as db:
+        exhausted = _running_job(db, user_id=user_id, started_at=now - loop.STALE_AFTER - datetime.timedelta(minutes=1))
+        exhausted.attempts = exhausted.max_attempts
+        retryable = _running_job(db, user_id=user_id, started_at=now - loop.STALE_AFTER - datetime.timedelta(minutes=1))
+        retryable.max_attempts = retryable.attempts + 1
+        db.commit()
+        exhausted_id, retryable_id = exhausted.id, retryable.id
+
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=lambda db, job: None, on_final_failure=record)}
+    with sqlalchemy.orm.Session(engine) as db:
+        loop.requeue_stale(db, now=now, handlers=specs)
+
+    with sqlalchemy.orm.Session(engine) as db:
+        assert db.get_one(models.Job, exhausted_id).status == models.JobStatus.FAILED.value
+        assert db.get_one(models.Job, retryable_id).status == models.JobStatus.QUEUED.value
+    assert calls == [(exhausted_id, errors.FailureReason.GAVE_UP.value)]
 
 
 def test_an_idle_queue_runs_nothing(engine: sqlalchemy.Engine) -> None:
@@ -200,6 +221,102 @@ def test_an_idle_queue_runs_nothing(engine: sqlalchemy.Engine) -> None:
     _make_due(engine, seconds_from_now=60)
 
     assert loop.run_one(engine, handlers=handlers.HANDLERS) is False
+
+
+def test_a_permanent_error_fails_the_job_at_once_and_calls_the_hook_with_its_reason(engine: sqlalchemy.Engine) -> None:
+    """No retry for a permanent error: one attempt, the reason kept as last_error, the hook told the same reason."""
+    calls: list[tuple[int, str]] = []
+
+    def explode(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise errors.PermanentJobError("nope, for good")
+
+    def record(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+        calls.append((job.id, reason))
+
+    _add_source_and_job(engine, url=OG_PAGE_URL)
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=explode, on_final_failure=record)}
+
+    loop.run_one(engine, handlers=specs)
+
+    job = _only_job(engine)
+    assert (job.attempts, job.status, job.last_error) == (1, models.JobStatus.FAILED.value, "nope, for good")
+    assert calls == [(job.id, "nope, for good")]
+
+
+def test_a_job_out_of_attempts_calls_the_hook_with_the_gave_up_reason(engine: sqlalchemy.Engine) -> None:
+    """Retries do not call the hook; the last allowed attempt does, with the generic user-facing reason."""
+    calls: list[str] = []
+
+    def explode(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise RuntimeError("transient")
+
+    def record(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+        calls.append(reason)
+
+    _add_source_and_job(engine, url=OG_PAGE_URL)
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=explode, on_final_failure=record)}
+
+    for _ in range(3):
+        loop.run_one(engine, handlers=specs)
+        _make_due(engine)
+
+    assert _only_job(engine).status == models.JobStatus.FAILED.value
+    assert calls == [errors.FailureReason.GAVE_UP]
+
+
+def test_the_hook_commits_with_the_job_failure(engine: sqlalchemy.Engine) -> None:
+    """A hook writing to the source lands in the same transaction as the failed job."""
+    source_id = _add_source_and_job(engine, url=OG_PAGE_URL)
+
+    def explode(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING)
+
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=explode, on_final_failure=handlers.mark_source_failed)}
+
+    loop.run_one(engine, handlers=specs)
+
+    source = _source(engine, source_id)
+    assert source.processing == models.ProcessingStatus.FAILED
+    assert source.processing_error == errors.FailureReason.TEXT_MISSING
+    assert _only_job(engine).status == models.JobStatus.FAILED.value
+
+
+def test_mark_source_failed_skips_a_deleted_source(engine: sqlalchemy.Engine) -> None:
+    """A tombstone is not touched by the failure hook."""
+    source_id = _add_source_and_job(engine, url=OG_PAGE_URL)
+    with sqlalchemy.orm.Session(engine) as db:
+        db.get_one(models.Source, source_id).deleted_at = sqlalchemy.func.now()
+        db.commit()
+    seq_before = _source(engine, source_id).change_seq
+
+    def explode(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise errors.PermanentJobError("gone")
+
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=explode, on_final_failure=handlers.mark_source_failed)}
+    loop.run_one(engine, handlers=specs)
+
+    source = _source(engine, source_id)
+    assert (source.processing, source.change_seq) == (models.ProcessingStatus.PENDING, seq_before)
+
+
+def test_jobs_enqueued_together_run_in_enqueue_order(engine: sqlalchemy.Engine) -> None:
+    """Both jobs are due at the same instant (one transaction); they still run first-in, first-out."""
+    ran: list[models.JobKind] = []
+
+    def record_kind(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        ran.append(models.JobKind(job.kind))
+
+    user_id = _add_user(engine)
+    with sqlalchemy.orm.Session(engine) as db:
+        for kind in (models.JobKind.ANALYZE, models.JobKind.PRIMER, models.JobKind.FETCH_CONTENT):
+            jobs.enqueue(db, kind=kind, user_id=user_id, payload={})
+        db.commit()
+    specs = {kind: loop.HandlerSpec(run=record_kind) for kind in models.JobKind}
+
+    while loop.run_one(engine, handlers=specs):
+        pass
+
+    assert ran == [models.JobKind.ANALYZE, models.JobKind.PRIMER, models.JobKind.FETCH_CONTENT]
 
 
 def _add_user(engine: sqlalchemy.Engine) -> int:
@@ -221,6 +338,7 @@ def _add_source_and_job(engine: sqlalchemy.Engine, *, url: str) -> uuid.UUID:
                 id=source_id,
                 user_id=user_id,
                 url=url,
+                normalized_url=url,
                 kind=models.SourceKind.LINK.value,
                 state=models.SourceState.INBOX.value,
                 intent=models.SourceIntent.QUEUE.value,

@@ -12,8 +12,36 @@ export type PulledSource = {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
+  processing: string;
+  processing_error: string | null;
+  reaction: string | null;
+  note: string | null;
+  prep_me: boolean;
+  merged_into_id: string | null;
 };
-export type PullPage = { rows: { sources: PulledSource[] }; position: number; more: boolean };
+export type PulledArtifact = {
+  id: string;
+  source_id: string;
+  kind: string;
+  version: number;
+  content: unknown;
+  is_current: boolean;
+  created_at: string;
+};
+export type PulledCard = {
+  id: string;
+  source_id: string;
+  kind: string;
+  question: string;
+  answer: string;
+  created_at: string;
+  deleted_at: string | null;
+};
+export type PullPage = {
+  rows: { sources: PulledSource[]; artifacts: PulledArtifact[]; cards: PulledCard[] };
+  position: number;
+  more: boolean;
+};
 
 export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;

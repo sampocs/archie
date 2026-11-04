@@ -23,6 +23,7 @@ class TestSessionRequest(pydantic.BaseModel):
 
     apple_sub: str = "test-user"
     email: str | None = None
+    is_whitelisted: bool = False
 
 
 class TestSessionView(pydantic.BaseModel):
@@ -37,12 +38,16 @@ class TestSessionView(pydantic.BaseModel):
 def create_test_session(
     request: TestSessionRequest, db: Annotated[orm.Session, fastapi.Depends(deps.get_db)]
 ) -> TestSessionView:
-    """Upsert the user by `apple_sub` and start a session for them."""
+    """Upsert the user by `apple_sub` (optionally whitelisted) and start a session for them."""
     user = db.scalars(sqlalchemy.select(models.User).where(models.User.apple_sub == request.apple_sub)).first()
     if user is None:
         user = models.User(apple_sub=request.apple_sub, email=request.email)
         db.add(user)
         db.flush()
+
+    # Whitelisting normally follows OWNER_EMAILS at Apple sign-in; tests that need the owner's keys ask for it.
+    if request.is_whitelisted:
+        user.is_whitelisted = True
 
     session_key = sessions.create_session(db, user_id=user.id)
     db.commit()

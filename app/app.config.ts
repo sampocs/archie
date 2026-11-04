@@ -25,6 +25,18 @@ const config: ExpoConfig = {
       "expo-splash-screen",
       { image: "./assets/images/splash-icon.png", resizeMode: "contain", backgroundColor: "#F4F2EC" },
     ],
+    // Before expo-share-extension on purpose: mods run last-listed first, and this one patches its target.
+    "./plugins/withSharedKeychain.js",
+    [
+      "expo-share-extension",
+      {
+        activationRules: [{ type: "url" }, { type: "text" }],
+        preprocessingFile: "./preprocessing.js",
+        // The theme's light `bg` (#F4F2EC) as RGBA.
+        backgroundColor: { red: 244, green: 242, blue: 236, alpha: 1 },
+        height: 560,
+      },
+    ],
   ],
   extra: { apiUrl: process.env.EXPO_PUBLIC_API_URL },
   experiments: { typedRoutes: true },

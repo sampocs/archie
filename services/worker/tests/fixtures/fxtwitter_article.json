@@ -1,0 +1,1751 @@
+{
+ "status": {
+  "type": "status",
+  "url": "https://x.com/hwchase17/status/2116553654857867330",
+  "id": "2116553654857867330",
+  "text": "A lot of content engineering challenges have pretty standard solutions, which has lead to some engineers saying agent engineering is solved/boring\n\nTrue to some extent, but there are a bunch of (fun) new ones emerging as agents evolve! https://x.com/i/article/2116547440857718784",
+  "raw_text": {
+   "text": "A lot of content engineering challenges have pretty standard solutions, which has lead to some engineers saying agent engineering is solved/boring\n\nTrue to some extent, but there are a bunch of (fun) new ones emerging as agents evolve! https://t.co/N82RZTcFSD",
+   "display_text_range": [
+    0,
+    259
+   ],
+   "facets": [
+    {
+     "type": "url",
+     "indices": [
+      236,
+      259
+     ],
+     "original": "https://t.co/N82RZTcFSD",
+     "replacement": "https://x.com/i/article/2116547440857718784",
+     "display": "x.com/i/article/2116…"
+    }
+   ]
+  },
+  "author": {
+   "screen_name": "hwchase17",
+   "url": "https://x.com/hwchase17",
+   "id": "2728439146",
+   "followers": 138222,
+   "following": 600,
+   "likes": 17085,
+   "media_count": 700,
+   "statuses": 17795,
+   "name": "Harrison Chase",
+   "description": "@LangChain\n\nAlways hiring: https://www.langchain.com/careers",
+   "raw_description": {
+    "text": "@LangChain\n\nAlways hiring: https://t.co/D5Ut3loFO7",
+    "facets": [
+     {
+      "type": "mention",
+      "indices": [
+       0,
+       10
+      ],
+      "original": "LangChain",
+      "id": ""
+     },
+     {
+      "type": "url",
+      "indices": [
+       27,
+       50
+      ],
+      "original": "https://t.co/D5Ut3loFO7",
+      "replacement": "https://www.langchain.com/careers",
+      "display": "langchain.com/careers"
+     }
+    ]
+   },
+   "location": "",
+   "banner_url": "",
+   "avatar_url": "https://pbs.twimg.com/profile_images/1569345624935485442/R67C4wCQ_200x200.jpg",
+   "joined": "Tue Jul 29 19:22:50 +0000 2014",
+   "protected": false,
+   "website": null,
+   "verification": {
+    "verified": true,
+    "verified_at": null,
+    "type": "individual"
+   },
+   "type": "profile"
+  },
+  "replies": 208,
+  "reposts": 67,
+  "likes": 622,
+  "bookmarks": 1026,
+  "quotes": 34,
+  "embed_card": "tweet",
+  "created_at": "Sat Oct 31 15:31:29 +0000 2026",
+  "created_timestamp": 1793460689,
+  "possibly_sensitive": false,
+  "views": 87498,
+  "is_note_tweet": false,
+  "community_note": null,
+  "lang": "en",
+  "replying_to": null,
+  "media": {},
+  "article": {
+   "created_at": "2026-10-31T15:31:29.000Z",
+   "modified_at": "2026-10-31T15:31:29.000Z",
+   "id": "2116547440857718784",
+   "title": "New context engineering challenges in late 2026",
+   "preview_text": "It feels like everyone is converging on the same agent architecture: an LLM, running in a loop, calling tools, running in a sandbox. Claude Code - perhaps the first high profile manifestation of this",
+   "cover_media": {
+    "id": "QXBpTWVkaWE6DAAFCgABHV+BuVRaoAAKAAIAAAAAoqCtagAA",
+    "media_id": "2116552982871580672",
+    "media_info": {
+     "__typename": "ApiImage",
+     "color_info": {
+      "palette": [
+       {
+        "percentage": 96.28,
+        "rgb": {
+         "blue": 255,
+         "green": 241,
+         "red": 223
+        }
+       },
+       {
+        "percentage": 2.39,
+        "rgb": {
+         "blue": 243,
+         "green": 192,
+         "red": 138
+        }
+       },
+       {
+        "percentage": 1.33,
+        "rgb": {
+         "blue": 161,
+         "green": 144,
+         "red": 125
+        }
+       }
+      ]
+     },
+     "original_img_height": 960,
+     "original_img_url": "https://pbs.twimg.com/media/HV-BuVRaoAAm2Au.jpg",
+     "original_img_width": 2400
+    },
+    "media_key": "3_2116552982871580672"
+   },
+   "content": {
+    "blocks": [
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 0,
+        "length": 11,
+        "offset": 133
+       },
+       {
+        "key": 1,
+        "length": 11,
+        "offset": 239
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "3dn16",
+      "text": "It feels like everyone is converging on the same agent architecture: an LLM, running in a loop, calling tools, running in a sandbox. Claude Code - perhaps the first high profile manifestation of this - came out over a year and a half ago. Deep Agents, our agent harness, launched over a year ago. This pattern has been building for a while.",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [],
+      "inlineStyleRanges": [],
+      "key": "2ko7e",
+      "text": "There’s nothing bad with that convergence per se, but it has led to a sentiment among some AI engineers that I’ve talked to recently that “all the hard problems are solved” or “there’s no new AI engineering problems to solve”.",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 2,
+        "length": 19,
+        "offset": 79
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "bk0hs",
+      "text": "When people express this sentiment, I think they are largely talking about the context engineering practices we do to make agents work. And to some extent they are right - there are a lot of standard-ish context engineering solutions we’ve all arrived at:",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 3,
+        "length": 24,
+        "offset": 0
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "8gam",
+      "text": "Summarizing long threads when it gets to be too much for the context window",
+      "type": "unordered-list-item"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 4,
+        "length": 34,
+        "offset": 0
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "4dqk1",
+      "text": "Offloading large tool call results",
+      "type": "unordered-list-item"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 5,
+        "length": 6,
+        "offset": 0
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "4ibsb",
+      "text": "Skills for progressive disclosure",
+      "type": "unordered-list-item"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 6,
+        "length": 11,
+        "offset": 0
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "cgpuj",
+      "text": "Tool search to deal with a lot of tools",
+      "type": "unordered-list-item"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 7,
+        "length": 9,
+        "offset": 0
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "463pq",
+      "text": "Subagents for context isolation",
+      "type": "unordered-list-item"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 8,
+        "length": 12,
+        "offset": 10
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "4gdk9",
+      "text": "Bash as a primary tool",
+      "type": "unordered-list-item"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 9,
+        "length": 42,
+        "offset": 277
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "18a6l",
+      "text": "The good news (for context engineering aficionados like myself) is that I think we’re seeing a step function change in agent capabilities, or at least how they are being used. Specifically, over the past few months every agent builder I’ve chatted with has been thinking about proactive, always on, goal-oriented agents. The core of this agent shares a lot of similarities with coding agents, but there are a set of new challenges as well. I highlight a few below. We (at LangChain, and in the industry) don’t necessarily have solutions (or at least, general solutions) for these, so thinking about these has been the most fun I’ve had in a while!",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 10,
+        "length": 1,
+        "offset": 0
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "9obk6",
+      "text": " ",
+      "type": "atomic"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 11,
+        "length": 21,
+        "offset": 100
+       }
+      ],
+      "inlineStyleRanges": [
+       {
+        "length": 42,
+        "offset": 0,
+        "style": "Bold"
+       }
+      ],
+      "key": "6i9ot",
+      "text": "How to be proactive without being annoying: These proactive agents run in the background and either listen to event feeds or are woken up with heartbeats. On one hand, they need to be able to push things to the user - that creates a sense of helping. On the other hand, if you push too many notifications to the user, you risk overwhelming them. Calibrating this to be a delightful experience (not too much, not too little) is still a hard context engineering challenge!",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 12,
+        "length": 17,
+        "offset": 8
+       },
+       {
+        "key": 13,
+        "length": 5,
+        "offset": 257
+       }
+      ],
+      "inlineStyleRanges": [
+       {
+        "length": 6,
+        "offset": 0,
+        "style": "Bold"
+       }
+      ],
+      "key": "eudvc",
+      "text": "Memory: memory for agents has been something we’ve talked with builders about for a while. Memory systems end up having two parts: the underlying data structure and an intelligence layer (agent) around the data. The data structures are often pretty simple (files, a single string). The hardest part of the intelligence layer is figuring out what to remember. Similar to proactiveness, it’s easy to mess up on either extreme (remembering nothing at all, or remembering way too granular of details). Since this intelligence layer that decides what to remember is often a (simple) agent itself, the context engineering around what to remember and when is still an open problem.",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 14,
+        "length": 5,
+        "offset": 369
+       },
+       {
+        "key": 15,
+        "length": 9,
+        "offset": 379
+       },
+       {
+        "key": 16,
+        "length": 6,
+        "offset": 460
+       }
+      ],
+      "inlineStyleRanges": [
+       {
+        "length": 5,
+        "offset": 0,
+        "style": "Bold"
+       }
+      ],
+      "key": "7uvje",
+      "text": "Async: These agents are getting longer and longer running, and interacting with other systems (tools, other agents) that themselves are longer and longer running. However, you almost always want to make sure the main agent interacting with the user is responsive to new messages. These combine to lead to an architecture where more work is getting done in asynchronous tools and subagents. This presents a set of new context engineering challenges: how do you notify the main agent when that work is done? How do you handle situations where the main agent is still running, vs when it has finished? What if it's paused waiting for human approval?",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 17,
+        "length": 1,
+        "offset": 0
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "f4ocr",
+      "text": " ",
+      "type": "atomic"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 18,
+        "length": 4,
+        "offset": 88
+       }
+      ],
+      "inlineStyleRanges": [
+       {
+        "length": 13,
+        "offset": 0,
+        "style": "Bold"
+       }
+      ],
+      "key": "84aqd",
+      "text": "Goal Tracking: Agents are moving from doing tasks to working towards goals. Agents like Hone are a great example of this. How do you design agents that can break down goals into smaller steps, run experiments, get feedback, and continue to iterate towards a larger goal. It’s challenging to get agents to try out new experiments in pursuit of a goal (and not just repeat things). It’s challenging to get agents to think about broad goals and not just small tasks. It’s challenging to keep them consistent over long time horizons.",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 19,
+        "length": 39,
+        "offset": 218
+       }
+      ],
+      "inlineStyleRanges": [
+       {
+        "length": 9,
+        "offset": 0,
+        "style": "Bold"
+       }
+      ],
+      "key": "e353c",
+      "text": "Alignment: Related to the above. Goal design is hard by itself. It will be very hard for users to design goals that agents can not cheat. If agents blindly try to optimize a goal - they may accomplish it, but they may cheat in ways that we cannot anticipate. For example: the classic example of “get rid of all bugs in codebase” → deletes codebase entirely (no code = no bugs). How do you design a harness to keep agents not only focused on goals, but not overly optimize for those goals.",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 20,
+        "length": 1,
+        "offset": 0
+       }
+      ],
+      "inlineStyleRanges": [],
+      "key": "7m2vr",
+      "text": " ",
+      "type": "atomic"
+     },
+     {
+      "data": {},
+      "entityRanges": [
+       {
+        "key": 21,
+        "length": 7,
+        "offset": 157
+       },
+       {
+        "key": 22,
+        "length": 5,
+        "offset": 227
+       }
+      ],
+      "inlineStyleRanges": [
+       {
+        "length": 11,
+        "offset": 0,
+        "style": "Bold"
+       }
+      ],
+      "key": "d149u",
+      "text": "Browser Use: For coding agents, the most important tool was a bash tool that could run and execute code. For a lot of these more general purpose agents, the browser is becoming that tool. A browser is a lot more complicated to drive than a terminal! Do you interact with images or with the DOM? Both are large objects - how do you manage context around that? Those are just some of the questions that pop up.",
+      "type": "unstyled"
+     },
+     {
+      "data": {},
+      "entityRanges": [],
+      "inlineStyleRanges": [],
+      "key": "5at7c",
+      "text": "A few months ago I would have maybe agreed that there weren’t that many open questions in context engineering. But with these always on, proactive agents we are seeing a whole new set of challenges arise! What a time to be alive.",
+      "type": "unstyled"
+     }
+    ],
+    "entityMap": [
+     {
+      "key": "12",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/memory-for-agents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "8",
+      "value": {
+       "data": {
+        "url": "https://vercel.com/blog/we-removed-80-percent-of-our-agents-tools"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "19",
+      "value": {
+       "data": {
+        "url": "https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "4",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/context-engineering-deep-agents-remember"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "15",
+      "value": {
+       "data": {
+        "url": "https://docs.langchain.com/langsmith/python/managed-deep-agents-subagents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "11",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/introducing-ambient-agents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "9",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/proactive-agents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "22",
+      "value": {
+       "data": {
+        "url": "https://docs.langchain.com/langsmith/python/managed-deep-agents-browser-use"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "13",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/how-we-built-agent-builders-memory"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "16",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/managed-deep-agents-browser-use-and-asynchronous-subagents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "5",
+      "value": {
+       "data": {
+        "url": "https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "10",
+      "value": {
+       "data": {
+        "entityKey": "7f55e269-5acf-4319-86f9-d359a9e9f4e1",
+        "mediaItems": [
+         {
+          "localMediaId": "5",
+          "mediaCategory": "DraftTweetImage",
+          "mediaId": "2116552921915809792"
+         }
+        ]
+       },
+       "mutability": "Immutable",
+       "type": "MEDIA"
+      }
+     },
+     {
+      "key": "21",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/browser-use-in-managed-deep-agents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "6",
+      "value": {
+       "data": {
+        "url": "https://www.anthropic.com/research/advanced-tool-use"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "1",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/deep-agents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "17",
+      "value": {
+       "data": {
+        "entityKey": "7b882d3b-5d28-4c5a-994d-9419c41a2b0a",
+        "mediaItems": [
+         {
+          "localMediaId": "3",
+          "mediaCategory": "DraftTweetImage",
+          "mediaId": "2116552886880792576"
+         }
+        ]
+       },
+       "mutability": "Immutable",
+       "type": "MEDIA"
+      }
+     },
+     {
+      "key": "14",
+      "value": {
+       "data": {
+        "url": "https://developers.openai.com/api/docs/guides/async-tool-calling"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "0",
+      "value": {
+       "data": {
+        "url": "https://www.anthropic.com/research/claude-3-7-sonnet"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "20",
+      "value": {
+       "data": {
+        "entityKey": "d729361e-3b2a-4a40-9125-08ce3b6f53be",
+        "mediaItems": [
+         {
+          "localMediaId": "1",
+          "mediaCategory": "DraftTweetImage",
+          "mediaId": "2116552850344189952"
+         }
+        ]
+       },
+       "mutability": "Immutable",
+       "type": "MEDIA"
+      }
+     },
+     {
+      "key": "2",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/context-engineering-for-agents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "18",
+      "value": {
+       "data": {
+        "url": "https://hone.com/blog/introducing-engines/"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "7",
+      "value": {
+       "data": {
+        "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     },
+     {
+      "key": "3",
+      "value": {
+       "data": {
+        "url": "https://www.langchain.com/blog/context-management-for-deepagents"
+       },
+       "mutability": "Mutable",
+       "type": "LINK"
+      }
+     }
+    ]
+   },
+   "media_entities": [
+    {
+     "id": "QXBpTWVkaWE6DAAFCgABHV+BqyMbYAAKAAIAAAAAoqCtagAA",
+     "media_id": "2116552921915809792",
+     "media_info": {
+      "__typename": "ApiImage",
+      "color_info": {
+       "palette": [
+        {
+         "percentage": 97.58,
+         "rgb": {
+          "blue": 255,
+          "green": 244,
+          "red": 230
+         }
+        },
+        {
+         "percentage": 1.73,
+         "rgb": {
+          "blue": 241,
+          "green": 189,
+          "red": 134
+         }
+        },
+        {
+         "percentage": 0.69,
+         "rgb": {
+          "blue": 162,
+          "green": 145,
+          "red": 126
+         }
+        }
+       ]
+      },
+      "original_img_height": 1350,
+      "original_img_url": "https://pbs.twimg.com/media/HV-BqyMbYAAhN6G.jpg",
+      "original_img_width": 2400
+     },
+     "media_key": "3_2116552921915809792"
+    },
+    {
+     "id": "QXBpTWVkaWE6DAAFCgABHV+BovrbcAAKAAIAAAAAoqCtagAA",
+     "media_id": "2116552886880792576",
+     "media_info": {
+      "__typename": "ApiImage",
+      "color_info": {
+       "palette": [
+        {
+         "percentage": 91.42,
+         "rgb": {
+          "blue": 255,
+          "green": 250,
+          "red": 242
+         }
+        },
+        {
+         "percentage": 5.57,
+         "rgb": {
+          "blue": 255,
+          "green": 200,
+          "red": 127
+         }
+        },
+        {
+         "percentage": 3.01,
+         "rgb": {
+          "blue": 221,
+          "green": 109,
+          "red": 0
+         }
+        }
+       ]
+      },
+      "original_img_height": 1350,
+      "original_img_url": "https://pbs.twimg.com/media/HV-BovrbcAAj3vE.png",
+      "original_img_width": 2400
+     },
+     "media_key": "3_2116552886880792576"
+    },
+    {
+     "id": "QXBpTWVkaWE6DAAFCgABHV+BmnkbIAAKAAIAAAAAoqCtagAA",
+     "media_id": "2116552850344189952",
+     "media_info": {
+      "__typename": "ApiImage",
+      "color_info": {
+       "palette": [
+        {
+         "percentage": 47.03,
+         "rgb": {
+          "blue": 34,
+          "green": 22,
+          "red": 13
+         }
+        },
+        {
+         "percentage": 44.81,
+         "rgb": {
+          "blue": 255,
+          "green": 250,
+          "red": 242
+         }
+        },
+        {
+         "percentage": 5.98,
+         "rgb": {
+          "blue": 94,
+          "green": 49,
+          "red": 8
+         }
+        },
+        {
+         "percentage": 2.13,
+         "rgb": {
+          "blue": 157,
+          "green": 142,
+          "red": 132
+         }
+        }
+       ]
+      },
+      "original_img_height": 1350,
+      "original_img_url": "https://pbs.twimg.com/media/HV-BmnkbIAAtEI_.png",
+      "original_img_width": 2400
+     },
+     "media_key": "3_2116552850344189952"
+    }
+   ]
+  },
+  "provider": "twitter",
+  "reposted_by": null
+ },
+ "thread": [
+  {
+   "type": "status",
+   "url": "https://x.com/hwchase17/status/2116553654857867330",
+   "id": "2116553654857867330",
+   "text": "A lot of content engineering challenges have pretty standard solutions, which has lead to some engineers saying agent engineering is solved/boring\n\nTrue to some extent, but there are a bunch of (fun) new ones emerging as agents evolve! https://x.com/i/article/2116547440857718784",
+   "raw_text": {
+    "text": "A lot of content engineering challenges have pretty standard solutions, which has lead to some engineers saying agent engineering is solved/boring\n\nTrue to some extent, but there are a bunch of (fun) new ones emerging as agents evolve! https://t.co/N82RZTcFSD",
+    "display_text_range": [
+     0,
+     259
+    ],
+    "facets": [
+     {
+      "type": "url",
+      "indices": [
+       236,
+       259
+      ],
+      "original": "https://t.co/N82RZTcFSD",
+      "replacement": "https://x.com/i/article/2116547440857718784",
+      "display": "x.com/i/article/2116…"
+     }
+    ]
+   },
+   "author": {
+    "screen_name": "hwchase17",
+    "url": "https://x.com/hwchase17",
+    "id": "2728439146",
+    "followers": 138222,
+    "following": 600,
+    "likes": 17085,
+    "media_count": 700,
+    "statuses": 17795,
+    "name": "Harrison Chase",
+    "description": "@LangChain\n\nAlways hiring: https://www.langchain.com/careers",
+    "raw_description": {
+     "text": "@LangChain\n\nAlways hiring: https://t.co/D5Ut3loFO7",
+     "facets": [
+      {
+       "type": "mention",
+       "indices": [
+        0,
+        10
+       ],
+       "original": "LangChain",
+       "id": ""
+      },
+      {
+       "type": "url",
+       "indices": [
+        27,
+        50
+       ],
+       "original": "https://t.co/D5Ut3loFO7",
+       "replacement": "https://www.langchain.com/careers",
+       "display": "langchain.com/careers"
+      }
+     ]
+    },
+    "location": "",
+    "banner_url": "",
+    "avatar_url": "https://pbs.twimg.com/profile_images/1569345624935485442/R67C4wCQ_200x200.jpg",
+    "joined": "Tue Jul 29 19:22:50 +0000 2014",
+    "protected": false,
+    "website": null,
+    "verification": {
+     "verified": true,
+     "verified_at": null,
+     "type": "individual"
+    },
+    "type": "profile"
+   },
+   "replies": 208,
+   "reposts": 67,
+   "likes": 622,
+   "bookmarks": 1026,
+   "quotes": 34,
+   "embed_card": "tweet",
+   "created_at": "Sat Oct 31 15:31:29 +0000 2026",
+   "created_timestamp": 1793460689,
+   "possibly_sensitive": false,
+   "views": 87498,
+   "is_note_tweet": false,
+   "community_note": null,
+   "lang": "en",
+   "replying_to": null,
+   "media": {},
+   "article": {
+    "created_at": "2026-10-31T15:31:29.000Z",
+    "modified_at": "2026-10-31T15:31:29.000Z",
+    "id": "2116547440857718784",
+    "title": "New context engineering challenges in late 2026",
+    "preview_text": "It feels like everyone is converging on the same agent architecture: an LLM, running in a loop, calling tools, running in a sandbox. Claude Code - perhaps the first high profile manifestation of this",
+    "cover_media": {
+     "id": "QXBpTWVkaWE6DAAFCgABHV+BuVRaoAAKAAIAAAAAoqCtagAA",
+     "media_id": "2116552982871580672",
+     "media_info": {
+      "__typename": "ApiImage",
+      "color_info": {
+       "palette": [
+        {
+         "percentage": 96.28,
+         "rgb": {
+          "blue": 255,
+          "green": 241,
+          "red": 223
+         }
+        },
+        {
+         "percentage": 2.39,
+         "rgb": {
+          "blue": 243,
+          "green": 192,
+          "red": 138
+         }
+        },
+        {
+         "percentage": 1.33,
+         "rgb": {
+          "blue": 161,
+          "green": 144,
+          "red": 125
+         }
+        }
+       ]
+      },
+      "original_img_height": 960,
+      "original_img_url": "https://pbs.twimg.com/media/HV-BuVRaoAAm2Au.jpg",
+      "original_img_width": 2400
+     },
+     "media_key": "3_2116552982871580672"
+    },
+    "content": {
+     "blocks": [
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 0,
+         "length": 11,
+         "offset": 133
+        },
+        {
+         "key": 1,
+         "length": 11,
+         "offset": 239
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "3dn16",
+       "text": "It feels like everyone is converging on the same agent architecture: an LLM, running in a loop, calling tools, running in a sandbox. Claude Code - perhaps the first high profile manifestation of this - came out over a year and a half ago. Deep Agents, our agent harness, launched over a year ago. This pattern has been building for a while.",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [],
+       "inlineStyleRanges": [],
+       "key": "2ko7e",
+       "text": "There’s nothing bad with that convergence per se, but it has led to a sentiment among some AI engineers that I’ve talked to recently that “all the hard problems are solved” or “there’s no new AI engineering problems to solve”.",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 2,
+         "length": 19,
+         "offset": 79
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "bk0hs",
+       "text": "When people express this sentiment, I think they are largely talking about the context engineering practices we do to make agents work. And to some extent they are right - there are a lot of standard-ish context engineering solutions we’ve all arrived at:",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 3,
+         "length": 24,
+         "offset": 0
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "8gam",
+       "text": "Summarizing long threads when it gets to be too much for the context window",
+       "type": "unordered-list-item"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 4,
+         "length": 34,
+         "offset": 0
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "4dqk1",
+       "text": "Offloading large tool call results",
+       "type": "unordered-list-item"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 5,
+         "length": 6,
+         "offset": 0
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "4ibsb",
+       "text": "Skills for progressive disclosure",
+       "type": "unordered-list-item"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 6,
+         "length": 11,
+         "offset": 0
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "cgpuj",
+       "text": "Tool search to deal with a lot of tools",
+       "type": "unordered-list-item"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 7,
+         "length": 9,
+         "offset": 0
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "463pq",
+       "text": "Subagents for context isolation",
+       "type": "unordered-list-item"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 8,
+         "length": 12,
+         "offset": 10
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "4gdk9",
+       "text": "Bash as a primary tool",
+       "type": "unordered-list-item"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 9,
+         "length": 42,
+         "offset": 277
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "18a6l",
+       "text": "The good news (for context engineering aficionados like myself) is that I think we’re seeing a step function change in agent capabilities, or at least how they are being used. Specifically, over the past few months every agent builder I’ve chatted with has been thinking about proactive, always on, goal-oriented agents. The core of this agent shares a lot of similarities with coding agents, but there are a set of new challenges as well. I highlight a few below. We (at LangChain, and in the industry) don’t necessarily have solutions (or at least, general solutions) for these, so thinking about these has been the most fun I’ve had in a while!",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 10,
+         "length": 1,
+         "offset": 0
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "9obk6",
+       "text": " ",
+       "type": "atomic"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 11,
+         "length": 21,
+         "offset": 100
+        }
+       ],
+       "inlineStyleRanges": [
+        {
+         "length": 42,
+         "offset": 0,
+         "style": "Bold"
+        }
+       ],
+       "key": "6i9ot",
+       "text": "How to be proactive without being annoying: These proactive agents run in the background and either listen to event feeds or are woken up with heartbeats. On one hand, they need to be able to push things to the user - that creates a sense of helping. On the other hand, if you push too many notifications to the user, you risk overwhelming them. Calibrating this to be a delightful experience (not too much, not too little) is still a hard context engineering challenge!",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 12,
+         "length": 17,
+         "offset": 8
+        },
+        {
+         "key": 13,
+         "length": 5,
+         "offset": 257
+        }
+       ],
+       "inlineStyleRanges": [
+        {
+         "length": 6,
+         "offset": 0,
+         "style": "Bold"
+        }
+       ],
+       "key": "eudvc",
+       "text": "Memory: memory for agents has been something we’ve talked with builders about for a while. Memory systems end up having two parts: the underlying data structure and an intelligence layer (agent) around the data. The data structures are often pretty simple (files, a single string). The hardest part of the intelligence layer is figuring out what to remember. Similar to proactiveness, it’s easy to mess up on either extreme (remembering nothing at all, or remembering way too granular of details). Since this intelligence layer that decides what to remember is often a (simple) agent itself, the context engineering around what to remember and when is still an open problem.",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 14,
+         "length": 5,
+         "offset": 369
+        },
+        {
+         "key": 15,
+         "length": 9,
+         "offset": 379
+        },
+        {
+         "key": 16,
+         "length": 6,
+         "offset": 460
+        }
+       ],
+       "inlineStyleRanges": [
+        {
+         "length": 5,
+         "offset": 0,
+         "style": "Bold"
+        }
+       ],
+       "key": "7uvje",
+       "text": "Async: These agents are getting longer and longer running, and interacting with other systems (tools, other agents) that themselves are longer and longer running. However, you almost always want to make sure the main agent interacting with the user is responsive to new messages. These combine to lead to an architecture where more work is getting done in asynchronous tools and subagents. This presents a set of new context engineering challenges: how do you notify the main agent when that work is done? How do you handle situations where the main agent is still running, vs when it has finished? What if it's paused waiting for human approval?",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 17,
+         "length": 1,
+         "offset": 0
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "f4ocr",
+       "text": " ",
+       "type": "atomic"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 18,
+         "length": 4,
+         "offset": 88
+        }
+       ],
+       "inlineStyleRanges": [
+        {
+         "length": 13,
+         "offset": 0,
+         "style": "Bold"
+        }
+       ],
+       "key": "84aqd",
+       "text": "Goal Tracking: Agents are moving from doing tasks to working towards goals. Agents like Hone are a great example of this. How do you design agents that can break down goals into smaller steps, run experiments, get feedback, and continue to iterate towards a larger goal. It’s challenging to get agents to try out new experiments in pursuit of a goal (and not just repeat things). It’s challenging to get agents to think about broad goals and not just small tasks. It’s challenging to keep them consistent over long time horizons.",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 19,
+         "length": 39,
+         "offset": 218
+        }
+       ],
+       "inlineStyleRanges": [
+        {
+         "length": 9,
+         "offset": 0,
+         "style": "Bold"
+        }
+       ],
+       "key": "e353c",
+       "text": "Alignment: Related to the above. Goal design is hard by itself. It will be very hard for users to design goals that agents can not cheat. If agents blindly try to optimize a goal - they may accomplish it, but they may cheat in ways that we cannot anticipate. For example: the classic example of “get rid of all bugs in codebase” → deletes codebase entirely (no code = no bugs). How do you design a harness to keep agents not only focused on goals, but not overly optimize for those goals.",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 20,
+         "length": 1,
+         "offset": 0
+        }
+       ],
+       "inlineStyleRanges": [],
+       "key": "7m2vr",
+       "text": " ",
+       "type": "atomic"
+      },
+      {
+       "data": {},
+       "entityRanges": [
+        {
+         "key": 21,
+         "length": 7,
+         "offset": 157
+        },
+        {
+         "key": 22,
+         "length": 5,
+         "offset": 227
+        }
+       ],
+       "inlineStyleRanges": [
+        {
+         "length": 11,
+         "offset": 0,
+         "style": "Bold"
+        }
+       ],
+       "key": "d149u",
+       "text": "Browser Use: For coding agents, the most important tool was a bash tool that could run and execute code. For a lot of these more general purpose agents, the browser is becoming that tool. A browser is a lot more complicated to drive than a terminal! Do you interact with images or with the DOM? Both are large objects - how do you manage context around that? Those are just some of the questions that pop up.",
+       "type": "unstyled"
+      },
+      {
+       "data": {},
+       "entityRanges": [],
+       "inlineStyleRanges": [],
+       "key": "5at7c",
+       "text": "A few months ago I would have maybe agreed that there weren’t that many open questions in context engineering. But with these always on, proactive agents we are seeing a whole new set of challenges arise! What a time to be alive.",
+       "type": "unstyled"
+      }
+     ],
+     "entityMap": [
+      {
+       "key": "12",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/memory-for-agents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "8",
+       "value": {
+        "data": {
+         "url": "https://vercel.com/blog/we-removed-80-percent-of-our-agents-tools"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "19",
+       "value": {
+        "data": {
+         "url": "https://deepmind.google/blog/specification-gaming-the-flip-side-of-ai-ingenuity/"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "4",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/context-engineering-deep-agents-remember"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "15",
+       "value": {
+        "data": {
+         "url": "https://docs.langchain.com/langsmith/python/managed-deep-agents-subagents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "11",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/introducing-ambient-agents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "9",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/proactive-agents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "22",
+       "value": {
+        "data": {
+         "url": "https://docs.langchain.com/langsmith/python/managed-deep-agents-browser-use"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "13",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/how-we-built-agent-builders-memory"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "16",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/managed-deep-agents-browser-use-and-asynchronous-subagents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "5",
+       "value": {
+        "data": {
+         "url": "https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "10",
+       "value": {
+        "data": {
+         "entityKey": "7f55e269-5acf-4319-86f9-d359a9e9f4e1",
+         "mediaItems": [
+          {
+           "localMediaId": "5",
+           "mediaCategory": "DraftTweetImage",
+           "mediaId": "2116552921915809792"
+          }
+         ]
+        },
+        "mutability": "Immutable",
+        "type": "MEDIA"
+       }
+      },
+      {
+       "key": "21",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/browser-use-in-managed-deep-agents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "6",
+       "value": {
+        "data": {
+         "url": "https://www.anthropic.com/research/advanced-tool-use"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "1",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/deep-agents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "17",
+       "value": {
+        "data": {
+         "entityKey": "7b882d3b-5d28-4c5a-994d-9419c41a2b0a",
+         "mediaItems": [
+          {
+           "localMediaId": "3",
+           "mediaCategory": "DraftTweetImage",
+           "mediaId": "2116552886880792576"
+          }
+         ]
+        },
+        "mutability": "Immutable",
+        "type": "MEDIA"
+       }
+      },
+      {
+       "key": "14",
+       "value": {
+        "data": {
+         "url": "https://developers.openai.com/api/docs/guides/async-tool-calling"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "0",
+       "value": {
+        "data": {
+         "url": "https://www.anthropic.com/research/claude-3-7-sonnet"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "20",
+       "value": {
+        "data": {
+         "entityKey": "d729361e-3b2a-4a40-9125-08ce3b6f53be",
+         "mediaItems": [
+          {
+           "localMediaId": "1",
+           "mediaCategory": "DraftTweetImage",
+           "mediaId": "2116552850344189952"
+          }
+         ]
+        },
+        "mutability": "Immutable",
+        "type": "MEDIA"
+       }
+      },
+      {
+       "key": "2",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/context-engineering-for-agents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "18",
+       "value": {
+        "data": {
+         "url": "https://hone.com/blog/introducing-engines/"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "7",
+       "value": {
+        "data": {
+         "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      },
+      {
+       "key": "3",
+       "value": {
+        "data": {
+         "url": "https://www.langchain.com/blog/context-management-for-deepagents"
+        },
+        "mutability": "Mutable",
+        "type": "LINK"
+       }
+      }
+     ]
+    },
+    "media_entities": [
+     {
+      "id": "QXBpTWVkaWE6DAAFCgABHV+BqyMbYAAKAAIAAAAAoqCtagAA",
+      "media_id": "2116552921915809792",
+      "media_info": {
+       "__typename": "ApiImage",
+       "color_info": {
+        "palette": [
+         {
+          "percentage": 97.58,
+          "rgb": {
+           "blue": 255,
+           "green": 244,
+           "red": 230
+          }
+         },
+         {
+          "percentage": 1.73,
+          "rgb": {
+           "blue": 241,
+           "green": 189,
+           "red": 134
+          }
+         },
+         {
+          "percentage": 0.69,
+          "rgb": {
+           "blue": 162,
+           "green": 145,
+           "red": 126
+          }
+         }
+        ]
+       },
+       "original_img_height": 1350,
+       "original_img_url": "https://pbs.twimg.com/media/HV-BqyMbYAAhN6G.jpg",
+       "original_img_width": 2400
+      },
+      "media_key": "3_2116552921915809792"
+     },
+     {
+      "id": "QXBpTWVkaWE6DAAFCgABHV+BovrbcAAKAAIAAAAAoqCtagAA",
+      "media_id": "2116552886880792576",
+      "media_info": {
+       "__typename": "ApiImage",
+       "color_info": {
+        "palette": [
+         {
+          "percentage": 91.42,
+          "rgb": {
+           "blue": 255,
+           "green": 250,
+           "red": 242
+          }
+         },
+         {
+          "percentage": 5.57,
+          "rgb": {
+           "blue": 255,
+           "green": 200,
+           "red": 127
+          }
+         },
+         {
+          "percentage": 3.01,
+          "rgb": {
+           "blue": 221,
+           "green": 109,
+           "red": 0
+          }
+         }
+        ]
+       },
+       "original_img_height": 1350,
+       "original_img_url": "https://pbs.twimg.com/media/HV-BovrbcAAj3vE.png",
+       "original_img_width": 2400
+      },
+      "media_key": "3_2116552886880792576"
+     },
+     {
+      "id": "QXBpTWVkaWE6DAAFCgABHV+BmnkbIAAKAAIAAAAAoqCtagAA",
+      "media_id": "2116552850344189952",
+      "media_info": {
+       "__typename": "ApiImage",
+       "color_info": {
+        "palette": [
+         {
+          "percentage": 47.03,
+          "rgb": {
+           "blue": 34,
+           "green": 22,
+           "red": 13
+          }
+         },
+         {
+          "percentage": 44.81,
+          "rgb": {
+           "blue": 255,
+           "green": 250,
+           "red": 242
+          }
+         },
+         {
+          "percentage": 5.98,
+          "rgb": {
+           "blue": 94,
+           "green": 49,
+           "red": 8
+          }
+         },
+         {
+          "percentage": 2.13,
+          "rgb": {
+           "blue": 157,
+           "green": 142,
+           "red": 132
+          }
+         }
+        ]
+       },
+       "original_img_height": 1350,
+       "original_img_url": "https://pbs.twimg.com/media/HV-BmnkbIAAtEI_.png",
+       "original_img_width": 2400
+      },
+      "media_key": "3_2116552850344189952"
+     }
+    ]
+   },
+   "provider": "twitter",
+   "reposted_by": null
+  }
+ ],
+ "author": {
+  "screen_name": "hwchase17",
+  "url": "https://x.com/hwchase17",
+  "id": "2728439146",
+  "followers": 138222,
+  "following": 600,
+  "likes": 17085,
+  "media_count": 700,
+  "statuses": 17795,
+  "name": "Harrison Chase",
+  "description": "@LangChain\n\nAlways hiring: https://www.langchain.com/careers",
+  "raw_description": {
+   "text": "@LangChain\n\nAlways hiring: https://t.co/D5Ut3loFO7",
+   "facets": [
+    {
+     "type": "mention",
+     "indices": [
+      0,
+      10
+     ],
+     "original": "LangChain",
+     "id": ""
+    },
+    {
+     "type": "url",
+     "indices": [
+      27,
+      50
+     ],
+     "original": "https://t.co/D5Ut3loFO7",
+     "replacement": "https://www.langchain.com/careers",
+     "display": "langchain.com/careers"
+    }
+   ]
+  },
+  "location": "",
+  "banner_url": "",
+  "avatar_url": "https://pbs.twimg.com/profile_images/1569345624935485442/R67C4wCQ_200x200.jpg",
+  "joined": "Tue Jul 29 19:22:50 +0000 2014",
+  "protected": false,
+  "website": null,
+  "verification": {
+   "verified": true,
+   "verified_at": null,
+   "type": "individual"
+  },
+  "type": "profile"
+ },
+ "code": 200
+}

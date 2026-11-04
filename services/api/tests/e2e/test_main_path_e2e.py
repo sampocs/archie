@@ -19,9 +19,10 @@ pytestmark = pytest.mark.postgres
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 
-# ogp.me serves an og:title distinct from its <title>, so this also proves og:title wins.
-PAGE_URL = "https://ogp.me/"
-PAGE_TITLE = "Open Graph protocol"
+# A podcast link is not processed by the pipeline in M2: the worker only titles it (`fetch_title`). Articles and
+# X posts take the `fetch_content` path instead, which test_pipeline_e2e.py covers.
+PAGE_URL = "https://open.spotify.com/show/4rOoJ6Egrf8K2IrywzwOMk"
+PAGE_TITLE = "The Joe Rogan Experience"
 
 POLL_INTERVAL_SECONDS = 0.2
 POLL_TIMEOUT_SECONDS = 10.0
@@ -36,6 +37,8 @@ def test_a_pushed_link_comes_back_titled_at_a_newer_position(
         record_mode=request.config.getoption("--record-mode") or "none",
         filter_headers=["authorization", "cookie", "set-cookie"],
         decode_compressed_response=True,
+        # Spotify sets tracking cookies on the response; they are not needed to replay it.
+        before_record_response=_drop_set_cookie,
         # The test's own calls to the live API must reach it; only the worker's page fetch is replayed.
         ignore_localhost=True,
     )
@@ -60,6 +63,11 @@ def test_a_pushed_link_comes_back_titled_at_a_newer_position(
     titled_source = _source(titled_pull, source_id)
     assert titled_source["title"] == PAGE_TITLE
     assert titled_source["change_seq"] > untitled_pull["position"]
+
+
+def _drop_set_cookie(response: dict[str, Any]) -> dict[str, Any]:
+    response["headers"] = {name: value for name, value in response["headers"].items() if name.lower() != "set-cookie"}
+    return response
 
 
 def _pull(authed: httpx.Client, *, since: int) -> dict[str, Any]:

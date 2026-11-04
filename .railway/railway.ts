@@ -50,6 +50,7 @@ export default defineRailway(() => {
       APPLE_AUDIENCE: "com.sampocs.archie",
       ARCHIE_ENV: "prod",
       OWNER_EMAILS: preserve(),
+      ANTHROPIC_API_KEY: preserve(),
       // Pinned because the generated domain targets port 8000.
       PORT: "8000",
     },

@@ -13,10 +13,10 @@ import uuid
 import httpx
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, models
+from archie_db import changes, models, pipeline
 from archie_shared import logging
 
-SOURCE_ID_KEY = "source_id"
+SOURCE_ID_KEY = pipeline.SOURCE_ID_KEY
 
 _FETCH_TIMEOUT_SECONDS = 10
 _MAX_BODY_BYTES = 1_000_000
@@ -68,14 +68,18 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     if source is None or source.deleted_at is not None:
         return
 
-    # The page is fetched before the user's write lock is taken, so a slow site never blocks their syncs.
-    title = extract_title(page=_fetch_page(url=source.url))
+    # Committing first releases the connection's transaction, and the page is fetched before the user's
+    # write lock is taken, so a slow site never holds either or blocks their syncs.
+    source_id, url, user_id = source.id, source.url, source.user_id
+    db.commit()
+    page = fetch_page(url=url, timeout_seconds=_FETCH_TIMEOUT_SECONDS, max_bytes=_MAX_BODY_BYTES)
+    title = extract_title(page=page)
     if title is None:
-        _logger.info("No title found for source %s", source.id)
+        _logger.info("No title found for source %s", source_id)
         return
 
     # The user may have deleted the link during the fetch; the lock makes the refreshed state final.
-    changes.lock_user_writes(db, source.user_id)
+    changes.lock_user_writes(db, user_id)
     db.refresh(source)
     if source.deleted_at is not None:
         return
@@ -100,22 +104,22 @@ def extract_title(*, page: str) -> str | None:
     return title[:_MAX_TITLE_LENGTH] if title else None
 
 
-def _fetch_page(*, url: str) -> str:
-    """Download `url` as text, reading at most 1 MB; raises on any 4xx/5xx or past a 10 s total deadline.
+def fetch_page(*, url: str, timeout_seconds: float, max_bytes: int) -> str:
+    """Download `url` as text, reading at most `max_bytes`; raises on any 4xx/5xx or past a total `timeout_seconds`.
 
     httpx's timeout applies to each read, so the deadline is checked per chunk to stop a trickling server
     from holding the worker; the loop's error boundary retries the `TimeoutError`.
     """
-    deadline = time.monotonic() + _FETCH_TIMEOUT_SECONDS
-    with httpx.Client(timeout=_FETCH_TIMEOUT_SECONDS, follow_redirects=True) as client:
+    deadline = time.monotonic() + timeout_seconds
+    with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
         with client.stream("GET", url) as response:
             response.raise_for_status()
 
             body = bytearray()
             for chunk in response.iter_bytes():
                 if time.monotonic() > deadline:
-                    raise TimeoutError(f"Fetching {url} took longer than {_FETCH_TIMEOUT_SECONDS}s")
+                    raise TimeoutError(f"Fetching {url} took longer than {timeout_seconds}s")
                 body.extend(chunk)
-                if len(body) >= _MAX_BODY_BYTES:
+                if len(body) >= max_bytes:
                     break
-            return bytes(body[:_MAX_BODY_BYTES]).decode(response.encoding or "utf-8", errors="replace")
+            return bytes(body[:max_bytes]).decode(response.encoding or "utf-8", errors="replace")

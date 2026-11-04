@@ -22,6 +22,10 @@ truth); how it's built lives in `docs/superpowers/specs/2026-11-02-backend-archi
 - `make reset-local-data` — empty the local dev database's synced data
 - `make maestro` / `make maestro-offline` — Maestro flows on the booted simulator (see `maestro/README.md`)
 - `cd app && npm test` / `npm run typecheck` — app jest suite / `tsc --noEmit`
+- Re-recording a cassette: delete it, then `uv run pytest <test file> --record-mode=once -m postgres` with
+  `TEST_DATABASE_URL` set (as `make test-db` does). Anthropic cassettes cost a few cents and need `ANTHROPIC_API_KEY`
+  in the repo-root `.env`; only `archie_testing.recording.use_recording_api_key` reads it, and only in record mode
+  (every normal run strips it and refuses the network). Recorded keys and account ids are filtered out.
 - `make scaffold` — list remaining scaffold markers
 - `scripts/install_ios.sh [api-url]` — Release build against the Railway API, installed on the connected iPhone
 - Deploys: Railway project `archie`, declared in `.railway/railway.ts`. Pushes deploy after CI passes; `railway config plan` / `apply` change infrastructure (see `docs/deploy.md`)

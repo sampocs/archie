@@ -1,3 +1,5 @@
+# HAND-EDITED: both interactions (Haiku, then Sonnet) have Anthropic's 529 overloaded_error body in place of the real
+# responses, because an overload can't be provoked on demand. The requests are real recordings.
 interactions:
 - request:
     body: '{"max_tokens":16,"messages":[{"role":"user","content":"hi"}],"model":"claude-haiku-5-5","system":"Reply

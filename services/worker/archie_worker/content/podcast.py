@@ -192,7 +192,7 @@ def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str) -> ResolvedE
         _logger.info("No feed for Spotify show %r", spotify.show_name)
         raise errors.PermanentJobError(errors.FailureReason.SPOTIFY_ONLY)
 
-    match = _match_spotify_episode(spotify, show=show)
+    match = _match_registered_or_searched(spotify, show=show, is_registered=registered is not None)
     if match is None and registered is not None:
         # The remembered feed may be stale (the show moved hosts), so search once more before giving up.
         match = _match_in_searched_feed(spotify, registered=registered)
@@ -204,6 +204,22 @@ def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str) -> ResolvedE
     # Only a matched feed is remembered, so a wrong top search hit never sticks; a changed feed replaces the old row.
     _remember_show(engine, show=match.show)
     return _resolved(item=match.item, show_name=match.show.name, feed_url=match.show.feed_url)
+
+
+def _match_registered_or_searched(spotify: SpotifyEpisode, *, show: _Show, is_registered: bool) -> _Match | None:
+    """Match in `show`'s feed; a remembered feed that is gone (404/410) or unreadable counts as "episode not there"."""
+    if not is_registered:
+        return _match_spotify_episode(spotify, show=show)
+
+    try:
+        return _match_spotify_episode(spotify, show=show)
+    except httpx.HTTPStatusError as error:
+        if error.response.status_code not in _GONE_STATUSES:
+            raise
+        _logger.info("Registered feed %s is gone (HTTP %d)", show.feed_url, error.response.status_code)
+    except errors.PermanentJobError:
+        _logger.info("Registered feed %s is unreadable", show.feed_url)
+    return None
 
 
 def _match_spotify_episode(spotify: SpotifyEpisode, *, show: _Show) -> _Match | None:

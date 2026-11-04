@@ -30,6 +30,7 @@ CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 AUDIO_SUFFIXES = (".mp3", ".m4a")
 MIN_TRANSCRIPT_WORDS = 200
 SPOTIFY_SHOW_ITUNES_ID = 1680976721
+GONE_FEED_URL = "https://feeds.libsyn.com/464601/archie-no-such-feed"
 
 
 @pytest.fixture
@@ -108,6 +109,31 @@ def test_a_registered_show_skips_itunes_search(engine: sqlalchemy.Engine, replay
     assert "itunes.apple.com" not in {request.host for request in cassette.requests}
     _assert_transcription_queued(engine, source_id)
     assert len(_shows(engine)) == 1
+
+
+def test_a_registered_feed_that_is_gone_is_replaced_by_the_searched_feed(
+    engine: sqlalchemy.Engine, replay: Replay
+) -> None:
+    """The remembered feed 404s, so iTunes Search is asked and its feed resolves the episode and replaces the row."""
+    with sqlalchemy.orm.Session(engine) as db:
+        db.add(
+            models.PodcastShow(
+                name_key=podcast.name_key(media.SPOTIFY_SHOW_NAME),
+                name=media.SPOTIFY_SHOW_NAME,
+                feed_url=GONE_FEED_URL,
+                itunes_id=SPOTIFY_SHOW_ITUNES_ID,
+            )
+        )
+        db.commit()
+    source_id = _add_source(engine, url=media.SPOTIFY_EPISODE_URL)
+
+    with replay("podcast_spotify_gone_feed") as cassette:
+        assert loop.run_one(engine, handlers=handlers.HANDLERS) is True
+
+    assert "itunes.apple.com" in {request.host for request in cassette.requests}
+    _assert_transcription_queued(engine, source_id)
+    (show,) = _shows(engine)
+    assert show.feed_url == media.EPISODE_FEED_URL
 
 
 def test_a_spotify_exclusive_episode_fails_without_a_retry_or_a_registered_show(

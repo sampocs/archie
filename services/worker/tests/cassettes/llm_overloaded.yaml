@@ -1,3 +1,5 @@
+# HAND-EDITED: the first interaction (Haiku) is Anthropic's 529 overloaded_error body in place of the real response,
+# because an overload can't be provoked on demand. The second interaction is an unedited real Sonnet response.
 interactions:
 - request:
     body: '{"max_tokens":16,"messages":[{"role":"user","content":"hi"}],"model":"claude-haiku-5-5","system":"Reply

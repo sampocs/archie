@@ -7,11 +7,12 @@ import uuid
 import xml.etree.ElementTree
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Annotated
+from typing import Annotated, Any
 
 import fastapi
 import httpx
 import pydantic
+import sqlalchemy
 from archie_db import models, pipeline
 from archie_shared import podcast_feed
 from sqlalchemy import orm
@@ -86,7 +87,7 @@ def episodes(
     db.commit()
     try:
         items = podcast_feed.parse_feed(podcast_feed.fetch_feed(resolved.feed_url))
-    except (httpx.HTTPError, TimeoutError, xml.etree.ElementTree.ParseError, ValueError) as error:
+    except (httpx.HTTPError, httpx.InvalidURL, TimeoutError, xml.etree.ElementTree.ParseError, ValueError) as error:
         raise fastapi.HTTPException(
             status_code=fastapi.status.HTTP_502_BAD_GATEWAY, detail="couldn't read the feed"
         ) from error
@@ -99,12 +100,16 @@ def episodes(
 def episodes_near(
     *, items: Sequence[podcast_feed.FeedItem], current_guid: str | None, fallback_date: datetime.date
 ) -> list[EpisodeView]:
-    """Items with a guid and a date within 30 days of the current item (else of `fallback_date`), newest first."""
+    """Playable items with a date within 30 days of the current item (else of `fallback_date`), newest first."""
     current = next((item for item in items if current_guid and item.guid == current_guid), None)
     centre = current.published if current is not None and current.published else fallback_date
     window = datetime.timedelta(days=EPISODE_WINDOW_DAYS)
 
-    nearby = [item for item in items if item.guid and item.published and abs(item.published - centre) <= window]
+    nearby = [
+        item
+        for item in items
+        if item.guid and item.audio_url and item.published and abs(item.published - centre) <= window
+    ]
     nearby.sort(key=lambda item: item.published or centre, reverse=True)
     return [
         EpisodeView(
@@ -126,13 +131,30 @@ def _resolved_episode(db: orm.Session, *, user: models.User, source_id: uuid.UUI
     if source.kind != models.SourceKind.PODCAST:
         raise _not_found()
 
-    artifact = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT)
-    episode = artifact.content.get(podcast_feed.EPISODE_KEY) if artifact is not None else None
-    if not isinstance(episode, dict) or not episode.get("feed_url"):
+    episode = _episode_of(db, source=source)
+    if episode is None:
         raise _not_found()
 
     return _ResolvedEpisode(feed_url=episode["feed_url"], guid=episode.get("guid"), saved_on=source.created_at.date())
 
 
+def _episode_of(db: orm.Session, *, source: models.Source) -> dict[str, Any] | None:
+    """The `episode` record of the current text, else of the newest text that has a feed url.
+
+    Choosing another episode retires the current text, and a failed re-fetch never writes a new one; the older
+    record keeps "Wrong episode?" usable then.
+    """
+    texts = db.scalars(
+        sqlalchemy.select(models.SourceArtifact)
+        .where(models.SourceArtifact.source_id == source.id, models.SourceArtifact.kind == models.ArtifactKind.TEXT)
+        .order_by(models.SourceArtifact.is_current.desc(), models.SourceArtifact.version.desc())
+    )
+    for artifact in texts:
+        episode = artifact.content.get(podcast_feed.EPISODE_KEY)
+        if isinstance(episode, dict) and episode.get("feed_url"):
+            return episode
+    return None
+
+
 def _not_found() -> fastapi.HTTPException:
-    return fastapi.HTTPException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="no such source text")
+    return fastapi.HTTPException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="source not found")

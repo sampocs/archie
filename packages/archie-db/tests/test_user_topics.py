@@ -52,6 +52,20 @@ def test_seed_owner_topics_adds_the_picks_live_and_the_extras_removed_once(
     assert user.topics_chosen_at is not None
 
 
+def test_seeding_files_the_owners_analyzed_sources_once(db: sqlalchemy.orm.Session, user: models.User) -> None:
+    """One analyzed source queues exactly one `file_topic` job; seeding again queues nothing more."""
+    source = _source(db, user=user)
+    pipeline.write_artifact(
+        db, source=source, kind=models.ArtifactKind.SUMMARY, content={}, model=None, prompt_version=None
+    )
+
+    user_topics.seed_owner_topics(db, user=user)
+    user_topics.seed_owner_topics(db, user=user)
+
+    jobs = list(db.scalars(sqlalchemy.select(models.Job)))
+    assert [(job.kind, job.payload[pipeline.SOURCE_ID_KEY]) for job in jobs] == [("file_topic", str(source.id))]
+
+
 def test_named_topic_matches_normalized_live_and_removed_topics_but_not_merged_ones(
     db: sqlalchemy.orm.Session, user: models.User
 ) -> None:

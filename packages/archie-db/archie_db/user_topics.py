@@ -33,6 +33,21 @@ def named_topic(db: sqlalchemy.orm.Session, *, user_id: int, name: str) -> model
     return next((topic for topic in candidates if topics.normalize_topic_name(topic.name) == wanted), None)
 
 
+def merge_winner(db: sqlalchemy.orm.Session, *, user_id: int, name: str) -> models.Topic | None:
+    """The topic that now stands in for the user's merged topic named like `name`, or None if no merged topic matches.
+
+    Follows `merged_into_id` to the end of the chain, so the result is never itself merged (it may be removed).
+    """
+    wanted = topics.normalize_topic_name(name)
+    merged = db.scalars(
+        sqlalchemy.select(models.Topic).where(models.Topic.user_id == user_id, models.Topic.merged_into_id.is_not(None))
+    )
+    topic = next((candidate for candidate in merged if topics.normalize_topic_name(candidate.name) == wanted), None)
+    while topic is not None and topic.merged_into_id is not None:
+        topic = db.get_one(models.Topic, topic.merged_into_id)
+    return topic
+
+
 def create_topic(
     db: sqlalchemy.orm.Session,
     *,
@@ -59,7 +74,8 @@ def create_topic(
 
 
 def seed_owner_topics(db: sqlalchemy.orm.Session, *, user: models.User) -> None:
-    """Give the owner their picks as live starter topics and the other starter topics as removed; mark them chosen.
+    """Give the owner their picks as live starter topics and the other starter topics as removed; mark them chosen,
+    and queue filing for the sources already analyzed.
 
     A no-op once the user has any topic, so it is safe on every sign-in and `/me`.
     """
@@ -75,6 +91,9 @@ def seed_owner_topics(db: sqlalchemy.orm.Session, *, user: models.User) -> None:
             create_topic(db, user_id=user.id, domain=domain, name=name, origin=models.TopicOrigin.STARTER, removed=True)
     user.topics_chosen_at = sqlalchemy.func.now()
     db.flush()
+
+    for source in analyzed_sources(db, user_id=user.id):
+        enqueue_file_topic(db, source=source)
 
 
 def live_topics(db: sqlalchemy.orm.Session, *, user_id: int) -> list[models.Topic]:

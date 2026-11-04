@@ -74,8 +74,9 @@ def _set_title_if_empty(source: models.Source, *, title: str | None) -> None:
 
 
 def _set_image_if_empty(source: models.Source, *, image_url: str | None) -> None:
-    if source.image_url or not image_url:
+    # A cut-off URL would point nowhere, so an overlong one means no image.
+    if source.image_url or not image_url or len(image_url) > _MAX_IMAGE_URL_LENGTH:
         return
 
-    source.image_url = image_url[:_MAX_IMAGE_URL_LENGTH]
+    source.image_url = image_url
     changes.touch(source)

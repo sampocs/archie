@@ -1,5 +1,7 @@
 import { ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+// Gesture handler's ScrollView lets a drag handle's pan (the queue) win over scrolling.
+import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "../useTheme";
@@ -10,9 +12,11 @@ type ScreenProps = {
   children?: ReactNode;
   headerRight?: ReactNode;
   onBack?: () => void;
+  // Pinned below the scrolling content, e.g. a long form's submit button.
+  footer?: ReactNode;
 };
 
-export function Screen({ title, children, headerRight, onBack }: ScreenProps) {
+export function Screen({ title, children, headerRight, onBack, footer }: ScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -32,9 +36,24 @@ export function Screen({ title, children, headerRight, onBack }: ScreenProps) {
       <ScrollView
         contentContainerStyle={{ padding: theme.spacing.gutterCards, gap: theme.spacing.section }}
         keyboardShouldPersistTaps="handled"
+        // Scrolls a focused field (search, adding a topic) above the keyboard.
+        automaticallyAdjustKeyboardInsets
       >
         {children}
       </ScrollView>
+      {footer ? (
+        <View
+          style={{
+            paddingHorizontal: theme.spacing.gutterCards,
+            paddingTop: theme.spacing.md,
+            paddingBottom: insets.bottom + theme.spacing.md,
+            borderTopWidth: StyleSheet.hairlineWidth,
+            borderTopColor: theme.colors.line,
+          }}
+        >
+          {footer}
+        </View>
+      ) : null}
     </View>
   );
 }

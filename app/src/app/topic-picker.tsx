@@ -43,7 +43,17 @@ export default function TopicPicker() {
   }
 
   return (
-    <Screen title="Pick your topics">
+    <Screen
+      title="Pick your topics"
+      footer={
+        <Button
+          testID="picker-continue"
+          label={`Continue · ${picked.length}`}
+          disabled={picked.length === 0}
+          onPress={submit}
+        />
+      }
+    >
       <Text tone="ink2">
         Archie files what you save under these. Pick the ones you want to understand; you can change them any time.
       </Text>
@@ -61,12 +71,6 @@ export default function TopicPicker() {
           ))
         : null}
 
-      <Button
-        testID="picker-continue"
-        label={`Continue · ${picked.length}`}
-        disabled={picked.length === 0}
-        onPress={submit}
-      />
     </Screen>
   );
 }

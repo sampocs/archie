@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Modal, Pressable, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Pressable, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme/useTheme";
@@ -19,7 +19,8 @@ export function BottomSheet({ visible, onClose, onDismiss, children, testID }: B
 
   return (
     <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
-      <View style={{ flex: 1, justifyContent: "flex-end" }}>
+      {/* Sheets with a text field (add or rename a topic, a note) must sit above the keyboard, not under it. */}
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: "flex-end" }}>
         <Pressable
           testID={testID ? `${testID}-backdrop` : undefined}
           onPress={onClose}
@@ -48,7 +49,7 @@ export function BottomSheet({ visible, onClose, onDismiss, children, testID }: B
           />
           {children}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

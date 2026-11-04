@@ -13,11 +13,21 @@ export default function DevLogin() {
   return <DevLoginInner />;
 }
 
+let signedInThisLaunch = false;
+
 function DevLoginInner() {
   const router = useRouter();
   const { whitelisted, picker, sub } = useLocalSearchParams<{ whitelisted?: string; picker?: string; sub?: string }>();
 
   useEffect(() => {
+    // Switching between the picker and the app rebuilds the stack, which can mount this route again (without the
+    // link's params); a launch signs in once, so a repeat just hands over to the app's own routing.
+    if (signedInThisLaunch) {
+      router.replace("/");
+      return;
+    }
+    signedInThisLaunch = true;
+
     apiFetch("/test/session", {
       method: "POST",
       body: { is_whitelisted: whitelisted === "1", seed_topics: picker !== "1", ...(sub ? { apple_sub: sub } : {}) },

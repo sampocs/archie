@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import pytest
 from archie_worker import content, corrections, transcription
 
 
@@ -106,3 +107,16 @@ def test_two_corrections_in_one_context_both_apply() -> None:
     ]
 
     assert _texts(corrections.apply(segments, fixes)) == ["Then Saylor said MicroStrategy bought more."]
+
+
+@pytest.mark.parametrize("context", ["Gary", "gary."])
+def test_a_context_with_no_word_beyond_heard_changes_nothing(context: str) -> None:
+    """Such a context would match every "Gary", which is a global replace; the correction is skipped instead."""
+    segments = [
+        content.Segment(start=0.0, text="Gary opened the show."),
+        content.Segment(start=5.0, text="and then Gary said the Fed would cut."),
+        content.Segment(start=9.0, text="Gary disagreed."),
+    ]
+    correction = corrections.Correction(heard="Gary", correct="Gabby", context=context)
+
+    assert _texts(corrections.apply(segments, [correction])) == _texts(segments)

@@ -1,0 +1,441 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - api.fxtwitter.com
+      user-agent:
+      - archie-worker/0.1
+    method: GET
+    uri: https://api.fxtwitter.com/2/thread/2107691261776052633
+  response:
+    body:
+      string: '{"status":{"type":"status","url":"https://x.com/sama/status/2107691261776052633","id":"2107691261776052633","text":"looking
+        up at the stars with extra awe tonight.\n\n\"thy sea is so great and my boat
+        is so small.\"","raw_text":{"text":"looking up at the stars with extra awe
+        tonight.\n\n\"thy sea is so great and my boat is so small.\"","display_text_range":[0,95],"facets":[]},"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415893,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"replies":1225,"reposts":674,"likes":12695,"bookmarks":968,"quotes":309,"embed_card":"tweet","created_at":"Wed
+        Oct 07 04:35:30 +0000 2026","created_timestamp":1791347730,"views":1944852,"is_note_tweet":false,"community_note":null,"lang":"en","replying_to":null,"media":{},"provider":"twitter","reposted_by":null},"thread":[{"type":"status","url":"https://x.com/sama/status/2107691261776052633","id":"2107691261776052633","text":"looking
+        up at the stars with extra awe tonight.\n\n\"thy sea is so great and my boat
+        is so small.\"","raw_text":{"text":"looking up at the stars with extra awe
+        tonight.\n\n\"thy sea is so great and my boat is so small.\"","display_text_range":[0,95],"facets":[]},"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415893,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"replies":1225,"reposts":674,"likes":12695,"bookmarks":968,"quotes":309,"embed_card":"tweet","created_at":"Wed
+        Oct 07 04:35:30 +0000 2026","created_timestamp":1791347730,"views":1944852,"is_note_tweet":false,"community_note":null,"lang":"en","replying_to":null,"media":{},"provider":"twitter","reposted_by":null},{"type":"status","url":"https://x.com/sama/status/2107691262795239805","id":"2107691262795239805","text":"thank
+        you to the machines, and the structure of reality, for letting us understand
+        a little more.","raw_text":{"text":"thank you to the machines, and the structure
+        of reality, for letting us understand a little more.","display_text_range":[0,97],"facets":[]},"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415891,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"replies":256,"reposts":105,"likes":3683,"bookmarks":122,"quotes":65,"embed_card":"tweet","created_at":"Wed
+        Oct 07 04:35:30 +0000 2026","created_timestamp":1791347730,"views":419558,"is_note_tweet":false,"community_note":null,"lang":"en","replying_to":{"screen_name":"sama","status":"2107691261776052633","url":"https://x.com/sama/status/2107691261776052633","profile_url":"https://x.com/sama"},"media":{},"provider":"twitter","reposted_by":null},{"type":"status","url":"https://x.com/sama/status/2107691577015755196","id":"2107691577015755196","text":"and
+        thank you to the untold number of people who put in the technical work, brick
+        by brick over the generations, to get us to the point where such a wonder
+        is possible.","raw_text":{"text":"and thank you to the untold number of people
+        who put in the technical work, brick by brick over the generations, to get
+        us to the point where such a wonder is possible.","display_text_range":[0,168],"facets":[]},"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415891,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"replies":224,"reposts":127,"likes":3962,"bookmarks":136,"quotes":34,"embed_card":"tweet","created_at":"Wed
+        Oct 07 04:36:45 +0000 2026","created_timestamp":1791347805,"views":361210,"is_note_tweet":false,"community_note":null,"lang":"en","replying_to":{"screen_name":"sama","status":"2107691262795239805","url":"https://x.com/sama/status/2107691262795239805","profile_url":"https://x.com/sama"},"media":{},"provider":"twitter","reposted_by":null}],"author":{"screen_name":"sama","url":"https://x.com/sama","id":"1605","followers":6415893,"following":1034,"likes":1016,"media_count":395,"statuses":8005,"name":"Sam
+        Altman","description":"The mission of OpenAI is to ensure that AGI benefits
+        all of humanity","raw_description":{"text":"The mission of OpenAI is to ensure
+        that AGI benefits all of humanity","facets":[]},"location":"SF","banner_url":"","avatar_url":"https://pbs.twimg.com/profile_images/2046764873200394240/r7BxVezs_200x200.jpg","joined":"Sun
+        Jul 16 22:01:55 +0000 2006","protected":false,"website":{"url":"http://blog.samaltman.com","display_url":"blog.samaltman.com"},"verification":{"verified":true,"verified_at":null,"type":"individual"},"type":"profile"},"code":200}'
+    headers:
+      access-control-allow-origin:
+      - '*'
+      allow:
+      - OPTIONS, GET, PURGE, HEAD
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-ray:
+      - a54f5ae78ebf136d-ATL
+      connection:
+      - keep-alive
+      content-length:
+      - '6788'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 00:03:22 GMT
+      nel:
+      - '{"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}'
+      report-to:
+      - '{"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=sB%2BhHkuPa1NFcD78eGjOCIuS13icio%2FeKxupn1LeqzJ624DlQgpxlb6AqxEzQ4mv%2Bs5tI3jkgrWEwStPm%2BpXX1UZbxyPIWSEOu5Edak6w90yI4g%2BL7YEm0QpNUwurSQufbFda8qI6%2B%2BJktReSP359g%3D%3D"}]}'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding, User-Agent
+      x-powered-by:
+      - fixtweet-main-ec941e7-2026-11-03T16:53:52
+      x-trans-rights:
+      - 'true'
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"max_tokens":8000,"messages":[{"role":"user","content":"Source kind: x\nTitle:
+      @sama: looking up at the stars with extra awe tonight. \"thy sea is so great
+      and my boa\nURL: https://x.com/sama/status/2107691261776052633\n\n<text>\nlooking
+      up at the stars with extra awe tonight.\n\n\"thy sea is so great and my boat
+      is so small.\"\n\nthank you to the machines, and the structure of reality, for
+      letting us understand a little more.\n\nand thank you to the untold number of
+      people who put in the technical work, brick by brick over the generations, to
+      get us to the point where such a wonder is possible.\n</text>"}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"summary":{"type":"object","properties":{"gist":{"type":"string"},"key_ideas":{"type":"array","items":{"type":"object","properties":{"timestamp":{"type":["string","null"]},"idea":{"type":"string"}},"required":["timestamp","idea"],"additionalProperties":false}},"numbers":{"type":"array","items":{"type":"object","properties":{"timestamp":{"type":["string","null"]},"fact":{"type":"string"}},"required":["timestamp","fact"],"additionalProperties":false}}},"required":["gist","key_ideas","numbers"],"additionalProperties":false},"domain":{"type":"string","enum":["AI","Macro","Crypto","Startups","Finance","Tech","History","Security","Sports","Other"]},"topic":{"type":"string"},"tags":{"type":"array","items":{"type":"string"}},"concepts":{"type":"array","items":{"type":"string"}},"is_educational":{"type":"boolean"},"cards":{"type":"array","items":{"type":"object","properties":{"kind":{"type":"string","enum":["concept","mechanism","number"]},"question":{"type":"string"},"answer":{"type":"string"}},"required":["kind","question","answer"],"additionalProperties":false}}},"required":["summary","domain","topic","tags","concepts","is_educational","cards"],"additionalProperties":false}}},"system":"You
+      process sources for a personal learning app. A source is an article, an X post
+      or thread, or an episode (podcast or video) that the user consumed or plans
+      to. The user wants \"level 2\" knowledge of its subject: enough to hold a real
+      conversation about it, including the vocabulary, how things work, the key players,
+      rough numbers, and the current debates.\n\nFrom the text, produce:\n- summary:
+      the gist in 2-3 sentences, the key ideas, and the numbers worth remembering.
+      Where the text has timestamps like [mm:ss] or [h:mm:ss], cite the one where
+      each idea or number comes up; when it has none, set the timestamp to null. Skip
+      ads and sponsor reads.\n- domain: the one broad domain the source belongs to.\n-
+      topic: a short, reusable topic name under that domain (e.g. \"Stablecoins\",
+      \"Fed policy\", \"NFL quarterbacks\").\n- tags: 3-8 short tags.\n- concepts:
+      the key concepts the source relies on or teaches, as short noun phrases.\n-
+      is_educational: true when the source teaches something worth remembering (how
+      things work, history, ideas, numbers). false for pure entertainment such as
+      banter, sports chat, jokes or gossip. A mostly entertaining source with real
+      teaching in it (e.g. how a contract works, why a play scheme succeeds) is still
+      true.\n- cards: when is_educational is true, 3-5 open-recall review cards of
+      kind concept, mechanism (\"why does X cause Y\") or number (a rough figure worth
+      knowing). Each card asks ONE focused question, never a compound one with several
+      parts. Each answer is what a good response would cover in 1-3 sentences. Avoid
+      trivia that only matters to this one source. When is_educational is false, cards
+      is an empty list.\n\nWrite in plain, conversational English for a smart reader
+      who is new to the subject. Short sentences. Define any jargon the first time
+      it appears. Prefer concrete examples and rough numbers (\"~1 GW\", not \"1.07
+      GW\")."}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '3826'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CggueENkTgYqXf5N5KVkk","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"{\"summary\":{\"gist\":\"Sam
+        Altman posts a short reflection on looking at the stars with fresh awe. He
+        quotes a line about the sea being great and a boat being small, which conveys
+        how vast the universe is compared with human effort. He thanks machines and
+        the structure of reality for helping people understand more, and thanks the
+        many engineers who built technology step by step over generations.\",\"key_ideas\":[{\"timestamp\":null,\"idea\":\"Humans
+        have built understanding of the universe gradually, through many small technical
+        steps over generations.\"},{\"timestamp\":null,\"idea\":\"The quoted line
+        about a great sea and a small boat expresses how tiny people feel next to
+        the vastness of nature.\"},{\"timestamp\":null,\"idea\":\"Machines and the
+        underlying structure of reality are credited with letting people understand
+        more about the world.\"}],\"numbers\":[]},\"domain\":\"Other\",\"topic\":\"Reflections
+        on science and technology\",\"tags\":[\"AI leaders\",\"science and wonder\",\"engineering
+        progress\",\"X post\"],\"concepts\":[\"incremental technical progress\",\"scientific
+        understanding\",\"human scale versus the universe\"],\"is_educational\":false,\"cards\":[]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1765,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":718,"output_tokens_details":{"thinking_tokens":355},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9999000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-04T00:03:24Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1999000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-04T00:03:27Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-04T00:03:23Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11998000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-04T00:03:24Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a54f5af47e2fe248-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '3861'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 00:03:27 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=4389
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-9b13e43c8ee8dd1d17076e8976e1bce3-87eb99638c0c0ba1-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"max_tokens":6000,"messages":[{"role":"user","content":"Source kind: x\nTitle:
+      @sama: looking up at the stars with extra awe tonight. \"thy sea is so great
+      and my boa\nURL: https://x.com/sama/status/2107691261776052633\n\n<text>\nlooking
+      up at the stars with extra awe tonight.\n\n\"thy sea is so great and my boat
+      is so small.\"\n\nthank you to the machines, and the structure of reality, for
+      letting us understand a little more.\n\nand thank you to the untold number of
+      people who put in the technical work, brick by brick over the generations, to
+      get us to the point where such a wonder is possible.\n</text>"}],"model":"claude-sonnet-5-5","system":"You
+      write primers for a personal learning app. A primer gives the background a source
+      assumes its reader already has, so the source is easy to follow. It is not a
+      summary of the source.\n\nRead the text, work out which concepts, players, history,
+      and numbers the author takes for granted, and explain those. Write for a smart
+      beginner: friendly, no assumed jargon, a 5-8 minute read (roughly 900-1400 words).
+      Use markdown with short sections and a title. Don''t reveal the source''s own
+      conclusions or story beats.\n\nWrite in plain, conversational English for a
+      smart reader who is new to the subject. Short sentences. Define any jargon the
+      first time it appears. Prefer concrete examples and rough numbers (\"~1 GW\",
+      not \"1.07 GW\")."}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '1391'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-sonnet-5-5","id":"msg_011CggueZXAypmJq6a8yXF2W","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"#
+        Primer: A Short Tweet About Stars, Machines, and Humility\n\n## What this
+        post is\n\nThis is a short, reflective post from Sam Altman, the CEO of OpenAI,
+        the company behind ChatGPT. It''s more of a mood than an announcement. He''s
+        looking at the night sky, feeling small, and giving thanks.\n\nThe post never
+        says what prompted the feeling. It mentions \"machines\" and \"such a wonder,\"
+        but names no event. So the main thing to bring along is the set of ideas he''s
+        drawing on. This primer covers those.\n\n## The quote: \"Thy sea is so great
+        and my boat is so small\"\n\nThe line is usually given as: *\"O God, thy sea
+        is so great and my boat is so small.\"*\n\n- It''s traditionally called a
+        **Breton fishermen''s prayer**. Brittany is a region on the northwest coast
+        of France, with a long fishing and seafaring history.\n- The prayer is about
+        humility. The sea is huge, dangerous, and indifferent, and a small wooden
+        boat has to cross it anyway.\n- It became famous in the US through **John
+        F. Kennedy**. A small plaque with the line sat on his desk in the Oval Office.
+        It was given to him by Admiral **Hyman Rickover**, the engineer who led the
+        development of nuclear-powered submarines for the US Navy.\n\nKennedy''s connection
+        matters because the line is often tied to big, risky human projects: ocean
+        voyages, nuclear power, the space race. When someone quotes it, they usually
+        mean: *what we''re attempting is vast, and we are tiny. We''re trying anyway.*\n\nIn
+        Altman''s post, the \"sea\" is plausibly the universe, or reality itself.
+        The \"stars\" in the first line point that way.\n\n## \"Thank you to the machines\"\n\nAltman
+        runs a company that builds AI systems, so \"the machines\" most likely means
+        those: large AI models, along with the computers and chips they run on. This
+        is a guess from context, since the post doesn''t spell it out.\n\nSome background
+        on why someone in his position might thank machines for helping us \"understand
+        a little more\":\n\n- **AI as a science tool.** For several years, AI systems
+        have been used to help with research, not just chatbots and writing. A well-known
+        example is **AlphaFold** from Google DeepMind. It predicts the 3D shapes of
+        proteins, a problem that had stumped biologists for decades. Its creators
+        shared a Nobel Prize in Chemistry in 2024.\n- **Astronomy and physics.** Modern
+        telescopes produce enormous amounts of data. Machine learning is used to sort
+        it, find patterns, and flag things humans would miss. Examples include spotting
+        distant planets and classifying galaxies.\n- **AI as a reasoning partner.**
+        Newer AI models are increasingly pitched as able to help with math proofs,
+        physics problems, and generating hypotheses. People in the field argue about
+        how far this really goes.\n\nSo thanking \"the machines\" fits a broader story:
+        tools we built are now helping us see more of the world. It''s also worth
+        knowing that Altman has a strong stake in this story, since it''s his industry.
+        The post is sincere in tone, but it comes from someone with a view on AI''s
+        importance.\n\n## \"The structure of reality\"\n\nThis phrase is a more philosophical
+        thank-you. It points to a fact that many scientists find remarkable: the universe
+        seems to follow rules that are **understandable**. A short equation can predict
+        where a planet will be years from now. Physicist Eugene Wigner called this
+        the \"unreasonable effectiveness\" of mathematics in describing nature.\n\nAltman
+        is thanking reality for being the kind of thing that *can* be figured out.
+        If the universe were random or chaotic at every level, neither humans nor
+        machines could learn much about it.\n\n## \"Brick by brick over the generations\"\n\nThe
+        last paragraph is about **cumulative progress**. Any modern technical marvel
+        rests on a very long chain of earlier work. A rough, illustrative version
+        of that chain for AI and astronomy:\n\n- **Mathematics and physics**, built
+        up over centuries by people like Newton, Maxwell, and Einstein.\n- **Optics
+        and telescopes**, from Galileo''s handheld instrument in the early 1600s to
+        space telescopes today.\n- **Electricity and the transistor.** The transistor,
+        invented in 1947, is the tiny switch at the heart of every computer chip.
+        Modern AI chips hold tens of billions of them.\n- **Computing and the internet**,
+        which let people store and share knowledge at scale.\n- **Software and algorithms**,
+        including the machine learning methods that took off in the 2010s.\n- **Manufacturing.**
+        Advanced chips require some of the most complex factories ever built, with
+        supply chains spanning many countries and many thousands of specialists.\n\n\"Untold
+        number of people\" is the key phrase. Most of the people on that chain are
+        anonymous: technicians, machinists, graduate students, engineers. No one person
+        built any of it. Altman is saluting that collective effort.\n\n## How the
+        pieces fit together\n\nThe post stacks three kinds of thanks, each at a different
+        scale:\n\n1. **The universe**, for being understandable.\n2. **The machines**,
+        for helping us see more of it.\n3. **The people**, for building those machines
+        over generations.\n\nThe Breton fishermen''s line ties these together. The
+        sea (the universe) is enormous, the boat (human ability) is small, and yet
+        the boat has gotten much better.\n\n## What to keep in mind while reading\n\n-
+        **There''s no specific claim to verify.** Don''t go looking for data or a
+        result in the text. It''s a reflection, not a report.\n- **The reference is
+        unstated.** The \"wonder\" could be a particular scientific result, a product
+        launch, or just the experience of stargazing with new tools. The post doesn''t
+        say, so it''s best not to assume.\n- **The speaker matters.** He leads a major
+        AI company, so his gratitude to \"machines\" is also a statement about the
+        technology he''s building. Reasonable people disagree about how transformative
+        AI will be, and this post takes the optimistic side without arguing for it.\n-
+        **Tone is the point.** Awe and humility are the message. The quote, the stars,
+        and the thanks to anonymous builders all serve that mood.\n\n## Quick glossary\n\n-
+        **Breton:** from Brittany, a coastal region of northwest France.\n- **Rickover:**
+        US Navy admiral who led the development of nuclear submarines.\n- **AlphaFold:**
+        an AI system that predicts protein structures.\n- **Transistor:** a tiny electronic
+        switch; the basic building block of computer chips.\n- **Machine learning:**
+        software that learns patterns from data instead of following only hand-written
+        rules."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":423,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2542,"output_tokens_details":{"thinking_tokens":451},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-04T00:03:28Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-04T00:03:49Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-04T00:03:27Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-04T00:03:28Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a54f5b10dae8b612-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '9521'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 00:03:49 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=22294
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-0b56e66a162f54a3a5912d7a36690825-d3a965343b373718-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -1,25 +1,31 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
+import { Linking, Pressable, View } from "react-native";
 
 import { db } from "@/db/client";
+import { setPrimerOpened } from "@/db/actions";
 import * as schema from "@/db/schema";
+import { FullEmailSheet } from "@/item/FullEmailSheet";
+import { ItemActions } from "@/item/ItemActions";
+import { ItemHeader, REACTION_LABELS } from "@/item/ItemHeader";
+import { ItemMenu } from "@/item/ItemMenu";
+import { timestampUrl } from "@/item/timestampLink";
+import { requestSync } from "@/sync/useSync";
 import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
+import { FinishSheet } from "@/ui/FinishSheet";
+import { haptic } from "@/ui/haptics";
 import { Markdown } from "@/ui/Markdown";
-import { ProcessingLine } from "@/ui/ProcessingLine";
-import { sourceByline } from "@/ui/sourceLabels";
 import { parseSummary, SummaryContent } from "@/ui/summaryContent";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
-
-const REACTION_LABELS: Record<string, string> = { easy: "Easy", mostly: "Mostly followed", lost: "Parts lost me" };
+type SourceRow = typeof schema.sources.$inferSelect;
 
 export default function SourceScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, primer: primerParam } = useLocalSearchParams<{ id: string; primer?: string }>();
   const router = useRouter();
   const { data: sources } = useLiveQuery(db.select().from(schema.sources).where(eq(schema.sources.id, id)), [id]);
   const { data: artifacts } = useLiveQuery(
@@ -38,6 +44,14 @@ export default function SourceScreen() {
     [id],
   );
 
+  const { data: topics } = useLiveQuery(
+    db.select().from(schema.topics).where(eq(schema.topics.id, sources[0]?.topicId ?? "")),
+    [sources[0]?.topicId],
+  );
+  const [finishOpen, setFinishOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [emailOpen, setEmailOpen] = useState(false);
+
   const source = sources[0];
   const mergedIntoId = source?.deletedAt ? source.mergedIntoId : null;
 
@@ -54,26 +68,39 @@ export default function SourceScreen() {
   const primerMarkdown = primer ? (JSON.parse(primer.content) as { markdown: string }).markdown : null;
 
   return (
-    <Screen title={source.title ?? "Source"}>
-      <SourceHeader source={source} />
-      {summaryContent ? <SummarySections summary={summaryContent} /> : null}
-      {primerMarkdown ? <PrimerSection markdown={primerMarkdown} /> : null}
-      <ReactionSection reaction={source.reaction} note={source.note} />
-      {cards.length > 0 ? <CardsSection cards={cards} /> : null}
+    <Screen
+      title=""
+      onBack={router.back}
+      headerRight={
+        <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
+          <Text variant="largeTitle">•••</Text>
+        </Pressable>
+      }
+    >
+      <ItemHeader source={source} topicName={topics[0]?.name ?? null} />
+      <Text testID="item-title" variant="articleTitle">
+        {source.title ?? source.url}
+      </Text>
+      <ItemActions source={source} onFinish={() => setFinishOpen(true)} />
+      {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
+      {primerMarkdown ? (
+        <PrimerSection markdown={primerMarkdown} source={source} openOnArrival={primerParam === "1"} />
+      ) : null}
+      {source.kind === "newsletter" ? <FullEmailRow onPress={() => setEmailOpen(true)} /> : null}
+      <NoteSection reaction={source.reaction} note={source.note} />
+      {source.state === "consumed" && cards.length > 0 ? <CardsSection cards={cards} /> : null}
+      <FinishSheet sourceId={source.id} visible={finishOpen} onClose={() => setFinishOpen(false)} />
+      <ItemMenu source={source} visible={menuOpen} onClose={() => setMenuOpen(false)} />
+      <FullEmailSheet sourceId={source.id} visible={emailOpen} onClose={() => setEmailOpen(false)} />
     </Screen>
   );
 }
 
-function SourceHeader({ source }: { source: typeof schema.sources.$inferSelect }) {
-  const theme = useTheme();
-
+function FullEmailRow({ onPress }: { onPress: () => void }) {
   return (
-    <View style={{ gap: theme.spacing.sm }}>
-      <Text variant="secondary" tone="ink3">
-        {source.kind} · {sourceByline(source)}
-      </Text>
-      <ProcessingLine source={source} />
-    </View>
+    <Pressable testID="item-full-email" onPress={onPress} hitSlop={8}>
+      <Text variant="headline">Open the full email ›</Text>
+    </Pressable>
   );
 }
 
@@ -85,13 +112,18 @@ function SectionTitle({ children }: { children: string }) {
   );
 }
 
-function TimestampChip({ timestamp }: { timestamp: string | null }) {
+function TimestampChip({ timestamp, source }: { timestamp: string | null; source: SourceRow }) {
   const theme = useTheme();
   if (!timestamp) return null;
 
   return (
-    <View
+    <Pressable
       testID="timestamp"
+      hitSlop={8}
+      onPress={() => {
+        haptic("light");
+        void Linking.openURL(timestampUrl(source, timestamp));
+      }}
       style={{
         backgroundColor: theme.colors.press,
         borderRadius: theme.radii.chipSmall,
@@ -102,11 +134,11 @@ function TimestampChip({ timestamp }: { timestamp: string | null }) {
       <Text variant="monoLabel" tone="ink2">
         {timestamp}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
-function SummarySections({ summary }: { summary: SummaryContent }) {
+function SummarySections({ summary, source }: { summary: SummaryContent; source: SourceRow }) {
   const theme = useTheme();
 
   return (
@@ -126,7 +158,7 @@ function SummarySections({ summary }: { summary: SummaryContent }) {
               <Text variant="readingBody" style={{ flex: 1 }}>
                 {item.idea}
               </Text>
-              <TimestampChip timestamp={item.timestamp} />
+              <TimestampChip timestamp={item.timestamp} source={source} />
             </View>
           ))}
         </View>
@@ -140,7 +172,7 @@ function SummarySections({ summary }: { summary: SummaryContent }) {
               <Text variant="monoLabel" style={{ flex: 1, textTransform: "none" }}>
                 {item.fact}
               </Text>
-              <TimestampChip timestamp={item.timestamp} />
+              <TimestampChip timestamp={item.timestamp} source={source} />
             </View>
           ))}
         </View>
@@ -149,9 +181,25 @@ function SummarySections({ summary }: { summary: SummaryContent }) {
   );
 }
 
-function PrimerSection({ markdown }: { markdown: string }) {
+function PrimerSection({
+  markdown,
+  source,
+  openOnArrival,
+}: {
+  markdown: string;
+  source: SourceRow;
+  openOnArrival: boolean;
+}) {
   const theme = useTheme();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(openOnArrival);
+  const needsMark = open && source.primerOpenedAt === null;
+
+  // Opening the primer is what marks it read (it leaves Today's "Primers ready").
+  useEffect(() => {
+    if (!needsMark) return;
+    setPrimerOpened(db, "source", source.id, true);
+    requestSync();
+  }, [needsMark, source.id]);
 
   return (
     <View testID="source-primer" style={{ gap: theme.spacing.md }}>
@@ -163,13 +211,13 @@ function PrimerSection({ markdown }: { markdown: string }) {
   );
 }
 
-function ReactionSection({ reaction, note }: { reaction: string | null; note: string | null }) {
+function NoteSection({ reaction, note }: { reaction: string | null; note: string | null }) {
   const theme = useTheme();
   if (!reaction && !note) return null;
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
-      <SectionTitle>Your take</SectionTitle>
+      <SectionTitle>Your note</SectionTitle>
       {reaction ? <Text>{REACTION_LABELS[reaction] ?? reaction}</Text> : null}
       {note ? <Text tone="ink2">{note}</Text> : null}
     </View>

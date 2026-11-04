@@ -87,7 +87,9 @@ def test_0003_gives_existing_users_an_ingest_token(test_database_url: str) -> No
 
 
 def test_0004_backfills_queue_positions_and_read_markers(test_database_url: str) -> None:
-    """Queued sources rank oldest first (-1, -2); every source counts its primer opened; only newsletters count as read.
+    """Queued sources rank newest on top (-1 for the oldest, counting down).
+
+    Every source counts its primer opened; only newsletters count as read.
 
     Each source also gets a newer change_seq, so phones pull the new columns.
     """

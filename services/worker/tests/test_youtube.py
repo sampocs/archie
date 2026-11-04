@@ -16,24 +16,21 @@ def _no_transcript_found() -> youtube_transcript_api.NoTranscriptFound:
 
 
 @pytest.mark.parametrize(
-    ("error", "has_supadata_key", "expected_reason"),
+    ("error", "expected_reason"),
     [
-        (youtube_transcript_api.RequestBlocked(VIDEO_ID), False, errors.FailureReason.YOUTUBE_NEEDS_SETUP),
-        (youtube_transcript_api.IpBlocked(VIDEO_ID), False, errors.FailureReason.YOUTUBE_NEEDS_SETUP),
-        (youtube_transcript_api.RequestBlocked(VIDEO_ID), True, None),
-        (youtube_transcript_api.IpBlocked(VIDEO_ID), True, None),
-        (youtube_transcript_api.TranscriptsDisabled(VIDEO_ID), False, errors.FailureReason.NO_CAPTIONS),
-        (youtube_transcript_api.TranscriptsDisabled(VIDEO_ID), True, errors.FailureReason.NO_CAPTIONS),
-        (_no_transcript_found(), False, errors.FailureReason.NO_CAPTIONS),
-        (youtube_transcript_api.VideoUnavailable(VIDEO_ID), False, errors.FailureReason.VIDEO_UNAVAILABLE),
-        (youtube_transcript_api.AgeRestricted(VIDEO_ID), False, None),
-        (RuntimeError("boom"), False, None),
+        (youtube_transcript_api.RequestBlocked(VIDEO_ID), errors.FailureReason.YOUTUBE_NEEDS_SETUP),
+        (youtube_transcript_api.IpBlocked(VIDEO_ID), errors.FailureReason.YOUTUBE_NEEDS_SETUP),
+        (youtube_transcript_api.TranscriptsDisabled(VIDEO_ID), errors.FailureReason.NO_CAPTIONS),
+        (_no_transcript_found(), errors.FailureReason.NO_CAPTIONS),
+        (youtube_transcript_api.VideoUnavailable(VIDEO_ID), errors.FailureReason.VIDEO_UNAVAILABLE),
+        (youtube_transcript_api.AgeRestricted(VIDEO_ID), None),
+        (RuntimeError("boom"), None),
     ],
 )
 def test_permanent_error_for_maps_each_library_failure(
-    error: Exception, has_supadata_key: bool, expected_reason: errors.FailureReason | None
+    error: Exception, expected_reason: errors.FailureReason | None
 ) -> None:
-    """Blocks need setup only without a Supadata key, caption/video problems are permanent, the rest is retried."""
-    permanent_error = youtube.permanent_error_for(error, has_supadata_key=has_supadata_key)
+    """Blocks need setup, caption/video problems are permanent, the rest is retried."""
+    permanent_error = youtube.permanent_error_for(error)
 
     assert (permanent_error.reason if permanent_error else None) == expected_reason

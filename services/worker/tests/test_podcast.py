@@ -314,3 +314,44 @@ def test_a_transcript_under_200_words_is_ignored(served: list[str], monkeypatch:
     monkeypatch.setattr(fetch_title, "fetch_bytes", fetch_short)
 
     assert transcripts.fetch_best([_link(VTT_URL, "text/vtt")]) is None
+
+
+def test_a_top_hit_without_a_feed_is_skipped_for_the_next_one_that_has_one() -> None:
+    """With no exact name match, the first hit that has a feedUrl is used, not a feedless top hit."""
+    results = [
+        {"collectionName": "The Show: Live", "collectionId": 1},
+        {"collectionName": "The Show Extra", "collectionId": 2, "feedUrl": "https://example.test/extra.xml"},
+    ]
+
+    hit = podcast.best_search_hit(show_name="The Show", results=results)
+
+    assert hit is not None
+    assert hit["collectionId"] == 2
+
+
+def test_an_exact_name_match_wins_over_the_top_hit() -> None:
+    """The hit named exactly (any case) beats a higher-ranked near match."""
+    results = [
+        {"collectionName": "The Show Extra", "collectionId": 2, "feedUrl": "https://example.test/extra.xml"},
+        {"collectionName": "the show", "collectionId": 3, "feedUrl": "https://example.test/show.xml"},
+    ]
+
+    hit = podcast.best_search_hit(show_name="The Show", results=results)
+
+    assert hit is not None
+    assert hit["collectionId"] == 3
+
+
+def test_an_exact_name_match_without_a_feed_does_not_borrow_another_shows_feed() -> None:
+    """A feedless exact match means the show is Spotify-only; the other shows named alike are not it."""
+    results = [
+        {"collectionName": "The Show", "collectionId": 1},
+        {"collectionName": "The Show Extra", "collectionId": 2, "feedUrl": "https://example.test/extra.xml"},
+    ]
+
+    assert podcast.best_search_hit(show_name="The Show", results=results) is None
+
+
+def test_no_search_results_means_no_show() -> None:
+    """An empty result gives nothing."""
+    assert podcast.best_search_hit(show_name="The Show", results=[]) is None

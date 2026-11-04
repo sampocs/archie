@@ -3,9 +3,10 @@
 The text comes from the Safari capture when the phone sent one, else from the X thread (for X posts) or
 the fetched page (for articles). Too little text, or a page that answers 401, 403, 404, 410 or 451 (a
 paywall, block or missing page), fails the job at once as `TEXT_MISSING`, since fetching the same page
-again will not help; the user is told to share it from Safari instead. Other failures are retried. Following the loop's
-handler contract, the source is read and marked `processing` in a committed transaction before any
-outside call, and the result is written under the user's lock afterwards.
+again will not help; the user is told to share it from Safari instead. A newsletter has no page to fetch (its URL is
+`newsletter:<message-id>`), so one without a capture, or with too little text, fails as `NEWSLETTER_UNREADABLE`.
+Other failures are retried. Following the loop's handler contract, the source is read and marked `processing` in a
+committed transaction before any outside call, and the result is written under the user's lock afterwards.
 """
 
 from __future__ import annotations
@@ -65,12 +66,18 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         _fetch_podcast(db, source=source, source_input=source_input)
         return
 
+    is_newsletter = source_input.kind == models.SourceKind.NEWSLETTER
+    if is_newsletter and source_input.capture_text is None:
+        raise errors.PermanentJobError(errors.FailureReason.NEWSLETTER_UNREADABLE)
+
     extracted = _get_text(source_input)
     word_count = len(extracted.text.split())
     minimum_words = _MIN_X_WORDS if source_input.kind == models.SourceKind.X else _MIN_ARTICLE_WORDS
     if word_count < minimum_words:
         _logger.info("Source %s has %d words, needs %d", source_input.source_id, word_count, minimum_words)
-        raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING)
+        raise errors.PermanentJobError(
+            errors.FailureReason.NEWSLETTER_UNREADABLE if is_newsletter else errors.FailureReason.TEXT_MISSING
+        )
 
     _text.store_text(
         db,
@@ -168,7 +175,7 @@ def _fetch_youtube(db: sqlalchemy.orm.Session, *, source: models.Source, source_
     try:
         segments = youtube.fetch_segments(video_id=video_id, supadata_api_key=supadata_api_key)
     except youtube_transcript_api.CouldNotRetrieveTranscript as error:
-        permanent_error = youtube.permanent_error_for(error, has_supadata_key=bool(supadata_api_key))
+        permanent_error = youtube.permanent_error_for(error)
         if permanent_error is None:
             raise
         raise permanent_error from error

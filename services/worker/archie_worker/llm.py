@@ -25,6 +25,9 @@ GROQ_WHISPER = "whisper-large-v3-turbo"
 OPENAI_TRANSCRIBE = "gpt-4o-mini-transcribe"
 REQUEST_TIMEOUT_SECONDS = 300
 
+# Statuses from this one up (including Anthropic's 529 "overloaded") are the service's fault: the fallback gets a turn.
+_FIRST_SERVER_ERROR_STATUS = 500
+
 # Stop reasons that mean the model did not deliver a usable answer, so the fallback model gets a turn.
 _UNUSABLE_STOP_REASONS = frozenset({"refusal", "max_tokens"})
 
@@ -122,7 +125,12 @@ def complete(
     max_tokens: int,
     json_schema: dict[str, Any] | None = None,
 ) -> Completion:
-    """Ask `models.primary`, then `models.fallback` if it refused or ran out of tokens; record every call."""
+    """Ask `models.primary`, then `models.fallback` if it refused, ran out of tokens, or the service failed it.
+
+    A service failure is a 5xx/529 answer or a connection error; a failure of the fallback is re-raised for the worker
+    loop to retry, as is any other API error (a 4xx would fail the fallback the same way). Every answered call is
+    recorded.
+    """
     # No SDK retries: the worker loop owns retrying, so a failed call is not silently billed twice.
     client = anthropic.Anthropic(api_key=api_key, max_retries=0, timeout=REQUEST_TIMEOUT_SECONDS)
     output_options: dict[str, Any] = (
@@ -130,14 +138,23 @@ def complete(
     )
 
     # `models` is the ModelPair parameter here, shadowing the `archie_db.models` module inside this function.
-    for model in (models.primary, models.fallback):
-        response = client.messages.create(
-            model=model,
-            max_tokens=max_tokens,
-            system=system,
-            messages=[{"role": "user", "content": user_message}],
-            **output_options,
-        )
+    attempts = (models.primary, models.fallback)
+    for attempt, model in enumerate(attempts):
+        try:
+            response = client.messages.create(
+                model=model,
+                max_tokens=max_tokens,
+                system=system,
+                messages=[{"role": "user", "content": user_message}],
+                **output_options,
+            )
+        except (anthropic.APIStatusError, anthropic.APIConnectionError) as error:
+            if not _is_service_failure(error) or attempt == len(attempts) - 1:
+                raise
+
+            _logger.warning("%s failed for job %d, trying %s: %r", model, context.job_id, models.fallback, error)
+            continue
+
         _record_call(engine, context=context, model=model, response=response)
 
         if response.stop_reason not in _UNUSABLE_STOP_REASONS:
@@ -173,6 +190,12 @@ def record_audio_call(
     with sqlalchemy.orm.Session(engine) as db:
         db.add(row)
         db.commit()
+
+
+def _is_service_failure(error: anthropic.APIStatusError | anthropic.APIConnectionError) -> bool:
+    if isinstance(error, anthropic.APIConnectionError):
+        return True
+    return error.status_code >= _FIRST_SERVER_ERROR_STATUS
 
 
 def _record_call(

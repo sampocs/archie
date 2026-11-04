@@ -19,6 +19,7 @@ from decimal import Decimal
 from typing import Any
 
 import anthropic
+import httpx2
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
@@ -247,6 +248,64 @@ def test_both_models_cut_off_is_a_model_output_error(
     calls = _calls(engine)
     assert [call.stop_reason for call in calls] == ["max_tokens", "max_tokens"]
     assert all(call.cost_usd > 0 for call in calls)
+
+
+@pytest.mark.postgres
+def test_fallback_model_answers_when_the_primary_is_overloaded(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette
+) -> None:
+    """A 529 from the primary hands over to the fallback; only the answered call is recorded.
+
+    The cassette is the `llm_fallback` one with its first response replaced by Anthropic's 529 error body.
+    """
+    with cassette("llm_overloaded"):
+        completion = _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
+
+    assert completion.model == llm.SONNET
+    assert [(call.model, call.stop_reason) for call in _calls(engine)] == [(llm.SONNET, "end_turn")]
+
+
+@pytest.mark.postgres
+def test_an_overloaded_fallback_is_raised_for_the_loop_to_retry(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette
+) -> None:
+    """When the fallback answers 529 too, the error surfaces instead of being swallowed."""
+    with cassette("llm_overloaded_twice"), pytest.raises(anthropic.APIStatusError) as raised:
+        _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
+
+    assert raised.value.status_code == 529
+    assert _calls(engine) == []
+
+
+@pytest.mark.postgres
+def test_a_client_error_from_the_primary_does_not_try_the_fallback(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette
+) -> None:
+    """A 401 would fail the fallback the same way, so it is raised at once (the cassette holds a single call)."""
+    with cassette("llm_unauthorized"), pytest.raises(anthropic.AuthenticationError):
+        _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
+
+    assert _calls(engine) == []
+
+
+@pytest.mark.postgres
+def test_a_dropped_connection_to_the_primary_tries_the_fallback(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The primary's request never reaches the API (a connection error); the fallback's recorded answer is used."""
+    create = anthropic.resources.messages.Messages.create
+
+    def create_unless_primary(self: Any, **kwargs: Any) -> Any:
+        if kwargs["model"] == llm.HAIKU:
+            raise anthropic.APIConnectionError(request=httpx2.Request("POST", "https://api.anthropic.com/v1/messages"))
+        return create(self, **kwargs)
+
+    monkeypatch.setattr(anthropic.resources.messages.Messages, "create", create_unless_primary)
+
+    with cassette("llm_overloaded"):
+        completion = _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
+
+    assert completion.model == llm.SONNET
 
 
 def _complete(

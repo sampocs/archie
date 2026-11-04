@@ -108,6 +108,14 @@ class _Show:
     itunes_id: int | None
 
 
+@dataclass(frozen=True)
+class _Match:
+    """The feed item that is the episode, and the show feed it was found in."""
+
+    show: _Show
+    item: FeedItem
+
+
 def resolve(engine: sqlalchemy.Engine, *, link: urls.PodcastLink) -> ResolvedEpisode:
     """Find the linked episode in its show's RSS feed.
 
@@ -178,20 +186,38 @@ def name_key(name: str) -> str:
 def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str) -> ResolvedEpisode:
     spotify = _read_spotify_page(episode_id=episode_id)
 
-    show = _registered_show(engine, show_name=spotify.show_name) or _search_show(show_name=spotify.show_name)
+    registered = _registered_show(engine, show_name=spotify.show_name)
+    show = registered or _search_show(show_name=spotify.show_name)
     if show is None:
         _logger.info("No feed for Spotify show %r", spotify.show_name)
         raise errors.PermanentJobError(errors.FailureReason.SPOTIFY_ONLY)
 
-    items = _read_feed(show.feed_url)
-    item = best_match(title=spotify.title, published=spotify.published, items=items)
-    if item is None:
+    match = _match_spotify_episode(spotify, show=show)
+    if match is None and registered is not None:
+        # The remembered feed may be stale (the show moved hosts), so search once more before giving up.
+        match = _match_in_searched_feed(spotify, registered=registered)
+
+    if match is None:
         _logger.info("Episode %r not found in the feed of %r", spotify.title, spotify.show_name)
         raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
 
-    # Only a matched feed is remembered, so a wrong top search hit never sticks.
-    _remember_show(engine, show=show)
-    return _resolved(item=item, show_name=show.name, feed_url=show.feed_url)
+    # Only a matched feed is remembered, so a wrong top search hit never sticks; a changed feed replaces the old row.
+    _remember_show(engine, show=match.show)
+    return _resolved(item=match.item, show_name=match.show.name, feed_url=match.show.feed_url)
+
+
+def _match_spotify_episode(spotify: SpotifyEpisode, *, show: _Show) -> _Match | None:
+    item = best_match(title=spotify.title, published=spotify.published, items=_read_feed(show.feed_url))
+    return _Match(show=show, item=item) if item else None
+
+
+def _match_in_searched_feed(spotify: SpotifyEpisode, *, registered: _Show) -> _Match | None:
+    """The episode in the searched feed, when search finds one other than the registered feed that lacked it."""
+    searched = _search_show(show_name=spotify.show_name)
+    if searched is None or searched.feed_url == registered.feed_url:
+        return None
+
+    return _match_spotify_episode(spotify, show=searched)
 
 
 def _resolve_apple(*, show_id: str, episode_id: int) -> ResolvedEpisode:
@@ -250,7 +276,7 @@ def _registered_show(engine: sqlalchemy.Engine, *, show_name: str) -> _Show | No
 
 
 def _search_show(*, show_name: str) -> _Show | None:
-    """The best iTunes Search hit with a feed: an exact (case-insensitive) name match, else the top hit."""
+    """The best iTunes Search hit (see `best_search_hit`) as a show, or None when there is none to use."""
     search = _fetch_json(
         url=str(
             httpx.URL(
@@ -264,15 +290,24 @@ def _search_show(*, show_name: str) -> _Show | None:
             )
         )
     )
-    candidates: list[dict[str, Any]] = search.get("results", [])
-    exact = [hit for hit in candidates if hit.get("collectionName", "").casefold() == show_name.casefold()]
-    ranked = exact or candidates
-    if not ranked or not ranked[0].get("feedUrl"):
+    hit = best_search_hit(show_name=show_name, results=search.get("results", []))
+    if hit is None:
         return None
 
-    hit = ranked[0]
-
     return _Show(name=show_name, feed_url=hit["feedUrl"], itunes_id=hit.get("collectionId"))
+
+
+def best_search_hit(*, show_name: str, results: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
+    """The feed-bearing hit named exactly (case-insensitive) like the show, else the top hit that has a feed.
+
+    A hit named exactly like the show but without a feed means the show has none (Spotify-only), so no other
+    show's feed is substituted for it.
+    """
+    exact = [hit for hit in results if hit.get("collectionName", "").casefold() == show_name.casefold()]
+    if exact:
+        return next((hit for hit in exact if hit.get("feedUrl")), None)
+
+    return next((hit for hit in results if hit.get("feedUrl")), None)
 
 
 def _remember_show(engine: sqlalchemy.Engine, *, show: _Show) -> None:

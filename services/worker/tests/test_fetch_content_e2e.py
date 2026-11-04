@@ -246,6 +246,35 @@ def test_x_falls_back_to_vxtwitter_when_fxtwitter_json_has_the_wrong_shape(
     assert _job(engine, models.JobKind.FETCH_CONTENT).status == models.JobStatus.DONE
 
 
+def test_a_newsletter_without_a_capture_fails_at_once_without_fetching(
+    engine: sqlalchemy.Engine, replay: Replay
+) -> None:
+    """A newsletter's URL is not a page: no request (the empty cassette raises on any), one attempt, email reason."""
+    source_id = _add_source(engine, url="newsletter:<abc@mail.example>", kind=models.SourceKind.NEWSLETTER)
+
+    with replay("no_requests"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    job = _job(engine, models.JobKind.FETCH_CONTENT)
+    assert (job.attempts, job.status) == (1, models.JobStatus.FAILED)
+    assert _source(engine, source_id).processing_error == errors.FailureReason.NEWSLETTER_UNREADABLE
+
+
+def test_a_short_newsletter_capture_fails_as_an_unreadable_email(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """A newsletter capture under the word minimum is an unreadable email, not a page to share from Safari."""
+    source_id = _add_source(
+        engine,
+        url="newsletter:<abc@mail.example>",
+        kind=models.SourceKind.NEWSLETTER,
+        capture=("Hi", "Only a few words here."),
+    )
+
+    with replay("no_requests"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert _source(engine, source_id).processing_error == errors.FailureReason.NEWSLETTER_UNREADABLE
+
+
 def test_an_x_source_with_an_unparseable_url_fails_for_good(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """No post id means nothing to fetch (and no request): the job fails once with the text-missing reason."""
     source_id = _add_source(engine, url="https://x.com/sama", kind=models.SourceKind.X)

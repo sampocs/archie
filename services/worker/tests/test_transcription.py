@@ -173,3 +173,12 @@ def test_a_split_that_exceeds_its_time_limit_stays_retryable(
 
     with pytest.raises(subprocess.TimeoutExpired):
         transcription.split(audio=SHORT_CHUNK, audio_seconds=0, directory=tmp_path, chunk_seconds=600)
+
+
+@pytest.mark.parametrize(
+    ("header", "expected"),
+    [("17", 17.0), ("2.5", 2.5), (None, 60.0), ("", 60.0), ("Wed, 21 Oct 2026 07:28:00 GMT", 60.0)],
+)
+def test_retry_after_uses_the_header_only_when_it_is_a_number_of_seconds(header: str | None, expected: float) -> None:
+    """An HTTP-date `retry-after` falls back to the default instead of crashing the handler with a ValueError."""
+    assert transcription.retry_after_seconds(header) == expected

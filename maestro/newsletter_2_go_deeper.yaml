@@ -16,6 +16,8 @@ appId: com.sampocs.archie
     timeout: 120000
 - tapOn:
     id: "item-go-deeper"
-- extendedWaitUntil:
-    visible: "Cards from this"
+# The cards land below the summary, so scroll down to them while the worker writes them.
+- scrollUntilVisible:
+    element:
+      id: "card-.*"
     timeout: 300000

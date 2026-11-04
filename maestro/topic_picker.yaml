@@ -23,11 +23,13 @@ appId: com.sampocs.archie
 - scrollUntilVisible:
     element:
       id: pick-crypto-bitcoin
+    centerElement: true
 - tapOn:
     id: pick-crypto-bitcoin
 - scrollUntilVisible:
     element:
       id: pick-add-ai
+    centerElement: true
 - tapOn:
     id: pick-add-ai
 - tapOn:

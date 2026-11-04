@@ -2,7 +2,8 @@
 
 Each correction names the misheard words (`heard`), their spelling (`correct`) and a short snippet of the transcript
 around them (`context`). A fix is applied only inside an occurrence of its context, never as a global replace, so a
-common word that was misheard once doesn't change everywhere.
+common word that was misheard once doesn't change everywhere. A correction whose context has no word beyond `heard`
+would match every occurrence, so it is skipped.
 """
 
 from __future__ import annotations
@@ -117,7 +118,8 @@ def request(
 def apply(segments: Sequence[content.Segment], corrections: Sequence[Correction]) -> list[content.Segment]:
     """`segments` with each correction applied to whole-word matches of `heard` inside occurrences of its `context`.
 
-    Matching ignores case. A match that would span two segments is skipped, as is one overlapping an earlier fix.
+    Matching ignores case. A correction whose `context` has no word beyond `heard` is skipped (it would replace
+    every occurrence), as is a match that would span two segments or overlap an earlier fix.
     """
     joined = _SEGMENT_SEPARATOR.join(segment.text for segment in segments)
     segment_starts = _segment_starts(segments)
@@ -125,6 +127,11 @@ def apply(segments: Sequence[content.Segment], corrections: Sequence[Correction]
     replacements: list[_Replacement] = []
     taken: list[tuple[int, int]] = []
     for correction in corrections:
+        if len(correction.context.split()) <= len(correction.heard.split()):
+            _logger.info(
+                "Skipped %r -> %r: its context adds no word beyond what was heard", correction.heard, correction.correct
+            )
+            continue
         for begin, end in _matches(joined, correction=correction):
             replacement = _replacement_at(
                 begin=begin, end=end, correct=correction.correct, segments=segments, segment_starts=segment_starts

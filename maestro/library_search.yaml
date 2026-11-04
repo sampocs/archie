@@ -1,0 +1,38 @@
+appId: com.sampocs.archie
+---
+# Free to run: the dev test user isn't whitelisted, so the source fails at analyze but keeps its fetched title.
+# Local search finds it by title and shows the empty state for a query nothing matches.
+- runFlow: login.yaml
+- tapOn:
+    id: "tab-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://example.com/"
+- tapOn:
+    id: "intent-queue"
+- tapOn:
+    id: "add-save"
+# Saving lands on Library; the worker's title replaces the URL.
+- extendedWaitUntil:
+    visible: ".*Example Domain.*"
+    timeout: 60000
+- tapOn:
+    id: "library-search"
+- inputText: "example domain"
+- assertVisible: ".*Example Domain.*"
+- eraseText
+- inputText: "zzqx nothing"
+- assertVisible:
+    id: "library-search-empty"

@@ -1,4 +1,4 @@
-"""`fetch_content`: get a source's readable text, store it as a `text` artifact, and queue analyze and primer.
+"""`fetch_content`: get a source's readable text, store it as a `text` artifact, and queue the kind's next steps.
 
 The text comes from the Safari capture when the phone sent one, else from the X thread (for X posts) or
 the fetched page (for articles). Too little text, or a page that answers 401, 403, 404, 410 or 451 (a
@@ -20,17 +20,14 @@ from archie_shared import logging, urls
 
 from archie_worker import content, errors
 from archie_worker.content import article, x
-from archie_worker.handlers import fetch_title
+from archie_worker.handlers import _text, fetch_title
 
 _PAGE_TIMEOUT_SECONDS = 15
 _PAGE_MAX_BYTES = 5_000_000
 _MIN_ARTICLE_WORDS = 50
 _MIN_X_WORDS = 1
-_MAX_TITLE_LENGTH = 500
 # Page statuses that mean "paywalled, blocked or gone"; a retry cannot fix them, sharing from Safari can.
 _PERMANENT_PAGE_STATUSES = frozenset({401, 403, 404, 410, 451})
-# Postgres text and jsonb values reject NUL, so a title or page text containing one would fail the job forever.
-_NUL = "\x00"
 
 _logger = logging.get_logger(logging.LoggerName.WORKER, "fetch_content")
 
@@ -48,7 +45,7 @@ class _SourceInput:
 
 
 def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
-    """Fetch the source's text and store it as the current `text` artifact, then queue analyze and primer."""
+    """Fetch the source's text and store it as the current `text` artifact, then queue the kind's next steps."""
     source = db.get(models.Source, uuid.UUID(job.payload[pipeline.SOURCE_ID_KEY]))
     if source is None or source.deleted_at is not None:
         return
@@ -64,22 +61,12 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         _logger.info("Source %s has %d words, needs %d", source_input.source_id, word_count, minimum_words)
         raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING)
 
-    # The user may have deleted the source during the fetch; the lock makes the refreshed state final.
-    changes.lock_user_writes(db, source_input.user_id)
-    db.refresh(source)
-    if source.deleted_at is not None:
-        return
-
-    pipeline.write_artifact(
+    _text.store_text(
         db,
         source=source,
-        kind=models.ArtifactKind.TEXT,
-        content={"text": extracted.text.replace(_NUL, "")},
-        model=None,
-        prompt_version=None,
+        text_content={content.TEXT_KEY: content.strip_nul(extracted.text)},
+        title=extracted.title,
     )
-    _set_title_if_empty(source, title=extracted.title)
-    pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.ANALYZE, models.JobKind.PRIMER])
 
 
 def _start_processing(db: sqlalchemy.orm.Session, *, source: models.Source) -> _SourceInput | None:
@@ -131,13 +118,3 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
         raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING) from error
 
     return article.extract(html=page, url=source_input.url) or content.ExtractedText(title=None, text="")
-
-
-def _set_title_if_empty(source: models.Source, *, title: str | None) -> None:
-    cleaned = " ".join((title or "").replace(_NUL, "").split())[:_MAX_TITLE_LENGTH]
-    if source.title or not cleaned:
-        return
-
-    source.title = cleaned
-    source.updated_at = sqlalchemy.func.now()
-    source.change_seq = changes.next_change_seq()

@@ -79,16 +79,31 @@ def set_processing(
     status: models.ProcessingStatus,
     error: str | None = None,
 ) -> None:
-    """Move the source to `status`; the error is kept only for FAILED."""
+    """Move the source to `status`; the error is kept only for FAILED and UNSUPPORTED."""
     source.processing = status.value
-    source.processing_error = error if status == models.ProcessingStatus.FAILED else None
+    keeps_error = status in (models.ProcessingStatus.FAILED, models.ProcessingStatus.UNSUPPORTED)
+    source.processing_error = error if keeps_error else None
     source.updated_at = sqlalchemy.func.now()
     source.change_seq = changes.next_change_seq()
 
 
+def required_artifacts(kind: models.SourceKind) -> tuple[models.ArtifactKind, ...]:
+    """The outputs a source of `kind` needs to be READY: newsletters are summary-only, the rest also get a primer."""
+    if kind == models.SourceKind.NEWSLETTER:
+        return (models.ArtifactKind.SUMMARY,)
+    return (models.ArtifactKind.SUMMARY, models.ArtifactKind.PRIMER)
+
+
+def steps_after_text(kind: models.SourceKind) -> list[models.JobKind]:
+    """The jobs that follow a source's text, in order: newsletters are only analyzed, the rest also get a primer."""
+    if kind == models.SourceKind.NEWSLETTER:
+        return [models.JobKind.ANALYZE]
+    return [models.JobKind.ANALYZE, models.JobKind.PRIMER]
+
+
 def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
-    """Mark the source READY once both its summary and primer exist; otherwise leave it as is."""
-    required = (models.ArtifactKind.SUMMARY, models.ArtifactKind.PRIMER)
+    """Mark the source READY once all the outputs its kind needs exist; otherwise leave it as is."""
+    required = required_artifacts(models.SourceKind(source.kind))
     if any(current_artifact(db, source_id=source.id, kind=kind) is None for kind in required):
         return
 
@@ -96,19 +111,21 @@ def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
 
 
 def steps_to_retry(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID) -> list[models.JobKind]:
-    """The jobs a retry should run: fetch when there is no text, else whichever of analyze/primer has no output.
+    """The jobs a retry should run: fetch when there is no text, else whichever of the kind's steps has no output.
 
-    When everything exists the user asked to redo it, so both generation steps run again.
+    When everything exists the user asked to redo it, so all of the kind's generation steps run again.
     """
     if current_artifact(db, source_id=source_id, kind=models.ArtifactKind.TEXT) is None:
         return [models.JobKind.FETCH_CONTENT]
 
-    step_outputs = (
-        (models.JobKind.ANALYZE, models.ArtifactKind.SUMMARY),
-        (models.JobKind.PRIMER, models.ArtifactKind.PRIMER),
-    )
-    missing = [step for step, kind in step_outputs if current_artifact(db, source_id=source_id, kind=kind) is None]
-    return missing or [step for step, _ in step_outputs]
+    source = db.get_one(models.Source, source_id)
+    steps = steps_after_text(models.SourceKind(source.kind))
+    step_outputs = {
+        models.JobKind.ANALYZE: models.ArtifactKind.SUMMARY,
+        models.JobKind.PRIMER: models.ArtifactKind.PRIMER,
+    }
+    missing = [step for step in steps if current_artifact(db, source_id=source_id, kind=step_outputs[step]) is None]
+    return missing or steps
 
 
 def enqueue_steps(db: sqlalchemy.orm.Session, *, source: models.Source, steps: list[models.JobKind]) -> None:

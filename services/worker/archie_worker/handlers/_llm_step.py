@@ -23,6 +23,7 @@ class StepRun:
 
     source_id: uuid.UUID
     user_id: int
+    kind: models.SourceKind
     context: llm.CallContext
     api_key: str
     user_message: str
@@ -45,16 +46,18 @@ def prepare_run(db: sqlalchemy.orm.Session, job: models.Job, *, step: models.Job
     if text_artifact is None:
         raise LookupError(f"Source {source.id} has no text artifact yet")
 
+    kind = models.SourceKind(source.kind)
     run = StepRun(
         source_id=source.id,
         user_id=source.user_id,
+        kind=kind,
         context=llm.CallContext(user_id=source.user_id, source_id=source.id, job_id=job.id, step=step),
         api_key=api_key,
         user_message=prompts.user_message(
-            kind=models.SourceKind(source.kind),
+            kind=kind,
             title=source.title,
             url=source.url,
-            text=text_artifact.content["text"],
+            text=prompts.model_text(text_artifact.content),
         ),
     )
     db.commit()

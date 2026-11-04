@@ -4,15 +4,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useTheme } from "@/theme/useTheme";
 
-type BottomSheetProps = { visible: boolean; onClose: () => void; children: ReactNode; testID?: string };
+type BottomSheetProps = {
+  visible: boolean;
+  onClose: () => void;
+  onDismiss?: () => void;
+  children: ReactNode;
+  testID?: string;
+};
 
 /** A modal sheet that slides up over a dimmed backdrop; tapping the backdrop closes it. */
-export function BottomSheet({ visible, onClose, children, testID }: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, onDismiss, children, testID }: BottomSheetProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose} onDismiss={onDismiss}>
       <View style={{ flex: 1, justifyContent: "flex-end" }}>
         <Pressable
           testID={testID ? `${testID}-backdrop` : undefined}

@@ -71,8 +71,9 @@ export type PullPage = {
     sources: PulledSource[];
     artifacts: PulledArtifact[];
     cards: PulledCard[];
-    topics: PulledTopic[];
-    topic_primers: PulledTopicPrimer[];
+    // Absent when pulling from a server older than M4.
+    topics?: PulledTopic[];
+    topic_primers?: PulledTopicPrimer[];
   };
   position: number;
   more: boolean;
@@ -82,7 +83,7 @@ export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;
   removeActions(ids: string[]): Promise<void>;
   // Also sets sources.syncError for that action's source. A rejected add_topic / choose_topics deletes its optimistic
-  // topics; any other rejected topic or topic-primer action rewinds the position so the next pull restores the server copy.
+  // topics; any other rejected topic, topic-primer, go_deeper or choose_episode action rewinds the position so the next pull restores the server copy.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
   // Upserts rows and saves the position in one transaction.

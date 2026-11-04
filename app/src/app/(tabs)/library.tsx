@@ -1,9 +1,10 @@
 import { useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { DomainsView } from "@/library/DomainsView";
 import { LibraryList } from "@/library/LibraryList";
+import { isLibraryFilter, type LibraryFilter } from "@/library/sections";
 import { useLibraryData } from "@/library/useLibraryData";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
@@ -21,9 +22,18 @@ const MODES: { mode: Mode; label: string }[] = [
 export default function LibraryScreen() {
   const theme = useTheme();
   const data = useLibraryData();
-  const { filter } = useLocalSearchParams<{ filter?: string }>();
+  const params = useLocalSearchParams<{ filter?: string; at?: string }>();
   const [mode, setMode] = useState<Mode>("list");
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<LibraryFilter>(isLibraryFilter(params.filter) ? params.filter : "all");
+
+  // Today links here with a filter (and a fresh `at`, so the same link works twice) while the tab may be mounted.
+  useEffect(() => {
+    if (!isLibraryFilter(params.filter)) return;
+    setMode("list");
+    setFilter(params.filter);
+    setQuery("");
+  }, [params.filter, params.at]);
 
   const showList = mode === "list" || query.trim() !== "";
 
@@ -53,7 +63,7 @@ export default function LibraryScreen() {
         ))}
       </View>
       <TextField testID="library-search" placeholder="Search your library" value={query} onChangeText={setQuery} />
-      {showList ? <LibraryList data={data} query={query} initialFilter={filter} /> : <DomainsView data={data} />}
+      {showList ? <LibraryList data={data} query={query} filter={filter} onFilterChange={setFilter} /> : <DomainsView data={data} />}
     </Screen>
   );
 }

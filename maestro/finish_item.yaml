@@ -21,6 +21,8 @@ appId: com.sampocs.archie
 # The reaction row can push Save under the keyboard; tapping the screen's hint text dismisses it.
 - tapOn: "Paste a link to save it."
 - tapOn:
+    id: "intent-queue"
+- tapOn:
     id: "add-save"
 # Saving lands on Library; open the queued source.
 - tapOn: ".*example\\.net.*"

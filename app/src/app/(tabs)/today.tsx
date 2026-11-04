@@ -190,7 +190,10 @@ export default function TodayScreen() {
           right={
             <Pressable
               testID="today-see-all"
-              onPress={() => router.push("/(tabs)/library?filter=queued")}
+              onPress={() => router.push({
+                  pathname: "/(tabs)/library",
+                  params: { filter: "queued", at: String(Date.now()) },
+                })}
               hitSlop={8}
             >
               <Text variant="secondary" tone="ink2">
@@ -217,7 +220,7 @@ export default function TodayScreen() {
       ) : null}
 
       {newsletters.count > 0 && newsletters.since ? (
-        <GroupedList>
+        <GroupedList title="Newsletters">
           <ItemRow
             testID="today-newsletters"
             artwork={{ imageUrl: null, domain: "Finance", monogram: "✉" }}
@@ -225,7 +228,10 @@ export default function TodayScreen() {
             title={newslettersLine(newsletters.count)}
             meta={`${newsletters.senders.join(", ")} · ${sinceLabel(newsletters.since, now)}`}
             end={<Text tone="ink3">›</Text>}
-            onPress={() => router.push("/(tabs)/library?filter=inbox")}
+            onPress={() => router.push({
+                pathname: "/(tabs)/library",
+                params: { filter: "inbox", at: String(Date.now()) },
+              })}
           />
         </GroupedList>
       ) : null}

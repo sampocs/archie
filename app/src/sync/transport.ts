@@ -107,15 +107,19 @@ export function createDbSyncStore(
 
         // A rejection doesn't bump the row's change_seq, so no pull would undo the optimistic edit; rewinding the
         // position makes the next pull re-send the server's topic or topic primer.
-        if (
+        // go_deeper / choose_episode also change state/processing optimistically, so they rewind too, and still
+        // surface syncError on the source below.
+        const rewind =
           TOPIC_ACTIONS.has(entry.type) ||
-          payload.target === "topic_primer"
-        ) {
+          payload.target === "topic_primer" ||
+          entry.type === "go_deeper" ||
+          entry.type === "choose_episode";
+        if (rewind) {
           tx.update(schema.syncState)
             .set({ position: 0 })
             .where(eq(schema.syncState.id, 1))
             .run();
-          return;
+          if (TOPIC_ACTIONS.has(entry.type) || payload.target === "topic_primer") return;
         }
 
         // The payload carries the changed row's id; surface the failure on that row.
@@ -232,7 +236,7 @@ export function createDbSyncStore(
             .run();
         }
 
-        for (const topic of page.rows.topics) {
+        for (const topic of page.rows.topics ?? []) {
           if (unsent.has(topic.id)) continue;
           // primerRequestedAt is phone-only and deliberately left out.
           const values = {
@@ -250,7 +254,7 @@ export function createDbSyncStore(
             .run();
         }
 
-        for (const primer of page.rows.topic_primers) {
+        for (const primer of page.rows.topic_primers ?? []) {
           if (unsent.has(primer.id)) continue;
           const values = {
             topicId: primer.topic_id,

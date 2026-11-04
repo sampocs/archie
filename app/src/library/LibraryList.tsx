@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
 import { deleteSource, setPrimerOpened, setRead, type PrimerTarget } from "@/db/actions";
@@ -26,7 +26,6 @@ import {
   entrySnoozedUntil,
   filterCounts,
   filterEntries,
-  isLibraryFilter,
   LIBRARY_FILTERS,
   type LibraryEntry,
   type LibraryFilter,
@@ -35,7 +34,12 @@ import { formatReturnTime } from "./snooze";
 import { SwipeRow, type SwipeAction } from "./SwipeRow";
 import { isSnoozed, queueOrder, statusTag } from "./visibility";
 
-type LibraryListProps = { data: LibraryData; query: string; initialFilter?: string };
+type LibraryListProps = {
+  data: LibraryData;
+  query: string;
+  filter: LibraryFilter;
+  onFilterChange: (filter: LibraryFilter) => void;
+};
 
 type Sheet = { kind: "snooze"; target: PrimerTarget; id: string } | { kind: "finish"; id: string };
 
@@ -51,17 +55,11 @@ const FILTER_LABELS: Record<LibraryFilter, string> = {
 };
 
 /** The Library list: filter chips over time sections (or the queue), or search results while a query is typed. */
-export function LibraryList({ data, query, initialFilter }: LibraryListProps) {
+export function LibraryList({ data, query, filter, onFilterChange }: LibraryListProps) {
   const theme = useTheme();
   const now = useNow();
-  const [filter, setFilter] = useState<LibraryFilter>(isLibraryFilter(initialFilter) ? initialFilter : "all");
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-
-  // Today links here with a filter while the tab may already be mounted.
-  useEffect(() => {
-    if (isLibraryFilter(initialFilter)) setFilter(initialFilter);
-  }, [initialFilter]);
 
   const rowActions: RowActions = {
     openSnooze: (target, id) => {
@@ -81,7 +79,7 @@ export function LibraryList({ data, query, initialFilter }: LibraryListProps) {
         <SearchResults data={data} query={query} rowActions={rowActions} />
       ) : (
         <>
-          <FilterChips filter={filter} counts={filterCounts(data, now)} onChange={setFilter} />
+          <FilterChips filter={filter} counts={filterCounts(data, now)} onChange={onFilterChange} />
           {filter === "queued" ? (
             <QueueBody data={data} now={now} rowActions={rowActions} />
           ) : (
@@ -243,7 +241,7 @@ function EntryRow(props: { entry: LibraryEntry; filter: LibraryFilter; rowAction
   return (
     <SwipeRow actions={swipeActions(entry, props.filter, props.rowActions)}>
       {entry.kind === "source" ? (
-        <LibraryItem source={entry.source} trailing={props.trailing} />
+        <LibraryItem source={entry.source} trailing={props.trailing} filter={props.filter} />
       ) : (
         <TopicPrimerItem primer={entry.primer} topic={entry.topic} trailing={props.trailing} />
       )}
@@ -251,8 +249,11 @@ function EntryRow(props: { entry: LibraryEntry; filter: LibraryFilter; rowAction
   );
 }
 
-function LibraryItem({ source, trailing }: { source: LibrarySource; trailing?: ReactNode }) {
+function LibraryItem(props: { source: LibrarySource; trailing?: ReactNode; filter?: LibraryFilter }) {
+  const { source, trailing } = props;
   const theme = useTheme();
+  const router = useRouter();
+  const asPrimer = props.filter === "primers";
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -260,9 +261,14 @@ function LibraryItem({ source, trailing }: { source: LibrarySource; trailing?: R
       <SourceRow
         source={source}
         testID={`source-row-${source.id}`}
+        onPress={
+          asPrimer
+            ? () => router.push({ pathname: "/source/[id]", params: { id: source.id, primer: "1" } })
+            : undefined
+        }
         end={
           <View style={{ alignItems: "flex-end", gap: theme.spacing.xs }}>
-            {trailing ?? <StatusTagView tag={statusTag(source)} testID={`status-${source.id}`} />}
+            {trailing ?? <StatusTagView tag={asPrimer ? "Primer" : statusTag(source)} testID={`status-${source.id}`} />}
             {source.syncError ? (
               <Pressable testID={`source-error-${source.id}`} onPress={() => setExpanded((open) => !open)} hitSlop={8}>
                 <Text variant="secondary" style={{ color: theme.signals.missed }}>

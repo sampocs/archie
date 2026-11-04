@@ -47,17 +47,20 @@ export function ItemActions({ source, onFinish }: ItemActionsProps) {
   if (source.state === "inbox" || source.state === "briefed") {
     return (
       <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
-        <View style={{ flex: 1 }}>
-          <Button
-            testID="item-go-deeper"
-            label="Go deeper"
-            onPress={() => {
-              goDeeper(db, source.id);
-              haptic("success");
-              requestSync();
-            }}
-          />
-        </View>
+        {/* The server rejects go_deeper until the source is ready. */}
+        {source.processing === "ready" ? (
+          <View style={{ flex: 1 }}>
+            <Button
+              testID="item-go-deeper"
+              label="Go deeper"
+              onPress={() => {
+                goDeeper(db, source.id);
+                haptic("success");
+                requestSync();
+              }}
+            />
+          </View>
+        ) : null}
         <View style={{ flex: 1 }}>
           <Button
             testID="item-read-later"

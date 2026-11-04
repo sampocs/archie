@@ -1,4 +1,7 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+
+import migrations from "../../drizzle/migrations";
+import { goDeeper } from "@/db/actions";
 
 import { ClientError, NetworkError, UnauthorizedError } from "@/api/client";
 import type { AppDb } from "@/db/client";
@@ -881,6 +884,58 @@ describe("database SyncStore: library rows", () => {
     });
   });
 });
+
+describe("database SyncStore: M4 migration and rejections", () => {
+  it("applies a page from a pre-M4 server (no topics keys) and saves the position", async () => {
+    const { db, store } = makeDbStore();
+    const legacyRows = { sources: [pulledSource({})], artifacts: [], cards: [] };
+
+    await store.applyPage({ rows: legacyRows, position: 9, more: false });
+
+    expect(db.select().from(schema.sources).all()).toHaveLength(1);
+    expect(await store.getPosition()).toBe(9);
+  });
+
+  it("the repull migration resets a saved position to 0", () => {
+    const { db } = makeDbStore();
+    db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
+    const last = migrations.journal.entries[migrations.journal.entries.length - 1];
+    const sql = (migrations.migrations as Record<string, string>)[`m${String(last.idx).padStart(4, "0")}`];
+    expect(last.tag).toBe("0004_repull_after_library");
+
+    db.run(sqlTag(sql));
+
+    expect(db.select().from(schema.syncState).get()?.position).toBe(0);
+  });
+
+  it("a rejected go_deeper surfaces syncError, rewinds the position, and the next pull restores the server copy", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: { sources: [pulledSource({ state: "inbox", processing: "ready" })], artifacts: [], cards: [] },
+      position: 5,
+      more: false,
+    });
+    goDeeper(db, "s1");
+    const entry = db.select().from(schema.outbox).get()!;
+
+    await store.rejectAction(entry.id, "not ready");
+
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)).toMatchObject({ state: "consumed", processing: "processing", syncError: "not ready" });
+
+    await store.applyPage({
+      rows: { sources: [pulledSource({ state: "inbox", processing: "ready" })], artifacts: [], cards: [] },
+      position: 6,
+      more: false,
+    });
+
+    // The pull restores state/processing; syncError is deliberately outside the upsert set, so it stays.
+    expect(sourceRow(db)).toMatchObject({ state: "inbox", processing: "ready", syncError: "not ready" });
+  });
+});
+
+const sourceRow = (db: AppDb) => db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get();
+const sqlTag = (text: string) => sql.raw(text);
 
 describe("createSyncScheduler", () => {
   it("never overlaps runs and coalesces triggers that arrive mid-run into one rerun", async () => {

@@ -20,9 +20,11 @@ function DevLoginInner() {
   const { whitelisted, picker, sub } = useLocalSearchParams<{ whitelisted?: string; picker?: string; sub?: string }>();
 
   useEffect(() => {
-    // Switching between the picker and the app rebuilds the stack, which can mount this route again (without the
-    // link's params); a launch signs in once, so a repeat just hands over to the app's own routing.
-    if (signedInThisLaunch) {
+    // Signing in rebuilds the stack, which can mount this route again without the link's params; that repeat hands
+    // over to the app's own routing instead of signing in again as the plain test user. A new link (with params, as
+    // flows that switch to the owner's user send) still signs in.
+    const isBareRepeat = signedInThisLaunch && whitelisted === undefined && picker === undefined && sub === undefined;
+    if (isBareRepeat) {
       router.replace("/");
       return;
     }

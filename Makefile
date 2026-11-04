@@ -89,18 +89,23 @@ MAESTRO_PATH := /opt/homebrew/opt/openjdk@17/bin:$(HOME)/.maestro/bin:$(PATH)
 
 # Empty the local development database's synced data so a flow never sees leftovers from an earlier run.
 reset-local-data: db-up
-	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, sources, sessions, users RESTART IDENTITY CASCADE"
+	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, topic_primers, topics, sources, sessions, users RESTART IDENTITY CASCADE"
 
 # The flows that only need a running backend (`make start-local` in another terminal).
+# source_page and today_primer call Anthropic for real, so a run spends a few cents.
 maestro: reset-local-data
-	@PATH="$(MAESTRO_PATH)" maestro test maestro/add_link.yaml maestro/sign_out.yaml maestro/source_page.yaml
+	@PATH="$(MAESTRO_PATH)" maestro test maestro/add_link.yaml maestro/sign_out.yaml maestro/source_page.yaml maestro/library_queue.yaml maestro/library_search.yaml maestro/topics.yaml maestro/finish_item.yaml maestro/topic_picker.yaml maestro/today_primer.yaml
 
 # The podcast flow resolves and summarizes a real episode, so it spends real API credits; run it on purpose.
 maestro-podcast: reset-local-data
 	@PATH="$(MAESTRO_PATH)" maestro test maestro/add_podcast.yaml
 
+# Delivers a newsletter through the ingest endpoint (needs INGEST_SECRET and the owner's keys in .env; a few cents).
+maestro-newsletter: reset-local-data
+	@maestro/run_newsletter.sh
+
 # Starts and stops the backend itself, to take the phone offline mid-flow.
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-offline

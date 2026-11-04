@@ -40,6 +40,9 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
 - **The domain.** Railway's generated `*.up.railway.app` domains can't be declared.
   `archie-production-4856.up.railway.app` routes to port 8000 on `archie`, and the iOS release build
   bakes it in (`scripts/install_ios.sh`).
+- **M4 re-filing.** After the M4 deploy, open the app once as the owner (its `/me` seeds the owner's topics), then run
+  `railway ssh --service archie -- uv run --no-sync archie-refile-sources` once. It queues `file_topic` for every
+  analyzed source of users with topics (a fraction of a cent each).
 
 ## Rebuilding from scratch
 

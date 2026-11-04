@@ -1,5 +1,7 @@
 # M4: Library, Today, topics and item states
 
+**Status:** Implemented on `m4-library` (plan `docs/superpowers/plans/2026-11-04-m4-library-today.md`).
+
 > Milestone 4 of the [backend architecture roadmap](2026-11-02-backend-architecture-design.md#roadmap). Builds on
 > [M2](2026-11-03-m2-capture-pipeline-design.md) and [M3](2026-11-04-m3-all-sources-design.md). Screens follow the
 > [UX spec](2026-10-29-ux-and-brand-design.md); the M4 mockups are in

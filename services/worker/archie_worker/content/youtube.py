@@ -20,6 +20,7 @@ from archie_worker.handlers import fetch_title as title_page
 SUPADATA_URL = "https://api.supadata.ai/v1/transcript"
 SUPADATA_JOB_URL = "https://api.supadata.ai/v1/transcript/{job_id}"
 WATCH_URL = "https://www.youtube.com/watch?v={video_id}"
+THUMBNAIL_URL = "https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
 
 _SUPADATA_TIMEOUT_SECONDS = 30
 _SUPADATA_JOB_DEADLINE_SECONDS = 120
@@ -55,6 +56,11 @@ def permanent_error_for(error: Exception) -> errors.PermanentJobError | None:
     if isinstance(error, youtube_transcript_api.VideoUnavailable):
         return errors.PermanentJobError(errors.FailureReason.VIDEO_UNAVAILABLE)
     return None
+
+
+def thumbnail_url(video_id: str) -> str:
+    """The video's standard thumbnail, which exists for every public video."""
+    return THUMBNAIL_URL.format(video_id=video_id)
 
 
 def fetch_title(*, video_id: str) -> str | None:

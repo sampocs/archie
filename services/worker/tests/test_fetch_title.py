@@ -59,3 +59,23 @@ def test_a_trickling_server_hits_the_total_deadline(monkeypatch: pytest.MonkeyPa
             timeout_seconds=fetch_title._FETCH_TIMEOUT_SECONDS,
             max_bytes=fetch_title._MAX_BODY_BYTES,
         )
+
+
+@pytest.mark.parametrize(
+    ("content", "expected"),
+    [
+        ("/img/a.png", "https://site.example/img/a.png"),
+        ("//cdn.example/a.png", "https://cdn.example/a.png"),
+        ("javascript:alert(1)", None),
+    ],
+)
+def test_og_image_is_made_absolute_and_must_be_http(content: str, expected: str | None) -> None:
+    """Relative and protocol-relative images resolve against the page URL; other schemes are dropped."""
+    page = f'<head><meta property="og:image" content="{content}"></head>'
+
+    assert fetch_title.extract_image(page=page, base_url="https://site.example/post/1") == expected
+
+
+def test_a_page_without_og_image_has_no_image() -> None:
+    """No og:image means no artwork."""
+    assert fetch_title.extract_image(page="<title>x</title>", base_url="https://site.example/") is None

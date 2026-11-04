@@ -31,7 +31,7 @@ _logger = logging.get_logger(logging.LoggerName.WORKER, "transcribe")
 
 @dataclass(frozen=True)
 class _Run:
-    """What the transcription needs after the first transaction ends, so no ORM object is held across calls."""
+    """Plain values read in the first transaction, used by the steps after it commits."""
 
     source_id: uuid.UUID
     keys: transcription.TranscriptionKeys

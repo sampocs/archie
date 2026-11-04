@@ -7,6 +7,8 @@ deleting a cassette (a few cents; needs ANTHROPIC_API_KEY, GROQ_API_KEY and OPEN
   resume and too-long tests replay it too.
 - `transcribe_openai_chunk`: one OpenAI call for `fixtures/audio/short_chunk.mp3` (the episode's first 60 s).
 - `transcribe_groq_rejected`: a real Groq 401, recorded with the literal invalid key, then the OpenAI fallback.
+- `transcribe_groq_sparse`: Groq transcribes `short_chunk.mp3`, `MIN_WORDS_PER_MINUTE` is raised so it counts as
+  sparse, and OpenAI redoes it.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ import pathlib
 import uuid
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from decimal import Decimal
 
 import pytest
 import sqlalchemy
@@ -147,8 +150,10 @@ def test_a_retried_job_skips_the_chunks_already_stored(engine: sqlalchemy.Engine
         db.commit()
 
     with replay("transcribe_short_episode"):
-        loop.run_one(engine, handlers=handlers.HANDLERS)
+        assert loop.run_one(engine, handlers=handlers.HANDLERS) is True
 
+    [transcribe_job, *_] = _jobs(engine)
+    assert transcribe_job.status == models.JobStatus.DONE.value
     # Each Groq call writes one cost row, so one fewer row than chunks proves chunk 0 was never sent.
     assert len(_llm_calls(engine, provider=models.TranscriptProvider.GROQ.value)) == EPISODE_CHUNKS - 1
     assert len(_transcript_chunks(engine, added.source_id)) == EPISODE_CHUNKS
@@ -197,18 +202,29 @@ def test_a_server_without_transcription_keys_fails_before_any_call(
     _assert_failed_at_once(engine, added, reason=errors.FailureReason.TRANSCRIPTION_NOT_SET_UP)
 
 
-def test_openai_transcribes_a_chunk_as_one_segment_per_part(replay: Replay, tmp_path: pathlib.Path) -> None:
-    """A 60 s chunk is one OpenAI part: one call, one segment at the chunk's start in episode time."""
+def test_openai_transcribes_a_chunk_as_one_segment_per_part(
+    engine: sqlalchemy.Engine, replay: Replay, tmp_path: pathlib.Path
+) -> None:
+    """A 60 s chunk is one OpenAI part: one call and cost row, one segment at the chunk's start in episode time."""
+    added = _add_transcribe_job(engine)
     chunk = transcription.AudioChunk(
         index=3, path=SHORT_CHUNK, start_seconds=180.0, duration_seconds=SHORT_CHUNK_SECONDS
     )
 
     with replay("transcribe_openai_chunk") as cassette:
         segments = transcription.transcribe_openai(
-            chunk=chunk, api_key=os.environ[config.OPENAI_API_KEY_ENV], prompt=PROMPT, directory=tmp_path
+            engine,
+            chunk=chunk,
+            api_key=os.environ[config.OPENAI_API_KEY_ENV],
+            prompt=PROMPT,
+            context=_context(engine, added),
+            directory=tmp_path,
         )
 
     assert len(cassette) == 1
+    [openai_call] = _llm_calls(engine, provider=models.TranscriptProvider.OPENAI.value)
+    assert openai_call.audio_seconds == Decimal(f"{SHORT_CHUNK_SECONDS:.3f}")
+    assert openai_call.cost_usd > 0
     [segment] = segments
     assert segment.start == 180.0
     assert len(segment.text.split()) >= MIN_OPENAI_WORDS
@@ -237,6 +253,56 @@ def test_a_groq_rejection_falls_back_to_openai(
     assert _llm_calls(engine, provider=models.TranscriptProvider.GROQ.value) == []
     [openai_call] = _llm_calls(engine, provider=models.TranscriptProvider.OPENAI.value)
     assert openai_call.cost_usd > 0
+
+
+def test_without_a_groq_key_the_chunk_goes_straight_to_openai(
+    engine: sqlalchemy.Engine, replay: Replay, tmp_path: pathlib.Path
+) -> None:
+    """No Groq key: OpenAI transcribes the chunk and is the only provider billed."""
+    added = _add_transcribe_job(engine)
+    chunk = transcription.AudioChunk(index=0, path=SHORT_CHUNK, start_seconds=0.0, duration_seconds=SHORT_CHUNK_SECONDS)
+    keys = transcription.TranscriptionKeys(groq=None, openai=os.environ[config.OPENAI_API_KEY_ENV])
+
+    with replay("transcribe_openai_chunk"):
+        transcript = transcription.transcribe_chunk(
+            engine,
+            chunk=chunk,
+            keys=keys,
+            prompt=PROMPT,
+            context=_context(engine, added),
+            directory=tmp_path,
+        )
+
+    assert transcript.provider == models.TranscriptProvider.OPENAI
+    assert len(transcript.segments[0].text.split()) >= MIN_OPENAI_WORDS
+    assert _llm_calls(engine, provider=models.TranscriptProvider.GROQ.value) == []
+    assert len(_llm_calls(engine, provider=models.TranscriptProvider.OPENAI.value)) == 1
+
+
+def test_a_sparse_groq_transcript_is_redone_by_openai(
+    engine: sqlalchemy.Engine, replay: Replay, tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A Groq result under the words-per-minute floor is redone by OpenAI; both calls are billed."""
+    monkeypatch.setattr(transcription, "MIN_WORDS_PER_MINUTE", 10_000)
+    added = _add_transcribe_job(engine)
+    chunk = transcription.AudioChunk(index=0, path=SHORT_CHUNK, start_seconds=0.0, duration_seconds=SHORT_CHUNK_SECONDS)
+    keys = transcription.TranscriptionKeys(
+        groq=os.environ[config.GROQ_API_KEY_ENV], openai=os.environ[config.OPENAI_API_KEY_ENV]
+    )
+
+    with replay("transcribe_groq_sparse"):
+        transcript = transcription.transcribe_chunk(
+            engine,
+            chunk=chunk,
+            keys=keys,
+            prompt=PROMPT,
+            context=_context(engine, added),
+            directory=tmp_path,
+        )
+
+    assert transcript.provider == models.TranscriptProvider.OPENAI
+    assert len(_llm_calls(engine, provider=models.TranscriptProvider.GROQ.value)) == 1
+    assert len(_llm_calls(engine, provider=models.TranscriptProvider.OPENAI.value)) == 1
 
 
 def _add_transcribe_job(engine: sqlalchemy.Engine, *, is_whitelisted: bool = True) -> _Added:

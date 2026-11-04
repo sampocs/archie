@@ -13,7 +13,7 @@ import pathlib
 
 import httpx
 import pytest
-from archie_worker import content
+from archie_worker import content, errors
 from archie_worker.content import podcast, transcripts
 from archie_worker.handlers import fetch_title
 
@@ -186,12 +186,29 @@ def test_the_spotify_page_gives_title_show_and_date() -> None:
         "<html>no data</html>",
         '<script type="application/ld+json">{"name": "x", "description": "Other", "datePublished": "2026-11-03"}'
         "</script>",
+        '<script type="application/ld+json">{"description": "Listen to this episode from Show on Spotify.",'
+        ' "datePublished": "2026-11-03"}</script>',
+        '<script type="application/ld+json">[1]</script>',
     ],
 )
 def test_a_page_without_the_expected_data_is_rejected(page: str) -> None:
     """A page with no ld+json, or a description without the show prefix, raises ValueError."""
     with pytest.raises(ValueError):
         podcast.spotify_episode_from_page(page)
+
+
+def test_a_feed_with_a_doctype_entity_fails_permanently(monkeypatch: pytest.MonkeyPatch) -> None:
+    """defusedxml refuses entity declarations; that surfaces as EPISODE_NOT_FOUND, not a retryable error."""
+    feed = (
+        b'<?xml version="1.0"?><!DOCTYPE rss [<!ENTITY boom "x">]>'
+        b"<rss><channel><item><title>&boom;</title></item></channel></rss>"
+    )
+    monkeypatch.setattr(podcast, "_fetch_feed", lambda feed_url: feed)
+
+    with pytest.raises(errors.PermanentJobError) as raised:
+        podcast._read_feed("https://example.test/feed.xml")
+
+    assert raised.value.reason == errors.FailureReason.EPISODE_NOT_FOUND
 
 
 def test_name_key_lowercases_and_collapses_whitespace() -> None:

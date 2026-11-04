@@ -48,7 +48,7 @@ class PublishedTranscript:
 def fetch_best(links: Sequence[podcast.TranscriptLink]) -> PublishedTranscript | None:
     """The first link, in format preference order, that fetches and parses to at least 200 words; else None."""
     for link in _in_preference_order(links):
-        transcript = _try_fetch(link)
+        transcript = _try_fetch(link=link)
         if transcript is not None and len(transcript.text.split()) >= MIN_TRANSCRIPT_WORDS:
             return transcript
 
@@ -102,17 +102,17 @@ def _base_mime(mime_type: str) -> str:
     return mime_type.split(";")[0].strip().lower()
 
 
-def _try_fetch(link: podcast.TranscriptLink) -> PublishedTranscript | None:
+def _try_fetch(*, link: podcast.TranscriptLink) -> PublishedTranscript | None:
     """Fetch and parse one link; a fetch or parse failure is logged and gives None so the next link is tried."""
     try:
         raw = fetch_title.fetch_bytes(url=link.url, timeout_seconds=_FETCH_TIMEOUT_SECONDS, max_bytes=_FETCH_MAX_BYTES)
-        return _parse(raw.decode("utf-8", errors="replace"), mime_type=_base_mime(link.mime_type))
+        return _parse(text=raw.decode("utf-8", errors="replace"), mime_type=_base_mime(link.mime_type))
     except (httpx.HTTPError, TimeoutError, ValueError, KeyError, TypeError) as error:
         _logger.info("Transcript %s failed: %s", link.url, error)
         return None
 
 
-def _parse(text: str, *, mime_type: str) -> PublishedTranscript:
+def _parse(*, text: str, mime_type: str) -> PublishedTranscript:
     if mime_type in _HTML_MIME_TYPES:
         return PublishedTranscript(text=html_to_text(text), segments=[])
 

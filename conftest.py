@@ -38,7 +38,6 @@ _SECRET_ENV_VARS = (
     config.SUPADATA_API_KEY_ENV,
     config.INGEST_SECRET_ENV,
     config.INGEST_EMAIL_DOMAIN_ENV,
-    config.INGEST_ALIASES_ENV,
 )
 
 NETWORK_REFUSED_MESSAGE = "Tests must not open network connections; replay a recorded cassette instead."

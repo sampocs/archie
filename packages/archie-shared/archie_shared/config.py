@@ -22,7 +22,6 @@ OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
 SUPADATA_API_KEY_ENV = "SUPADATA_API_KEY"
 INGEST_SECRET_ENV = "INGEST_SECRET"
 INGEST_EMAIL_DOMAIN_ENV = "INGEST_EMAIL_DOMAIN"
-INGEST_ALIASES_ENV = "INGEST_ALIASES"
 
 
 class ConfigError(RuntimeError):
@@ -56,7 +55,6 @@ class Settings(BaseSettings):
     supadata_api_key: str | None = None
     ingest_secret: str | None = None
     ingest_email_domain: str | None = None
-    ingest_aliases: str | None = None
 
     def require_database_url(self) -> str:
         """Return the Postgres URL, raising a clear error if it is missing."""
@@ -87,20 +85,6 @@ class Settings(BaseSettings):
         if not self.owner_emails:
             return frozenset()
         return frozenset(email.strip().lower() for email in self.owner_emails.split(",") if email.strip())
-
-    def ingest_alias_map(self) -> dict[str, str]:
-        """Newsletter aliases (`news=a@x.com, test=a@x.com`) as {alias: owner email}, trimmed and lower-cased.
-
-        Entries without an `=` or with an empty side are skipped rather than failing the whole setting.
-        """
-        if not self.ingest_aliases:
-            return {}
-
-        parsed_entries = (
-            (alias.strip().lower(), separator, email.strip().lower())
-            for alias, separator, email in (entry.partition("=") for entry in self.ingest_aliases.split(","))
-        )
-        return {alias: email for alias, separator, email in parsed_entries if separator and alias and email}
 
     def env(self) -> ArchieEnv:
         """The deployment this process runs as, defaulting to `DEV` when `ARCHIE_ENV` is unset."""

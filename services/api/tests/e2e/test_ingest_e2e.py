@@ -18,7 +18,7 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_api.ingest import routes
-from archie_db import models, session
+from archie_db import ingest_address, models, session
 from archie_testing import recording
 from archie_testing.harness import LiveStack
 
@@ -177,17 +177,19 @@ def test_a_morning_brew_issue_without_a_web_link_gets_a_placeholder_url_and_a_su
     assert [call.step for call in _llm_calls(live_stack)] == ["analyze"]
 
 
-def test_a_mail_alias_delivers_to_the_user_with_that_email(
-    live_stack: LiveStack, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """An INGEST_ALIASES alias (case- and +tag-insensitive) lands on the oldest user with that email."""
-    monkeypatch.setenv("INGEST_ALIASES", "news=owner@example.com")
+def test_a_chosen_address_delivers_to_its_user(live_stack: LiveStack) -> None:
+    """After `archie-set-ingest-address`, mail to `News+tag@` (case- and +tag-insensitive) lands on that user only."""
     authed = live_stack.authed(live_stack.sign_in(apple_sub="owner", email="Owner@Example.com"))
     other = live_stack.authed(live_stack.sign_in(apple_sub="other", email="other@example.com"))
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        ingest_address.set_ingest_address(db, email="owner@example.com", address="news")
+    engine.dispose()
 
     response = _deliver(live_stack, raw=_fixture("substack_bytebytego"), to=f"News+tag@{INGEST_DOMAIN}")
 
     assert response.status_code == 202
+    assert authed.get("/me").json()["ingest_address"] == f"news@{INGEST_DOMAIN}"
     assert len(authed.get("/sync/pull", params={"since": 0}).json()["rows"]["sources"]) == 1
     assert other.get("/sync/pull", params={"since": 0}).json()["rows"]["sources"] == []
 

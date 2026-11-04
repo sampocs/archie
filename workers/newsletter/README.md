@@ -9,11 +9,13 @@ This replaces the spike in `spikes/newsletter_ingest` (same KV namespace). It is
 ## Deploy (owner)
 
 1. `cd workers/newsletter`
-2. `npx wrangler secret put INGEST_SECRET`, with the same value as `INGEST_SECRET` on Railway's `api` service.
+2. `npx wrangler secret put INGEST_SECRET`, with the same value as `INGEST_SECRET` on Railway's `archie` service.
 3. `npx wrangler deploy`
-4. Cloudflare dashboard, Email Routing, catch-all address: action "Send to a Worker", destination `archie-newsletter`.
-5. Send a test mail to the address shown in the app (Settings), and check it appears in Library as an Inbox item.
-6. Delete the spike worker: `cd ../../spikes/newsletter_ingest && npx wrangler delete`.
+4. Give the owner `news@` first (their subscriptions use it, and mail to an address no user holds is dropped):
+   `railway ssh --service archie -- uv run --no-sync archie-set-ingest-address --email <owner email> --address news`.
+5. Cloudflare dashboard, Email Routing, catch-all address: action "Send to a Worker", destination `archie-newsletter`.
+6. Send a test mail to the address shown in the app (Settings), and check it appears in Library as an Inbox item.
+7. Delete the spike worker: `cd ../../spikes/newsletter_ingest && npx wrangler delete`.
 
 ## Local check
 

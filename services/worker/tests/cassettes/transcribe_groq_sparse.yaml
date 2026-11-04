@@ -1,0 +1,177 @@
+interactions:
+- request:
+    body: "--907a7d95067930fb593d5485f66aa4b4\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-large-v3-turbo\r\n--907a7d95067930fb593d5485f66aa4b4\r\nContent-Disposition:
+      form-data; name=\"response_format\"\r\n\r\nverbose_json\r\n--907a7d95067930fb593d5485f66aa4b4\r\nContent-Disposition:
+      form-data; name=\"language\"\r\n\r\nen\r\n--907a7d95067930fb593d5485f66aa4b4\r\nContent-Disposition:
+      form-data; name=\"temperature\"\r\n\r\n0\r\n--907a7d95067930fb593d5485f66aa4b4\r\nContent-Disposition:
+      form-data; name=\"prompt\"\r\n\r\nUPI Odd News Minute. Alligator in a bagel
+      shop, largest rubber band ball.\r\n--907a7d95067930fb593d5485f66aa4b4\r\nContent-Disposition:
+      form-data; name=\"file\"; filename=\"short_chunk.mp3\"\r\nContent-Type: audio/mpeg\r\n\r\n<audio
+      omitted>\r\n--907a7d95067930fb593d5485f66aa4b4--\r\n"
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '241298'
+      content-type:
+      - multipart/form-data; boundary=907a7d95067930fb593d5485f66aa4b4
+      host:
+      - api.groq.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.groq.com/openai/v1/audio/transcriptions
+  response:
+    body:
+      string: '{"task":"transcribe","language":"English","duration":60.000002048,"text":"
+        I''m Ben Hooper, and this is your UPI Odd News Minute for Tuesday, November
+        3rd, 2026. A North Carolina bagel shop''s cameras were rolling when a three-foot
+        alligator walked in through the back door and strolled through the store.
+        Surveillance camera footage shared by the Bagel Dock Express in Southport
+        shows the baby alligator walking in through the back door, which had been
+        left open, and walking through the kitchen to reach the front of the store.
+        The video shows owner Jesse Driscoll encountering the gator at the front counter
+        and briefly panicking before calling 911. Driscoll said the store was not
+        open at the time of the incident. The alligator was carted away by Southport
+        Police and Animal Protective Services. Moving on from a reptile in search
+        of locks to a Michigan man thinking outside the box, A Detroit man spent over
+        10 years assembling an 11,578-pound rubber band ball that has now been certified","segments":[{"id":0,"seek":0,"start":0,"end":9.639999,"text":"
+        I''m Ben Hooper, and this is your UPI Odd News Minute for Tuesday, November
+        3rd, 2026.","tokens":[50365,286,478,3964,3631,7192,11,293,341,307,428,20074,40,422,24810,426,1023,82,33509,337,10017,11,7674,805,7800,11,945,10880,13,50847],"temperature":0,"avg_logprob":-0.061136913,"compression_ratio":1.6593406,"no_speech_prob":0},{"id":1,"seek":0,"start":9.639999,"end":17.779999,"text":"
+        A North Carolina bagel shop''s cameras were rolling when a three-foot alligator
+        walked in through the back door and strolled through the store.","tokens":[50847,316,4067,11480,3411,338,3945,311,8622,645,9439,562,257,1045,12,13498,48095,7628,294,807,264,646,2853,293,342,28850,807,264,3531,13,51254],"temperature":0,"avg_logprob":-0.061136913,"compression_ratio":1.6593406,"no_speech_prob":0},{"id":2,"seek":0,"start":17.98,"end":29.619999,"text":"
+        Surveillance camera footage shared by the Bagel Dock Express in Southport
+        shows the baby alligator walking in through the back door, which had been
+        left open, and walking through the kitchen to reach the front of the store.","tokens":[51264,6732,303,17223,2799,9556,5507,538,264,24377,338,1144,547,20212,294,4242,2707,3110,264,3186,48095,4494,294,807,264,646,2853,11,597,632,668,1411,1269,11,293,4494,807,264,6525,281,2524,264,1868,295,264,3531,13,51846],"temperature":0,"avg_logprob":-0.061136913,"compression_ratio":1.6593406,"no_speech_prob":0},{"id":3,"seek":2962,"start":29.619999,"end":36.8,"text":"
+        The video shows owner Jesse Driscoll encountering the gator at the front counter
+        and briefly panicking before calling 911.","tokens":[50365,440,960,3110,7289,21895,2491,8610,285,8593,278,264,290,1639,412,264,1868,5682,293,10515,2462,10401,949,5141,26901,13,50724],"temperature":0,"avg_logprob":-0.110761695,"compression_ratio":1.5407726,"no_speech_prob":0},{"id":4,"seek":2962,"start":37.32,"end":40.34,"text":"
+        Driscoll said the store was not open at the time of the incident.","tokens":[50750,2491,8610,285,848,264,3531,390,406,1269,412,264,565,295,264,9348,13,50901],"temperature":0,"avg_logprob":-0.110761695,"compression_ratio":1.5407726,"no_speech_prob":0},{"id":5,"seek":2962,"start":40.68,"end":45.399998,"text":"
+        The alligator was carted away by Southport Police and Animal Protective Services.","tokens":[50918,440,48095,390,5467,292,1314,538,4242,2707,11882,293,24358,10019,22909,12124,13,51154],"temperature":0,"avg_logprob":-0.110761695,"compression_ratio":1.5407726,"no_speech_prob":0},{"id":6,"seek":2962,"start":45.859997,"end":51.46,"text":"
+        Moving on from a reptile in search of locks to a Michigan man thinking outside
+        the box,","tokens":[51177,14242,322,490,257,29143,794,294,3164,295,20703,281,257,11925,587,1953,2380,264,2424,11,51457],"temperature":0,"avg_logprob":-0.110761695,"compression_ratio":1.5407726,"no_speech_prob":0},{"id":7,"seek":5146,"start":51.46,"end":60,"text":"
+        A Detroit man spent over 10 years assembling an 11,578-pound rubber band ball
+        that has now been certified","tokens":[50378,316,20887,587,4418,670,1266,924,43867,364,2975,11,19004,23,12,44806,11593,4116,2594,300,575,586,668,18580,50792],"temperature":0,"avg_logprob":-0.11671357,"compression_ratio":1.0707071,"no_speech_prob":0}],"x_groq":{"id":"req_01m6jd4yv7e05twhf2v9p69d34"}}
+
+        '
+    headers:
+      alt-svc:
+      - h3=":443"; ma=86400
+      cache-control:
+      - private, max-age=0, no-store, no-cache, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a550e1fea966e227-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '4276'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 04:30:20 GMT
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-groq-region:
+      - msp
+      x-ratelimit-limit-requests:
+      - '2000'
+      x-ratelimit-remaining-requests:
+      - '1999'
+      x-ratelimit-reset-requests:
+      - 43.2s
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "--f5f47f1d2f58d338f2bc4f8c0bd737c8\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\ngpt-4o-mini-transcribe\r\n--f5f47f1d2f58d338f2bc4f8c0bd737c8\r\nContent-Disposition:
+      form-data; name=\"response_format\"\r\n\r\njson\r\n--f5f47f1d2f58d338f2bc4f8c0bd737c8\r\nContent-Disposition:
+      form-data; name=\"language\"\r\n\r\nen\r\n--f5f47f1d2f58d338f2bc4f8c0bd737c8\r\nContent-Disposition:
+      form-data; name=\"prompt\"\r\n\r\nUPI Odd News Minute. Alligator in a bagel
+      shop, largest rubber band ball.\r\n--f5f47f1d2f58d338f2bc4f8c0bd737c8\r\nContent-Disposition:
+      form-data; name=\"file\"; filename=\"short_chunk_part_000.mp3\"\r\nContent-Type:
+      audio/mpeg\r\n\r\n<audio omitted>\r\n--f5f47f1d2f58d338f2bc4f8c0bd737c8--\r\n"
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '241206'
+      content-type:
+      - multipart/form-data; boundary=f5f47f1d2f58d338f2bc4f8c0bd737c8
+      host:
+      - api.openai.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.openai.com/v1/audio/transcriptions
+  response:
+    body:
+      string: '{"text":"I''m Ben Hooper, and this is your UPI Odd News Minute for
+        Tuesday, November 3rd, 2026. A North Carolina bagel shop''s cameras were rolling
+        when a three-foot alligator walked in through the back door and strolled through
+        the store. Surveillance camera footage shared by the Bagel Dock Express in
+        Southport shows the baby alligator walking in through the back door, which
+        had been left open, and walking through the kitchen to reach the front of
+        the store. The video shows owner Jesse Driscoll encountering the gator at
+        the front counter and briefly panicking before calling 911. Driscoll said
+        the store was not open at the time of the incident. The alligator was carted
+        away by Southport police and animal protective services. Moving on from a
+        reptile in search of locks to a Michigan man thinking outside the box, a Detroit
+        man spent over 10 years assembling an 11,578-pound rubber band ball that has
+        now been certified.","usage":{"type":"tokens","total_tokens":819,"input_tokens":618,"input_token_details":{"text_tokens":18,"audio_tokens":600},"output_tokens":201}}'
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a550e2031985fafa-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '1073'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 04:30:23 GMT
+      openai-processing-ms:
+      - '1311'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-reset-requests:
+      - 12ms
+    status:
+      code: 200
+      message: OK
+version: 1

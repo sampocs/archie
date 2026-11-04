@@ -20,8 +20,10 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import models, session
+from archie_shared import config
 from archie_testing import media, recording
 from archie_testing.harness import LiveStack
+from archie_worker import transcription
 
 pytestmark = [pytest.mark.postgres, pytest.mark.worker]
 
@@ -31,13 +33,22 @@ TIMESTAMP_PATTERN = re.compile(r"^\d{1,2}:\d{2}(:\d{2})?$")
 READY_TIMEOUT_SECONDS = 30.0
 # Live model calls (analyze, then a long Sonnet primer) take much longer than replaying them.
 RECORDING_TIMEOUT_SECONDS = 240.0
+# Transcribing adds a download, ffmpeg and several Groq uploads on top of the model calls.
+TRANSCRIBE_READY_TIMEOUT_SECONDS = 60.0
+TRANSCRIBE_RECORDING_TIMEOUT_SECONDS = 600.0
+# The same 60 s chunks the worker's transcribe tests use, so a ~2 minute episode spans several chunks.
+TEST_CHUNK_SECONDS = 60
 POLL_INTERVAL_SECONDS = 0.2
 
 
 @pytest.fixture(autouse=True)
 def recording_api_key(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
-    """The real Anthropic key while recording, a placeholder on replay."""
-    recording.use_recording_api_key(request, monkeypatch)
+    """Real keys while recording, placeholders on replay; the Apple case only ever calls Anthropic."""
+    recording.use_recording_api_key(
+        request,
+        monkeypatch,
+        env_names=(config.ANTHROPIC_API_KEY_ENV, config.GROQ_API_KEY_ENV, config.OPENAI_API_KEY_ENV),
+    )
 
 
 @pytest.fixture
@@ -72,6 +83,39 @@ def test_an_apple_episode_with_a_published_transcript_becomes_a_ready_source_wit
     calls = _llm_calls(live_stack)
     assert [call.step for call in calls] == ["analyze", "primer"]
     assert all(call.cost_usd > Decimal(0) for call in calls)
+
+
+def test_a_spotify_episode_without_a_transcript_is_transcribed_into_a_ready_source(
+    live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Resolve (Spotify, iTunes, feed), transcribe (Groq, corrections), analyze and primer all run and are costed."""
+    monkeypatch.setattr(transcription, "CHUNK_SECONDS", TEST_CHUNK_SECONDS)
+    replaying = request.config.getoption("--record-mode") in (None, "none")
+    timeout = TRANSCRIBE_READY_TIMEOUT_SECONDS if replaying else TRANSCRIBE_RECORDING_TIMEOUT_SECONDS
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    source_id = str(uuid.uuid4())
+
+    with _replay(request, "pipeline_podcast_spotify"):
+        _push_add_source(authed, {"id": source_id, "url": media.SPOTIFY_EPISODE_URL, "intent": "queue"})
+        pulled = _poll_until(authed, source_id, processing="ready", timeout=timeout)
+
+    source = _row_by_id(pulled["rows"]["sources"], source_id)
+    assert (source["kind"], source["processing_error"]) == ("podcast", None)
+    current = {row["kind"]: row for row in pulled["rows"]["artifacts"] if row["is_current"]}
+    assert current["summary"]["content"]["summary"]["gist"].strip()
+    assert current["primer"]["content"]["markdown"].strip()
+    timestamps = _timestamps(current["summary"]["content"])
+    assert timestamps, "no key idea or number carries a timestamp"
+    assert any(TIMESTAMP_PATTERN.match(timestamp) for timestamp in timestamps)
+
+    calls = _llm_calls(live_stack)
+    steps = {call.step for call in calls}
+    assert {"transcribe", "corrections", "analyze", "primer"} <= steps
+    assert all(call.cost_usd > Decimal(0) for call in calls)
+    transcribe_calls = [call for call in calls if call.step == "transcribe"]
+    assert {call.provider for call in transcribe_calls} == {"groq"}
+    assert all(call.audio_seconds is not None and call.audio_seconds > Decimal(0) for call in transcribe_calls)
+    assert _transcript_chunk_count(live_stack) >= 2
 
 
 def test_a_spotify_show_link_is_unsupported(live_stack: LiveStack) -> None:
@@ -129,6 +173,15 @@ def _llm_calls(live_stack: LiveStack) -> list[models.LlmCall]:
     try:
         with sqlalchemy.orm.Session(engine) as db:
             return list(db.scalars(sqlalchemy.select(models.LlmCall).order_by(models.LlmCall.id)))
+    finally:
+        engine.dispose()
+
+
+def _transcript_chunk_count(live_stack: LiveStack) -> int:
+    engine = session.engine_for(live_stack.database_url)
+    try:
+        with sqlalchemy.orm.Session(engine) as db:
+            return len(list(db.scalars(sqlalchemy.select(models.TranscriptChunk))))
     finally:
         engine.dispose()
 

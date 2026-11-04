@@ -21,6 +21,16 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
   - `ANTHROPIC_API_KEY` on `archie`, the key that pays for whitelisted users' summaries and primers. Set it once from
     the owner's local `.env` (`railway variable set --service archie ANTHROPIC_API_KEY=…`, without echoing the
     value); without it the pipeline's model steps fail.
+- **Transcription, YouTube and newsletter settings** on `archie`, declared `preserve()` in `.railway/railway.ts`;
+  set each with `railway variable set --service archie NAME=…` without echoing the value:
+  - `GROQ_API_KEY` and `OPENAI_API_KEY`: podcast transcription (Groq first, OpenAI as the fallback).
+  - `SUPADATA_API_KEY` (optional): YouTube captions. Without it YouTube links fail with "needs setup" on Railway.
+  - `INGEST_SECRET`: the shared secret for `POST /ingest/email`; use the same value as the newsletter Worker's secret.
+  - `INGEST_EMAIL_DOMAIN` and `INGEST_ALIASES`: the domain newsletter addresses live on and the fixed aliases
+    (such as `news@`) that map to the owner.
+- **ffmpeg.** The image now installs it (podcast audio is split with it); nothing to configure.
+- **The newsletter Worker.** Deploy it from `workers/newsletter/README.md` only after the API is live with
+  `INGEST_SECRET` set, then switch Email Routing to it.
 - **The domain.** Railway's generated `*.up.railway.app` domains can't be declared.
   `archie-production-4856.up.railway.app` routes to port 8000 on `archie`, and the iOS release build
   bakes it in (`scripts/install_ios.sh`).

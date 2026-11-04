@@ -14,7 +14,7 @@ import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, models, pipeline
 
-from archie_worker import llm, prompts
+from archie_worker import llm, prompts, timestamps
 from archie_worker.handlers import _llm_step
 
 MAX_OUTPUT_TOKENS = 8000
@@ -35,6 +35,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         json_schema=prompts.ANALYSIS_SCHEMA,
     )
     analysis = json.loads(completion.text)
+    _clean_timestamps(analysis)
 
     source = _llm_step.lock_live_source(db, run)
     if source is None:
@@ -49,9 +50,17 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         prompt_version=prompts.ANALYZE_PROMPT_VERSION,
     )
     _retire_cards_before(db, source_id=source.id, current_artifact_id=summary.id)
-    if analysis["is_educational"]:
+    # Newsletters are summary-only: no cards, whatever the model says.
+    if analysis["is_educational"] and run.kind != models.SourceKind.NEWSLETTER:
         _insert_cards(db, source=source, artifact_id=summary.id, cards=analysis["cards"])
     pipeline.finish_step(db, source=source)
+
+
+def _clean_timestamps(analysis: dict[str, Any]) -> None:
+    """Strip brackets from the model's key-idea and number timestamps and null any that still are not a time."""
+    summary = analysis["summary"]
+    for item in [*summary["key_ideas"], *summary["numbers"]]:
+        item["timestamp"] = timestamps.clean_model_timestamp(item["timestamp"])
 
 
 def _retire_cards_before(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID, current_artifact_id: uuid.UUID) -> None:

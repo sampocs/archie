@@ -21,6 +21,22 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
   - `ANTHROPIC_API_KEY` on `archie`, the key that pays for whitelisted users' summaries and primers. Set it once from
     the owner's local `.env` (`railway variable set --service archie ANTHROPIC_API_KEY=…`, without echoing the
     value); without it the pipeline's model steps fail.
+- **Transcription, YouTube and newsletter settings** on `archie`, declared `preserve()` in `.railway/railway.ts`;
+  set each with `railway variable set --service archie NAME=…` without echoing the value:
+  - `GROQ_API_KEY` and `OPENAI_API_KEY`: podcast transcription (Groq first, OpenAI as the fallback).
+  - `SUPADATA_API_KEY` (optional): YouTube captions. Without it YouTube links fail with "needs setup" on Railway.
+  - `INGEST_SECRET`: the shared secret for `POST /ingest/email`; use the same value as the newsletter Worker's secret.
+  - `INGEST_EMAIL_DOMAIN`: the domain newsletter addresses live on (`example.com`).
+- **The owner's newsletter address.** Each user's address is their random `ingest_token`; the owner's subscriptions
+  use `news@`, so the owner's token is set to `news` once. Do it after the newsletter API is live but **before** switching
+  Email Routing to the Worker: mail to an address no user holds is accepted and dropped, so nothing retries it. To set
+  or redo it (for example after recreating the account), run this in the deployed container, where `DATABASE_URL` reaches the
+  database, with the email the account signed in with (the account sheet shows it):
+  `railway ssh --service archie -- uv run --no-sync archie-set-ingest-address --email <owner email> --address news`.
+  It refuses an address another user already holds, and an email that matches no user or more than one.
+- **ffmpeg.** The image now installs it (podcast audio is split with it); nothing to configure.
+- **The newsletter Worker.** Deploy it from `workers/newsletter/README.md` only after the API is live with
+  `INGEST_SECRET` set, then switch Email Routing to it.
 - **The domain.** Railway's generated `*.up.railway.app` domains can't be declared.
   `archie-production-4856.up.railway.app` routes to port 8000 on `archie`, and the iOS release build
   bakes it in (`scripts/install_ios.sh`).

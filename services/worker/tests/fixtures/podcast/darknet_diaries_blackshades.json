@@ -1,0 +1,1805 @@
+{
+ "version": "1.0.0",
+ "segments": [
+  {
+   "startTime": 0.435,
+   "endTime": 1.6,
+   "speaker": "",
+   "body": "JACK: Have you ever tried installing"
+  },
+  {
+   "startTime": 1.601,
+   "endTime": 3.534,
+   "speaker": "",
+   "body": "an app on your computer but then"
+  },
+  {
+   "startTime": 3.537,
+   "endTime": 4.615,
+   "speaker": "",
+   "body": "ended up with something else?"
+  },
+  {
+   "startTime": 4.616,
+   "endTime": 6.139,
+   "speaker": "",
+   "body": "Like, you downloaded something you"
+  },
+  {
+   "startTime": 6.139,
+   "endTime": 8.207,
+   "speaker": "",
+   "body": "actually wanted like a app to retrieve"
+  },
+  {
+   "startTime": 8.208,
+   "endTime": 10.285,
+   "speaker": "",
+   "body": "a deleted file or to get some video"
+  },
+  {
+   "startTime": 10.286,
+   "endTime": 11.666,
+   "speaker": "",
+   "body": "to play properly, [Music] you get it"
+  },
+  {
+   "startTime": 11.667,
+   "endTime": 13.151,
+   "speaker": "",
+   "body": "on your machine the way everyone does,"
+  },
+  {
+   "startTime": 13.151,
+   "endTime": 14.662,
+   "speaker": "",
+   "body": "you downloaded it, run the installer,"
+  },
+  {
+   "startTime": 14.665,
+   "endTime": 16.257,
+   "speaker": "",
+   "body": "click through the screens, next, next,"
+  },
+  {
+   "startTime": 16.258,
+   "endTime": 18.779,
+   "speaker": "",
+   "body": "next, agree, and then it\u2019s installed,"
+  },
+  {
+   "startTime": 18.779,
+   "endTime": 20.986,
+   "speaker": "",
+   "body": "but then something strange happens."
+  },
+  {
+   "startTime": 21.142,
+   "endTime": 22.457,
+   "speaker": "",
+   "body": "You might not notice right away, but"
+  },
+  {
+   "startTime": 22.457,
+   "endTime": 24.601,
+   "speaker": "",
+   "body": "there\u2019s something new on your computer,"
+  },
+  {
+   "startTime": 24.84,
+   "endTime": 27.255,
+   "speaker": "",
+   "body": "a new app or toolbar in your browser,"
+  },
+  {
+   "startTime": 27.256,
+   "endTime": 28.974,
+   "speaker": "",
+   "body": "or maybe your homepage changed to"
+  },
+  {
+   "startTime": 28.974,
+   "endTime": 30.647,
+   "speaker": "",
+   "body": "something like a search engine you"
+  },
+  {
+   "startTime": 30.649,
+   "endTime": 32.522,
+   "speaker": "",
+   "body": "never heard of, and your computer"
+  },
+  {
+   "startTime": 32.522,
+   "endTime": 33.779,
+   "speaker": "",
+   "body": "seems to be doing something every now"
+  },
+  {
+   "startTime": 33.78,
+   "endTime": 35.947,
+   "speaker": "",
+   "body": "and then that just doesn't make sense."
+  },
+  {
+   "startTime": 36.508,
+   "endTime": 38.549,
+   "speaker": "",
+   "body": "Like, it\u2019s a tad slower or the"
+  },
+  {
+   "startTime": 38.549,
+   "endTime": 40.722,
+   "speaker": "",
+   "body": "fans are suddenly louder, but"
+  },
+  {
+   "startTime": 40.723,
+   "endTime": 42.238,
+   "speaker": "",
+   "body": "you're just not exactly sure why."
+  },
+  {
+   "startTime": 42.705,
+   "endTime": 44.483,
+   "speaker": "",
+   "body": "Most of the time it\u2019s relatively harmless."
+  },
+  {
+   "startTime": 44.494,
+   "endTime": 45.921,
+   "speaker": "",
+   "body": "It\u2019s some kind of junkware."
+  },
+  {
+   "startTime": 46.229,
+   "endTime": 48.19,
+   "speaker": "",
+   "body": "Some company paid a few cents to bundle"
+  },
+  {
+   "startTime": 48.193,
+   "endTime": 49.989,
+   "speaker": "",
+   "body": "their stuff into your download, hoping"
+  },
+  {
+   "startTime": 49.989,
+   "endTime": 51.357,
+   "speaker": "",
+   "body": "that you wouldn't remove the software"
+  },
+  {
+   "startTime": 51.357,
+   "endTime": 53.232,
+   "speaker": "",
+   "body": "and you would start using their software."
+  },
+  {
+   "startTime": 53.394,
+   "endTime": 54.513,
+   "speaker": "",
+   "body": "It\u2019s annoying but it\u2019s easy"
+  },
+  {
+   "startTime": 54.513,
+   "endTime": 55.783,
+   "speaker": "",
+   "body": "to delete and forget about it."
+  },
+  {
+   "startTime": 56.244,
+   "endTime": 57.715,
+   "speaker": "",
+   "body": "But stop and think what just happened;"
+  },
+  {
+   "startTime": 57.741,
+   "endTime": 60.068,
+   "speaker": "",
+   "body": "you went to try to install one thing"
+  },
+  {
+   "startTime": 60.313,
+   "endTime": 61.804,
+   "speaker": "",
+   "body": "and something else came along with"
+  },
+  {
+   "startTime": 61.804,
+   "endTime": 63.042,
+   "speaker": "",
+   "body": "it, something you didn't choose to"
+  },
+  {
+   "startTime": 63.042,
+   "endTime": 64.354,
+   "speaker": "",
+   "body": "download and didn't even know you"
+  },
+  {
+   "startTime": 64.354,
+   "endTime": 65.672,
+   "speaker": "",
+   "body": "were installing it at the time."
+  },
+  {
+   "startTime": 66.128,
+   "endTime": 67.61,
+   "speaker": "",
+   "body": "You didn't even know what it was."
+  },
+  {
+   "startTime": 67.727,
+   "endTime": 69.257,
+   "speaker": "",
+   "body": "It latched onto something else"
+  },
+  {
+   "startTime": 69.259,
+   "endTime": 70.981,
+   "speaker": "",
+   "body": "that you trusted and came into"
+  },
+  {
+   "startTime": 70.981,
+   "endTime": 72.445,
+   "speaker": "",
+   "body": "your PC and got installed."
+  },
+  {
+   "startTime": 73.003,
+   "endTime": 74.618,
+   "speaker": "",
+   "body": "I hate this kind of software,"
+  },
+  {
+   "startTime": 74.621,
+   "endTime": 76.195,
+   "speaker": "",
+   "body": "software that you didn't install."
+  },
+  {
+   "startTime": 76.196,
+   "endTime": 78.22800000000001,
+   "speaker": "",
+   "body": "It just came along for the ride, software"
+  },
+  {
+   "startTime": 78.231,
+   "endTime": 79.611,
+   "speaker": "",
+   "body": "that you don't want on your machine."
+  },
+  {
+   "startTime": 79.98,
+   "endTime": 81.745,
+   "speaker": "",
+   "body": "It has a hidden agenda, and who"
+  },
+  {
+   "startTime": 81.746,
+   "endTime": 83.188,
+   "speaker": "",
+   "body": "knows what that thing is doing there."
+  },
+  {
+   "startTime": 83.74,
+   "endTime": 86.175,
+   "speaker": "",
+   "body": "This is a story about a piece of software"
+  },
+  {
+   "startTime": 86.175,
+   "endTime": 88.342,
+   "speaker": "",
+   "body": "that snuck onto our machines like that."
+  },
+  {
+   "startTime": 88.892,
+   "endTime": 90.77199999999999,
+   "speaker": "",
+   "body": "It\u2019s called Blackshades."
+  },
+  {
+   "startTime": 94.993,
+   "endTime": 95.64500000000001,
+   "speaker": "",
+   "body": "Intro: [Intro music] These"
+  },
+  {
+   "startTime": 95.64500000000001,
+   "endTime": 96.791,
+   "speaker": "",
+   "body": "are true stories from the"
+  },
+  {
+   "startTime": 96.792,
+   "endTime": 98.251,
+   "speaker": "",
+   "body": "dark side of the internet."
+  },
+  {
+   "startTime": 102.086,
+   "endTime": 103.328,
+   "speaker": "",
+   "body": "I\u2019m Jack Rhysider."
+  },
+  {
+   "startTime": 104.66499999999999,
+   "endTime": 105.575,
+   "speaker": "",
+   "body": "This is Darknet Diaries."
+  },
+  {
+   "startTime": 105.575,
+   "endTime": 105.983,
+   "speaker": "",
+   "body": "JACK: Let me start at"
+  },
+  {
+   "startTime": 123.182,
+   "endTime": 123.603,
+   "speaker": "",
+   "body": "beginning."
+  },
+  {
+   "startTime": 123.829,
+   "endTime": 126.235,
+   "speaker": "",
+   "body": "Alex Yucel and Michael Hogue created"
+  },
+  {
+   "startTime": 126.235,
+   "endTime": 128.21,
+   "speaker": "",
+   "body": "a program called Blackshades, and in"
+  },
+  {
+   "startTime": 128.211,
+   "endTime": 130.484,
+   "speaker": "",
+   "body": "2010 they started selling it online."
+  },
+  {
+   "startTime": 131.019,
+   "endTime": 132.225,
+   "speaker": "",
+   "body": "Blackshades, or more"
+  },
+  {
+   "startTime": 132.226,
+   "endTime": 132.39600000000002,
+   "speaker": "",
+   "body": "specifically, the Blackshades RAT,"
+  },
+  {
+   "startTime": 134.505,
+   "endTime": 135.99,
+   "speaker": "",
+   "body": "is a piece of software that allows"
+  },
+  {
+   "startTime": 135.99,
+   "endTime": 137.903,
+   "speaker": "",
+   "body": "an attacker to gain complete control"
+  },
+  {
+   "startTime": 137.915,
+   "endTime": 139.877,
+   "speaker": "",
+   "body": "remotely of a victim\u2019s machine."
+  },
+  {
+   "startTime": 140.063,
+   "endTime": 141.926,
+   "speaker": "",
+   "body": "They can view their files, record"
+  },
+  {
+   "startTime": 141.926,
+   "endTime": 142.953,
+   "speaker": "",
+   "body": "their keystrokes, lock their"
+  },
+  {
+   "startTime": 142.953,
+   "endTime": 144.432,
+   "speaker": "",
+   "body": "data, and hijack their webcam."
+  },
+  {
+   "startTime": 144.445,
+   "endTime": 145.923,
+   "speaker": "",
+   "body": "[Music] They marketed Blackshades"
+  },
+  {
+   "startTime": 145.937,
+   "endTime": 147.38,
+   "speaker": "",
+   "body": "like a regular software product."
+  },
+  {
+   "startTime": 147.38400000000001,
+   "endTime": 149.004,
+   "speaker": "",
+   "body": "They had a website with an About"
+  },
+  {
+   "startTime": 149.004,
+   "endTime": 150.713,
+   "speaker": "",
+   "body": "Us page and an Order Now button."
+  },
+  {
+   "startTime": 151.144,
+   "endTime": 153.424,
+   "speaker": "",
+   "body": "The page said \u2018Blackshades is"
+  },
+  {
+   "startTime": 153.425,
+   "endTime": 155.184,
+   "speaker": "",
+   "body": "mainly an IT surveillance and"
+  },
+  {
+   "startTime": 155.184,
+   "endTime": 157.43099999999998,
+   "speaker": "",
+   "body": "security-based company directed at"
+  },
+  {
+   "startTime": 157.43099999999998,
+   "endTime": 159.787,
+   "speaker": "",
+   "body": "making your PC experiences easier."
+  },
+  {
+   "startTime": 160.167,
+   "endTime": 162.304,
+   "speaker": "",
+   "body": "Our main goal is to offer affordable"
+  },
+  {
+   "startTime": 162.304,
+   "endTime": 164.35,
+   "speaker": "",
+   "body": "software solutions comparable to bigger"
+  },
+  {
+   "startTime": 164.352,
+   "endTime": 166.81799999999998,
+   "speaker": "",
+   "body": "names out there.\u2019 Then they listed"
+  },
+  {
+   "startTime": 166.81799999999998,
+   "endTime": 168.414,
+   "speaker": "",
+   "body": "the benefits of using the product;"
+  },
+  {
+   "startTime": 168.935,
+   "endTime": 172.016,
+   "speaker": "",
+   "body": "to spy on your children or spouse, to"
+  },
+  {
+   "startTime": 172.016,
+   "endTime": 173.641,
+   "speaker": "",
+   "body": "find out if your partner is cheating"
+  },
+  {
+   "startTime": 173.641,
+   "endTime": 175.611,
+   "speaker": "",
+   "body": "on you, or to see if someone was"
+  },
+  {
+   "startTime": 175.611,
+   "endTime": 178.17000000000002,
+   "speaker": "",
+   "body": "using your computer in unwanted ways."
+  },
+  {
+   "startTime": 178.796,
+   "endTime": 180.585,
+   "speaker": "",
+   "body": "They even had a legal notice saying"
+  },
+  {
+   "startTime": 180.899,
+   "endTime": 182.899,
+   "speaker": "",
+   "body": "that it\u2019s legal to install monitoring"
+  },
+  {
+   "startTime": 182.899,
+   "endTime": 184.464,
+   "speaker": "",
+   "body": "software on your own computer"
+  },
+  {
+   "startTime": 184.698,
+   "endTime": 186.822,
+   "speaker": "",
+   "body": "according to the Spy Act of 2004."
+  },
+  {
+   "startTime": 187.483,
+   "endTime": 188.058,
+   "speaker": "",
+   "body": "The price?"
+  },
+  {
+   "startTime": 188.36599999999999,
+   "endTime": 189.117,
+   "speaker": "",
+   "body": "Forty bucks."
+  },
+  {
+   "startTime": 189.939,
+   "endTime": 192.13,
+   "speaker": "",
+   "body": "The site wasn't hidden on the dark web."
+  },
+  {
+   "startTime": 192.14,
+   "endTime": 193.293,
+   "speaker": "",
+   "body": "It was right there in the open with"
+  },
+  {
+   "startTime": 193.311,
+   "endTime": 195.27100000000002,
+   "speaker": "",
+   "body": "normal-sounding marketing language, and"
+  },
+  {
+   "startTime": 195.27100000000002,
+   "endTime": 197.653,
+   "speaker": "",
+   "body": "at first glance it doesn't look nefarious."
+  },
+  {
+   "startTime": 197.935,
+   "endTime": 199.857,
+   "speaker": "",
+   "body": "But as you think about it, you're"
+  },
+  {
+   "startTime": 199.858,
+   "endTime": 201.148,
+   "speaker": "",
+   "body": "like, wait, hold on a minute."
+  },
+  {
+   "startTime": 201.628,
+   "endTime": 204.267,
+   "speaker": "",
+   "body": "The software is used to spy on people?"
+  },
+  {
+   "startTime": 205.373,
+   "endTime": 206.247,
+   "speaker": "",
+   "body": "Which makes me wonder,"
+  },
+  {
+   "startTime": 206.756,
+   "endTime": 208.995,
+   "speaker": "",
+   "body": "is Blackshades legal?"
+  },
+  {
+   "startTime": 209.787,
+   "endTime": 211.21,
+   "speaker": "",
+   "body": "Well, there\u2019s actually two questions here."
+  },
+  {
+   "startTime": 211.23,
+   "endTime": 212.999,
+   "speaker": "",
+   "body": "Is making and selling Blackshades"
+  },
+  {
+   "startTime": 213.011,
+   "endTime": 215.724,
+   "speaker": "",
+   "body": "legal, and is using Blackshades legal?"
+  },
+  {
+   "startTime": 216.245,
+   "endTime": 217.59,
+   "speaker": "",
+   "body": "The website says that this is a"
+  },
+  {
+   "startTime": 217.59,
+   "endTime": 219.065,
+   "speaker": "",
+   "body": "surveillance and security tool"
+  },
+  {
+   "startTime": 219.303,
+   "endTime": 220.822,
+   "speaker": "",
+   "body": "used to monitor the activity"
+  },
+  {
+   "startTime": 220.846,
+   "endTime": 221.95600000000002,
+   "speaker": "",
+   "body": "of your child\u2019s computer."
+  },
+  {
+   "startTime": 222.52100000000002,
+   "endTime": 224.348,
+   "speaker": "",
+   "body": "Well, that in itself isn't illegal"
+  },
+  {
+   "startTime": 224.348,
+   "endTime": 226.26,
+   "speaker": "",
+   "body": "even if it can be abused, kinda"
+  },
+  {
+   "startTime": 226.26,
+   "endTime": 227.519,
+   "speaker": "",
+   "body": "like a knife isn't illegal."
+  },
+  {
+   "startTime": 227.519,
+   "endTime": 228.686,
+   "speaker": "",
+   "body": "We need it to make food with."
+  },
+  {
+   "startTime": 229.296,
+   "endTime": 230.772,
+   "speaker": "",
+   "body": "Someone waving it around on the"
+  },
+  {
+   "startTime": 230.773,
+   "endTime": 232.377,
+   "speaker": "",
+   "body": "street is suddenly a big threat."
+  },
+  {
+   "startTime": 233.088,
+   "endTime": 234.664,
+   "speaker": "",
+   "body": "In fact, many businesses today use"
+  },
+  {
+   "startTime": 234.664,
+   "endTime": 236.329,
+   "speaker": "",
+   "body": "software just like that to monitor"
+  },
+  {
+   "startTime": 236.32999999999998,
+   "endTime": 237.377,
+   "speaker": "",
+   "body": "what their employees are doing."
+  },
+  {
+   "startTime": 237.6,
+   "endTime": 239.06900000000002,
+   "speaker": "",
+   "body": "It\u2019ll take screenshots, record what"
+  },
+  {
+   "startTime": 239.085,
+   "endTime": 240.951,
+   "speaker": "",
+   "body": "apps are opened and in focus, and"
+  },
+  {
+   "startTime": 240.951,
+   "endTime": 242.516,
+   "speaker": "",
+   "body": "track the locations of devices."
+  },
+  {
+   "startTime": 243.274,
+   "endTime": 244.974,
+   "speaker": "",
+   "body": "But when a company spies on its own"
+  },
+  {
+   "startTime": 244.975,
+   "endTime": 246.793,
+   "speaker": "",
+   "body": "computers, it typically makes it very"
+  },
+  {
+   "startTime": 246.797,
+   "endTime": 249.167,
+   "speaker": "",
+   "body": "clear; there is a monitoring system"
+  },
+  {
+   "startTime": 249.183,
+   "endTime": 251.263,
+   "speaker": "",
+   "body": "on your computer, or they make the"
+  },
+  {
+   "startTime": 251.266,
+   "endTime": 252.873,
+   "speaker": "",
+   "body": "employees sign a document which says"
+  },
+  {
+   "startTime": 252.873,
+   "endTime": 254.442,
+   "speaker": "",
+   "body": "\u2018You may be monitored while you're here"
+  },
+  {
+   "startTime": 254.442,
+   "endTime": 256.728,
+   "speaker": "",
+   "body": "at work\u2019, which is what makes it legal."
+  },
+  {
+   "startTime": 256.752,
+   "endTime": 258.043,
+   "speaker": "",
+   "body": "That person being spied on"
+  },
+  {
+   "startTime": 258.055,
+   "endTime": 259.873,
+   "speaker": "",
+   "body": "knows and consents to it."
+  },
+  {
+   "startTime": 260.468,
+   "endTime": 263.222,
+   "speaker": "",
+   "body": "So, on the surface, both making and using"
+  },
+  {
+   "startTime": 263.222,
+   "endTime": 266.379,
+   "speaker": "",
+   "body": "software like this can be perfectly legal."
+  },
+  {
+   "startTime": 267.272,
+   "endTime": 268.638,
+   "speaker": "",
+   "body": "But Blackshades wasn't"
+  },
+  {
+   "startTime": 268.659,
+   "endTime": 270.695,
+   "speaker": "",
+   "body": "marketing this to businesses."
+  },
+  {
+   "startTime": 271.253,
+   "endTime": 273.808,
+   "speaker": "",
+   "body": "They were marketing it on hacker forums."
+  },
+  {
+   "startTime": 275.487,
+   "endTime": 276.451,
+   "speaker": "",
+   "body": "[Music] They specifically were"
+  },
+  {
+   "startTime": 276.455,
+   "endTime": 278.101,
+   "speaker": "",
+   "body": "building a tool that they knew people"
+  },
+  {
+   "startTime": 278.102,
+   "endTime": 280.491,
+   "speaker": "",
+   "body": "would use for malicious purposes."
+  },
+  {
+   "startTime": 280.756,
+   "endTime": 281.83,
+   "speaker": "",
+   "body": "They weren't in the business"
+  },
+  {
+   "startTime": 281.831,
+   "endTime": 283.455,
+   "speaker": "",
+   "body": "of selling kitchen knives."
+  },
+  {
+   "startTime": 283.805,
+   "endTime": 285.303,
+   "speaker": "",
+   "body": "They were specifically marketing"
+  },
+  {
+   "startTime": 285.305,
+   "endTime": 286.223,
+   "speaker": "",
+   "body": "their product to people"
+  },
+  {
+   "startTime": 286.225,
+   "endTime": 288.136,
+   "speaker": "",
+   "body": "they knew would abuse it."
+  },
+  {
+   "startTime": 288.519,
+   "endTime": 289.686,
+   "speaker": "",
+   "body": "So, their whole website, which was"
+  },
+  {
+   "startTime": 289.687,
+   "endTime": 291.123,
+   "speaker": "",
+   "body": "saying this is used to track your kids,"
+  },
+  {
+   "startTime": 291.211,
+   "endTime": 293.363,
+   "speaker": "",
+   "body": "that was really a lie, a ruse to make"
+  },
+  {
+   "startTime": 293.364,
+   "endTime": 295.867,
+   "speaker": "",
+   "body": "it look legal and look perfectly fine."
+  },
+  {
+   "startTime": 296.439,
+   "endTime": 298.133,
+   "speaker": "",
+   "body": "To the courts, who look at things through"
+  },
+  {
+   "startTime": 298.133,
+   "endTime": 301.654,
+   "speaker": "",
+   "body": "the lens of the law, intent matters a lot."
+  },
+  {
+   "startTime": 302.181,
+   "endTime": 303.976,
+   "speaker": "",
+   "body": "If you know you're selling to people"
+  },
+  {
+   "startTime": 303.979,
+   "endTime": 305.967,
+   "speaker": "",
+   "body": "who will use it to commit crimes with,"
+  },
+  {
+   "startTime": 306.604,
+   "endTime": 308.364,
+   "speaker": "",
+   "body": "then yeah, it\u2019s illegal to sell that."
+  },
+  {
+   "startTime": 309.096,
+   "endTime": 311.513,
+   "speaker": "",
+   "body": "When it comes to the customers, if"
+  },
+  {
+   "startTime": 311.513,
+   "endTime": 312.537,
+   "speaker": "",
+   "body": "they were putting it on people\u2019s"
+  },
+  {
+   "startTime": 312.544,
+   "endTime": 314.234,
+   "speaker": "",
+   "body": "computers without their consent"
+  },
+  {
+   "startTime": 314.244,
+   "endTime": 315.729,
+   "speaker": "",
+   "body": "and spying on someone without them"
+  },
+  {
+   "startTime": 315.729,
+   "endTime": 317.818,
+   "speaker": "",
+   "body": "knowing, then that\u2019s illegal, too."
+  },
+  {
+   "startTime": 318.421,
+   "endTime": 319.921,
+   "speaker": "",
+   "body": "That\u2019s unauthorized access to"
+  },
+  {
+   "startTime": 319.924,
+   "endTime": 321.561,
+   "speaker": "",
+   "body": "a computer, privacy violations,"
+  },
+  {
+   "startTime": 321.572,
+   "endTime": 322.813,
+   "speaker": "",
+   "body": "identity theft, intercepting"
+  },
+  {
+   "startTime": 322.815,
+   "endTime": 324.316,
+   "speaker": "",
+   "body": "communications, and extortion."
+  },
+  {
+   "startTime": 324.839,
+   "endTime": 326.392,
+   "speaker": "",
+   "body": "So yeah, this can be illegal"
+  },
+  {
+   "startTime": 326.39300000000003,
+   "endTime": 328.411,
+   "speaker": "",
+   "body": "to use as well, both illegal"
+  },
+  {
+   "startTime": 328.412,
+   "endTime": 330.022,
+   "speaker": "",
+   "body": "to make and illegal to use."
+  },
+  {
+   "startTime": 330.479,
+   "endTime": 331.907,
+   "speaker": "",
+   "body": "But again, it all comes down"
+  },
+  {
+   "startTime": 331.909,
+   "endTime": 334.03,
+   "speaker": "",
+   "body": "to intent of whether or not"
+  },
+  {
+   "startTime": 334.03,
+   "endTime": 335.914,
+   "speaker": "",
+   "body": "this is legal versus illegal."
+  },
+  {
+   "startTime": 336.491,
+   "endTime": 338.503,
+   "speaker": "",
+   "body": "If these people who use it and make"
+  },
+  {
+   "startTime": 338.503,
+   "endTime": 340.303,
+   "speaker": "",
+   "body": "it are going to get in trouble over"
+  },
+  {
+   "startTime": 340.304,
+   "endTime": 341.80899999999997,
+   "speaker": "",
+   "body": "this, then the courts are gonna have"
+  },
+  {
+   "startTime": 341.81,
+   "endTime": 343.798,
+   "speaker": "",
+   "body": "to prove that intent was there to"
+  },
+  {
+   "startTime": 343.812,
+   "endTime": 345.838,
+   "speaker": "",
+   "body": "sell it to criminals or to spy on"
+  },
+  {
+   "startTime": 345.84000000000003,
+   "endTime": 346.931,
+   "speaker": "",
+   "body": "people without their permission."
+  },
+  {
+   "startTime": 347.751,
+   "endTime": 349.633,
+   "speaker": "",
+   "body": "Blackshades is better known as"
+  },
+  {
+   "startTime": 349.633,
+   "endTime": 352.119,
+   "speaker": "",
+   "body": "the Blackshades RAT, and RAT"
+  },
+  {
+   "startTime": 352.242,
+   "endTime": 354.565,
+   "speaker": "",
+   "body": "stands for Remote Access Trojan."
+  },
+  {
+   "startTime": 354.991,
+   "endTime": 356.389,
+   "speaker": "",
+   "body": "Remote access is like when you"
+  },
+  {
+   "startTime": 356.396,
+   "endTime": 358.889,
+   "speaker": "",
+   "body": "need computer help and IT support"
+  },
+  {
+   "startTime": 358.907,
+   "endTime": 360.3,
+   "speaker": "",
+   "body": "takes over your computer to fix"
+  },
+  {
+   "startTime": 360.3,
+   "endTime": 361.918,
+   "speaker": "",
+   "body": "something, or when you log into your"
+  },
+  {
+   "startTime": 361.923,
+   "endTime": 363.385,
+   "speaker": "",
+   "body": "home computer from a coffee shop."
+  },
+  {
+   "startTime": 364.018,
+   "endTime": 365.435,
+   "speaker": "",
+   "body": "A RAT is the exact same thing,"
+  },
+  {
+   "startTime": 365.563,
+   "endTime": 367.73,
+   "speaker": "",
+   "body": "except it\u2019s malicious in nature."
+  },
+  {
+   "startTime": 368.138,
+   "endTime": 370.207,
+   "speaker": "",
+   "body": "Someone you don't know takes"
+  },
+  {
+   "startTime": 370.207,
+   "endTime": 372.173,
+   "speaker": "",
+   "body": "over your computer without your"
+  },
+  {
+   "startTime": 372.173,
+   "endTime": 373.634,
+   "speaker": "",
+   "body": "knowledge or consent, and they"
+  },
+  {
+   "startTime": 373.634,
+   "endTime": 375.298,
+   "speaker": "",
+   "body": "can see everything you're doing."
+  },
+  {
+   "startTime": 375.828,
+   "endTime": 377.644,
+   "speaker": "",
+   "body": "The scariest bit is you have no"
+  },
+  {
+   "startTime": 377.644,
+   "endTime": 379.309,
+   "speaker": "",
+   "body": "idea it\u2019s happening, since it\u2019s"
+  },
+  {
+   "startTime": 379.323,
+   "endTime": 381.037,
+   "speaker": "",
+   "body": "completely running silently."
+  },
+  {
+   "startTime": 382.669,
+   "endTime": 383.895,
+   "speaker": "",
+   "body": "Once Blackshades was on your"
+  },
+  {
+   "startTime": 383.896,
+   "endTime": 385.381,
+   "speaker": "",
+   "body": "machine, the attacker has an"
+  },
+  {
+   "startTime": 385.382,
+   "endTime": 387.151,
+   "speaker": "",
+   "body": "astonishing level of access."
+  },
+  {
+   "startTime": 387.394,
+   "endTime": 388.729,
+   "speaker": "",
+   "body": "They could read every file and view"
+  },
+  {
+   "startTime": 388.731,
+   "endTime": 390.626,
+   "speaker": "",
+   "body": "every photo and video on your computer."
+  },
+  {
+   "startTime": 390.901,
+   "endTime": 391.512,
+   "speaker": "",
+   "body": "They could see every"
+  },
+  {
+   "startTime": 391.513,
+   "endTime": 392.62,
+   "speaker": "",
+   "body": "single key you pressed."
+  },
+  {
+   "startTime": 392.64,
+   "endTime": 394.046,
+   "speaker": "",
+   "body": "Every password, every credit card"
+  },
+  {
+   "startTime": 394.048,
+   "endTime": 395.289,
+   "speaker": "",
+   "body": "number, every private message"
+  },
+  {
+   "startTime": 395.29200000000003,
+   "endTime": 396.645,
+   "speaker": "",
+   "body": "went straight to the attacker."
+  },
+  {
+   "startTime": 396.995,
+   "endTime": 398.807,
+   "speaker": "",
+   "body": "They could steal the log-ins to your bank,"
+  },
+  {
+   "startTime": 398.846,
+   "endTime": 400.741,
+   "speaker": "",
+   "body": "your e-mail, your social media accounts."
+  },
+  {
+   "startTime": 401.131,
+   "endTime": 402.469,
+   "speaker": "",
+   "body": "They could turn your webcam and"
+  },
+  {
+   "startTime": 402.469,
+   "endTime": 404.265,
+   "speaker": "",
+   "body": "microphone on, and from there they"
+  },
+  {
+   "startTime": 404.267,
+   "endTime": 406.314,
+   "speaker": "",
+   "body": "can commit a litany of crimes; theft,"
+  },
+  {
+   "startTime": 406.325,
+   "endTime": 408.922,
+   "speaker": "",
+   "body": "extortion, blackmail, for example, but"
+  },
+  {
+   "startTime": 408.923,
+   "endTime": 410.855,
+   "speaker": "",
+   "body": "also wire fraud and identity theft."
+  },
+  {
+   "startTime": 411.373,
+   "endTime": 412.15,
+   "speaker": "",
+   "body": "And it gets worse."
+  },
+  {
+   "startTime": 412.386,
+   "endTime": 413.659,
+   "speaker": "",
+   "body": "Blackshades had a feature"
+  },
+  {
+   "startTime": 413.699,
+   "endTime": 415.048,
+   "speaker": "",
+   "body": "called the Spreader."
+  },
+  {
+   "startTime": 415.42,
+   "endTime": 416.699,
+   "speaker": "",
+   "body": "Once it was on your computer, the"
+  },
+  {
+   "startTime": 416.701,
+   "endTime": 418.743,
+   "speaker": "",
+   "body": "attacker could use your social media"
+  },
+  {
+   "startTime": 418.743,
+   "endTime": 420.607,
+   "speaker": "",
+   "body": "accounts and chat apps to try to spread"
+  },
+  {
+   "startTime": 420.608,
+   "endTime": 422.178,
+   "speaker": "",
+   "body": "it to your friends\u2019 computers, too."
+  },
+  {
+   "startTime": 422.749,
+   "endTime": 423.994,
+   "speaker": "",
+   "body": "They could even use Blackshades"
+  },
+  {
+   "startTime": 424.01,
+   "endTime": 426.286,
+   "speaker": "",
+   "body": "for ransomware, locking up their"
+  },
+  {
+   "startTime": 426.286,
+   "endTime": 427.895,
+   "speaker": "",
+   "body": "targets\u2019 files and demanding"
+  },
+  {
+   "startTime": 427.895,
+   "endTime": 429.427,
+   "speaker": "",
+   "body": "payments to unscramble them."
+  },
+  {
+   "startTime": 429.427,
+   "endTime": 431.971,
+   "speaker": "",
+   "body": "[Music] I can't imagine this feature"
+  },
+  {
+   "startTime": 432.036,
+   "endTime": 434.356,
+   "speaker": "",
+   "body": "being used for any legitimate purpose."
+  },
+  {
+   "startTime": 434.804,
+   "endTime": 436.686,
+   "speaker": "",
+   "body": "So, the fact that this had a ransomware"
+  },
+  {
+   "startTime": 436.695,
+   "endTime": 438.335,
+   "speaker": "",
+   "body": "feature squarely puts it in the"
+  },
+  {
+   "startTime": 438.335,
+   "endTime": 440.013,
+   "speaker": "",
+   "body": "malicious software territory, if you're"
+  },
+  {
+   "startTime": 440.013,
+   "endTime": 442.539,
+   "speaker": "",
+   "body": "asking me, making it clearly illegal."
+  },
+  {
+   "startTime": 443.094,
+   "endTime": 444.996,
+   "speaker": "",
+   "body": "But Blackshades would make their users"
+  },
+  {
+   "startTime": 444.998,
+   "endTime": 446.63,
+   "speaker": "",
+   "body": "click on a button stating that the"
+  },
+  {
+   "startTime": 446.631,
+   "endTime": 448.856,
+   "speaker": "",
+   "body": "user is responsible for whatever the"
+  },
+  {
+   "startTime": 448.861,
+   "endTime": 451.349,
+   "speaker": "",
+   "body": "action resulted in, and warning them"
+  },
+  {
+   "startTime": 451.395,
+   "endTime": 453.131,
+   "speaker": "",
+   "body": "to be careful when using this feature."
+  },
+  {
+   "startTime": 453.519,
+   "endTime": 455.704,
+   "speaker": "",
+   "body": "It also said this was made"
+  },
+  {
+   "startTime": 455.946,
+   "endTime": 458.084,
+   "speaker": "",
+   "body": "for educational purposes only."
+  },
+  {
+   "startTime": 458.899,
+   "endTime": 460.956,
+   "speaker": "",
+   "body": "Yeah, okay, sure."
+  },
+  {
+   "startTime": 461.831,
+   "endTime": 462.957,
+   "speaker": "",
+   "body": "But there was one problem"
+  },
+  {
+   "startTime": 463.179,
+   "endTime": 464.169,
+   "speaker": "",
+   "body": "for Blackshades users."
+  },
+  {
+   "startTime": 464.405,
+   "endTime": 466.304,
+   "speaker": "",
+   "body": "You couldn't just wave a wand at"
+  },
+  {
+   "startTime": 466.304,
+   "endTime": 468.099,
+   "speaker": "",
+   "body": "someone and infect their computer"
+  },
+  {
+   "startTime": 468.099,
+   "endTime": 469.674,
+   "speaker": "",
+   "body": "with Blackshades, and no one in"
+  },
+  {
+   "startTime": 469.674,
+   "endTime": 470.925,
+   "speaker": "",
+   "body": "their right mind would install"
+  },
+  {
+   "startTime": 470.925,
+   "endTime": 472.587,
+   "speaker": "",
+   "body": "this to give some random attacker"
+  },
+  {
+   "startTime": 472.597,
+   "endTime": 473.847,
+   "speaker": "",
+   "body": "full access to their computer."
+  },
+  {
+   "startTime": 474.288,
+   "endTime": 476.613,
+   "speaker": "",
+   "body": "So, to get Blackshades on a victim\u2019s"
+  },
+  {
+   "startTime": 476.621,
+   "endTime": 478.714,
+   "speaker": "",
+   "body": "machine, they had to trick the victim"
+  },
+  {
+   "startTime": 478.87,
+   "endTime": 481.252,
+   "speaker": "",
+   "body": "into installing it themselves, to make"
+  },
+  {
+   "startTime": 481.253,
+   "endTime": 483.045,
+   "speaker": "",
+   "body": "them think they're installing something"
+  },
+  {
+   "startTime": 483.046,
+   "endTime": 485.442,
+   "speaker": "",
+   "body": "else, and that\u2019s tricky because you"
+  },
+  {
+   "startTime": 485.443,
+   "endTime": 487.898,
+   "speaker": "",
+   "body": "basically have to exploit another human"
+  },
+  {
+   "startTime": 488.229,
+   "endTime": 489.771,
+   "speaker": "",
+   "body": "to get it installed, which brings us"
+  },
+  {
+   "startTime": 489.772,
+   "endTime": 491.288,
+   "speaker": "",
+   "body": "into the world of social engineering,"
+  },
+  {
+   "startTime": 491.288,
+   "endTime": 493.221,
+   "speaker": "",
+   "body": "the art of tricking people into doing"
+  },
+  {
+   "startTime": 493.221,
+   "endTime": 495.082,
+   "speaker": "",
+   "body": "things they don't actually want to do."
+  },
+  {
+   "startTime": 495.807,
+   "endTime": 497.8,
+   "speaker": "",
+   "body": "There are a 1001 ways that we can"
+  },
+  {
+   "startTime": 497.813,
+   "endTime": 499.937,
+   "speaker": "",
+   "body": "all be tricked into installing"
+  },
+  {
+   "startTime": 499.945,
+   "endTime": 501.277,
+   "speaker": "",
+   "body": "things that we don't actually want."
+  },
+  {
+   "startTime": 501.551,
+   "endTime": 503.081,
+   "speaker": "",
+   "body": "Humans are a weak link when"
+  },
+  {
+   "startTime": 503.084,
+   "endTime": 504.416,
+   "speaker": "",
+   "body": "it comes to computer security."
+  },
+  {
+   "startTime": 504.908,
+   "endTime": 506.07,
+   "speaker": "",
+   "body": "You might have seen some of them,"
+  },
+  {
+   "startTime": 506.137,
+   "endTime": 507.381,
+   "speaker": "",
+   "body": "obvious links; click here for"
+  },
+  {
+   "startTime": 507.381,
+   "endTime": 508.514,
+   "speaker": "",
+   "body": "a free iPhone, and you're like,"
+  },
+  {
+   "startTime": 508.515,
+   "endTime": 510.022,
+   "speaker": "",
+   "body": "yeah, nah, I\u2019m not doing that."
+  },
+  {
+   "startTime": 510.441,
+   "endTime": 512.592,
+   "speaker": "",
+   "body": "But sometimes it\u2019s not so obvious."
+  },
+  {
+   "startTime": 512.847,
+   "endTime": 514.427,
+   "speaker": "",
+   "body": "Since Blackshades can spread from"
+  },
+  {
+   "startTime": 514.427,
+   "endTime": 516.345,
+   "speaker": "",
+   "body": "a friend\u2019s computer to yours using"
+  },
+  {
+   "startTime": 516.345,
+   "endTime": 517.792,
+   "speaker": "",
+   "body": "malicious links, it can look like"
+  },
+  {
+   "startTime": 517.793,
+   "endTime": 519.438,
+   "speaker": "",
+   "body": "it\u2019s coming from someone you trust."
+  },
+  {
+   "startTime": 520.215,
+   "endTime": 522.104,
+   "speaker": "",
+   "body": "They can also hide malware inside"
+  },
+  {
+   "startTime": 522.368,
+   "endTime": 524.841,
+   "speaker": "",
+   "body": "pirated software, games, or movies"
+  },
+  {
+   "startTime": 525.069,
+   "endTime": 526.63,
+   "speaker": "",
+   "body": "on peer-to-peer file-sharing sites."
+  },
+  {
+   "startTime": 526.94,
+   "endTime": 528.513,
+   "speaker": "",
+   "body": "So, if you downloaded a cracked version"
+  },
+  {
+   "startTime": 528.514,
+   "endTime": 530.054,
+   "speaker": "",
+   "body": "of a video game that you didn't want"
+  },
+  {
+   "startTime": 530.057,
+   "endTime": 531.723,
+   "speaker": "",
+   "body": "to buy, Blackshades might come along"
+  },
+  {
+   "startTime": 531.725,
+   "endTime": 533.604,
+   "speaker": "",
+   "body": "for the ride and get installed with it."
+  },
+  {
+   "startTime": 534.252,
+   "endTime": 535.001,
+   "speaker": "",
+   "body": "I should know, too."
+  },
+  {
+   "startTime": 535.001,
+   "endTime": 536.463,
+   "speaker": "",
+   "body": "When I was a teenager I downloaded a"
+  },
+  {
+   "startTime": 536.463,
+   "endTime": 538.928,
+   "speaker": "",
+   "body": "lot of shady apps and games from shady"
+  },
+  {
+   "startTime": 538.929,
+   "endTime": 540.317,
+   "speaker": "",
+   "body": "parts of the internet, and I would"
+  },
+  {
+   "startTime": 540.317,
+   "endTime": 542.045,
+   "speaker": "",
+   "body": "constantly be dealing with infections."
+  },
+  {
+   "startTime": 542.529,
+   "endTime": 543.762,
+   "speaker": "",
+   "body": "I didn't care because I really wanted"
+  },
+  {
+   "startTime": 543.762,
+   "endTime": 544.858,
+   "speaker": "",
+   "body": "to play the game, but eventually"
+  },
+  {
+   "startTime": 544.858,
+   "endTime": 546.435,
+   "speaker": "",
+   "body": "the infection would get so bad that"
+  },
+  {
+   "startTime": 546.436,
+   "endTime": 548.088,
+   "speaker": "",
+   "body": "I couldn't use my computer at all."
+  },
+  {
+   "startTime": 548.372,
+   "endTime": 549.185,
+   "speaker": "",
+   "body": "Pop-ups would just"
+  },
+  {
+   "startTime": 549.223,
+   "endTime": 550.353,
+   "speaker": "",
+   "body": "constantly be showing up."
+  },
+  {
+   "startTime": 550.569,
+   "endTime": 552.431,
+   "speaker": "",
+   "body": "The CPU would crawl to a standstill."
+  },
+  {
+   "startTime": 552.66,
+   "endTime": 553.925,
+   "speaker": "",
+   "body": "I must have been hit with malware"
+  },
+  {
+   "startTime": 553.926,
+   "endTime": 555.859,
+   "speaker": "",
+   "body": "hundreds of times when I was a teenager."
+  },
+  {
+   "startTime": 556.486,
+   "endTime": 558.04,
+   "speaker": "",
+   "body": "But that\u2019s what got me good at fixing"
+  },
+  {
+   "startTime": 558.04,
+   "endTime": 560.138,
+   "speaker": "",
+   "body": "computers, learning how to find malware"
+  },
+  {
+   "startTime": 560.171,
+   "endTime": 561.971,
+   "speaker": "",
+   "body": "and remove it and cleaning up my computer."
+  },
+  {
+   "startTime": 562.315,
+   "endTime": 563.598,
+   "speaker": "",
+   "body": "After a while I took pride in"
+  },
+  {
+   "startTime": 563.598,
+   "endTime": 564.692,
+   "speaker": "",
+   "body": "knowing there is no problem"
+  },
+  {
+   "startTime": 564.692,
+   "endTime": 566.029,
+   "speaker": "",
+   "body": "that I can't fix on my computer."
+  },
+  {
+   "startTime": 566.344,
+   "endTime": 567.314,
+   "speaker": "",
+   "body": "Worst case is I could just"
+  },
+  {
+   "startTime": 567.36,
+   "endTime": 568.731,
+   "speaker": "",
+   "body": "reinstall the operating system"
+  },
+  {
+   "startTime": 568.732,
+   "endTime": 571.203,
+   "speaker": "",
+   "body": "if I had to, which I did a lot."
+  },
+  {
+   "startTime": 571.371,
+   "endTime": 572.444,
+   "speaker": "",
+   "body": "I mean, a lot, a lot."
+  },
+  {
+   "startTime": 573.212,
+   "endTime": 575.735,
+   "speaker": "",
+   "body": "Anyway, sometimes devices you buy in the"
+  },
+  {
+   "startTime": 575.736,
+   "endTime": 577.258,
+   "speaker": "",
+   "body": "store actually come with malware on them."
+  },
+  {
+   "startTime": 577.26,
+   "endTime": 578.449,
+   "speaker": "",
+   "body": "There was a story I read once"
+  },
+  {
+   "startTime": 578.449,
+   "endTime": 579.947,
+   "speaker": "",
+   "body": "where a Chinese laptop maker"
+  },
+  {
+   "startTime": 579.948,
+   "endTime": 581.013,
+   "speaker": "",
+   "body": "was selling their laptops on"
+  },
+  {
+   "startTime": 581.013,
+   "endTime": 583.049,
+   "speaker": "",
+   "body": "Amazon that came with Windows 11."
+  },
+  {
+   "startTime": 583.425,
+   "endTime": 584.651,
+   "speaker": "",
+   "body": "Well, the thing was the Chinese seller"
+  },
+  {
+   "startTime": 584.651,
+   "endTime": 586.189,
+   "speaker": "",
+   "body": "was trying to cut costs and didn't want"
+  }
+ ]
+}

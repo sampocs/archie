@@ -89,6 +89,23 @@ def test_analyze_writes_a_summary_and_cards(engine: sqlalchemy.Engine, replay: R
     assert _source(engine, source_id).processing == models.ProcessingStatus.PROCESSING.value
 
 
+def test_newsletter_analyze_writes_a_summary_but_no_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """Even when the model calls a newsletter educational, it gets a summary only: no cards, no primer, ready."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT, kind=models.SourceKind.NEWSLETTER)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE)
+
+    # The cassette's response is educational with cards, so only the newsletter rule can keep them out.
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    [summary] = _artifacts(engine, source_id, models.ArtifactKind.SUMMARY)
+    assert summary.content["is_educational"] is True
+    assert _cards(engine, source_id) == []
+    assert _artifacts(engine, source_id, models.ArtifactKind.PRIMER) == []
+    assert _source(engine, source_id).processing == models.ProcessingStatus.READY.value
+    assert [job.kind for job in _jobs(engine)] == [models.JobKind.ANALYZE.value]
+
+
 def test_analyze_and_primer_together_make_the_source_ready(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """The primer is stored as markdown from Sonnet, and the second of the two steps flips the source to ready."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)
@@ -287,19 +304,19 @@ def test_a_missing_text_artifact_is_retried(engine: sqlalchemy.Engine) -> None:
     assert _llm_calls(engine) == []
 
 
-def test_user_message_caps_the_text() -> None:
-    """Only the first 200,000 characters reach the model, inside <text> tags below the source's details."""
-    message = prompts.user_message(
-        kind=models.SourceKind.ARTICLE,
-        title=None,
-        url="https://example.com/a",
-        text="§" * (prompts.MAX_TEXT_CHARACTERS + 50),
-    )
+def test_user_message_wraps_the_text_below_the_source_details() -> None:
+    """The source's details come first, then the text inside <text> tags."""
+    message = prompts.user_message(kind=models.SourceKind.ARTICLE, title=None, url="https://example.com/a", text="body")
 
-    assert message.count("§") == prompts.MAX_TEXT_CHARACTERS
     assert message.startswith("Source kind: article\nTitle: (none)\nURL: https://example.com/a")
-    assert "<text>\n" in message
-    assert message.endswith("\n</text>")
+    assert message.endswith("<text>\nbody\n</text>")
+
+
+def test_model_text_caps_untimed_text() -> None:
+    """Only the first 200,000 characters of untimed text reach the model."""
+    text = prompts.model_text({"text": "§" * (prompts.MAX_TEXT_CHARACTERS + 50)})
+
+    assert text.count("§") == 200_000
 
 
 def _add_source(

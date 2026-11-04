@@ -1,0 +1,1434 @@
+Mime-Version: 1.0
+Content-Type: multipart/alternative;
+ boundary="7b6b9f074abef334ecba72b8362790211aac12567fd40ff46d45abb751b9"
+Subject: How Netflix Uses AI Agents for Performance Engineering
+From: ByteByteGo <bytebytego@substack.com>
+Message-Id: <cdfb73cabdba592bd437f379@example.invalid>
+Date: Tue, 3 Nov 2026 16:31:10 +0000
+List-Id: <bytebytego.substack.com>
+List-Post:
+ <https://blog.bytebytego.com/p/how-netflix-uses-ai-agents-for-performance>
+To: reader@example.invalid
+List-Unsubscribe: <https://example.invalid/unsubscribe>
+
+--7b6b9f074abef334ecba72b8362790211aac12567fd40ff46d45abb751b9
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+View this post on the web at https://blog.bytebytego.com/p/how-netflix-uses-a=
+i-agents-for-performance
+
+The real benefits of end-to-end observability (Sponsored) [ https://example.i=
+nvalid/tracked ]
+How does full-stack observability impact engineering speed, incident response=
+, and cost control?
+In this eBook from Datadog, you=E2=80=99ll learn how real teams across indust=
+ries are using observability to:
+Reduce mean time to resolution (MTTR)
+Cut tooling costs and improve team efficiency
+Align business and engineering KPIs
+See how unifying your stack leads to faster troubleshooting and long-term ope=
+rational gains.
+Performance engineering is the discipline in which you design, analyze, and o=
+ptimize software systems so that they run quickly. Also, they should use reso=
+urces efficiently. In distributed architectures, the focus of any performance=
+ engineering activity is on shaving milliseconds off response times. Or locat=
+ing execution bottlenecks in CPU or memory. Or making sure infrastructure cos=
+ts are kept under control.
+Historically, performance engineering work has been slow. And manual. You oft=
+en depend on a small group of really skilled developers. However, with the ri=
+se of AI-assisted software development, there=E2=80=99s a contradiction. Deve=
+lopers can write and ship code faster than ever. No matter what their skill l=
+evel may be. But that code often introduces subtle performance problems.
+To solve this problem, the Netflix engineering team has developed an autonomo=
+us performance agent system. In this article, we=E2=80=99ll be learning more =
+about it. Here=E2=80=99s what we will cover:
+Bottlenecks for traditional performance work
+The problem with AI-Generated code
+Can LLMs handle profile data
+The agentic profiling pipeline
+The problems Netflix found in production
+Safety, verification, and trust architecture
+Shifting left
+Disclaimer: This post is based on publicly shared details from various source=
+s. References at the end. Please comment if you notice any inaccuracies.
+Bottlenecks For Traditional Performance Work
+Traditional performance engineering work at Netflix was built on a highly ite=
+rative loop that is pretty much manual in nature.
+First, you trigger profiling for an application. A developer tries to detect =
+high latency or increased resource usage by triggering a profiler on a live p=
+roduction server.
+In the second step, the profiler outputs raw trace data or flame graphs. The =
+developer downloads these details to their local machine.
+Third, the developer spends time looking at complex, color-coded flame graphs=
+. They try to spot wide stack frames that might show signs of higher-than-nor=
+mal CPU or memory consumption.
+Next, the developer goes through the codebase looking for cryptic method name=
+s found in the flame graph. They try to make sense of the surrounding applica=
+tion logic to figure things out.
+Fifth, the developer traces the execution path and identifies the inefficient=
+ operation. They write a proposed patch to fix the operation.
+Moving further, the developers deploy the patch to an environment where any c=
+hange in performance levels can be measured.
+At the end, when new code paths are deployed in production, the developer sta=
+rts the manual process once again.
+As you may have noticed, this workflow doesn=E2=80=99t scale. Everything depe=
+nds on a few domain experts who have a deep sense of understanding about low-=
+level execution stacks. Since human attention is a scarce resource, you can i=
+nvestigate performance issues only for major incidents or obvious system slow=
+downs. Smaller but steady resource drains go unnoticed.
+Why Braintrust, Raycast and Jane Street use WarpBuild (Sponsored) [ https://e=
+xample.invalid/tracked ]
+Fast-moving teams ship more code than ever, and AI tools add even more. Their=
+ CI has to keep up without the bill getting out of hand.
+That is why teams at Braintrust, Raycast, OpenRouter, Comcast and Jane Street=
+ run GitHub Actions on WarpBuild:
+Twice as fast at half the cost
+Linux, macOS and Windows on x86-64 and ARM64
+Unlimited macOS concurrency
+One line change to runs-on
+Use code START50 for $50 in free credits.
+The Problem with AI Code
+The use of AI coding assistants has increased performance problems. There are=
+ two main reasons for this. The speed trap and the context gap.
+Developers who are using AI tools can generate and ship code up to 10 times f=
+aster than before. No matter their skill level or knowledge of the system. Bu=
+t you cannot guarantee that code that is fast to generate also performs well.=
+ While your average developer might be able to write 10K lines of code in a f=
+ew minutes, the team might have to spend years debugging regressions. Or deal=
+ing with code bloat. Or handling other architecture-related problems.
+Also, if you=E2=80=99ve noticed, LLMs are great at syntax and local-level log=
+ic. If you ask an LLM to write a function or an API endpoint, it writes code =
+that compiles successfully and runs without any obvious errors. It might also=
+ pass standard unit tests. However, the LLM has no idea about the host platfo=
+rm=E2=80=99s runtime environment.
+For example, you can=E2=80=99t expect the LLM to know that a particular utili=
+ty function being used in your code might run 10 million times per second on =
+a critical request path. It cannot see the overall call stack. Neither can it=
+ understand memory allocation challenges that might exist inside a container =
+running at peak load within your platform. Therefore, the code you write migh=
+t appear good enough in isolation. But it can still waste a huge amount of re=
+sources when you run it at scale.
+Can LLMs Handle Profile Data
+Netflix wanted to test whether automation could remove these issues. They set=
+ up an experiment to find out if an LLM can read and make sense of raw profil=
+ing data directly.
+Different languages have different profilers. But they use a shared language =
+and store the same core information. For example, JVM=E2=80=99s async-profile=
+r or Java Flight Recorder operates at 100 Hz sampling to capture execution tr=
+aces, memory allocation rates, and thread lock contention. Python=E2=80=99s p=
+y-spy provides low-overhead, async stack sampling of live production processe=
+s. Go has pprof, which generates goroutine profiles, heap snapshots, and bloc=
+k contention data.
+Each one of these profilers breaks down execution into call stacks. They trac=
+k two main metrics. First, you have the inclusive time. This is the total tim=
+e spent executing a function. It includes every child function and the subrou=
+tines called by this function. Second, you have the Self (CPU) Time. It=E2=80=
+=99s the time spent running code purely inside the function itself. No extern=
+al calls are involved.
+With this exercise, the Netflix engineering team came to the conclusion that =
+a single analytical pipeline could understand data from almost any programmin=
+g runtime.
+Another advantage of LLMs is that they don=E2=80=99t have to guess how an alg=
+orithm works from scratch. Since LLMs have been broadly trained on many softw=
+are repositories, they are mostly familiar with classic programming anti-patt=
+erns. For example, they know that quadratic loops where a hot method is calle=
+d again and again for each item in a collection aren=E2=80=99t a good idea. A=
+lso, loop invariants where you compute a calculation for every iteration of t=
+he loop instead of making the calculation once at the beginning. Other patter=
+ns include excessive object allocation on hot execution paths and =E2=80=9CN+=
+1=E2=80=9D query patterns.
+Due to this knowledge base of LLMs, you don=E2=80=99t need to ask an AI model=
+ to guess why an application might be performing poorly. You can build a work=
+flow that asks the model to pattern-match known performance bugs against actu=
+al call stacks.
+The Agentic Profiling Pipeline
+Netflix built an automated performance system that wraps the LLM inside a wel=
+l-defined pipeline.
+A key lesson Netflix engineers learnt during this implementation was about sc=
+oping. If you feed an LLM a complete, raw stack trace without boundaries, it =
+can get distracted. Often, the model spends a lot of reasoning tokens analyzi=
+ng internal JVM garbage collection pauses, low-level Linux kernel syscalls, o=
+r even 3rd party open-source framework overhead.
+Application developers don=E2=80=99t have any control over such internal libr=
+ary concerns or OS routines. Therefore, you need to provide the agent with st=
+rict package prefix rules. This way, the model can ignore generic platform no=
+ise and focus on tracing only the specific application code.
+The Problems Netflix Found in Production
+When the Netflix engineering team deployed the profiling pipeline against its=
+ production service, the agent found 4 major categories of performance bugs.
+First was an algorithmic bottleneck that wasted 8.8% of CPU resources. The ag=
+ent found an aggregation method using Java Streams where an immutable map was=
+ updated inside a reduction step.
+// Anti-pattern: O(N^2) accumulation inside stream reduction
+stream().reduce(ImmutableMap.of(), (acc, val) -> {
+    return ImmutableMap.builder()
+        .putAll(acc) // Copies every existing entry on every single step
+        .put(val)
+        .build();
+});
+Since putAll(acc) copies every existing key-value pair on every step, you nee=
+d to copy elements again and again to build a map of size N. This results in =
+quadratic complexity.
+The agent modified the quadratic builder reduction with a linear collection a=
+pproach.
+// Optimized: O(N) single-pass collection
+stream()
+    .flatMap(e -> e.entrySet().stream())
+    .collect(toMap(Entry::getKey, Entry::getValue));
+The second category was about regular expressions on the hot path. In a servi=
+ce, the developer had to sanitize incoming request strings by modifying chara=
+cters that weren=E2=80=99t allowed. The earlier implementation ran a raw regu=
+lar expression substitution on every request.
+// Anti-pattern: Dynamic regex evaluation per request
+String sanitized =3D input.replaceAll(=E2=80=9D[^a-zA-Z0-9.-]=E2=80=9D, =E2=
+=80=9C_=E2=80=9D);
+As you might know, evaluating regular expressions involves parsing and state-=
+machine transitions. This logic on high-volume traffic used 46% of the servic=
+e=E2=80=99s CPU time.
+The agent replaced the regex evaluation with a pre-computed lookup table that=
+ checked characters by index. The execution got 22 times faster.
+The next category was related to unnecessary object allocation that caused OO=
+M crashes. A service frequently checked whether incoming data payloads contai=
+ned specific metadata fields. To perform the check, the code was creating a n=
+ew, heavy HashSet on every incoming call.
+However, the underlying data object already had an internal lookup method ava=
+ilable. Also, instantiating millions of such objects consumed 47% of the serv=
+ice=E2=80=99s total heap collections.
+The agent fixed this issue by removing the redundant object instantiations an=
+d modified the code to reuse the cached method.
+The next category was around library misuse. For example, the discovery invol=
+ved metric telemetry instrumentation. One of the services tracked operations =
+by looking up a counter from a metric registry on every single call.
+// Anti-pattern: Looking up metric instances on every function execution
+Metrics.counter(=E2=80=9Drequest.count=E2=80=9D).increment();
+When the query was sent to the registry, it needed dictionary lookups and int=
+ernal synchronization locks. The profiler showed that the work consumed 66% o=
+f the CPU, whereas the actual business logic used only 0.3%.
+The agent fixed it by caching the metric counter reference at the time of cla=
+ss initialization. Also, it found that the same issue was happening across th=
+ree independent services.
+Safety, Verification, and Trust Architecture
+If you have an AI agent that can optimize code, it=E2=80=99s quite dangerous =
+if the changes are applied without automatic verification. If the agent makes=
+ a change that breaks business logic, it=E2=80=99s worse than inefficient cod=
+e.
+To prevent regressions, the agentic pipeline uses the standard SDLC.
+In stage 1, you verify the logic. Before you move any code, the agent=E2=80=
+=99s branch must pass all existing unit, integration, and contract tests. Thi=
+s is to make sure that the changes made by the change don=E2=80=99t alter bas=
+ic inputs, outputs, or handling of edge cases.
+In stage 2, you have the canary deployment. If the tests pass, the pipeline s=
+pins up a canary deployment in production. The canary instance gets a portion=
+ of the traffic. It runs side-by-side with an identical baseline instance tha=
+t runs the original code.
+Stage 3 is about generating the observability report. The platform collects h=
+ard telemetry metrics over a big enough window. Some metrics are relative CPU=
+ utilization, median latency, P99 latency, and memory allocation rates. They =
+also don=E2=80=99t use any AI model to check the canary results.
+In stage 4, you have the final engineering decision. When the canary version =
+shows a good level of performance improvement with zero increase in error rat=
+es, the system opens a PR. This PR goes for human review. It includes the cod=
+e change, the original flame graph, and the canary report. The final decision=
+ on deploying the change to production is taken by the human developer.
+Shifting Left
+Automated production profiling is quite effective. But if you just rely on it=
+, you end up exposing several limitations.
+By the time an agent finds an anti-pattern in production, you=E2=80=99ve alre=
+ady paid for days or weeks of wasted compute capacity.
+Second, developers are anyway cautious about changing a running service. If y=
+ou have a service that handles production traffic without crashing, the devel=
+opers hesitate to just make changes for the sake of optimization.
+Lastly, multiple teams often make the exact same mistakes when it comes to pa=
+tterns. If you run a super-expensive agent on 10 different services just to f=
+ind the same problem, it=E2=80=99s not very efficient.
+These limitations led to Netflix making the decision to shift performance che=
+cks left into the early development cycle. Also, they wanted the agents to sh=
+are their findings across the entire engineering organization.
+However, as you might know, language models are stateless. Every time you sen=
+d a prompt to an LLM, it starts with a clean slate. It might no retain any me=
+mory of the bug it found some time back in another service. The Netflix engin=
+eering team built a Pattern Catalog to make the models achieve persistence. T=
+his was done by pairing a stateless LLM with a stateful catalog. Or a shared =
+memory across the fleet.
+The Pattern Catalog was built around 4 key principles.
+First, it has to be centralized and serve as the single source of truth for a=
+ll engineering teams. This way, no two teams end up debugging the same issues.
+The second principle is that the same catalog entries should work across dist=
+inct environments. For example, offline profiling, CI/CD pull request checks,=
+ and local development tools.
+Third, you need to format entries so that an automation script can easily inj=
+ect them into an LLM=E2=80=99s system prompt.
+Lastly, the contents of the catalog should be reviewable by human developers.
+To implement the Pattern Catalog, the Netflix engineering team used a simple =
+Git repository filled with plain Markdown files. They didn=E2=80=99t use vect=
+or databases or complex knowledge stores. The idea was borrowed from the =E2=
+=80=9CLLM-wiki=E2=80=9D concept popularized by Andrej Karpathy.
+By using a standard Git repository, the developers got several advantages. Fo=
+r one, developers can diff changes, open pull requests, and use git features =
+to find out why an entry was created. It also scales well to 100s of detailed=
+ performance rules without the need for complex search infrastructure. Lastly=
+, plain Markdown is easy for both humans and language models to read without =
+translation layers.
+How Netflix Catches Problems Early
+With the Pattern Catalog in place, Netflix can handle performance engineering=
+ via two paths. Reactive and Proactive.
+In the reactive path, your system profiles production services on a recurring=
+ schedule or on demand. When the agent finds a new bottleneck, it tests the f=
+ix on a canary instance. If everything goes fine, the patch is merged, and th=
+e agent documents the new finding in the Pattern Catalog.
+In the proactive path, the process starts when a developer creates a new PR. =
+CI tooling performs a fast regex or symbol match against the Pattern Catalog =
+index. If the code in the PR matches known anti-patterns, the CI bot calls an=
+ LLM and provides it with the pull request diff. The LLM checks the context a=
+nd leaves an inline comment that explains the inefficiency. It shows the reso=
+urce impact and suggests a fix. All this happens before the code ever merges =
+to the main branch.
+Conclusion
+The key learning from the Netflix engineering experience is that automating p=
+erformance engineering work is not an all-or-nothing game. You can have organ=
+izations adopt workflows along a four-level maturity spectrum.
+Level 0 is the manual situation. This is the level where machine learning is =
+not used. Human developers manually capture traces, interpret flame graphs, a=
+nd trace code paths.
+Level 1 is the assist approach. This is the entry point for AI adoption. The =
+LLM acts as an analytical copilot. A developer initiates the profiling proces=
+s. But they don=E2=80=99t spend time studying flame graphs. Instead, they fee=
+d the stack dump to the model. The model finds the hot execution path.
+Level 2 is the orchestration level. This is the current state at Netflix. A l=
+ot of proactive scanning happens. Also, they use the Pattern Catalog.
+Level 3 is the fully autonomous level. This is the long-term vision at Netfli=
+x for performance agents. At Level 3, the agents will create their own optimi=
+zation strategies. They will explore multiple alternative implementations. Or=
+ run automated benchmarks.
+References:
+A Netflix Production Story - P99 Conference [ https://example.invalid/tracked=
+ ]
+
+Unsubscribe https://example.invalid/tracked
+
+--7b6b9f074abef334ecba72b8362790211aac12567fd40ff46d45abb751b9
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+MIME-Version: 1.0
+
+<html lang=3D"en" dir=3D"ltr" style=3D"scrollbar-width: thin;scrollbar-color:=
+ rgb(219,219,219)rgb(255,255,255);"><head><meta charset=3D"utf-8"><title>How =
+Netflix Uses AI Agents for Performance Engineering</title><style>@media all a=
+nd (-ms-high-contrast: none), (-ms-high-contrast: active){.typography .markup=
+ table.image-wrapper img{max-width: 550px}}@media screen and (max-width: 768p=
+x){.post{padding: 16px 0 0 0}}@media all and (-ms-high-contrast: none), (-ms-=
+high-contrast: active){body .markup table.image-wrapper img{max-width: 550px}=
+}@media not all and (min-resolution: 0.001dpcm){@supports (-webkit-appearance=
+: none){p a:not(.primary.button),.post p:not(.button-wrapper) a:not(.primary.=
+button){color: #7756e3;text-decoration: none}p a:not(.primary.button):hover,.=
+post p:not(.button-wrapper) a:not(.primary.button):hover{text-decoration: und=
+erline}}}</style></head><body class=3D"email-body" style=3D"font-kerning: aut=
+o;--image-offset-margin: -120px;"><img src=3D"https://example.invalid/tracked=
+" alt=3D"" width=3D"1" height=3D"1" border=3D"0" style=3D"height:1px !importa=
+nt;width:1px !important;border-width:0 !important;margin-top:0 !important;mar=
+gin-bottom:0 !important;margin-right:0 !important;margin-left:0 !important;pa=
+dding-top:0 !important;padding-bottom:0 !important;padding-right:0 !important=
+;padding-left:0 !important;"/><div class=3D"preview" style=3D"display:none;fo=
+nt-size:1px;color:#333333;line-height:1px;max-height:0px;max-width:0px;opacit=
+y:0;overflow:hidden;">The Netflix engineering team has developed an autonomou=
+s performance agent system. In this article, we&#8217;ll be learning more abo=
+ut it.</div><div class=3D"preview" style=3D"display:none;font-size:1px;color:=
+#333333;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidde=
+n;">&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8=
+199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nb=
+sp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#8=
+47; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#=
+173;&#847; &nbsp; &#8199; &#173;&#847; &nbsp; &#8199; &#173;</div><table clas=
+s=3D"email-body-container" role=3D"presentation" width=3D"100%" border=3D"0" =
+cellspacing=3D"0" cellpadding=3D"0"><tbody><tr><td></td><td class=3D"content"=
+ width=3D"550"></td><td></td></tr><tr><td></td><td class=3D"content" width=3D=
+"550" align=3D"left"><div style=3D"font-size: 16px;line-height: 26px;max-widt=
+h: 550px;width: 100%;margin: 0 auto;overflow-wrap: break-word;"><table role=
+=3D"presentation" width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=
+=3D"0"><tbody><tr><td align=3D"right" style=3D"height:20px;"><table role=3D"p=
+resentation" width=3D"auto" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">=
+<tbody><tr><td style=3D"vertical-align:middle;"><span class=3D"pencraft pc-re=
+set reset-PDs18X pencraft color-secondary-B3TpYa font-text-a4IB2X size-13-yQM=
+lsX" style=3D"list-style: none;text-decoration: unset;color: rgb(119,119,119)=
+;margin: 0;font-size: 13px;line-height: 20px;font-family: system-ui,-apple-sy=
+stem,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple C=
+olor Emoji','Segoe UI Emoji','Segoe UI Symbol';"><div class=3D"pencraft pc-re=
+set align-right-t4bsLb size-12-qKBnAQ reset-PDs18X" style=3D"list-style: none=
+;color: unset;text-align: right;font-size: 12px;line-height: 16px;text-decora=
+tion: unset;margin: 0;"><span class=3D"pencraft pc-reset reset-PDs18X" transl=
+ated=3D"" style=3D"list-style: none;color: unset;text-decoration: unset;margi=
+n: 0;">Forwarded this email? <a class=3D"pencraft pc-reset decoration-underli=
+ne-JhbQFe reset-PDs18X" href=3D"https://example.invalid/tracked" style=3D"lis=
+t-style: none;color: unset;text-decoration: unset;margin: 0;-webkit-text-deco=
+ration-line: underline;text-decoration-line: underline;">Subscribe here</a> f=
+or more</span></div></span></td></tr></tbody></table></td></tr></tbody></tabl=
+e><div class=3D"post typography" dir=3D"auto" style=3D"--image-offset-margin:=
+ -120px;padding: 32px 0 0 0;font-size: 16px;line-height: 26px;"><div class=3D=
+"post-header" role=3D"region" aria-label=3D"Post header" style=3D"font-size: =
+16px;line-height: 26px;"><h1 class=3D"post-title published title-X77sOw" dir=
+=3D"auto" style=3D"direction: auto;text-align: start;unicode-bidi: isolate;co=
+lor: rgb(54,55,55);overflow-wrap: anywhere;word-break: normal;font-family: 'S=
+F Pro Display',-apple-system-headline,system-ui,-apple-system,BlinkMacSystemF=
+ont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe U=
+I Emoji','Segoe UI Symbol';font-weight: bold;-webkit-font-smoothing: antialia=
+sed;-moz-osx-font-smoothing: antialiased;-webkit-appearance: optimizelegibili=
+ty;-moz-appearance: optimizelegibility;appearance: optimizelegibility;margin:=
+ 0;line-height: 36px;font-size: 32px;"><a href=3D"https://substack.com/app-li=
+nk/post" style=3D"color: rgb(54,55,55);text-decoration: none;">How Netflix Us=
+es AI Agents for Performance Engineering</a></h1><table class=3D"post-meta" r=
+ole=3D"presentation" width=3D"100%" border=3D"0" cellspacing=3D"0" cellpaddin=
+g=3D"0" style=3D"margin: 1em 0;height: 20px;align-items: center;"><tbody><tr>=
+<td><table role=3D"presentation" width=3D"auto" border=3D"0" cellspacing=3D"0=
+" cellpadding=3D"0"><tbody><tr><td><table role=3D"presentation" width=3D"auto=
+" border=3D"0" cellspacing=3D"0" cellpadding=3D"0"><tbody><tr><td style=3D"ve=
+rtical-align:middle;"><div class=3D"pencraft pc-reset color-primary-ECDxTd li=
+ne-height-20-_MEacI font-meta-Wq5ZQP size-11-gJkq5q weight-medium-Hv9lSX tran=
+sform-uppercase-LYgH6s reset-PDs18X meta-SjvJkP custom-css-email-post-author"=
+ style=3D"list-style: none;font-size: 11px;line-height: 20px;text-decoration:=
+ unset;color: rgb(54,55,55);margin: 0;font-family: 'SF Compact',-apple-system=
+,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial=
+,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weigh=
+t: 500;text-transform: uppercase;letter-spacing: .2px;"><a class=3D"pencraft =
+pc-reset color-primary-ECDxTd line-height-20-_MEacI font-meta-Wq5ZQP size-11-=
+gJkq5q weight-medium-Hv9lSX transform-uppercase-LYgH6s reset-PDs18X meta-SjvJ=
+kP" style=3D"list-style: none;color: rgb(54,55,55);margin: 0;font-size: 11px;=
+line-height: 20px;font-family: 'SF Compact',-apple-system,system-ui,-apple-sy=
+stem,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple C=
+olor Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: 500;text-transfor=
+m: uppercase;letter-spacing: .2px;text-decoration: none" href=3D"https://subs=
+tack.com/@bytebytego399569">ByteByteGo</a></div></td></tr></tbody></table></t=
+d></tr><tr><td><table role=3D"presentation" width=3D"auto" border=3D"0" cells=
+pacing=3D"0" cellpadding=3D"0"><tbody><tr><td style=3D"vertical-align:middle;=
+"><div class=3D"pencraft pc-reset color-secondary-B3TpYa line-height-20-_MEac=
+I font-meta-Wq5ZQP size-11-gJkq5q weight-medium-Hv9lSX transform-uppercase-LY=
+gH6s reset-PDs18X meta-SjvJkP" style=3D"list-style: none;font-size: 11px;line=
+-height: 20px;text-decoration: unset;color: rgb(119,119,119);margin: 0;font-f=
+amily: 'SF Compact',-apple-system,system-ui,-apple-system,BlinkMacSystemFont,=
+'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Em=
+oji','Segoe UI Symbol';font-weight: 500;text-transform: uppercase;letter-spac=
+ing: .2px;"><time datetime=3D"2026-11-03T16:31:10.745Z">Nov 3</time></div></t=
+d></tr></tbody></table></td></tr></tbody></table></td><td align=3D"right"><ta=
+ble role=3D"presentation" width=3D"auto" border=3D"0" cellspacing=3D"0" cellp=
+adding=3D"0"><tbody><tr><td style=3D"vertical-align:middle;"><a href=3D"https=
+://substack.com/@bytebytego399569"><img class=3D"custom-css-email-avatar avat=
+ar-QIQ5yR" src=3D"https://substackcdn.com/image/fetch/$s_!U1Ej!,f_auto,q_auto=
+:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com=
+%2Fpublic%2Fimages%2Fc9941c68-e5b7-4b93-be75-df7cc4ffef02_504x540.png" style=
+=3D"box-sizing: border-box;max-width: 550px;border: none !important;vertical-=
+align: middle;width: 40px;height: 40px;min-width: 40px;min-height: 40px;objec=
+t-fit: cover;margin: 0px;display: inline;border-radius: 50%" width=3D"40" hei=
+ght=3D"40"></a></td></tr></tbody></table></td></tr></tbody></table><table cla=
+ss=3D"email-ufi-2-top" role=3D"presentation" width=3D"100%" border=3D"0" cell=
+spacing=3D"0" cellpadding=3D"0" style=3D"border-top: 1px solid rgb(0,0,0,.1);=
+border-bottom: 1px solid rgb(0,0,0,.1);min-width: 100%;"><tbody><tr height=3D=
+"16"><td height=3D"16" style=3D"font-size:0px;line-height:0;">&nbsp;</td></tr=
+><tr><td><table role=3D"presentation" width=3D"100%" border=3D"0" cellspacing=
+=3D"0" cellpadding=3D"0"><tbody><tr><td><table role=3D"presentation" width=3D=
+"auto" border=3D"0" cellspacing=3D"0" cellpadding=3D"0"><tbody><tr><td style=
+=3D"vertical-align:middle;"><table role=3D"presentation" width=3D"38" border=
+=3D"0" cellspacing=3D"0" cellpadding=3D"0"><tbody><tr><td align=3D"center"><a=
+ class=3D"email-icon-button" href=3D"https://substack.com/app-link/post" styl=
+e=3D"font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Robot=
+o,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI S=
+ymbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1)=
+;border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height:=
+ 1;padding: 9px 0;text-decoration: none;color: rgb(119,119,119);min-width: 38=
+px;box-sizing: border-box;width: 38px"><img class=3D"icon" src=3D"https://sub=
+stackcdn.com/image/fetch/$s_!PeVs!,w_36,c_scale,f_png,q_auto:good,fl_progress=
+ive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideHeart%3Fv%3D4%26height%3D=
+36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width=3D"18" heigh=
+t=3D"18" style=3D"border: none !important;vertical-align: middle;max-width: 1=
+8px" alt=3D""></a></td></tr></tbody></table></td><td width=3D"8" style=3D"min=
+-width:8px;"></td><td style=3D"vertical-align:middle;"><table role=3D"present=
+ation" width=3D"38" border=3D"0" cellspacing=3D"0" cellpadding=3D"0"><tbody><=
+tr><td align=3D"center"><a class=3D"email-icon-button" href=3D"https://substa=
+ck.com/app-link/post" style=3D"font-family: system-ui,-apple-system,BlinkMacS=
+ystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','S=
+egoe UI Emoji','Segoe UI Symbol';display: inline-block;font-weight: 500;borde=
+r: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-transform: uppercase;fo=
+nt-size: 12px;line-height: 1;padding: 9px 0;text-decoration: none;color: rgb(=
+119,119,119);min-width: 38px;box-sizing: border-box;width: 38px"><img class=
+=3D"icon" src=3D"https://substackcdn.com/image/fetch/$s_!x1tS!,w_36,c_scale,f=
+_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLuc=
+ideComments%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26stro=
+keWidth%3D2" width=3D"18" height=3D"18" style=3D"border: none !important;vert=
+ical-align: middle;max-width: 18px" alt=3D""></a></td></tr></tbody></table></=
+td><td width=3D"8" style=3D"min-width:8px;"></td><td style=3D"vertical-align:=
+middle;"><table role=3D"presentation" width=3D"38" border=3D"0" cellspacing=
+=3D"0" cellpadding=3D"0"><tbody><tr><td align=3D"center"><a class=3D"email-ic=
+on-button" href=3D"https://substack.com/app-link/post" style=3D"font-family: =
+system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,=
+sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: in=
+line-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 99=
+99px;text-transform: uppercase;font-size: 12px;line-height: 1;padding: 9px 0;=
+text-decoration: none;color: rgb(119,119,119);min-width: 38px;box-sizing: bor=
+der-box;width: 38px"><img class=3D"icon" src=3D"https://substackcdn.com/image=
+/fetch/$s_!_L14!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A=
+%2F%2Fsubstack.com%2Ficon%2FLucideShare2%3Fv%3D4%26height%3D36%26fill%3Dnone%=
+26stroke%3D%2523808080%26strokeWidth%3D2" width=3D"18" height=3D"18" style=3D=
+"border: none !important;vertical-align: middle;max-width: 18px" alt=3D""></a=
+></td></tr></tbody></table></td><td width=3D"8" style=3D"min-width:8px;"></td=
+><td style=3D"vertical-align:middle;"><table role=3D"presentation" width=3D"3=
+8" border=3D"0" cellspacing=3D"0" cellpadding=3D"0"><tbody><tr><td align=3D"c=
+enter"><a class=3D"email-icon-button" href=3D"https://open.substack.com/pub/b=
+ytebytego/p/how-netflix-uses-ai-agents-for-performance" style=3D"font-family:=
+ system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial=
+,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: i=
+nline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9=
+999px;text-transform: uppercase;font-size: 12px;line-height: 1;padding: 9px 0=
+;text-decoration: none;color: rgb(119,119,119);min-width: 38px;box-sizing: bo=
+rder-box;width: 38px"><img class=3D"icon" src=3D"https://substackcdn.com/imag=
+e/fetch/$s_!ubXF!,w_36,c_scale,f_png,q_auto:good,fl_progressive:steep/https%3=
+A%2F%2Fsubstack.com%2Ficon%2Fnotes__NoteRestackIcon%3Fv%3D4%26height%3D36%26f=
+ill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2%26strokeLinecap%3Dround%2=
+6strokeLinejoin%3Dround" width=3D"18" height=3D"18" alt=3D"" style=3D"max-wid=
+th: 550px;border: none !important;vertical-align: middle;"></a></td></tr></tb=
+ody></table></td></tr></tbody></table></td><td align=3D"right"><table role=3D=
+"presentation" width=3D"auto" border=3D"0" cellspacing=3D"0" cellpadding=3D"0=
+"><tbody><tr><td style=3D"vertical-align:middle;"><table role=3D"presentation=
+" width=3D"auto" border=3D"0" cellspacing=3D"0" cellpadding=3D"0"><tbody><tr>=
+<td align=3D"center"><a class=3D"email-button-outline" href=3D"https://open.s=
+ubstack.com/pub/bytebytego/p/how-netflix-uses-ai-agents-for-performance" styl=
+e=3D"font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Robot=
+o,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI S=
+ymbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1)=
+;border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-height:=
+ 12px;padding: 9px 14px;text-decoration: none;color: rgb(119,119,119);"><div =
+class=3D"email-button-spacer" style=3D"font-size: 16px;line-height: 26px;disp=
+lay: inline-block;vertical-align: middle;max-width: 0;min-height: 18px;"></di=
+v><span class=3D"email-button-text" style=3D"vertical-align: middle;margin-ri=
+ght: 4px">READ IN APP</span><img class=3D"icon text-icon" src=3D"https://subs=
+tackcdn.com/image/fetch/$s_!ET-_!,w_36,c_scale,f_png,q_auto:good,fl_progressi=
+ve:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideArrowUpRight%3Fv%3D4%26hei=
+ght%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width=3D"18"=
+ height=3D"18" style=3D"min-width: 18px;min-height: 18px;border: none !import=
+ant;vertical-align: middle;margin-right: 0;margin-left: 0;max-width: 18px" al=
+t=3D""></a></td></tr></tbody></table></td></tr></tbody></table></td></tr></tb=
+ody></table></td></tr><tr height=3D"16"><td height=3D"16" style=3D"font-size:=
+0px;line-height:0;">&nbsp;</td></tr></tbody></table></div></div><div class=3D=
+"post typography" dir=3D"auto" style=3D"--image-offset-margin: -120px;padding=
+: 32px 0 0 0;font-size: 16px;line-height: 26px;"><div class=3D"body markup" d=
+ir=3D"auto" style=3D"text-align: initial;font-size: 16px;line-height: 26px;wi=
+dth: 100%;margin-bottom: 16px;hanging-punctuation: allow-end;overflow-wrap: a=
+nywhere;word-break: break-word;"><h2 class=3D"header-anchor-post" style=3D"po=
+sition: relative;font-family: 'SF Pro Display',-apple-system-headline,system-=
+ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-se=
+rif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: bold;=
+-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing: antialiased;-web=
+kit-appearance: optimizelegibility;-moz-appearance: optimizelegibility;appear=
+ance: optimizelegibility;margin: 1em 0 0.625em 0;color: rgb(54,55,55);line-he=
+ight: 1.16em;font-size: calc(1.625em * 1);overflow-wrap: anywhere;word-break:=
+ normal;unicode-bidi: plaintext;margin-top: 0;"><a href=3D"https://example.in=
+valid/tracked" style=3D"color: rgb(54,55,55);text-decoration: underline;">The=
+ real benefits of end-to-end observability (Sponsored)</a></h2><div class=3D"=
+captioned-image-container-static" style=3D"font-size: 16px;line-height: 26px;=
+margin: 32px auto;"><figure style=3D"width: 100%;margin: 0 auto;"><table clas=
+s=3D"image-wrapper" width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=
+=3D"0" data-component-name=3D"Image2ToDOMStatic" style=3D"mso-padding-alt: 1e=
+m 0 1.6em;"><tbody><tr><td style=3D"text-align: center;"></td><td class=3D"co=
+ntent" align=3D"left" width=3D"1200" style=3D"text-align: center;"><a class=
+=3D"image-link" target=3D"_blank" href=3D"https://example.invalid/tracked" st=
+yle=3D"position: relative;text-decoration: underline;display: block;"><img cl=
+ass=3D"wide-image" data-attrs=3D"{&quot;src&quot;:&quot;https://substack-post=
+-media.s3.amazonaws.com/public/images/4ff6acab-5dfa-413b-b839-cf5b13501afc_12=
+00x628.png&quot;,&quot;srcNoWatermark&quot;:null,&quot;fullscreen&quot;:null,=
+&quot;imageSize&quot;:null,&quot;height&quot;:628,&quot;width&quot;:1200,&quo=
+t;resizeWidth&quot;:null,&quot;bytes&quot;:156679,&quot;alt&quot;:null,&quot;=
+title&quot;:null,&quot;type&quot;:&quot;image/png&quot;,&quot;href&quot;:&quo=
+t;https://go.bytebytego.com/datadog_110326&quot;,&quot;belowTheFold&quot;:fal=
+se,&quot;topImage&quot;:true,&quot;internalRedirect&quot;:&quot;https://blog.=
+bytebytego.com/i/222755655" alt=3D"" width=3D"550" height=3D"287.833333333333=
+3" src=3D"https://substackcdn.com/image/fetch/$s_!AhGz!,w_1100,c_limit,f_auto=
+,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazon=
+aws.com%2Fpublic%2Fimages%2F4ff6acab-5dfa-413b-b839-cf5b13501afc_1200x628.png=
+" style=3D"border: none !important;vertical-align: middle;display: block;-ms-=
+interpolation-mode: bicubic;height: auto;margin-bottom: 0;width: auto !import=
+ant;max-width: 100% !important;margin: 0 auto;"></a></td><td style=3D"text-al=
+ign: center;"></td></tr></tbody></table></figure></div><p style=3D"margin: 0 =
+0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi:=
+ plaintext;">How does full-stack observability impact engineering speed, inci=
+dent response, and cost control?</p><p style=3D"margin: 0 0 20px 0;color: rgb=
+(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">In thi=
+s eBook from Datadog, you&#8217;ll learn how real teams across industries are=
+ using observability to:</p><ul style=3D"margin-top: 0;padding: 0;"><li style=
+=3D"margin: 8px 0 0 32px;mso-special-format: bullet;unicode-bidi: plaintext;"=
+><p style=3D"color: rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizi=
+ng: border-box;padding-left: 4px;font-size: 16px;unicode-bidi: plaintext;marg=
+in: 0;">Reduce mean time to resolution (MTTR)</p></li><li style=3D"margin: 8p=
+x 0 0 32px;mso-special-format: bullet;unicode-bidi: plaintext;"><p style=3D"c=
+olor: rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: border-box=
+;padding-left: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;">Cut to=
+oling costs and improve team efficiency</p></li><li style=3D"margin: 8px 0 0 =
+32px;mso-special-format: bullet;unicode-bidi: plaintext;"><p style=3D"color: =
+rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: border-box;paddi=
+ng-left: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;">Align busine=
+ss and engineering KPIs</p></li></ul><p style=3D"margin: 0 0 20px 0;color: rg=
+b(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">See h=
+ow unifying your stack leads to faster troubleshooting and long-term operatio=
+nal gains.</p><p class=3D"button-wrapper" data-attrs=3D"{&quot;url&quot;:&quo=
+t;https://go.bytebytego.com/datadog_110326&quot;,&quot;text&quot;:&quot;Downl=
+oad the eBook&quot;,&quot;action&quot;:null,&quot;class&quot;:null}" data-com=
+ponent-name=3D"ButtonCreateButton" style=3D"margin: 0 0 20px 0;color: rgb(54,=
+55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;text-align: =
+center;cursor: pointer;border-radius: 4px;"><a class=3D"button primary" href=
+=3D"https://example.invalid/tracked" style=3D"font-family: system-ui,-apple-s=
+ystem,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple =
+Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;box-siz=
+ing: border-box;cursor: pointer;border: none;border-radius: 8px;font-size: 14=
+px;line-height: 20px;font-weight: 600;text-align: center;margin: 0;opacity: 1=
+;outline: none;white-space: nowrap;color: #ffffff !important;text-decoration:=
+ none !important;background-color: #7756e3;padding: 12px 20px;height: auto;">=
+<span style=3D"color: #ffffff;text-decoration: none;">Download the eBook</spa=
+n></a></p><div style=3D"font-size: 16px;line-height: 26px;"><hr style=3D"marg=
+in: 32px 0;padding: 0;height: 1px;background: rgb(0,0,0,.1);border: none;"></=
+div><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;fon=
+t-size: 16px;unicode-bidi: plaintext;">Performance engineering is the discipl=
+ine in which you design, analyze, and optimize software systems so that they =
+run quickly. Also, they should use resources efficiently. In distributed arch=
+itectures, the focus of any performance engineering activity is on shaving mi=
+lliseconds off response times. Or locating execution bottlenecks in CPU or me=
+mory. Or making sure infrastructure costs are kept under control.</p><p style=
+=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px=
+;unicode-bidi: plaintext;">Historically, performance engineering work has bee=
+n slow. And manual. You often depend on a small group of really skilled devel=
+opers. However, with the rise of AI-assisted software development, there&#821=
+7;s a contradiction. Developers can write and ship code faster than ever. No =
+matter what their skill level may be. But that code often introduces subtle p=
+erformance problems.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);l=
+ine-height: 26px;font-size: 16px;unicode-bidi: plaintext;">To solve this prob=
+lem, the Netflix engineering team has developed an autonomous performance age=
+nt system. In this article, we&#8217;ll be learning more about it. Here&#8217=
+;s what we will cover:</p><ul style=3D"margin-top: 0;padding: 0;"><li style=
+=3D"margin: 8px 0 0 32px;mso-special-format: bullet;unicode-bidi: plaintext;"=
+><p style=3D"color: rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizi=
+ng: border-box;padding-left: 4px;font-size: 16px;unicode-bidi: plaintext;marg=
+in: 0;">Bottlenecks for traditional performance work</p></li><li style=3D"mar=
+gin: 8px 0 0 32px;mso-special-format: bullet;unicode-bidi: plaintext;"><p sty=
+le=3D"color: rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: bor=
+der-box;padding-left: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;"=
+>The problem with AI-Generated code</p></li><li style=3D"margin: 8px 0 0 32px=
+;mso-special-format: bullet;unicode-bidi: plaintext;"><p style=3D"color: rgb(=
+54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: border-box;padding-l=
+eft: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;">Can LLMs handle =
+profile data</p></li><li style=3D"margin: 8px 0 0 32px;mso-special-format: bu=
+llet;unicode-bidi: plaintext;"><p style=3D"color: rgb(54,55,55);line-height: =
+26px;margin-bottom: 0;box-sizing: border-box;padding-left: 4px;font-size: 16p=
+x;unicode-bidi: plaintext;margin: 0;">The agentic profiling pipeline</p></li>=
+<li style=3D"margin: 8px 0 0 32px;mso-special-format: bullet;unicode-bidi: pl=
+aintext;"><p style=3D"color: rgb(54,55,55);line-height: 26px;margin-bottom: 0=
+;box-sizing: border-box;padding-left: 4px;font-size: 16px;unicode-bidi: plain=
+text;margin: 0;">The problems Netflix found in production</p></li><li style=
+=3D"margin: 8px 0 0 32px;mso-special-format: bullet;unicode-bidi: plaintext;"=
+><p style=3D"color: rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizi=
+ng: border-box;padding-left: 4px;font-size: 16px;unicode-bidi: plaintext;marg=
+in: 0;">Safety, verification, and trust architecture</p></li><li style=3D"mar=
+gin: 8px 0 0 32px;mso-special-format: bullet;unicode-bidi: plaintext;"><p sty=
+le=3D"color: rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: bor=
+der-box;padding-left: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;"=
+>Shifting left</p></li></ul><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,5=
+5);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;text-align: just=
+ify"><em>Disclaimer: This post is based on publicly shared details from vario=
+us sources. References at the end. Please comment if you notice any inaccurac=
+ies.</em></p><h2 class=3D"header-anchor-post" style=3D"position: relative;fon=
+t-family: 'SF Pro Display',-apple-system-headline,system-ui,-apple-system,Bli=
+nkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emo=
+ji','Segoe UI Emoji','Segoe UI Symbol';font-weight: bold;-webkit-font-smoothi=
+ng: antialiased;-moz-osx-font-smoothing: antialiased;-webkit-appearance: opti=
+mizelegibility;-moz-appearance: optimizelegibility;appearance: optimizelegibi=
+lity;margin: 1em 0 0.625em 0;color: rgb(54,55,55);line-height: 1.16em;font-si=
+ze: calc(1.625em * 1);overflow-wrap: anywhere;word-break: normal;unicode-bidi=
+: plaintext;">Bottlenecks For Traditional Performance Work</h2><p style=3D"ma=
+rgin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unico=
+de-bidi: plaintext;">Traditional performance engineering work at Netflix was =
+built on a highly iterative loop that is pretty much manual in nature.</p><di=
+v class=3D"captioned-image-container-static" style=3D"font-size: 16px;line-he=
+ight: 26px;margin: 32px auto;"><figure style=3D"width: 100%;margin: 0 auto;">=
+<table class=3D"image-wrapper" width=3D"100%" border=3D"0" cellspacing=3D"0" =
+cellpadding=3D"0" data-component-name=3D"Image2ToDOMStatic" style=3D"mso-padd=
+ing-alt: 1em 0 1.6em;"><tbody><tr><td style=3D"text-align: center;"></td><td =
+class=3D"content" align=3D"left" width=3D"1456" style=3D"text-align: center;"=
+><a class=3D"image-link" target=3D"_blank" href=3D"https://example.invalid/tr=
+acked" style=3D"position: relative;text-decoration: underline;display: block;=
+"><img class=3D"wide-image" data-attrs=3D"{&quot;src&quot;:&quot;https://subs=
+tack-post-media.s3.amazonaws.com/public/images/aa461266-54bb-4caa-87bd-44e621=
+09da52_2432x2038.png&quot;,&quot;srcNoWatermark&quot;:null,&quot;fullscreen&q=
+uot;:null,&quot;imageSize&quot;:null,&quot;height&quot;:1220,&quot;width&quot=
+;:1456,&quot;resizeWidth&quot;:null,&quot;bytes&quot;:176693,&quot;alt&quot;:=
+null,&quot;title&quot;:null,&quot;type&quot;:&quot;image/png&quot;,&quot;href=
+&quot;:null,&quot;belowTheFold&quot;:true,&quot;topImage&quot;:false,&quot;in=
+ternalRedirect&quot;:&quot;https://blog.bytebytego.com/i/222755655" alt=3D"" =
+width=3D"550" height=3D"460.85164835164835" src=3D"https://substackcdn.com/im=
+age/fetch/$s_!uk-_!,w_1100,c_limit,f_auto,q_auto:good,fl_progressive:steep/ht=
+tps%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Faa461266=
+-54bb-4caa-87bd-44e62109da52_2432x2038.png" style=3D"border: none !important;=
+vertical-align: middle;display: block;-ms-interpolation-mode: bicubic;height:=
+ auto;margin-bottom: 0;width: auto !important;max-width: 100% !important;marg=
+in: 0 auto;"></a></td><td style=3D"text-align: center;"></td></tr></tbody></t=
+able></figure></div><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-=
+height: 26px;font-size: 16px;unicode-bidi: plaintext;">First, you trigger pro=
+filing for an application. A developer tries to detect high latency or increa=
+sed resource usage by triggering a profiler on a live production server.</p><=
+p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-siz=
+e: 16px;unicode-bidi: plaintext;">In the second step, the profiler outputs ra=
+w trace data or flame graphs. The developer downloads these details to their =
+local machine.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-he=
+ight: 26px;font-size: 16px;unicode-bidi: plaintext;">Third, the developer spe=
+nds time looking at complex, color-coded flame graphs. They try to spot wide =
+stack frames that might show signs of higher-than-normal CPU or memory consum=
+ption.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26=
+px;font-size: 16px;unicode-bidi: plaintext;">Next, the developer goes through=
+ the codebase looking for cryptic method names found in the flame graph. They=
+ try to make sense of the surrounding application logic to figure things out.=
+</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;fon=
+t-size: 16px;unicode-bidi: plaintext;">Fifth, the developer traces the execut=
+ion path and identifies the inefficient operation. They write a proposed patc=
+h to fix the operation.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55=
+);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">Moving further,=
+ the developers deploy the patch to an environment where any change in perfor=
+mance levels can be measured.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54=
+,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">At the en=
+d, when new code paths are deployed in production, the developer starts the m=
+anual process once again.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,=
+55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">As you may ha=
+ve noticed, this workflow doesn&#8217;t scale. Everything depends on a few do=
+main experts who have a deep sense of understanding about low-level execution=
+ stacks. Since human attention is a scarce resource, you can investigate perf=
+ormance issues only for major incidents or obvious system slowdowns. Smaller =
+but steady resource drains go unnoticed.</p><div style=3D"font-size: 16px;lin=
+e-height: 26px;"><hr style=3D"margin: 32px 0;padding: 0;height: 1px;backgroun=
+d: rgb(0,0,0,.1);border: none;"></div><h2 class=3D"header-anchor-post" style=
+=3D"position: relative;font-family: 'SF Pro Display',-apple-system-headline,s=
+ystem-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,s=
+ans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight:=
+ bold;-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing: antialiase=
+d;-webkit-appearance: optimizelegibility;-moz-appearance: optimizelegibility;=
+appearance: optimizelegibility;margin: 1em 0 0.625em 0;color: rgb(54,55,55);l=
+ine-height: 1.16em;font-size: calc(1.625em * 1);overflow-wrap: anywhere;word-=
+break: normal;unicode-bidi: plaintext;"><a href=3D"https://example.invalid/tr=
+acked" style=3D"color: rgb(54,55,55);text-decoration: underline;">Why Braintr=
+ust, Raycast and Jane Street use WarpBuild (Sponsored)</a></h2><div class=3D"=
+captioned-image-container-static" style=3D"font-size: 16px;line-height: 26px;=
+margin: 32px auto;"><figure style=3D"width: 100%;margin: 0 auto;"><table clas=
+s=3D"image-wrapper" width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=
+=3D"0" data-component-name=3D"Image2ToDOMStatic" style=3D"mso-padding-alt: 1e=
+m 0 1.6em;"><tbody><tr><td style=3D"text-align: center;"></td><td class=3D"co=
+ntent" align=3D"left" width=3D"1456" style=3D"text-align: center;"><a class=
+=3D"image-link" target=3D"_blank" href=3D"https://example.invalid/tracked" st=
+yle=3D"position: relative;text-decoration: underline;display: block;"><img cl=
+ass=3D"wide-image" data-attrs=3D"{&quot;src&quot;:&quot;https://substack-post=
+-media.s3.amazonaws.com/public/images/e02e5fb7-c8c4-4a9b-bba1-0fd863850cbb_16=
+00x840.png&quot;,&quot;srcNoWatermark&quot;:null,&quot;fullscreen&quot;:null,=
+&quot;imageSize&quot;:null,&quot;height&quot;:764,&quot;width&quot;:1456,&quo=
+t;resizeWidth&quot;:null,&quot;bytes&quot;:104824,&quot;alt&quot;:null,&quot;=
+title&quot;:null,&quot;type&quot;:&quot;image/png&quot;,&quot;href&quot;:&quo=
+t;https://go.bytebytego.com/warpbuild_110326&quot;,&quot;belowTheFold&quot;:t=
+rue,&quot;topImage&quot;:false,&quot;internalRedirect&quot;:&quot;https://blo=
+g.bytebytego.com/i/222755655" alt=3D"" width=3D"550" height=3D"288.5989010989=
+011" src=3D"https://substackcdn.com/image/fetch/$s_!XUMB!,w_1100,c_limit,f_au=
+to,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amaz=
+onaws.com%2Fpublic%2Fimages%2Fe02e5fb7-c8c4-4a9b-bba1-0fd863850cbb_1600x840.p=
+ng" style=3D"border: none !important;vertical-align: middle;display: block;-m=
+s-interpolation-mode: bicubic;height: auto;margin-bottom: 0;width: auto !impo=
+rtant;max-width: 100% !important;margin: 0 auto;"></a></td><td style=3D"text-=
+align: center;"></td></tr></tbody></table></figure></div><p style=3D"margin: =
+0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bid=
+i: plaintext;">Fast-moving teams ship more code than ever, and AI tools add e=
+ven more. Their CI has to keep up without the bill getting out of hand.</p><p=
+ style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size=
+: 16px;unicode-bidi: plaintext;">That is why teams at Braintrust, Raycast, Op=
+enRouter, Comcast and Jane Street run GitHub Actions on WarpBuild:</p><ul sty=
+le=3D"margin-top: 0;padding: 0;"><li style=3D"margin: 8px 0 0 32px;mso-specia=
+l-format: bullet;unicode-bidi: plaintext;"><p style=3D"color: rgb(54,55,55);l=
+ine-height: 26px;margin-bottom: 0;box-sizing: border-box;padding-left: 4px;fo=
+nt-size: 16px;unicode-bidi: plaintext;margin: 0;">Twice as fast at half the c=
+ost</p></li><li style=3D"margin: 8px 0 0 32px;mso-special-format: bullet;unic=
+ode-bidi: plaintext;"><p style=3D"color: rgb(54,55,55);line-height: 26px;marg=
+in-bottom: 0;box-sizing: border-box;padding-left: 4px;font-size: 16px;unicode=
+-bidi: plaintext;margin: 0;">Linux, macOS and Windows on x86-64 and ARM64</p>=
+</li><li style=3D"margin: 8px 0 0 32px;mso-special-format: bullet;unicode-bid=
+i: plaintext;"><p style=3D"color: rgb(54,55,55);line-height: 26px;margin-bott=
+om: 0;box-sizing: border-box;padding-left: 4px;font-size: 16px;unicode-bidi: =
+plaintext;margin: 0;">Unlimited macOS concurrency</p></li><li style=3D"margin=
+: 8px 0 0 32px;mso-special-format: bullet;unicode-bidi: plaintext;"><p style=
+=3D"color: rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: borde=
+r-box;padding-left: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;">O=
+ne line change to runs-on</p></li></ul><p style=3D"margin: 0 0 20px 0;color: =
+rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">Use=
+ code START50 for $50 in free credits.</p><p class=3D"button-wrapper" data-at=
+trs=3D"{&quot;url&quot;:&quot;https://go.bytebytego.com/warpbuild_110326&quot=
+;,&quot;text&quot;:&quot;Try WarpBuild free&quot;,&quot;action&quot;:null,&qu=
+ot;class&quot;:null}" data-component-name=3D"ButtonCreateButton" style=3D"mar=
+gin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicod=
+e-bidi: plaintext;text-align: center;cursor: pointer;border-radius: 4px;"><a =
+class=3D"button primary" href=3D"https://example.invalid/tracked" style=3D"fo=
+nt-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helve=
+tica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';=
+display: inline-block;box-sizing: border-box;cursor: pointer;border: none;bor=
+der-radius: 8px;font-size: 14px;line-height: 20px;font-weight: 600;text-align=
+: center;margin: 0;opacity: 1;outline: none;white-space: nowrap;color: #fffff=
+f !important;text-decoration: none !important;background-color: #7756e3;paddi=
+ng: 12px 20px;height: auto;"><span style=3D"color: #ffffff;text-decoration: n=
+one;">Try WarpBuild free</span></a></p><div style=3D"font-size: 16px;line-hei=
+ght: 26px;"><hr style=3D"margin: 32px 0;padding: 0;height: 1px;background: rg=
+b(0,0,0,.1);border: none;"></div><h2 class=3D"header-anchor-post" style=3D"po=
+sition: relative;font-family: 'SF Pro Display',-apple-system-headline,system-=
+ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-se=
+rif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: bold;=
+-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing: antialiased;-web=
+kit-appearance: optimizelegibility;-moz-appearance: optimizelegibility;appear=
+ance: optimizelegibility;margin: 1em 0 0.625em 0;color: rgb(54,55,55);line-he=
+ight: 1.16em;font-size: calc(1.625em * 1);overflow-wrap: anywhere;word-break:=
+ normal;unicode-bidi: plaintext;">The Problem with AI Code</h2><p style=3D"ma=
+rgin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unico=
+de-bidi: plaintext;">The use of AI coding assistants has increased performanc=
+e problems. There are two main reasons for this. The speed trap and the conte=
+xt gap.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 2=
+6px;font-size: 16px;unicode-bidi: plaintext;">Developers who are using AI too=
+ls can generate and ship code up to 10 times faster than before. No matter th=
+eir skill level or knowledge of the system. But you cannot guarantee that cod=
+e that is fast to generate also performs well. While your average developer m=
+ight be able to write 10K lines of code in a few minutes, the team might have=
+ to spend years debugging regressions. Or dealing with code bloat. Or handlin=
+g other architecture-related problems.</p><p style=3D"margin: 0 0 20px 0;colo=
+r: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">=
+Also, if you&#8217;ve noticed, LLMs are great at syntax and local-level logic=
+. If you ask an LLM to write a function or an API endpoint, it writes code th=
+at compiles successfully and runs without any obvious errors. It might also p=
+ass standard unit tests. However, the LLM has no idea about the host platform=
+&#8217;s runtime environment.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54=
+,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">For examp=
+le, you can&#8217;t expect the LLM to know that a particular utility function=
+ being used in your code might run 10 million times per second on a critical =
+request path. It cannot see the overall call stack. Neither can it understand=
+ memory allocation challenges that might exist inside a container running at =
+peak load within your platform. Therefore, the code you write might appear go=
+od enough in isolation. But it can still waste a huge amount of resources whe=
+n you run it at scale.</p><h2 class=3D"header-anchor-post" style=3D"position:=
+ relative;font-family: 'SF Pro Display',-apple-system-headline,system-ui,-app=
+le-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Ap=
+ple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: bold;-webkit=
+-font-smoothing: antialiased;-moz-osx-font-smoothing: antialiased;-webkit-app=
+earance: optimizelegibility;-moz-appearance: optimizelegibility;appearance: o=
+ptimizelegibility;margin: 1em 0 0.625em 0;color: rgb(54,55,55);line-height: 1=
+.16em;font-size: calc(1.625em * 1);overflow-wrap: anywhere;word-break: normal=
+;unicode-bidi: plaintext;">Can LLMs Handle Profile Data</h2><p style=3D"margi=
+n: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-=
+bidi: plaintext;">Netflix wanted to test whether automation could remove thes=
+e issues. They set up an experiment to find out if an LLM can read and make s=
+ense of raw profiling data directly.</p><div class=3D"captioned-image-contain=
+er-static" style=3D"font-size: 16px;line-height: 26px;margin: 32px auto;"><fi=
+gure style=3D"width: 100%;margin: 0 auto;"><table class=3D"image-wrapper" wid=
+th=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0" data-component-n=
+ame=3D"Image2ToDOMStatic" style=3D"mso-padding-alt: 1em 0 1.6em;"><tbody><tr>=
+<td style=3D"text-align: center;"></td><td class=3D"content" align=3D"left" w=
+idth=3D"1456" style=3D"text-align: center;"><a class=3D"image-link" target=3D=
+"_blank" href=3D"https://example.invalid/tracked" style=3D"position: relative=
+;text-decoration: underline;display: block;"><img class=3D"wide-image" data-a=
+ttrs=3D"{&quot;src&quot;:&quot;https://substack-post-media.s3.amazonaws.com/p=
+ublic/images/e791ea9f-247d-4cc5-bc29-5f800a035695_3292x2012.png&quot;,&quot;s=
+rcNoWatermark&quot;:null,&quot;fullscreen&quot;:null,&quot;imageSize&quot;:nu=
+ll,&quot;height&quot;:890,&quot;width&quot;:1456,&quot;resizeWidth&quot;:null=
+,&quot;bytes&quot;:235731,&quot;alt&quot;:null,&quot;title&quot;:null,&quot;t=
+ype&quot;:&quot;image/png&quot;,&quot;href&quot;:null,&quot;belowTheFold&quot=
+;:true,&quot;topImage&quot;:false,&quot;internalRedirect&quot;:&quot;https://=
+blog.bytebytego.com/i/222755655" alt=3D"" width=3D"550" height=3D"336.1950549=
+4505495" src=3D"https://substackcdn.com/image/fetch/$s_!Jm17!,w_1100,c_limit,=
+f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.=
+amazonaws.com%2Fpublic%2Fimages%2Fe791ea9f-247d-4cc5-bc29-5f800a035695_3292x2=
+012.png" style=3D"border: none !important;vertical-align: middle;display: blo=
+ck;-ms-interpolation-mode: bicubic;height: auto;margin-bottom: 0;width: auto =
+!important;max-width: 100% !important;margin: 0 auto;"></a></td><td style=3D"=
+text-align: center;"></td></tr></tbody></table></figure></div><p style=3D"mar=
+gin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicod=
+e-bidi: plaintext;">Different languages have different profilers. But they us=
+e a shared language and store the same core information. For example, JVM&#82=
+17;s async-profiler or Java Flight Recorder operates at 100 Hz sampling to ca=
+pture execution traces, memory allocation rates, and thread lock contention. =
+Python&#8217;s py-spy provides low-overhead, async stack sampling of live pro=
+duction processes. Go has pprof, which generates goroutine profiles, heap sna=
+pshots, and block contention data.</p><p style=3D"margin: 0 0 20px 0;color: r=
+gb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">Each=
+ one of these profilers breaks down execution into call stacks. They track tw=
+o main metrics. First, you have the inclusive time. This is the total time sp=
+ent executing a function. It includes every child function and the subroutine=
+s called by this function. Second, you have the Self (CPU) Time. It&#8217;s t=
+he time spent running code purely inside the function itself. No external cal=
+ls are involved.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-=
+height: 26px;font-size: 16px;unicode-bidi: plaintext;">With this exercise, th=
+e Netflix engineering team came to the conclusion that a single analytical pi=
+peline could understand data from almost any programming runtime.</p><p style=
+=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px=
+;unicode-bidi: plaintext;">Another advantage of LLMs is that they don&#8217;t=
+ have to guess how an algorithm works from scratch. Since LLMs have been broa=
+dly trained on many software repositories, they are mostly familiar with clas=
+sic programming anti-patterns. For example, they know that quadratic loops wh=
+ere a hot method is called again and again for each item in a collection aren=
+&#8217;t a good idea. Also, loop invariants where you compute a calculation f=
+or every iteration of the loop instead of making the calculation once at the =
+beginning. Other patterns include excessive object allocation on hot executio=
+n paths and &#8220;N+1&#8221; query patterns.</p><p style=3D"margin: 0 0 20px=
+ 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plain=
+text;">Due to this knowledge base of LLMs, you don&#8217;t need to ask an AI =
+model to guess why an application might be performing poorly. You can build a=
+ workflow that asks the model to pattern-match known performance bugs against=
+ actual call stacks.</p><h2 class=3D"header-anchor-post" style=3D"position: r=
+elative;font-family: 'SF Pro Display',-apple-system-headline,system-ui,-apple=
+-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Appl=
+e Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: bold;-webkit-f=
+ont-smoothing: antialiased;-moz-osx-font-smoothing: antialiased;-webkit-appea=
+rance: optimizelegibility;-moz-appearance: optimizelegibility;appearance: opt=
+imizelegibility;margin: 1em 0 0.625em 0;color: rgb(54,55,55);line-height: 1.1=
+6em;font-size: calc(1.625em * 1);overflow-wrap: anywhere;word-break: normal;u=
+nicode-bidi: plaintext;">The Agentic Profiling Pipeline</h2><p style=3D"margi=
+n: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-=
+bidi: plaintext;">Netflix built an automated performance system that wraps th=
+e LLM inside a well-defined pipeline.</p><div class=3D"captioned-image-contai=
+ner-static" style=3D"font-size: 16px;line-height: 26px;margin: 32px auto;"><f=
+igure style=3D"width: 100%;margin: 0 auto;"><table class=3D"image-wrapper" wi=
+dth=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0" data-component-=
+name=3D"Image2ToDOMStatic" style=3D"mso-padding-alt: 1em 0 1.6em;"><tbody><tr=
+><td style=3D"text-align: center;"></td><td class=3D"content" align=3D"left" =
+width=3D"1456" style=3D"text-align: center;"><a class=3D"image-link" target=
+=3D"_blank" href=3D"https://example.invalid/tracked" style=3D"position: relat=
+ive;text-decoration: underline;display: block;"><img class=3D"wide-image" dat=
+a-attrs=3D"{&quot;src&quot;:&quot;https://substack-post-media.s3.amazonaws.co=
+m/public/images/937b41ad-bfbf-411c-9061-fbd0fbfad501_3472x1934.png&quot;,&quo=
+t;srcNoWatermark&quot;:null,&quot;fullscreen&quot;:null,&quot;imageSize&quot;=
+:null,&quot;height&quot;:811,&quot;width&quot;:1456,&quot;resizeWidth&quot;:n=
+ull,&quot;bytes&quot;:218745,&quot;alt&quot;:null,&quot;title&quot;:null,&quo=
+t;type&quot;:&quot;image/png&quot;,&quot;href&quot;:null,&quot;belowTheFold&q=
+uot;:true,&quot;topImage&quot;:false,&quot;internalRedirect&quot;:&quot;https=
+://blog.bytebytego.com/i/222755655" alt=3D"" width=3D"550" height=3D"306.3530=
+2197802196" src=3D"https://substackcdn.com/image/fetch/$s_!Fpfx!,w_1100,c_lim=
+it,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.=
+s3.amazonaws.com%2Fpublic%2Fimages%2F937b41ad-bfbf-411c-9061-fbd0fbfad501_347=
+2x1934.png" style=3D"border: none !important;vertical-align: middle;display: =
+block;-ms-interpolation-mode: bicubic;height: auto;margin-bottom: 0;width: au=
+to !important;max-width: 100% !important;margin: 0 auto;"></a></td><td style=
+=3D"text-align: center;"></td></tr></tbody></table></figure></div><p style=3D=
+"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;un=
+icode-bidi: plaintext;">A key lesson Netflix engineers learnt during this imp=
+lementation was about scoping. If you feed an LLM a complete, raw stack trace=
+ without boundaries, it can get distracted. Often, the model spends a lot of =
+reasoning tokens analyzing internal JVM garbage collection pauses, low-level =
+Linux kernel syscalls, or even 3rd party open-source framework overhead.</p><=
+p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-siz=
+e: 16px;unicode-bidi: plaintext;">Application developers don&#8217;t have any=
+ control over such internal library concerns or OS routines. Therefore, you n=
+eed to provide the agent with strict package prefix rules. This way, the mode=
+l can ignore generic platform noise and focus on tracing only the specific ap=
+plication code.</p><h2 class=3D"header-anchor-post" style=3D"position: relati=
+ve;font-family: 'SF Pro Display',-apple-system-headline,system-ui,-apple-syst=
+em,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Col=
+or Emoji','Segoe UI Emoji','Segoe UI Symbol';font-weight: bold;-webkit-font-s=
+moothing: antialiased;-moz-osx-font-smoothing: antialiased;-webkit-appearance=
+: optimizelegibility;-moz-appearance: optimizelegibility;appearance: optimize=
+legibility;margin: 1em 0 0.625em 0;color: rgb(54,55,55);line-height: 1.16em;f=
+ont-size: calc(1.625em * 1);overflow-wrap: anywhere;word-break: normal;unicod=
+e-bidi: plaintext;">The Problems Netflix Found in Production</h2><p style=3D"=
+margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;uni=
+code-bidi: plaintext;">When the Netflix engineering team deployed the profili=
+ng pipeline against its production service, the agent found 4 major categorie=
+s of performance bugs.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55)=
+;line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">First was an alg=
+orithmic bottleneck that wasted 8.8% of CPU resources. The agent found an agg=
+regation method using Java Streams where an immutable map was updated inside =
+a reduction step.</p><table class=3D"email-code-block" role=3D"presentation" =
+width=3D"100%" border=3D"0" cellpadding=3D"20" cellspacing=3D"0" style=3D"wid=
+th: 100%;border-collapse: separate;border-spacing: 0;"><tbody><tr><td class=
+=3D"email-code-block-content" style=3D"background-color: rgb(250,250,250);pad=
+ding: 20px;outline: 1px solid rgb(0,0,0,.1);outline-offset: -1px;border-radiu=
+s: 8px;box-sizing: border-box;"><div style=3D"font-size: 16px;line-height: 26=
+px;"><pre class=3D"shiki github-light" tabindex=3D"0" style=3D"background-col=
+or: rgb(250,250,250);margin-top: 0;margin-bottom: 20px;outline-offset: -1px;b=
+ox-sizing: border-box;font-family: ui-monospace,SFMono-Regular,'SF Mono',Menl=
+o,Consolas,'Liberation Mono',monospace;font-size: 13px;line-height: 20px;mso-=
+line-height-rule: exactly;padding: 0;outline: none;border-radius: 0;backgroun=
+d: transparent;margin: 0;color: #24292e"><code style=3D"line-height: 20px;mso=
+-line-height-rule: exactly;"><span class=3D"line"><span>// Anti-pattern: O(N^=
+2) accumulation inside stream reduction</span></span>
+<span class=3D"line"><span>stream().reduce(ImmutableMap.of(), (acc, val) -&gt=
+; {</span></span>
+<span class=3D"line"><span>    return ImmutableMap.builder()</span></span>
+<span class=3D"line"><span>        .putAll(acc) // Copies every existing entr=
+y on every single step</span></span>
+<span class=3D"line"><span>        .put(val)</span></span>
+<span class=3D"line"><span>        .build();</span></span>
+<span class=3D"line"><span>});</span></span></code></pre></div></td></tr><tr>=
+<td class=3D"email-code-block-spacer" height=3D"20" style=3D"height: 20px;lin=
+e-height: 20px;font-size: 0;mso-line-height-rule: exactly;background: transpa=
+rent;padding: 0;border: 0;">&#8203;</td></tr></tbody></table><p style=3D"marg=
+in: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode=
+-bidi: plaintext;">Since putAll(acc) copies every existing key-value pair on =
+every step, you need to copy elements again and again to build a map of size =
+N. This results in quadratic complexity.</p><p style=3D"margin: 0 0 20px 0;co=
+lor: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;=
+">The agent modified the quadratic builder reduction with a linear collection=
+ approach.</p><table class=3D"email-code-block" role=3D"presentation" width=
+=3D"100%" border=3D"0" cellpadding=3D"20" cellspacing=3D"0" style=3D"width: 1=
+00%;border-collapse: separate;border-spacing: 0;"><tbody><tr><td class=3D"ema=
+il-code-block-content" style=3D"background-color: rgb(250,250,250);padding: 2=
+0px;outline: 1px solid rgb(0,0,0,.1);outline-offset: -1px;border-radius: 8px;=
+box-sizing: border-box;"><div style=3D"font-size: 16px;line-height: 26px;"><p=
+re class=3D"shiki github-light" tabindex=3D"0" style=3D"background-color: rgb=
+(250,250,250);margin-top: 0;margin-bottom: 20px;outline-offset: -1px;box-sizi=
+ng: border-box;font-family: ui-monospace,SFMono-Regular,'SF Mono',Menlo,Conso=
+las,'Liberation Mono',monospace;font-size: 13px;line-height: 20px;mso-line-he=
+ight-rule: exactly;padding: 0;outline: none;border-radius: 0;background: tran=
+sparent;margin: 0;color: #24292e"><code style=3D"line-height: 20px;mso-line-h=
+eight-rule: exactly;"><span class=3D"line"><span>// Optimized: O(N) single-pa=
+ss collection</span></span>
+<span class=3D"line"><span>stream()</span></span>
+<span class=3D"line"><span>    .flatMap(e -&gt; e.entrySet().stream())</span>=
+</span>
+<span class=3D"line"><span>    .collect(toMap(Entry::getKey, Entry::getValue)=
+);</span></span></code></pre></div></td></tr><tr><td class=3D"email-code-bloc=
+k-spacer" height=3D"20" style=3D"height: 20px;line-height: 20px;font-size: 0;=
+mso-line-height-rule: exactly;background: transparent;padding: 0;border: 0;">=
+&#8203;</td></tr></tbody></table><p style=3D"margin: 0 0 20px 0;color: rgb(54=
+,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">The secon=
+d category was about regular expressions on the hot path. In a service, the d=
+eveloper had to sanitize incoming request strings by modifying characters tha=
+t weren&#8217;t allowed. The earlier implementation ran a raw regular express=
+ion substitution on every request.</p><table class=3D"email-code-block" role=
+=3D"presentation" width=3D"100%" border=3D"0" cellpadding=3D"20" cellspacing=
+=3D"0" style=3D"width: 100%;border-collapse: separate;border-spacing: 0;"><tb=
+ody><tr><td class=3D"email-code-block-content" style=3D"background-color: rgb=
+(250,250,250);padding: 20px;outline: 1px solid rgb(0,0,0,.1);outline-offset: =
+-1px;border-radius: 8px;box-sizing: border-box;"><div style=3D"font-size: 16p=
+x;line-height: 26px;"><pre class=3D"shiki github-light" tabindex=3D"0" style=
+=3D"background-color: rgb(250,250,250);margin-top: 0;margin-bottom: 20px;outl=
+ine-offset: -1px;box-sizing: border-box;font-family: ui-monospace,SFMono-Regu=
+lar,'SF Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size: 13px;line=
+-height: 20px;mso-line-height-rule: exactly;padding: 0;outline: none;border-r=
+adius: 0;background: transparent;margin: 0;color: #24292e"><code style=3D"lin=
+e-height: 20px;mso-line-height-rule: exactly;"><span class=3D"line"><span>// =
+Anti-pattern: Dynamic regex evaluation per request</span></span>
+<span class=3D"line"><span>String sanitized =3D input.replaceAll(&#8221;[^a-z=
+A-Z0-9.-]&#8221;, &#8220;_&#8221;);</span></span></code></pre></div></td></tr=
+><tr><td class=3D"email-code-block-spacer" height=3D"20" style=3D"height: 20p=
+x;line-height: 20px;font-size: 0;mso-line-height-rule: exactly;background: tr=
+ansparent;padding: 0;border: 0;">&#8203;</td></tr></tbody></table><p style=3D=
+"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;un=
+icode-bidi: plaintext;">As you might know, evaluating regular expressions inv=
+olves parsing and state-machine transitions. This logic on high-volume traffi=
+c used 46% of the service&#8217;s CPU time.</p><p style=3D"margin: 0 0 20px 0=
+;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plainte=
+xt;">The agent replaced the regex evaluation with a pre-computed lookup table=
+ that checked characters by index. The execution got 22 times faster.</p><p s=
+tyle=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: =
+16px;unicode-bidi: plaintext;">The next category was related to unnecessary o=
+bject allocation that caused OOM crashes. A service frequently checked whethe=
+r incoming data payloads contained specific metadata fields. To perform the c=
+heck, the code was creating a new, heavy HashSet on every incoming call.</p><=
+p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-siz=
+e: 16px;unicode-bidi: plaintext;">However, the underlying data object already=
+ had an internal lookup method available. Also, instantiating millions of suc=
+h objects consumed 47% of the service&#8217;s total heap collections.</p><p s=
+tyle=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: =
+16px;unicode-bidi: plaintext;">The agent fixed this issue by removing the red=
+undant object instantiations and modified the code to reuse the cached method=
+.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;fo=
+nt-size: 16px;unicode-bidi: plaintext;">The next category was around library =
+misuse. For example, the discovery involved metric telemetry instrumentation.=
+ One of the services tracked operations by looking up a counter from a metric=
+ registry on every single call.</p><table class=3D"email-code-block" role=3D"=
+presentation" width=3D"100%" border=3D"0" cellpadding=3D"20" cellspacing=3D"0=
+" style=3D"width: 100%;border-collapse: separate;border-spacing: 0;"><tbody><=
+tr><td class=3D"email-code-block-content" style=3D"background-color: rgb(250,=
+250,250);padding: 20px;outline: 1px solid rgb(0,0,0,.1);outline-offset: -1px;=
+border-radius: 8px;box-sizing: border-box;"><div style=3D"font-size: 16px;lin=
+e-height: 26px;"><pre class=3D"shiki github-light" tabindex=3D"0" style=3D"ba=
+ckground-color: rgb(250,250,250);margin-top: 0;margin-bottom: 20px;outline-of=
+fset: -1px;box-sizing: border-box;font-family: ui-monospace,SFMono-Regular,'S=
+F Mono',Menlo,Consolas,'Liberation Mono',monospace;font-size: 13px;line-heigh=
+t: 20px;mso-line-height-rule: exactly;padding: 0;outline: none;border-radius:=
+ 0;background: transparent;margin: 0;color: #24292e"><code style=3D"line-heig=
+ht: 20px;mso-line-height-rule: exactly;"><span class=3D"line"><span>// Anti-p=
+attern: Looking up metric instances on every function execution</span></span>
+<span class=3D"line"><span>Metrics.counter(&#8221;request.count&#8221;).incre=
+ment();</span></span></code></pre></div></td></tr><tr><td class=3D"email-code=
+-block-spacer" height=3D"20" style=3D"height: 20px;line-height: 20px;font-siz=
+e: 0;mso-line-height-rule: exactly;background: transparent;padding: 0;border:=
+ 0;">&#8203;</td></tr></tbody></table><p style=3D"margin: 0 0 20px 0;color: r=
+gb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">When=
+ the query was sent to the registry, it needed dictionary lookups and interna=
+l synchronization locks. The profiler showed that the work consumed 66% of th=
+e CPU, whereas the actual business logic used only 0.3%.</p><p style=3D"margi=
+n: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-=
+bidi: plaintext;">The agent fixed it by caching the metric counter reference =
+at the time of class initialization. Also, it found that the same issue was h=
+appening across three independent services.</p><h2 class=3D"header-anchor-pos=
+t" style=3D"position: relative;font-family: 'SF Pro Display',-apple-system-he=
+adline,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica=
+,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';font=
+-weight: bold;-webkit-font-smoothing: antialiased;-moz-osx-font-smoothing: an=
+tialiased;-webkit-appearance: optimizelegibility;-moz-appearance: optimizeleg=
+ibility;appearance: optimizelegibility;margin: 1em 0 0.625em 0;color: rgb(54,=
+55,55);line-height: 1.16em;font-size: calc(1.625em * 1);overflow-wrap: anywhe=
+re;word-break: normal;unicode-bidi: plaintext;">Safety, Verification, and Tru=
+st Architecture</h2><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-=
+height: 26px;font-size: 16px;unicode-bidi: plaintext;">If you have an AI agen=
+t that can optimize code, it&#8217;s quite dangerous if the changes are appli=
+ed without automatic verification. If the agent makes a change that breaks bu=
+siness logic, it&#8217;s worse than inefficient code.</p><p style=3D"margin: =
+0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bid=
+i: plaintext;">To prevent regressions, the agentic pipeline uses the standard=
+ SDLC.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26=
+px;font-size: 16px;unicode-bidi: plaintext;">In stage 1, you verify the logic=
+. Before you move any code, the agent&#8217;s branch must pass all existing u=
+nit, integration, and contract tests. This is to make sure that the changes m=
+ade by the change don&#8217;t alter basic inputs, outputs, or handling of edg=
+e cases.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: =
+26px;font-size: 16px;unicode-bidi: plaintext;">In stage 2, you have the canar=
+y deployment. If the tests pass, the pipeline spins up a canary deployment in=
+ production. The canary instance gets a portion of the traffic. It runs side-=
+by-side with an identical baseline instance that runs the original code.</p><=
+p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-siz=
+e: 16px;unicode-bidi: plaintext;">Stage 3 is about generating the observabili=
+ty report. The platform collects hard telemetry metrics over a big enough win=
+dow. Some metrics are relative CPU utilization, median latency, P99 latency, =
+and memory allocation rates. They also don&#8217;t use any AI model to check =
+the canary results.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);li=
+ne-height: 26px;font-size: 16px;unicode-bidi: plaintext;">In stage 4, you hav=
+e the final engineering decision. When the canary version shows a good level =
+of performance improvement with zero increase in error rates, the system open=
+s a PR. This PR goes for human review. It includes the code change, the origi=
+nal flame graph, and the canary report. The final decision on deploying the c=
+hange to production is taken by the human developer.</p><h2 class=3D"header-a=
+nchor-post" style=3D"position: relative;font-family: 'SF Pro Display',-apple-=
+system-headline,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,=
+Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Sym=
+bol';font-weight: bold;-webkit-font-smoothing: antialiased;-moz-osx-font-smoo=
+thing: antialiased;-webkit-appearance: optimizelegibility;-moz-appearance: op=
+timizelegibility;appearance: optimizelegibility;margin: 1em 0 0.625em 0;color=
+: rgb(54,55,55);line-height: 1.16em;font-size: calc(1.625em * 1);overflow-wra=
+p: anywhere;word-break: normal;unicode-bidi: plaintext;">Shifting Left</h2><p=
+ style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size=
+: 16px;unicode-bidi: plaintext;">Automated production profiling is quite effe=
+ctive. But if you just rely on it, you end up exposing several limitations.</=
+p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-=
+size: 16px;unicode-bidi: plaintext;">By the time an agent finds an anti-patte=
+rn in production, you&#8217;ve already paid for days or weeks of wasted compu=
+te capacity.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-heig=
+ht: 26px;font-size: 16px;unicode-bidi: plaintext;">Second, developers are any=
+way cautious about changing a running service. If you have a service that han=
+dles production traffic without crashing, the developers hesitate to just mak=
+e changes for the sake of optimization.</p><p style=3D"margin: 0 0 20px 0;col=
+or: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;"=
+>Lastly, multiple teams often make the exact same mistakes when it comes to p=
+atterns. If you run a super-expensive agent on 10 different services just to =
+find the same problem, it&#8217;s not very efficient.</p><p style=3D"margin: =
+0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bid=
+i: plaintext;">These limitations led to Netflix making the decision to shift =
+performance checks left into the early development cycle. Also, they wanted t=
+he agents to share their findings across the entire engineering organization.=
+</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;fon=
+t-size: 16px;unicode-bidi: plaintext;">However, as you might know, language m=
+odels are stateless. Every time you send a prompt to an LLM, it starts with a=
+ clean slate. It might no retain any memory of the bug it found some time bac=
+k in another service. The Netflix engineering team built a Pattern Catalog to=
+ make the models achieve persistence. This was done by pairing a stateless LL=
+M with a stateful catalog. Or a shared memory across the fleet.</p><p style=
+=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px=
+;unicode-bidi: plaintext;">The Pattern Catalog was built around 4 key princip=
+les.</p><ul style=3D"margin-top: 0;padding: 0;"><li style=3D"margin: 8px 0 0 =
+32px;mso-special-format: bullet;unicode-bidi: plaintext;"><p style=3D"color: =
+rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: border-box;paddi=
+ng-left: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;">First, it ha=
+s to be centralized and serve as the single source of truth for all engineeri=
+ng teams. This way, no two teams end up debugging the same issues.</p></li><l=
+i style=3D"margin: 8px 0 0 32px;mso-special-format: bullet;unicode-bidi: plai=
+ntext;"><p style=3D"color: rgb(54,55,55);line-height: 26px;margin-bottom: 0;b=
+ox-sizing: border-box;padding-left: 4px;font-size: 16px;unicode-bidi: plainte=
+xt;margin: 0;">The second principle is that the same catalog entries should w=
+ork across distinct environments. For example, offline profiling, CI/CD pull =
+request checks, and local development tools.</p></li><li style=3D"margin: 8px=
+ 0 0 32px;mso-special-format: bullet;unicode-bidi: plaintext;"><p style=3D"co=
+lor: rgb(54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: border-box;=
+padding-left: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;">Third, =
+you need to format entries so that an automation script can easily inject the=
+m into an LLM&#8217;s system prompt.</p></li><li style=3D"margin: 8px 0 0 32p=
+x;mso-special-format: bullet;unicode-bidi: plaintext;"><p style=3D"color: rgb=
+(54,55,55);line-height: 26px;margin-bottom: 0;box-sizing: border-box;padding-=
+left: 4px;font-size: 16px;unicode-bidi: plaintext;margin: 0;">Lastly, the con=
+tents of the catalog should be reviewable by human developers.</p></li></ul><=
+p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-siz=
+e: 16px;unicode-bidi: plaintext;">To implement the Pattern Catalog, the Netfl=
+ix engineering team used a simple Git repository filled with plain Markdown f=
+iles. They didn&#8217;t use vector databases or complex knowledge stores. The=
+ idea was borrowed from the &#8220;LLM-wiki&#8221; concept popularized by And=
+rej Karpathy.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-hei=
+ght: 26px;font-size: 16px;unicode-bidi: plaintext;">By using a standard Git r=
+epository, the developers got several advantages. For one, developers can dif=
+f changes, open pull requests, and use git features to find out why an entry =
+was created. It also scales well to 100s of detailed performance rules withou=
+t the need for complex search infrastructure. Lastly, plain Markdown is easy =
+for both humans and language models to read without translation layers.</p><h=
+2 class=3D"header-anchor-post" style=3D"position: relative;font-family: 'SF P=
+ro Display',-apple-system-headline,system-ui,-apple-system,BlinkMacSystemFont=
+,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI E=
+moji','Segoe UI Symbol';font-weight: bold;-webkit-font-smoothing: antialiased=
+;-moz-osx-font-smoothing: antialiased;-webkit-appearance: optimizelegibility;=
+-moz-appearance: optimizelegibility;appearance: optimizelegibility;margin: 1e=
+m 0 0.625em 0;color: rgb(54,55,55);line-height: 1.16em;font-size: calc(1.625e=
+m * 1);overflow-wrap: anywhere;word-break: normal;unicode-bidi: plaintext;">H=
+ow Netflix Catches Problems Early</h2><p style=3D"margin: 0 0 20px 0;color: r=
+gb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">With=
+ the Pattern Catalog in place, Netflix can handle performance engineering via=
+ two paths. Reactive and Proactive.</p><div class=3D"captioned-image-containe=
+r-static" style=3D"font-size: 16px;line-height: 26px;margin: 32px auto;"><fig=
+ure style=3D"width: 100%;margin: 0 auto;"><table class=3D"image-wrapper" widt=
+h=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0" data-component-na=
+me=3D"Image2ToDOMStatic" style=3D"mso-padding-alt: 1em 0 1.6em;"><tbody><tr><=
+td style=3D"text-align: center;"></td><td class=3D"content" align=3D"left" wi=
+dth=3D"1456" style=3D"text-align: center;"><a class=3D"image-link" target=3D"=
+_blank" href=3D"https://example.invalid/tracked" style=3D"position: relative;=
+text-decoration: underline;display: block;"><img class=3D"wide-image" data-at=
+trs=3D"{&quot;src&quot;:&quot;https://substack-post-media.s3.amazonaws.com/pu=
+blic/images/7b9b4997-595e-4a9f-9b67-fffaba0aca9c_3592x2272.png&quot;,&quot;sr=
+cNoWatermark&quot;:null,&quot;fullscreen&quot;:null,&quot;imageSize&quot;:nul=
+l,&quot;height&quot;:921,&quot;width&quot;:1456,&quot;resizeWidth&quot;:null,=
+&quot;bytes&quot;:245211,&quot;alt&quot;:null,&quot;title&quot;:null,&quot;ty=
+pe&quot;:&quot;image/png&quot;,&quot;href&quot;:null,&quot;belowTheFold&quot;=
+:true,&quot;topImage&quot;:false,&quot;internalRedirect&quot;:&quot;https://b=
+log.bytebytego.com/i/222755655" alt=3D"" width=3D"550" height=3D"347.90521978=
+02198" src=3D"https://substackcdn.com/image/fetch/$s_!zz8C!,w_1100,c_limit,f_=
+auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.am=
+azonaws.com%2Fpublic%2Fimages%2F7b9b4997-595e-4a9f-9b67-fffaba0aca9c_3592x227=
+2.png" style=3D"border: none !important;vertical-align: middle;display: block=
+;-ms-interpolation-mode: bicubic;height: auto;margin-bottom: 0;width: auto !i=
+mportant;max-width: 100% !important;margin: 0 auto;"></a></td><td style=3D"te=
+xt-align: center;"></td></tr></tbody></table></figure></div><p style=3D"margi=
+n: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-=
+bidi: plaintext;">In the reactive path, your system profiles production servi=
+ces on a recurring schedule or on demand. When the agent finds a new bottlene=
+ck, it tests the fix on a canary instance. If everything goes fine, the patch=
+ is merged, and the agent documents the new finding in the Pattern Catalog.</=
+p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-=
+size: 16px;unicode-bidi: plaintext;">In the proactive path, the process start=
+s when a developer creates a new PR. CI tooling performs a fast regex or symb=
+ol match against the Pattern Catalog index. If the code in the PR matches kno=
+wn anti-patterns, the CI bot calls an LLM and provides it with the pull reque=
+st diff. The LLM checks the context and leaves an inline comment that explain=
+s the inefficiency. It shows the resource impact and suggests a fix. All this=
+ happens before the code ever merges to the main branch.</p><h2 class=3D"head=
+er-anchor-post" style=3D"position: relative;font-family: 'SF Pro Display',-ap=
+ple-system-headline,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Rob=
+oto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI=
+ Symbol';font-weight: bold;-webkit-font-smoothing: antialiased;-moz-osx-font-=
+smoothing: antialiased;-webkit-appearance: optimizelegibility;-moz-appearance=
+: optimizelegibility;appearance: optimizelegibility;margin: 1em 0 0.625em 0;c=
+olor: rgb(54,55,55);line-height: 1.16em;font-size: calc(1.625em * 1);overflow=
+-wrap: anywhere;word-break: normal;unicode-bidi: plaintext;">Conclusion</h2><=
+p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-siz=
+e: 16px;unicode-bidi: plaintext;">The key learning from the Netflix engineeri=
+ng experience is that automating performance engineering work is not an all-o=
+r-nothing game. You can have organizations adopt workflows along a four-level=
+ maturity spectrum.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);li=
+ne-height: 26px;font-size: 16px;unicode-bidi: plaintext;">Level 0 is the manu=
+al situation. This is the level where machine learning is not used. Human dev=
+elopers manually capture traces, interpret flame graphs, and trace code paths=
+.</p><p style=3D"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;fo=
+nt-size: 16px;unicode-bidi: plaintext;">Level 1 is the assist approach. This =
+is the entry point for AI adoption. The LLM acts as an analytical copilot. A =
+developer initiates the profiling process. But they don&#8217;t spend time st=
+udying flame graphs. Instead, they feed the stack dump to the model. The mode=
+l finds the hot execution path.</p><p style=3D"margin: 0 0 20px 0;color: rgb(=
+54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: plaintext;">Level 2=
+ is the orchestration level. This is the current state at Netflix. A lot of p=
+roactive scanning happens. Also, they use the Pattern Catalog.</p><p style=3D=
+"margin: 0 0 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;un=
+icode-bidi: plaintext;">Level 3 is the fully autonomous level. This is the lo=
+ng-term vision at Netflix for performance agents. At Level 3, the agents will=
+ create their own optimization strategies. They will explore multiple alterna=
+tive implementations. Or run automated benchmarks.</p><p style=3D"margin: 0 0=
+ 20px 0;color: rgb(54,55,55);line-height: 26px;font-size: 16px;unicode-bidi: =
+plaintext;"><strong>References:</strong></p><ul style=3D"margin-top: 0;paddin=
+g: 0;margin-bottom: 0;"><li style=3D"margin: 8px 0 0 32px;mso-special-format:=
+ bullet;unicode-bidi: plaintext;"><p style=3D"color: rgb(54,55,55);line-heigh=
+t: 26px;margin-bottom: 0;box-sizing: border-box;padding-left: 4px;font-size: =
+16px;unicode-bidi: plaintext;margin: 0;"><a href=3D"https://example.invalid/t=
+racked" style=3D"color: #7756e3;text-decoration: none;">A Netflix Production =
+Story - P99 Conference</a></p></li></ul></div></div><div class=3D"postscript-=
+placeholder" style=3D"margin: 32px 0 0;width: 100%;box-sizing: border-box;fon=
+t-size: 16px;line-height: 26px;"></div><table class=3D"email-ufi-2-bottom" ro=
+le=3D"presentation" width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=
+=3D"0" style=3D"border-top: 1px solid rgb(0,0,0,.1);border-bottom: 1px solid =
+rgb(0,0,0,.1);min-width: 100%;"><tbody><tr height=3D"16"><td height=3D"16" st=
+yle=3D"font-size:0px;line-height:0;">&nbsp;</td></tr><tr><td><table role=3D"p=
+resentation" width=3D"100%" border=3D"0" cellspacing=3D"0" cellpadding=3D"0">=
+<tbody><tr><td><table role=3D"presentation" width=3D"auto" border=3D"0" cells=
+pacing=3D"0" cellpadding=3D"0" style=3D"margin:0 auto;"><tbody><tr><td style=
+=3D"vertical-align:middle;"><table role=3D"presentation" width=3D"auto" borde=
+r=3D"0" cellspacing=3D"0" cellpadding=3D"0"><tbody><tr><td align=3D"center"><=
+a class=3D"email-button-outline" href=3D"https://substack.com/app-link/post" =
+style=3D"font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',R=
+oboto,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe =
+UI Symbol';display: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0=
+,.1);border-radius: 9999px;text-transform: uppercase;font-size: 12px;line-hei=
+ght: 12px;padding: 9px 14px;text-decoration: none;color: rgb(119,119,119);"><=
+img class=3D"icon" src=3D"https://substackcdn.com/image/fetch/$s_!PeVs!,w_36,=
+c_scale,f_png,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Fi=
+con%2FLucideHeart%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%=
+26strokeWidth%3D2" width=3D"18" height=3D"18" style=3D"margin-right: 8px;min-=
+width: 18px;min-height: 18px;border: none !important;vertical-align: middle;m=
+ax-width: 18px" alt=3D""><span class=3D"email-button-text" style=3D"vertical-=
+align: middle;">Like</span></a></td></tr></tbody></table></td><td width=3D"8"=
+ style=3D"min-width:8px;"></td><td style=3D"vertical-align:middle;"><table ro=
+le=3D"presentation" width=3D"auto" border=3D"0" cellspacing=3D"0" cellpadding=
+=3D"0"><tbody><tr><td align=3D"center"><a class=3D"email-button-outline" href=
+=3D"https://substack.com/app-link/post" style=3D"font-family: system-ui,-appl=
+e-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif,'App=
+le Color Emoji','Segoe UI Emoji','Segoe UI Symbol';display: inline-block;font=
+-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radius: 9999px;text-trans=
+form: uppercase;font-size: 12px;line-height: 12px;padding: 9px 14px;text-deco=
+ration: none;color: rgb(119,119,119);"><img class=3D"icon" src=3D"https://sub=
+stackcdn.com/image/fetch/$s_!x1tS!,w_36,c_scale,f_png,q_auto:good,fl_progress=
+ive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2FLucideComments%3Fv%3D4%26height=
+%3D36%26fill%3Dnone%26stroke%3D%2523808080%26strokeWidth%3D2" width=3D"18" he=
+ight=3D"18" style=3D"margin-right: 8px;min-width: 18px;min-height: 18px;borde=
+r: none !important;vertical-align: middle;max-width: 18px" alt=3D""><span cla=
+ss=3D"email-button-text" style=3D"vertical-align: middle;">Comment</span></a>=
+</td></tr></tbody></table></td><td width=3D"8" style=3D"min-width:8px;"></td>=
+<td style=3D"vertical-align:middle;"><table role=3D"presentation" width=3D"au=
+to" border=3D"0" cellspacing=3D"0" cellpadding=3D"0"><tbody><tr><td align=3D"=
+center"><a class=3D"email-button-outline" href=3D"https://open.substack.com/p=
+ub/bytebytego/p/how-netflix-uses-ai-agents-for-performance" style=3D"font-fam=
+ily: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,A=
+rial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';displa=
+y: inline-block;font-weight: 500;border: 1px solid rgb(0,0,0,.1);border-radiu=
+s: 9999px;text-transform: uppercase;font-size: 12px;line-height: 12px;padding=
+: 9px 14px;text-decoration: none;color: rgb(119,119,119);"><img class=3D"icon=
+" src=3D"https://substackcdn.com/image/fetch/$s_!ubXF!,w_36,c_scale,f_png,q_a=
+uto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Ficon%2Fnotes__Note=
+RestackIcon%3Fv%3D4%26height%3D36%26fill%3Dnone%26stroke%3D%2523808080%26stro=
+keWidth%3D2%26strokeLinecap%3Dround%26strokeLinejoin%3Dround" width=3D"18" he=
+ight=3D"18" alt=3D"" style=3D"margin-right: 8px;min-width: 18px;min-height: 1=
+8px;max-width: 550px;border: none !important;vertical-align: middle;"><span c=
+lass=3D"email-button-text" style=3D"vertical-align: middle;">Restack</span></=
+a></td></tr></tbody></table></td></tr></tbody></table></td><td align=3D"right=
+"><table role=3D"presentation" width=3D"auto" border=3D"0" cellspacing=3D"0" =
+cellpadding=3D"0"><tbody><tr></tr></tbody></table></td></tr></tbody></table><=
+/td></tr><tr height=3D"16"><td height=3D"16" style=3D"font-size:0px;line-heig=
+ht:0;">&nbsp;</td></tr></tbody></table><div class=3D"footer footer-lyzfzm" st=
+yle=3D"color: rgb(119,119,119);text-align: center;font-size: 16px;line-height=
+: 26px;padding: 24px 0;"><div style=3D"font-size: 16px;line-height: 26px;padd=
+ing-bottom: 24px"><p class=3D"pencraft pc-reset color-secondary-B3TpYa size-1=
+2-qKBnAQ reset-PDs18X small meta-QuZQ_E" style=3D"list-style: none;font-famil=
+y: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Ari=
+al,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI Symbol';padding-=
+bottom: 0;font-size: 12px;line-height: 16px;margin: 0;color: rgb(119,119,119)=
+;text-decoration: unset;">&#169; 2026 <span>ByteByteGo</span><br>548 Market S=
+treet PMB 72296, San Francisco, CA 94104 <br><a href=3D"https://example.inval=
+id/tracked" style=3D"color: #7756e3;text-decoration: none;"><span style=3D"co=
+lor: rgb(119,119,119);text-decoration: underline;">Unsubscribe</span></a></p>=
+</div><p class=3D"footerSection-uQEPXS small powered-by-substack" style=3D"pa=
+dding: 0 24px;font-size: 12px;line-height: 20px;margin: 0;color: rgb(119,119,=
+119);font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Robot=
+o,Helvetica,Arial,sans-serif,'Apple Color Emoji','Segoe UI Emoji','Segoe UI S=
+ymbol';padding-bottom: 0;margin-top: 0;"><a href=3D"https://example.invalid/t=
+racked" style=3D"color: #7756e3;text-decoration: none;display: inline-block;m=
+argin: 0 4px;"><img src=3D"https://substackcdn.com/image/fetch/$s_!IzGP!,w_26=
+2,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%=
+2Fimg%2Femail%2Fgeneric-app-button%402x.png" srcset=3D"https://substackcdn.co=
+m/image/fetch/$s_!DIki!,w_131,c_limit,f_auto,q_auto:good,fl_progressive:steep=
+/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fgeneric-app-button.png, https://s=
+ubstackcdn.com/image/fetch/$s_!IzGP!,w_262,c_limit,f_auto,q_auto:good,fl_prog=
+ressive:steep/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fgeneric-app-button%4=
+02x.png 2x, https://substackcdn.com/image/fetch/$s_!QWua!,w_393,c_limit,f_aut=
+o,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2=
+Fgeneric-app-button%403x.png 3x" width=3D"131" alt=3D"Get the app" height=3D"=
+40" style=3D"max-width: 550px;border: none !important;vertical-align: middle;=
+"></a><a href=3D"https://example.invalid/tracked" style=3D"color: #7756e3;tex=
+t-decoration: none;display: inline-block;margin: 0 4px;"><img src=3D"https://=
+substackcdn.com/image/fetch/$s_!FMON!,w_366,c_limit,f_auto,q_auto:good,fl_pro=
+gressive:steep/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fstart-your-substack=
+-button%402x.png" srcset=3D"https://substackcdn.com/image/fetch/$s_!PPEm!,w_1=
+83,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack.com=
+%2Fimg%2Femail%2Fstart-your-substack-button.png, https://substackcdn.com/imag=
+e/fetch/$s_!FMON!,w_366,c_limit,f_auto,q_auto:good,fl_progressive:steep/https=
+%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fstart-your-substack-button%402x.png 2x,=
+ https://substackcdn.com/image/fetch/$s_!s5wz!,w_549,c_limit,f_auto,q_auto:go=
+od,fl_progressive:steep/https%3A%2F%2Fsubstack.com%2Fimg%2Femail%2Fstart-your=
+-substack-button%403x.png 3x" width=3D"183" alt=3D"Start your Substack" heigh=
+t=3D"40" style=3D"max-width: 550px;border: none !important;vertical-align: mi=
+ddle;"></a></p></div></div></td><td></td></tr></tbody></table><img src=3D"htt=
+ps://example.invalid/tracked" alt=3D"" width=3D"1" height=3D"1" border=3D"0" =
+style=3D"height:1px !important;width:1px !important;border-width:0 !important=
+;margin-top:0 !important;margin-bottom:0 !important;margin-right:0 !important=
+;margin-left:0 !important;padding-top:0 !important;padding-bottom:0 !importan=
+t;padding-right:0 !important;padding-left:0 !important;"/><img width=3D"1" he=
+ight=3D"1" alt=3D"" src=3D"https://example.invalid/tracked"></body></html>
+
+--7b6b9f074abef334ecba72b8362790211aac12567fd40ff46d45abb751b9--

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
 from urllib import parse
 
 import pydantic
@@ -23,8 +24,19 @@ _MALFORMED_RETRY_SOURCE = "payload needs id"
 _NOT_FAILED = "source is not failed"
 _SOURCE_ID_EXISTS = "source id already exists"
 
-# Sources the pipeline fetches and summarizes; the rest only get their title looked up.
-_PROCESSED_KINDS = frozenset({urls.UrlKind.ARTICLE, urls.UrlKind.X})
+_SHOW_LINK_REASON = "Share an episode, not the show."
+_CHANNEL_LINK_REASON = "Share a video, not the channel."
+_PLAYLIST_LINK_REASON = "Share a video, not the playlist."
+_PLAYLIST_PATH = "/playlist"
+
+
+@dataclass(frozen=True)
+class _Start:
+    """How a new source begins: its processing status, any error to show, and the first job to queue."""
+
+    processing: models.ProcessingStatus
+    error: str | None
+    first_job: models.JobKind
 
 
 class _CapturePayload(pydantic.BaseModel):
@@ -156,25 +168,40 @@ def _validate_capture(capture: _CapturePayload | None) -> str | None:
     return None
 
 
+def _start_for(url: str) -> _Start:
+    """Classify `url`: pages the pipeline can fetch start pending; show and channel links wait unsupported."""
+    url_kind = urls.detect_kind(url)
+    unsupported_reason = None
+    if url_kind == urls.UrlKind.PODCAST and urls.podcast_link(url) is None:
+        unsupported_reason = _SHOW_LINK_REASON
+    if url_kind == urls.UrlKind.YOUTUBE and urls.youtube_video_id(url) is None:
+        is_playlist = parse.urlsplit(url).path.rstrip("/") == _PLAYLIST_PATH
+        unsupported_reason = _PLAYLIST_LINK_REASON if is_playlist else _CHANNEL_LINK_REASON
+    if unsupported_reason is not None:
+        return _Start(
+            processing=models.ProcessingStatus.UNSUPPORTED,
+            error=unsupported_reason,
+            first_job=models.JobKind.FETCH_TITLE,
+        )
+
+    # Any other kind (including an unrecognized link) is fetched as an article was before this task.
+    return _Start(processing=models.ProcessingStatus.PENDING, error=None, first_job=models.JobKind.FETCH_CONTENT)
+
+
 def _insert_source(db: orm.Session, *, user: models.User, payload: _AddSourcePayload, normalized_url: str) -> None:
     """Insert a new source and queue its first pipeline step."""
-    url_kind = urls.detect_kind(payload.url)
-    processed = url_kind in _PROCESSED_KINDS
-    source = _build_source(
-        user=user,
-        payload=payload,
-        normalized_url=normalized_url,
-        processing=models.ProcessingStatus.PENDING if processed else models.ProcessingStatus.UNSUPPORTED,
-    )
+    start = _start_for(payload.url)
+    source = _build_source(user=user, payload=payload, normalized_url=normalized_url, processing=start.processing)
+    source.processing_error = start.error
     db.add(source)
     db.flush()
     if payload.capture is not None:
         _add_capture(db, source_id=source.id, capture=payload.capture)
 
-    if processed:
-        pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.FETCH_CONTENT])
+    if start.first_job == models.JobKind.FETCH_CONTENT:
+        pipeline.enqueue_steps(db, source=source, steps=[start.first_job])
         return
-    jobs.enqueue(db, kind=models.JobKind.FETCH_TITLE, user_id=user.id, payload={pipeline.SOURCE_ID_KEY: str(source.id)})
+    jobs.enqueue(db, kind=start.first_job, user_id=user.id, payload={pipeline.SOURCE_ID_KEY: str(source.id)})
 
 
 def _insert_merged_source(
@@ -221,11 +248,10 @@ def _build_source(
 def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSourcePayload) -> None:
     """Fold a duplicate capture into `existing`: state moves forward only, given fields overwrite.
 
-    An M1 `link` row was never classified or processed, so a fresh share of its page classifies it now and starts the
-    pipeline when its kind is one the pipeline handles.
+    An `unsupported` source (an M1 `link` row, or a YouTube/podcast share M2 stored without processing) is classified
+    afresh by a new share of its page, and starts the pipeline when its URL is one the pipeline handles.
     """
-    if existing.kind == models.SourceKind.LINK:
-        _reclassify_m1_source(db, existing=existing)
+    _start_if_now_processable(db, existing=existing)
 
     if payload.intent == models.SourceIntent.FINISHED:
         existing.intent = models.SourceIntent.FINISHED.value
@@ -255,15 +281,25 @@ def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSource
     db.flush()
 
 
-def _reclassify_m1_source(db: orm.Session, *, existing: models.Source) -> None:
-    """Give an M1 `link` source its real kind, and start the pipeline if that kind is processed."""
-    url_kind = urls.detect_kind(existing.url)
-    existing.kind = models.SourceKind(url_kind).value
-    if url_kind not in _PROCESSED_KINDS:
+def _start_if_now_processable(db: orm.Session, *, existing: models.Source) -> None:
+    """Give an M1 `link` source its real kind; start an `unsupported` source whose URL the pipeline can now process.
+
+    A source whose URL is still not processable keeps `unsupported` and gets the reason it is shown.
+    """
+    if existing.kind == models.SourceKind.LINK:
+        existing.kind = models.SourceKind(urls.detect_kind(existing.url)).value
+
+    if existing.processing != models.ProcessingStatus.UNSUPPORTED:
         return
 
-    pipeline.set_processing(db, source=existing, status=models.ProcessingStatus.PENDING)
-    pipeline.enqueue_steps(db, source=existing, steps=[models.JobKind.FETCH_CONTENT])
+    start = _start_for(existing.url)
+    if start.processing == models.ProcessingStatus.UNSUPPORTED:
+        # Still not processable (a show, channel or playlist link), but now it can say why.
+        pipeline.set_processing(db, source=existing, status=start.processing, error=start.error)
+        return
+
+    pipeline.set_processing(db, source=existing, status=start.processing)
+    pipeline.enqueue_steps(db, source=existing, steps=[start.first_job])
 
 
 def _add_capture(db: orm.Session, *, source_id: uuid.UUID, capture: _CapturePayload) -> None:

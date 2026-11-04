@@ -15,6 +15,13 @@
       "when": 1793748778974,
       "tag": "0001_tough_iron_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793765862328,
+      "tag": "0002_hesitant_raza",
+      "breakpoints": true
     }
   ]
 }

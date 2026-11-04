@@ -12,6 +12,7 @@ dependencies = [
 
 [project.scripts]
 archie-db = "archie_db.migrate:main"
+archie-set-ingest-address = "archie_db.ingest_address:main"
 
 [tool.uv.sources]
 archie-shared = { workspace = true }

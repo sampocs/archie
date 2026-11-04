@@ -9,6 +9,7 @@ dependencies = [
   "archie-shared",
   "archie-db",
   "pyjwt[crypto]>=2.15.1",
+  "trafilatura>=2.3.1",
 ]
 
 [project.scripts]

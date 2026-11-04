@@ -11,14 +11,10 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { Markdown } from "@/ui/Markdown";
 import { ProcessingLine } from "@/ui/ProcessingLine";
+import { sourceByline } from "@/ui/sourceLabels";
+import { parseSummary, SummaryContent } from "@/ui/summaryContent";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
-type TimedItem = { timestamp: string | null };
-type SummaryContent = {
-  gist: string;
-  key_ideas: (TimedItem & { idea: string })[];
-  numbers: (TimedItem & { fact: string })[];
-};
 
 const REACTION_LABELS: Record<string, string> = { easy: "Easy", mostly: "Mostly followed", lost: "Parts lost me" };
 
@@ -54,7 +50,7 @@ export default function SourceScreen() {
 
   const summary = artifacts.find((artifact) => artifact.kind === "summary");
   const primer = artifacts.find((artifact) => artifact.kind === "primer");
-  const summaryContent = summary ? (JSON.parse(summary.content) as SummaryContent) : null;
+  const summaryContent = summary ? parseSummary(summary.content) : null;
   const primerMarkdown = primer ? (JSON.parse(primer.content) as { markdown: string }).markdown : null;
 
   return (
@@ -68,17 +64,13 @@ export default function SourceScreen() {
   );
 }
 
-function hostOf(url: string): string {
-  return URL.canParse(url) ? new URL(url).hostname : url;
-}
-
 function SourceHeader({ source }: { source: typeof schema.sources.$inferSelect }) {
   const theme = useTheme();
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
       <Text variant="secondary" tone="ink3">
-        {source.kind} · {hostOf(source.url)}
+        {source.kind} · {sourceByline(source)}
       </Text>
       <ProcessingLine source={source} />
     </View>
@@ -99,6 +91,7 @@ function TimestampChip({ timestamp }: { timestamp: string | null }) {
 
   return (
     <View
+      testID="timestamp"
       style={{
         backgroundColor: theme.colors.press,
         borderRadius: theme.radii.chipSmall,

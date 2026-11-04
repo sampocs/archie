@@ -147,6 +147,43 @@ def test_steps_to_retry_without_a_summary_but_with_a_primer(db: sqlalchemy.orm.S
     assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.ANALYZE]
 
 
+def test_newsletter_is_ready_after_only_a_summary(db: sqlalchemy.orm.Session, source: models.Source) -> None:
+    """A newsletter needs no primer, so its summary alone finishes it."""
+    source.kind = models.SourceKind.NEWSLETTER.value
+    pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
+    _write(db, source, kind=models.ArtifactKind.SUMMARY, content={})
+    db.flush()
+
+    pipeline.finish_step(db, source=source)
+    db.flush()
+    db.refresh(source)
+
+    assert source.processing == models.ProcessingStatus.READY
+
+
+def test_steps_to_retry_for_a_newsletter_never_includes_the_primer(
+    db: sqlalchemy.orm.Session, source: models.Source
+) -> None:
+    """With text only, analyze; with everything present, still only analyze."""
+    source.kind = models.SourceKind.NEWSLETTER.value
+    _write(db, source, kind=models.ArtifactKind.TEXT, content={})
+    db.flush()
+    assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.ANALYZE]
+
+    _write(db, source, kind=models.ArtifactKind.SUMMARY, content={})
+    db.flush()
+    assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.ANALYZE]
+
+
+def test_set_processing_keeps_the_error_for_unsupported(db: sqlalchemy.orm.Session, source: models.Source) -> None:
+    """UNSUPPORTED explains itself like FAILED does; PROCESSING clears it."""
+    pipeline.set_processing(db, source=source, status=models.ProcessingStatus.UNSUPPORTED, error="x")
+    assert source.processing_error == "x"
+
+    pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING, error="x")
+    assert source.processing_error is None
+
+
 def test_enqueue_steps_adds_one_job_per_step_in_order(db: sqlalchemy.orm.Session, source: models.Source) -> None:
     """Jobs carry the source id and are created in the given order."""
     steps = [models.JobKind.PRIMER, models.JobKind.ANALYZE]

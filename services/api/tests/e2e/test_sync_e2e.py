@@ -9,6 +9,7 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, models, session
+from archie_shared import urls
 from archie_testing.harness import LiveStack
 
 pytestmark = pytest.mark.postgres
@@ -110,19 +111,40 @@ def test_an_article_url_starts_pending_with_a_fetch_content_job(live_stack: Live
 
 @pytest.mark.parametrize(
     ("url", "kind"),
-    [("https://www.youtube.com/watch?v=abc", "youtube"), ("https://open.spotify.com/episode/abc", "podcast")],
+    [("https://www.youtube.com/watch?v=abc123", "youtube"), ("https://open.spotify.com/episode/abc123", "podcast")],
 )
-def test_a_youtube_or_podcast_url_is_unsupported_and_only_gets_a_title(
-    live_stack: LiveStack, url: str, kind: str
-) -> None:
-    """Video and audio links aren't processed yet: they're marked unsupported and just fetch their title."""
+def test_a_youtube_video_or_podcast_episode_starts_the_pipeline(live_stack: LiveStack, url: str, kind: str) -> None:
+    """Video and episode links are fetched like articles: pending with one fetch_content job and no error."""
     authed = live_stack.authed(live_stack.sign_in())
     action = _add_source(url)
 
     _push(authed, action)
     row = _pull_sources(authed)[action["payload"]["id"]]
 
-    assert (row["kind"], row["processing"]) == (kind, "unsupported")
+    assert (row["kind"], row["processing"], row["processing_error"], row["sender"]) == (kind, "pending", None, None)
+    assert _queued_jobs(live_stack) == [("fetch_content", {"source_id": action["payload"]["id"]})]
+
+
+@pytest.mark.parametrize(
+    ("url", "kind", "reason"),
+    [
+        ("https://open.spotify.com/show/abc123", "podcast", "Share an episode, not the show."),
+        ("https://podcasts.apple.com/us/podcast/some-show/id123456", "podcast", "Share an episode, not the show."),
+        ("https://www.youtube.com/@somechannel", "youtube", "Share a video, not the channel."),
+        ("https://www.youtube.com/playlist?list=PL123", "youtube", "Share a video, not the playlist."),
+    ],
+)
+def test_a_show_channel_or_playlist_link_is_unsupported_with_a_reason_and_only_gets_a_title(
+    live_stack: LiveStack, url: str, kind: str, reason: str
+) -> None:
+    """Show, channel and playlist links can't be processed: unsupported, told why, and only the title is fetched."""
+    authed = live_stack.authed(live_stack.sign_in())
+    action = _add_source(url)
+
+    _push(authed, action)
+    row = _pull_sources(authed)[action["payload"]["id"]]
+
+    assert (row["kind"], row["processing"], row["processing_error"]) == (kind, "unsupported", reason)
     assert _queued_jobs(live_stack) == [("fetch_title", {"source_id": action["payload"]["id"]})]
 
 
@@ -820,9 +842,13 @@ def test_pull_pages_across_sources_artifacts_and_cards(live_stack: LiveStack) ->
     }
 
 
-def _insert_m1_link(live_stack: LiveStack, *, user_id: int, url: str) -> uuid.UUID:
-    """Insert a source the way the M1 migration left it: kind `link`, `unsupported`, normalized_url = url."""
+def _insert_m1_link(
+    live_stack: LiveStack, *, user_id: int, url: str, kind: models.SourceKind = models.SourceKind.LINK
+) -> uuid.UUID:
+    """Insert an `unsupported` source as M1 (kind `link`) or M2 (a real kind, no error) left it."""
     source_id = uuid.uuid4()
+    # M1 stored the URL as shared (migration 0002); only M2 kinds were normalized.
+    normalized_url = url if kind == models.SourceKind.LINK else urls.normalize_url(url)
     engine = session.engine_for(live_stack.database_url)
     with sqlalchemy.orm.Session(engine) as db:
         db.add(
@@ -830,8 +856,8 @@ def _insert_m1_link(live_stack: LiveStack, *, user_id: int, url: str) -> uuid.UU
                 id=source_id,
                 user_id=user_id,
                 url=url,
-                normalized_url=url,
-                kind=models.SourceKind.LINK.value,
+                normalized_url=normalized_url,
+                kind=kind.value,
                 state=models.SourceState.QUEUED.value,
                 intent=models.SourceIntent.QUEUE.value,
                 processing=models.ProcessingStatus.UNSUPPORTED.value,
@@ -858,8 +884,8 @@ def test_sharing_an_m1_article_link_classifies_it_and_starts_the_pipeline(live_s
     assert _queued_jobs(live_stack) == [("fetch_content", {"source_id": str(source_id)})]
 
 
-def test_sharing_an_m1_youtube_link_classifies_it_but_leaves_it_unsupported(live_stack: LiveStack) -> None:
-    """A kind the pipeline doesn't process is re-classified only: it stays unsupported and queues no fetch."""
+def test_sharing_an_m1_youtube_link_classifies_it_and_starts_the_pipeline(live_stack: LiveStack) -> None:
+    """An M1 link to a YouTube video is re-classified and queues fetch_content."""
     authed = live_stack.authed(live_stack.sign_in())
     url = "https://youtube.com/watch?v=abc123"
     source_id = _insert_m1_link(live_stack, user_id=authed.get("/me").json()["user_id"], url=url)
@@ -868,6 +894,70 @@ def test_sharing_an_m1_youtube_link_classifies_it_but_leaves_it_unsupported(live
     _push(authed, _add_source(url))
     row = _pull_sources(authed)[str(source_id)]
 
-    assert (row["kind"], row["processing"]) == ("youtube", "unsupported")
+    assert (row["kind"], row["processing"]) == ("youtube", "pending")
+    assert row["change_seq"] > before["change_seq"]
+    assert _queued_jobs(live_stack) == [("fetch_content", {"source_id": str(source_id)})]
+
+
+def test_sharing_an_m1_spotify_show_link_classifies_it_but_leaves_it_unsupported(live_stack: LiveStack) -> None:
+    """An M1 link to a show is re-classified only: it stays unsupported and queues no fetch."""
+    authed = live_stack.authed(live_stack.sign_in())
+    url = "https://open.spotify.com/show/abc123"
+    source_id = _insert_m1_link(live_stack, user_id=authed.get("/me").json()["user_id"], url=url)
+    before = _pull_sources(authed)[str(source_id)]
+
+    _push(authed, _add_source(url))
+    row = _pull_sources(authed)[str(source_id)]
+
+    assert (row["kind"], row["processing"]) == ("podcast", "unsupported")
+    assert row["processing_error"] == "Share an episode, not the show."
     assert row["change_seq"] > before["change_seq"]
     assert "fetch_content" not in [kind for kind, _ in _queued_jobs(live_stack)]
+
+
+def test_sharing_an_m2_unsupported_youtube_video_starts_the_pipeline(live_stack: LiveStack) -> None:
+    """M2 stored every YouTube share as unsupported with no error; sharing the video again now processes it."""
+    authed = live_stack.authed(live_stack.sign_in())
+    url = "https://www.youtube.com/watch?v=abc123"
+    source_id = _insert_m1_link(
+        live_stack, user_id=authed.get("/me").json()["user_id"], url=url, kind=models.SourceKind.YOUTUBE
+    )
+
+    _push(authed, _add_source(url))
+    row = _pull_sources(authed)[str(source_id)]
+
+    assert (row["kind"], row["processing"], row["processing_error"]) == ("youtube", "pending", None)
+    assert _queued_jobs(live_stack) == [("fetch_content", {"source_id": str(source_id)})]
+
+
+def test_sharing_an_m2_unsupported_spotify_show_link_leaves_it_unsupported(live_stack: LiveStack) -> None:
+    """A show link M2 left unsupported stays so on a re-share, with no fetch queued."""
+    authed = live_stack.authed(live_stack.sign_in())
+    url = "https://open.spotify.com/show/abc123"
+    source_id = _insert_m1_link(
+        live_stack, user_id=authed.get("/me").json()["user_id"], url=url, kind=models.SourceKind.PODCAST
+    )
+
+    _push(authed, _add_source(url))
+    row = _pull_sources(authed)[str(source_id)]
+
+    assert (row["kind"], row["processing"]) == ("podcast", "unsupported")
+    assert row["processing_error"] == "Share an episode, not the show."
+    assert _queued_jobs(live_stack) == []
+
+
+def test_sharing_an_m1_youtube_channel_link_says_why_it_is_unsupported(live_stack: LiveStack) -> None:
+    """An M1 link to a channel is re-classified and shown the channel reason."""
+    authed = live_stack.authed(live_stack.sign_in())
+    url = "https://youtube.com/@somechannel"
+    source_id = _insert_m1_link(live_stack, user_id=authed.get("/me").json()["user_id"], url=url)
+
+    _push(authed, _add_source(url))
+    row = _pull_sources(authed)[str(source_id)]
+
+    assert (row["kind"], row["processing"], row["processing_error"]) == (
+        "youtube",
+        "unsupported",
+        "Share a video, not the channel.",
+    )
+    assert _queued_jobs(live_stack) == []

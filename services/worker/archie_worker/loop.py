@@ -7,10 +7,10 @@ Handler contract: a handler is `(db, job) -> None` run in one session. A handler
 call (HTTP, LLM) first reads what it needs into locals and calls `db.commit()`, so no connection or
 transaction is held during the call; it then takes `changes.lock_user_writes` and writes. After the
 handler returns, the loop marks the job done in that same session and commits. A handler fails by
-raising: `PermanentJobError` fails the job at once, anything else is retried with backoff until the
-job's attempts run out; `RetryLaterError` re-queues the job after the delay the service asked for (still
-counting as an attempt). Either way a `HandlerSpec.on_final_failure` hook then runs in the transaction
-that marks the job failed, so the hook's writes and the failure commit together. The stale sweep
+raising: `PermanentJobError` fails the job at once; `RetryLaterError` re-queues it after the delay the
+service asked for; anything else is retried with backoff. Both retry paths count as an attempt and stop
+when the job's attempts run out. When a job fails for good, its `HandlerSpec.on_final_failure` hook runs
+in the transaction that marks it failed, so the hook's writes and the failure commit together. The stale sweep
 (`requeue_stale`) does the same for a job whose worker crashed on its last attempt.
 """
 
@@ -176,14 +176,18 @@ def _record_failure(
     error: Exception,
     handlers: Mapping[models.JobKind, HandlerSpec],
 ) -> None:
-    """Fail the job for good if the error is permanent or attempts ran out; otherwise re-queue it after a backoff."""
+    """Fail the job for good if the error is permanent or attempts ran out.
+
+    Otherwise re-queue it after the service's requested delay or a backoff.
+    """
     _logger.warning("Job %s failed: %r", job_id, error)
 
     with sqlalchemy.orm.Session(engine) as db:
         job = db.get_one(models.Job, job_id)
         permanent_reason = error.reason if isinstance(error, errors.PermanentJobError) else None
         retry_later = error if isinstance(error, errors.RetryLaterError) else None
-        job.last_error = (permanent_reason or (retry_later.reason if retry_later else repr(error)))[:_MAX_ERROR_LENGTH]
+        known_reason = error.reason if isinstance(error, (errors.PermanentJobError, errors.RetryLaterError)) else None
+        job.last_error = (known_reason or repr(error))[:_MAX_ERROR_LENGTH]
 
         if permanent_reason is not None or job.attempts >= job.max_attempts:
             job.status = models.JobStatus.FAILED.value

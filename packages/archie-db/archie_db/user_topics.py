@@ -74,7 +74,8 @@ def create_topic(
 
 
 def seed_owner_topics(db: sqlalchemy.orm.Session, *, user: models.User) -> None:
-    """Give the owner their picks as live starter topics and the other starter topics as removed; mark them chosen.
+    """Give the owner their picks as live starter topics and the other starter topics as removed; mark them chosen,
+    and queue filing for the sources already analyzed.
 
     A no-op once the user has any topic, so it is safe on every sign-in and `/me`.
     """
@@ -90,6 +91,9 @@ def seed_owner_topics(db: sqlalchemy.orm.Session, *, user: models.User) -> None:
             create_topic(db, user_id=user.id, domain=domain, name=name, origin=models.TopicOrigin.STARTER, removed=True)
     user.topics_chosen_at = sqlalchemy.func.now()
     db.flush()
+
+    for source in analyzed_sources(db, user_id=user.id):
+        enqueue_file_topic(db, source=source)
 
 
 def live_topics(db: sqlalchemy.orm.Session, *, user_id: int) -> list[models.Topic]:

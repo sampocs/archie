@@ -87,7 +87,7 @@ def episodes(
     db.commit()
     try:
         items = podcast_feed.parse_feed(podcast_feed.fetch_feed(resolved.feed_url))
-    except (httpx.HTTPError, TimeoutError, xml.etree.ElementTree.ParseError, ValueError) as error:
+    except (httpx.HTTPError, httpx.InvalidURL, TimeoutError, xml.etree.ElementTree.ParseError, ValueError) as error:
         raise fastapi.HTTPException(
             status_code=fastapi.status.HTTP_502_BAD_GATEWAY, detail="couldn't read the feed"
         ) from error
@@ -157,4 +157,4 @@ def _episode_of(db: orm.Session, *, source: models.Source) -> dict[str, Any] | N
 
 
 def _not_found() -> fastapi.HTTPException:
-    return fastapi.HTTPException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="no such source text")
+    return fastapi.HTTPException(status_code=fastapi.status.HTTP_404_NOT_FOUND, detail="source not found")

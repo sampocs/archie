@@ -29,8 +29,9 @@ export function ShareSheet(props: InitialProps) {
   const [choice, setChoice] = useState<CaptureChoice>(EMPTY_CHOICE);
   const [phase, setPhase] = useState<Phase>({ name: "editing" });
 
-  // Not awaited: the sheet renders in the system font until Geist loads rather than waiting on it.
-  useFonts(fontAssets);
+  // Text set in a Geist family that isn't registered yet renders invisibly in the extension, so wait
+  // for the fonts (or their failure) before drawing anything, as the root layout does in the app.
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
 
   useEffect(() => {
     if (phase.name !== "saved") return;
@@ -49,6 +50,8 @@ export function ShareSheet(props: InitialProps) {
       setPhase({ name: "rejected", reason: error instanceof Error ? error.message : String(error) });
     }
   }
+
+  if (!fontsLoaded && !fontError) return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: theme.spacing.gutterCards, gap: theme.spacing.lg }}>

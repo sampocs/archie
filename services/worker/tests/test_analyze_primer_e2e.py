@@ -107,6 +107,22 @@ def test_newsletter_analyze_writes_a_summary_but_no_cards(engine: sqlalchemy.Eng
     assert [job.kind for job in _jobs(engine)] == [models.JobKind.ANALYZE.value]
 
 
+def test_a_newsletter_analyzed_after_going_deeper_gets_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """Once the user went deeper the newsletter is consumed, and the re-run analyze gives it cards."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT, kind=models.SourceKind.NEWSLETTER)
+    with sqlalchemy.orm.Session(engine) as db:
+        source = db.get(models.Source, source_id)
+        assert source is not None
+        source.state = models.SourceState.CONSUMED.value
+        db.commit()
+    _enqueue(engine, source_id, models.JobKind.ANALYZE)
+
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert MIN_CARDS <= len(_cards(engine, source_id)) <= MAX_CARDS
+
+
 def test_analyze_and_primer_together_make_the_source_ready(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """The primer is stored as markdown from Sonnet, and the second of the two steps flips the source to ready."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)

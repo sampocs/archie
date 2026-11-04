@@ -20,6 +20,7 @@ import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, jobs, models, pipeline, session
 from archie_shared import config
+from archie_shared.domains import Domain
 from archie_testing import recording
 from archie_worker import errors, handlers, llm, loop, prompts
 
@@ -130,6 +131,34 @@ def test_analyze_and_primer_together_make_the_source_ready(engine: sqlalchemy.En
     assert source.change_seq > seq_before_ready
     assert {job.status for job in _jobs(engine)} == {models.JobStatus.DONE.value}
     assert [call.step for call in _llm_calls(engine)] == [models.JobKind.ANALYZE.value, models.JobKind.PRIMER.value]
+
+
+def test_analyze_queues_filing_for_a_user_who_has_chosen_topics(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """A never-filed source of a user with topics gets a `file_topic` job after its analyze."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT)
+    _choose_topics(engine, source_id)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE)
+
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    [analyze, filing] = _jobs(engine)
+    assert (analyze.kind, analyze.status) == (models.JobKind.ANALYZE.value, models.JobStatus.DONE.value)
+    assert (filing.kind, filing.status) == (models.JobKind.FILE_TOPIC.value, models.JobStatus.QUEUED.value)
+    assert filing.payload == {pipeline.SOURCE_ID_KEY: str(source_id)}
+
+
+def test_reanalyzing_a_filed_source_does_not_refile_it(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """A source that already has a domain keeps its filing: no `file_topic` job is queued."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT)
+    _choose_topics(engine, source_id, filed_domain=Domain.STARTUPS)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE)
+
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert [job.kind for job in _jobs(engine)] == [models.JobKind.ANALYZE.value]
+    assert _source(engine, source_id).domain == Domain.STARTUPS.value
 
 
 def test_entertainment_gets_a_summary_but_no_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
@@ -360,6 +389,17 @@ def _add_source(
             )
         db.commit()
     return source_id
+
+
+def _choose_topics(engine: sqlalchemy.Engine, source_id: uuid.UUID, *, filed_domain: Domain | None = None) -> None:
+    """Mark the source's user as having chosen topics, and the source as filed under `filed_domain` if given."""
+    with sqlalchemy.orm.Session(engine) as db:
+        source = db.get_one(models.Source, source_id)
+        changes.lock_user_writes(db, source.user_id)
+        db.get_one(models.User, source.user_id).topics_chosen_at = sqlalchemy.func.now()
+        if filed_domain is not None:
+            source.domain = filed_domain.value
+        db.commit()
 
 
 def _enqueue(engine: sqlalchemy.Engine, source_id: uuid.UUID, *steps: models.JobKind) -> None:

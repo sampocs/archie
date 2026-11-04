@@ -12,7 +12,7 @@ from typing import Any
 
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, models, pipeline
+from archie_db import changes, models, pipeline, user_topics
 
 from archie_worker import llm, prompts, timestamps
 from archie_worker.handlers import _llm_step
@@ -54,6 +54,11 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     if analysis["is_educational"] and run.kind != models.SourceKind.NEWSLETTER:
         _insert_cards(db, source=source, artifact_id=summary.id, cards=analysis["cards"])
     pipeline.finish_step(db, source=source)
+
+    # File each source once, after its first summary; a re-analysis never overrides a topic the user chose.
+    user = db.get_one(models.User, source.user_id)
+    if source.domain is None and user.topics_chosen_at is not None:
+        user_topics.enqueue_file_topic(db, source=source)
 
 
 def _clean_timestamps(analysis: dict[str, Any]) -> None:

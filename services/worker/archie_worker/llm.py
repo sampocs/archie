@@ -47,6 +47,7 @@ class ModelPair:
 ANALYZE_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 PRIMER_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 CORRECTIONS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+FILE_TOPIC_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 
 
 @dataclass(frozen=True)

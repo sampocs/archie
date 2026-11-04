@@ -75,6 +75,7 @@ class _Show:
     name: str
     feed_url: str
     itunes_id: int | None
+    artwork_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -85,17 +86,17 @@ class _Match:
     item: podcast_feed.FeedItem
 
 
-def resolve(engine: sqlalchemy.Engine, *, link: urls.PodcastLink) -> ResolvedEpisode:
-    """Find the linked episode in its show's RSS feed.
+def resolve(engine: sqlalchemy.Engine, *, link: urls.PodcastLink, episode_guid: str | None = None) -> ResolvedEpisode:
+    """Find the linked episode in its show's RSS feed, or the feed item with `episode_guid` when the user chose one.
 
     Raises `PermanentJobError` with `SPOTIFY_ONLY` when iTunes knows no feed for a Spotify show, and with
     `EPISODE_NOT_FOUND` when the episode isn't in the feed (or Apple's lookup lacks it).
     """
     if link.platform == urls.PodcastPlatform.SPOTIFY:
-        return _resolve_spotify(engine, episode_id=link.episode_id)
+        return _resolve_spotify(engine, episode_id=link.episode_id, episode_guid=episode_guid)
 
     assert link.show_id is not None
-    return _resolve_apple(show_id=link.show_id, episode_id=int(link.episode_id))
+    return _resolve_apple(show_id=link.show_id, episode_id=int(link.episode_id), episode_guid=episode_guid)
 
 
 def spotify_episode_from_page(page: str) -> SpotifyEpisode:
@@ -145,7 +146,7 @@ def name_key(name: str) -> str:
     return " ".join(name.lower().split())
 
 
-def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str) -> ResolvedEpisode:
+def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str, episode_guid: str | None) -> ResolvedEpisode:
     spotify = _read_spotify_page(episode_id=episode_id)
 
     registered = _registered_show(engine, show_name=spotify.show_name)
@@ -154,10 +155,12 @@ def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str) -> ResolvedE
         _logger.info("No feed for Spotify show %r", spotify.show_name)
         raise errors.PermanentJobError(errors.FailureReason.SPOTIFY_ONLY)
 
-    match = _match_registered_or_searched(spotify, show=show, is_registered=registered is not None)
+    match = _match_registered_or_searched(
+        spotify, show=show, is_registered=registered is not None, episode_guid=episode_guid
+    )
     if match is None and registered is not None:
         # The remembered feed may be stale (the show moved hosts), so search once more before giving up.
-        match = _match_in_searched_feed(spotify, registered=registered)
+        match = _match_in_searched_feed(spotify, registered=registered, episode_guid=episode_guid)
 
     if match is None:
         _logger.info("Episode %r not found in the feed of %r", spotify.title, spotify.show_name)
@@ -165,16 +168,23 @@ def _resolve_spotify(engine: sqlalchemy.Engine, *, episode_id: str) -> ResolvedE
 
     # Only a matched feed is remembered, so a wrong top search hit never sticks; a changed feed replaces the old row.
     _remember_show(engine, show=match.show)
-    return _resolved(item=match.item, show_name=match.show.name, feed_url=match.show.feed_url)
+    return _resolved(
+        item=match.item,
+        show_name=match.show.name,
+        feed_url=match.show.feed_url,
+        artwork_url=match.show.artwork_url,
+    )
 
 
-def _match_registered_or_searched(spotify: SpotifyEpisode, *, show: _Show, is_registered: bool) -> _Match | None:
+def _match_registered_or_searched(
+    spotify: SpotifyEpisode, *, show: _Show, is_registered: bool, episode_guid: str | None
+) -> _Match | None:
     """Match in `show`'s feed; a remembered feed that is gone (404/410) or unreadable counts as "episode not there"."""
     if not is_registered:
-        return _match_spotify_episode(spotify, show=show)
+        return _match_spotify_episode(spotify, show=show, episode_guid=episode_guid)
 
     try:
-        return _match_spotify_episode(spotify, show=show)
+        return _match_spotify_episode(spotify, show=show, episode_guid=episode_guid)
     except httpx.HTTPStatusError as error:
         if error.response.status_code not in _GONE_STATUSES:
             raise
@@ -184,21 +194,26 @@ def _match_registered_or_searched(spotify: SpotifyEpisode, *, show: _Show, is_re
     return None
 
 
-def _match_spotify_episode(spotify: SpotifyEpisode, *, show: _Show) -> _Match | None:
-    item = best_match(title=spotify.title, published=spotify.published, items=_read_feed(show.feed_url))
+def _match_spotify_episode(spotify: SpotifyEpisode, *, show: _Show, episode_guid: str | None) -> _Match | None:
+    items = _read_feed(show.feed_url)
+    item = (
+        podcast_feed.item_by_guid(items=items, guid=episode_guid)
+        if episode_guid
+        else best_match(title=spotify.title, published=spotify.published, items=items)
+    )
     return _Match(show=show, item=item) if item else None
 
 
-def _match_in_searched_feed(spotify: SpotifyEpisode, *, registered: _Show) -> _Match | None:
+def _match_in_searched_feed(spotify: SpotifyEpisode, *, registered: _Show, episode_guid: str | None) -> _Match | None:
     """The episode in the searched feed, when search finds one other than the registered feed that lacked it."""
     searched = _search_show(show_name=spotify.show_name)
     if searched is None or searched.feed_url == registered.feed_url:
         return None
 
-    return _match_spotify_episode(spotify, show=searched)
+    return _match_spotify_episode(spotify, show=searched, episode_guid=episode_guid)
 
 
-def _resolve_apple(*, show_id: str, episode_id: int) -> ResolvedEpisode:
+def _resolve_apple(*, show_id: str, episode_id: int, episode_guid: str | None) -> ResolvedEpisode:
     lookup = _fetch_json(url=f"{ITUNES_LOOKUP_URL}?id={show_id}&entity=podcastEpisode&limit={_LOOKUP_EPISODE_LIMIT}")
     results: list[dict[str, Any]] = lookup.get("results", [])
     show = next((result for result in results if result.get("wrapperType") == "track" and result.get("feedUrl")), None)
@@ -215,16 +230,17 @@ def _resolve_apple(*, show_id: str, episode_id: int) -> ResolvedEpisode:
         raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
 
     items = _read_feed(show["feedUrl"])
-    item = podcast_feed.item_by_guid(items=items, guid=apple_episode.get("episodeGuid")) or best_match(
-        title=title,
-        published=_apple_date(release_date),
-        items=items,
+    item = (
+        podcast_feed.item_by_guid(items=items, guid=episode_guid)
+        if episode_guid
+        else podcast_feed.item_by_guid(items=items, guid=apple_episode.get("episodeGuid"))
+        or best_match(title=title, published=_apple_date(release_date), items=items)
     )
     if item is None:
         _logger.info("Apple episode %r not found in the feed of show %s", title, show_id)
         raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
 
-    return _resolved(item=item, show_name=show_name, feed_url=show["feedUrl"])
+    return _resolved(item=item, show_name=show_name, feed_url=show["feedUrl"], artwork_url=show.get("artworkUrl600"))
 
 
 def _read_spotify_page(*, episode_id: str) -> SpotifyEpisode:
@@ -272,7 +288,9 @@ def _search_show(*, show_name: str) -> _Show | None:
     if hit is None:
         return None
 
-    return _Show(name=show_name, feed_url=hit["feedUrl"], itunes_id=hit.get("collectionId"))
+    return _Show(
+        name=show_name, feed_url=hit["feedUrl"], itunes_id=hit.get("collectionId"), artwork_url=hit.get("artworkUrl600")
+    )
 
 
 def best_search_hit(*, show_name: str, results: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
@@ -337,7 +355,9 @@ def _fetch_json(*, url: str) -> dict[str, Any]:
     return json.loads(body)
 
 
-def _resolved(*, item: podcast_feed.FeedItem, show_name: str, feed_url: str) -> ResolvedEpisode:
+def _resolved(
+    *, item: podcast_feed.FeedItem, show_name: str, feed_url: str, artwork_url: str | None
+) -> ResolvedEpisode:
     assert item.audio_url is not None
     episode = episode_content.PodcastEpisode(
         show_name=show_name,
@@ -347,6 +367,7 @@ def _resolved(*, item: podcast_feed.FeedItem, show_name: str, feed_url: str) -> 
         guid=item.guid,
         audio_url=item.audio_url,
         duration_s=item.duration_s,
+        image_url=item.image_url or artwork_url,
     )
     return ResolvedEpisode(episode=episode, transcripts=item.transcripts)
 

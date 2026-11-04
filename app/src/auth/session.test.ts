@@ -32,7 +32,7 @@ jest.mock("@/db/client", () => {
     CREATE TABLE sources (id text PRIMARY KEY NOT NULL, url text NOT NULL, title text, kind text NOT NULL, state text NOT NULL,
       intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text,
       processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
-      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text);
+      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text, sender text);
     CREATE TABLE artifacts (id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, version integer NOT NULL,
       content text NOT NULL, is_current integer NOT NULL, created_at text NOT NULL);
     CREATE TABLE cards (id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, question text NOT NULL,

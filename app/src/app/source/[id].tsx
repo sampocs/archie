@@ -11,6 +11,7 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { Markdown } from "@/ui/Markdown";
 import { ProcessingLine } from "@/ui/ProcessingLine";
+import { sourceByline } from "@/ui/sourceLabels";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 type TimedItem = { timestamp: string | null };
@@ -68,17 +69,13 @@ export default function SourceScreen() {
   );
 }
 
-function hostOf(url: string): string {
-  return URL.canParse(url) ? new URL(url).hostname : url;
-}
-
 function SourceHeader({ source }: { source: typeof schema.sources.$inferSelect }) {
   const theme = useTheme();
 
   return (
     <View style={{ gap: theme.spacing.sm }}>
       <Text variant="secondary" tone="ink3">
-        {source.kind} · {hostOf(source.url)}
+        {source.kind} · {sourceByline(source)}
       </Text>
       <ProcessingLine source={source} />
     </View>
@@ -99,6 +96,7 @@ function TimestampChip({ timestamp }: { timestamp: string | null }) {
 
   return (
     <View
+      testID="timestamp"
       style={{
         backgroundColor: theme.colors.press,
         borderRadius: theme.radii.chipSmall,

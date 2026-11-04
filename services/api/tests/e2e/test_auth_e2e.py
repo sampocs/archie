@@ -54,3 +54,23 @@ def test_apple_sign_in_rejects_an_invalid_token(live_stack: LiveStack, monkeypat
     response = live_stack.client.post("/auth/apple", json={"identity_token": "not-a-jwt"})
 
     assert response.status_code == 401
+
+
+def test_me_has_no_ingest_address_without_a_domain(live_stack: LiveStack, monkeypatch: pytest.MonkeyPatch) -> None:
+    """With INGEST_EMAIL_DOMAIN unset the newsletter address isn't offered."""
+    monkeypatch.delenv("INGEST_EMAIL_DOMAIN", raising=False)
+    authed = live_stack.authed(live_stack.sign_in())
+
+    assert authed.get("/me").json()["ingest_address"] is None
+
+
+def test_me_returns_the_users_ingest_address(live_stack: LiveStack, monkeypatch: pytest.MonkeyPatch) -> None:
+    """With the domain set, /me gives `<10-char token>@<domain>`, stable across calls."""
+    monkeypatch.setenv("INGEST_EMAIL_DOMAIN", "archiesecondbrain.com")
+    authed = live_stack.authed(live_stack.sign_in(apple_sub="newsletter-reader"))
+
+    address = authed.get("/me").json()["ingest_address"]
+    token, _, domain = address.partition("@")
+
+    assert (len(token), domain) == (10, "archiesecondbrain.com")
+    assert authed.get("/me").json()["ingest_address"] == address

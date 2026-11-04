@@ -1,0 +1,215 @@
+interactions:
+- request:
+    body: '{"max_tokens":6000,"messages":[{"role":"user","content":"Domain: Macro\nTopic:
+      Fed & monetary policy\n\nThe user''s sources on this topic (for emphasis only):\n-
+      Powell''s Jackson Hole speech\n- Why the yield curve inverted"}],"model":"claude-sonnet-5-5","system":"You
+      write topic primers for a personal learning app. A topic primer gives the general
+      background on one topic (for example \"How the Fed works\" for the topic \"Fed
+      & monetary policy\"): the core concepts, how the machinery works, the key players,
+      a little history, the rough numbers worth knowing, and the live debates. It
+      is about the topic, not about any one source.\n\nThe user lists the titles of
+      their own sources on the topic. Use them only to decide what to emphasize, never
+      as material to summarize. Write for a smart beginner: friendly, no assumed jargon,
+      a 5-8 minute read (roughly 900-1400 words). Use markdown with short sections
+      and a title.\n\nWrite in plain, conversational English for a smart reader who
+      is new to the subject. Short sentences. Define any jargon the first time it
+      appears. Prefer concrete examples and rough numbers (\"~1 GW\", not \"1.07 GW\")."}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '1143'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: "{\"model\":\"claude-sonnet-5-5\",\"id\":\"msg_011CgiRotnnmHzkvWtbydKFD\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"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\"},{\"type\":\"text\",\"text\":\"#
+        Fed & Monetary Policy: The Background\\n\\n## The one-sentence version\\n\\nThe
+        Federal Reserve (the \\\"Fed\\\") is the US central bank. Its main job is
+        to steer borrowing costs up or down so that prices stay stable and most people
+        who want jobs can find them.\\n\\n## The mandate: two goals\\n\\nCongress
+        gave the Fed a **dual mandate**:\\n\\n1. **Stable prices.** The Fed defines
+        this as 2% inflation per year, measured by a price gauge called PCE (personal
+        consumption expenditures).\\n2. **Maximum employment.** There's no fixed number.
+        It means roughly \\\"as many people working as the economy can sustain without
+        overheating.\\\"\\n\\nThese goals can pull against each other. Cutting rates
+        helps jobs but can push up inflation. Raising rates cools inflation but can
+        cost jobs. Most Fed debates come down to which risk is bigger right now.\\n\\n##
+        Who makes the decisions\\n\\n- **The Board of Governors** in Washington has
+        7 members, appointed by the President and confirmed by the Senate. The **Chair**
+        (Jerome Powell since 2018) is the public face.\\n- **12 regional Reserve Banks**
+        (New York, Kansas City, and so on) do research and supervise banks.\\n- **The
+        FOMC** (Federal Open Market Committee) sets interest rate policy. It has 12
+        voters: the 7 governors, the New York Fed president, and 4 other regional
+        presidents who rotate in. It meets 8 times a year.\\n\\nThe Fed is designed
+        to be **independent**. Politicians can't overrule its rate decisions. The
+        idea is that a central bank insulated from elections is less tempted to juice
+        the economy before a vote.\\n\\n## The main tool: the policy rate\\n\\nThe
+        Fed's headline lever is the **federal funds rate**. This is the rate banks
+        charge each other for overnight loans. The Fed doesn't set it directly. It
+        sets a target range (for example, 4.25%\u20134.50%) and uses other tools to
+        keep the market inside it.\\n\\nHere's how a change ripples out:\\n\\n1. The
+        Fed raises its target rate.\\n2. Short-term borrowing gets more expensive
+        for banks.\\n3. Banks pass that along: higher rates on credit cards, car loans,
+        business loans, and, indirectly, mortgages.\\n4. People and companies borrow
+        and spend less.\\n5. Demand cools, hiring slows, and price increases ease.\\n\\nCutting
+        rates runs the same chain in reverse.\\n\\nOne catch: this works with **long
+        and variable lags**. A rate move can take a year or more to fully hit the
+        economy, and nobody knows the exact timing. That's why the Fed is always steering
+        by looking ahead, like driving while looking mostly in the rearview mirror.\\n\\n##
+        The other tools\\n\\n- **The balance sheet.** The Fed owns Treasury bonds
+        and mortgage-backed securities. Buying them pushes long-term rates down. That's
+        **quantitative easing (QE)**. Letting them run off, or selling them, is **quantitative
+        tightening (QT)**. The balance sheet went from under $1 trillion before 2008
+        to about $9 trillion by 2022.\\n- **Forward guidance.** Simply *telling* markets
+        what it plans to do. Markets move on expectations, so words matter almost
+        as much as actions.\\n- **Administered rates.** The Fed pays banks interest
+        on the reserves they park with it. This sets a floor under short-term rates.\\n\\n##
+        Why speeches and press conferences matter\\n\\nMarkets trade on what they
+        think the Fed will do next, so the Fed's communication is part of policy.
+        After each meeting there's a statement, a press conference, and a \\\"dot
+        plot\\\" showing where each official thinks rates are heading. The most-watched
+        stage of the year is the **Jackson Hole symposium**, a gathering the Kansas
+        City Fed hosts each August in Wyoming. Chairs often use it to signal a big
+        shift in thinking, or to reset market expectations. Even a short speech there
+        can move stocks and bonds.\\n\\n## Reading the yield curve\\n\\nA **Treasury
+        yield** is the interest rate the US government pays to borrow for a set period.
+        The **yield curve** plots those yields from short maturities (3 months, 2
+        years) to long ones (10, 30 years).\\n\\nNormally the curve slopes **upward**.
+        Lenders want more interest for locking up money longer.\\n\\nAn **inversion**
+        is when short-term yields rise *above* long-term yields. Common checks are
+        the 2-year versus the 10-year, or the 3-month versus the 10-year.\\n\\nWhy
+        does it happen?\\n\\n- The Fed controls the short end directly. When it hikes
+        aggressively, short yields jump.\\n- Long yields reflect what investors expect
+        over many years. If they think the hikes will slow the economy and force rate
+        cuts later, long yields stay lower.\\n\\nSo an inversion is the bond market
+        saying, \\\"Rates are high now, but they won't stay this high.\\\" Historically,
+        an inverted curve has come before most US recessions since the 1960s, usually
+        with a lag of 6 to 24 months. That's why it's watched so closely.\\n\\nBut
+        it's a signal, not a law. The curve inverted in 2022 and stayed inverted for
+        an unusually long time, well over a year, without an obvious recession following.
+        People disagree on why. Some argue the Fed's large bond holdings distorted
+        long yields. Others point to unusually strong consumers and a tight job market,
+        or say the recession is just late.\\n\\n## A short history\\n\\n- **1913:**
+        The Fed is created, after a series of bank panics.\\n- **1970s:** Inflation
+        spirals. Fed leadership is slow to respond.\\n- **1979\u201382:** Chair Paul
+        Volcker pushes the funds rate to nearly 20%. Inflation breaks, but two recessions
+        follow. This is the founding story for \\\"the Fed must be willing to cause
+        pain to restore credibility.\\\"\\n- **1990s\u20132007:** The \\\"Great Moderation,\\\"
+        a long stretch of calm growth and low inflation.\\n- **2008\u20132015:** Financial
+        crisis. Rates go to roughly zero. QE is used at scale for the first time.\\n-
+        **2020:** Pandemic. Rates return to zero, and the balance sheet balloons.\\n-
+        **2021\u201322:** Inflation surges, hitting about 9% (by the CPI measure)
+        in mid-2022. The Fed had called it \\\"transitory\\\" and was late to react.\\n-
+        **2022\u201323:** The fastest hiking cycle in decades, from near 0% to about
+        5.25\u20135.50%.\\n- **2024 onward:** Rate cuts begin as inflation cools.\\n\\n##
+        Rough numbers worth knowing\\n\\n- Inflation target: **2%**\\n- Peak funds
+        rate in the 2023 cycle: **~5.5%**\\n- Pre-2008 balance sheet: **<$1T**. Peak:
+        **~$9T**\\n- Volcker-era peak funds rate: **~20%**\\n- FOMC meetings per year:
+        **8**\\n\\n## Live debates\\n\\n- **Was the Fed too slow in 2021?** Critics
+        say it kept rates at zero too long and misjudged inflation as temporary.\\n-
+        **The neutral rate.** There's a theoretical rate (often called **r-star**)
+        that neither speeds up nor slows down the economy. Nobody can observe it,
+        and many think it's higher than it was before the pandemic. That determines
+        whether today's rates are \\\"tight\\\" or merely normal.\\n- **Soft landing
+        or not?** Can the Fed bring inflation down without a recession? Historically
+        that's been rare.\\n- **How much should the balance sheet shrink?** QT has
+        costs and risks, and economists disagree on where to stop.\\n- **Independence
+        under pressure.** Political criticism of the Fed, and questions about its
+        role beyond price stability, keep resurfacing.\\n- **Is 2% the right target?**
+        Some argue for a higher target to leave more room to cut in downturns.\\n\\n##
+        What to take away\\n\\nThe Fed pulls one big lever (short-term rates), with
+        lags, under uncertainty, and tries to guide expectations with words. The yield
+        curve is the market's running verdict on whether that bet will work. When
+        you read about a Fed speech or an inverted curve, ask two questions: **What
+        does this say about where rates are going?** and **What does it say about
+        the risk of recession versus inflation?**\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":354,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":3435,\"output_tokens_details\":{\"thinking_tokens\":826},\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-04T19:19:35Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1999000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-04T19:20:02Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-04T19:19:34Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11999000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-04T19:19:35Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a555f896ec8b104c-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '11755'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 19:20:02 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=28571
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-288a86f609d2bc05e15f4e76c5d452d4-684372d53d8ca3a8-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

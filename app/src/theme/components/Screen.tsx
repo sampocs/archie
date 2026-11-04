@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Pressable, StyleSheet, View } from "react-native";
 // Gesture handler's ScrollView lets a drag handle's pan (the queue) win over scrolling.
 import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,8 +20,14 @@ export function Screen({ title, children, headerRight, onBack, footer }: ScreenP
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
+  // A pinned footer rides above the keyboard; otherwise a typed-in field would hide the screen's submit button.
+  // Only footer screens opt in: tab screens sit above the tab bar, which the keyboard's height already includes.
   return (
-    <View style={[styles.root, { backgroundColor: theme.colors.bg, paddingTop: insets.top }]}>
+    <KeyboardAvoidingView
+      behavior="padding"
+      enabled={footer !== undefined}
+      style={[styles.root, { backgroundColor: theme.colors.bg, paddingTop: insets.top }]}
+    >
       <View style={[styles.header, { paddingHorizontal: theme.spacing.gutterText }]}>
         <View style={styles.titleGroup}>
           {onBack ? (
@@ -54,7 +60,7 @@ export function Screen({ title, children, headerRight, onBack, footer }: ScreenP
           {footer}
         </View>
       ) : null}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

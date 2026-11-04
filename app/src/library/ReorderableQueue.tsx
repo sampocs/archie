@@ -44,6 +44,13 @@ export function ReorderableQueue({ sources, renderRow }: ReorderableQueueProps) 
   const order = sources.map((source) => source.id).join(",");
   const latestOrder = useRef(order);
   latestOrder.current = order;
+  // Row heights live on the JS side and are copied to the UI thread: reading a shared value on the JS thread returns
+  // the UI thread's copy, which lags behind the JS thread's own writes, so building the array there loses rows.
+  const heightsById = useRef(new Map<string, number>());
+
+  function publishHeights(): void {
+    drag.heights.value = sources.map((source) => heightsById.current.get(source.id) ?? QUEUE_ROW_HEIGHT);
+  }
 
   function release(): void {
     drag.from.value = NOT_DRAGGING;
@@ -54,7 +61,7 @@ export function ReorderableQueue({ sources, renderRow }: ReorderableQueueProps) 
   // A move lands once the reordered list arrives; only then does the dragged row let go of its offset.
   useEffect(() => {
     release();
-    drag.heights.value = sources.map((_, index) => drag.heights.value[index] ?? QUEUE_ROW_HEIGHT);
+    publishHeights();
     // The shared values are stable; the order is what matters.
   }, [order]);
 
@@ -71,10 +78,9 @@ export function ReorderableQueue({ sources, renderRow }: ReorderableQueueProps) 
     }, RELEASE_FALLBACK_MS);
   }
 
-  function onLayoutRow(index: number, height: number): void {
-    const heights = [...drag.heights.value];
-    heights[index] = height;
-    drag.heights.value = heights;
+  function onLayoutRow(id: string, height: number): void {
+    heightsById.current.set(id, height);
+    publishHeights();
   }
 
   return (
@@ -85,7 +91,7 @@ export function ReorderableQueue({ sources, renderRow }: ReorderableQueueProps) 
           index={index}
           drag={drag}
           onMove={onMove}
-          onLayout={(height) => onLayoutRow(index, height)}
+          onLayout={(height) => onLayoutRow(source.id, height)}
           divider={index > 0 ? theme.colors.line : null}
         >
           {(handle) => renderRow(source, index, handle)}

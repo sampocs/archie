@@ -18,6 +18,8 @@ export const sources = sqliteTable("sources", {
   note: text("note"),
   prepMe: integer("prep_me").notNull().default(0),
   mergedIntoId: text("merged_into_id"),
+  // Newsletter sender (display name or address); null for other kinds.
+  sender: text("sender"),
 });
 
 export const artifacts = sqliteTable("artifacts", {

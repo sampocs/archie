@@ -9,6 +9,8 @@ dependencies = [
   "httpx>=0.28.1",
   "anthropic>=2.4",
   "trafilatura>=2.3.1",
+  "defusedxml>=0.7.1",
+  "youtube-transcript-api>=1.2",
 ]
 
 [project.scripts]

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import urllib.parse
+from dataclasses import dataclass
 from enum import StrEnum
 
 # Query parameters that only track where a link was shared from. `s` and `t` are X/YouTube share noise.
@@ -22,6 +23,11 @@ PODCAST_HOSTS = frozenset({"open.spotify.com", "podcasts.apple.com"})
 
 # `/<handle>/status/<id>` or `/i/article/<id>` and so on; a profile (`/naval`) has no id.
 _X_POST_PATH = re.compile(r"^/(?:[^/]+/)+(?:status|article)/(\d+)(?:/|$)")
+_SPOTIFY_EPISODE_PATH = re.compile(r"^/(?:intl-[a-z]+/)?episode/([A-Za-z0-9]+)/?$")
+_APPLE_PODCAST_PATH = re.compile(r"^/[a-z]{2}/podcast/[^/]+/id(\d+)/?$")
+_APPLE_EPISODE_ID = re.compile(r"^\d+$")
+_YOUTUBE_ID = re.compile(r"^[A-Za-z0-9_-]+$")
+_YOUTUBE_ID_PATH = re.compile(r"^/(?:shorts|live)/([A-Za-z0-9_-]+)/?$")
 _DEFAULT_PORTS = {"http": 80, "https": 443}
 _X_CANONICAL_URL = "https://x.com/i/status/{post_id}"
 
@@ -89,4 +95,58 @@ def _x_post_id_for(*, host: str, path: str) -> str | None:
     if host not in X_HOSTS:
         return None
     match = _X_POST_PATH.match(path)
+    return match.group(1) if match else None
+
+
+class PodcastPlatform(StrEnum):
+    """Which podcast app a shared episode link came from."""
+
+    SPOTIFY = "spotify"
+    APPLE = "apple"
+
+
+@dataclass(frozen=True)
+class PodcastLink:
+    """A podcast episode link: the platform's episode id, and the show id when the link carries one (Apple only)."""
+
+    platform: PodcastPlatform
+    episode_id: str
+    show_id: str | None
+
+
+def podcast_link(url: str) -> PodcastLink | None:
+    """Parse a Spotify or Apple Podcasts episode link; show links and everything else give None."""
+    parts = urllib.parse.urlsplit(url.strip())
+    host = _bare_host(parts.netloc, scheme=parts.scheme)
+
+    if host == "open.spotify.com":
+        match = _SPOTIFY_EPISODE_PATH.match(parts.path)
+        return PodcastLink(platform=PodcastPlatform.SPOTIFY, episode_id=match.group(1), show_id=None) if match else None
+
+    if host == "podcasts.apple.com":
+        match = _APPLE_PODCAST_PATH.match(parts.path)
+        episode_ids = urllib.parse.parse_qs(parts.query).get("i", [])
+        if not match or not episode_ids or not _APPLE_EPISODE_ID.match(episode_ids[0]):
+            return None
+        return PodcastLink(platform=PodcastPlatform.APPLE, episode_id=episode_ids[0], show_id=match.group(1))
+
+    return None
+
+
+def youtube_video_id(url: str) -> str | None:
+    """The video id of a watch, youtu.be, shorts or live link; channels, playlists and other URLs give None."""
+    parts = urllib.parse.urlsplit(url.strip())
+    host = _bare_host(parts.netloc, scheme=parts.scheme)
+
+    if host == "youtu.be":
+        video_id = parts.path.strip("/")
+        return video_id if _YOUTUBE_ID.match(video_id) else None
+
+    if host != "youtube.com":
+        return None
+    if parts.path == "/watch":
+        video_ids = urllib.parse.parse_qs(parts.query).get("v", [])
+        return video_ids[0] if video_ids and _YOUTUBE_ID.match(video_ids[0]) else None
+
+    match = _YOUTUBE_ID_PATH.match(parts.path)
     return match.group(1) if match else None

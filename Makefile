@@ -95,8 +95,12 @@ reset-local-data: db-up
 maestro: reset-local-data
 	@PATH="$(MAESTRO_PATH)" maestro test maestro/add_link.yaml maestro/sign_out.yaml maestro/source_page.yaml
 
+# The podcast flow resolves and summarizes a real episode, so it spends real API credits; run it on purpose.
+maestro-podcast: reset-local-data
+	@PATH="$(MAESTRO_PATH)" maestro test maestro/add_podcast.yaml
+
 # Starts and stops the backend itself, to take the phone offline mid-flow.
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-offline

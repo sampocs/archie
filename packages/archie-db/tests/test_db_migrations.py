@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import alembic.autogenerate
 import alembic.migration
 import pytest
@@ -60,6 +62,25 @@ def test_0002_backfills_existing_m1_sources(test_database_url: str) -> None:
         row = connection.execute(sqlalchemy.text("SELECT normalized_url, processing, change_seq FROM sources")).one()
     assert row.change_seq > old_change_seq
     assert (row.normalized_url, row.processing) == ("https://example.com/old", "unsupported")
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
+    engine.dispose()
+
+
+def test_0003_gives_existing_users_an_ingest_token(test_database_url: str) -> None:
+    """Users that predate M3 each get a distinct 10-character lowercase-or-digit token."""
+    migrate.downgrade(test_database_url)
+    migrate.upgrade(test_database_url, "0002")
+    engine = session.engine_for(test_database_url)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub) VALUES ('sub-a'), ('sub-b')"))
+
+    migrate.upgrade(test_database_url)
+
+    with engine.connect() as connection:
+        tokens = [row.ingest_token for row in connection.execute(sqlalchemy.text("SELECT ingest_token FROM users"))]
+    assert len(set(tokens)) == 2
+    assert all(re.fullmatch(r"[a-z0-9]{10}", token) for token in tokens)
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
     engine.dispose()

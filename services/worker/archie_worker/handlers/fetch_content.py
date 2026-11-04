@@ -1,11 +1,12 @@
-"""`fetch_content`: get a source's readable text, store it as a `text` artifact, and queue analyze and primer.
+"""`fetch_content`: get a source's readable text, store it as a `text` artifact, and queue the kind's next steps.
 
 The text comes from the Safari capture when the phone sent one, else from the X thread (for X posts) or
 the fetched page (for articles). Too little text, or a page that answers 401, 403, 404, 410 or 451 (a
 paywall, block or missing page), fails the job at once as `TEXT_MISSING`, since fetching the same page
-again will not help; the user is told to share it from Safari instead. Other failures are retried. Following the loop's
-handler contract, the source is read and marked `processing` in a committed transaction before any
-outside call, and the result is written under the user's lock afterwards.
+again will not help; the user is told to share it from Safari instead. A newsletter has no page to fetch (its URL is
+`newsletter:<message-id>`), so one without a capture, or with too little text, fails as `NEWSLETTER_UNREADABLE`.
+Other failures are retried. Following the loop's handler contract, the source is read and marked `processing` in a
+committed transaction before any outside call, and the result is written under the user's lock afterwards.
 """
 
 from __future__ import annotations
@@ -14,23 +15,23 @@ import uuid
 from dataclasses import dataclass
 
 import httpx
+import sqlalchemy
 import sqlalchemy.orm
+import youtube_transcript_api
 from archie_db import changes, models, pipeline
-from archie_shared import logging, urls
+from archie_shared import config, logging, urls
 
 from archie_worker import content, errors
-from archie_worker.content import article, x
-from archie_worker.handlers import fetch_title
+from archie_worker.content import article, podcast, transcripts, x, youtube
+from archie_worker.content import episode as episode_content
+from archie_worker.handlers import _text, fetch_title
 
 _PAGE_TIMEOUT_SECONDS = 15
 _PAGE_MAX_BYTES = 5_000_000
 _MIN_ARTICLE_WORDS = 50
 _MIN_X_WORDS = 1
-_MAX_TITLE_LENGTH = 500
 # Page statuses that mean "paywalled, blocked or gone"; a retry cannot fix them, sharing from Safari can.
 _PERMANENT_PAGE_STATUSES = frozenset({401, 403, 404, 410, 451})
-# Postgres text and jsonb values reject NUL, so a title or page text containing one would fail the job forever.
-_NUL = "\x00"
 
 _logger = logging.get_logger(logging.LoggerName.WORKER, "fetch_content")
 
@@ -48,7 +49,7 @@ class _SourceInput:
 
 
 def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
-    """Fetch the source's text and store it as the current `text` artifact, then queue analyze and primer."""
+    """Fetch the source's text and store it as the current `text` artifact, then queue the kind's next steps."""
     source = db.get(models.Source, uuid.UUID(job.payload[pipeline.SOURCE_ID_KEY]))
     if source is None or source.deleted_at is not None:
         return
@@ -57,29 +58,56 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     if source_input is None:
         return
 
+    if source_input.kind == models.SourceKind.YOUTUBE:
+        _fetch_youtube(db, source=source, source_input=source_input)
+        return
+
+    if source_input.kind == models.SourceKind.PODCAST:
+        _fetch_podcast(db, source=source, source_input=source_input)
+        return
+
+    is_newsletter = source_input.kind == models.SourceKind.NEWSLETTER
+    if is_newsletter and source_input.capture_text is None:
+        raise errors.PermanentJobError(errors.FailureReason.NEWSLETTER_UNREADABLE)
+
     extracted = _get_text(source_input)
     word_count = len(extracted.text.split())
     minimum_words = _MIN_X_WORDS if source_input.kind == models.SourceKind.X else _MIN_ARTICLE_WORDS
     if word_count < minimum_words:
         _logger.info("Source %s has %d words, needs %d", source_input.source_id, word_count, minimum_words)
-        raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING)
+        raise errors.PermanentJobError(
+            errors.FailureReason.NEWSLETTER_UNREADABLE if is_newsletter else errors.FailureReason.TEXT_MISSING
+        )
 
-    # The user may have deleted the source during the fetch; the lock makes the refreshed state final.
-    changes.lock_user_writes(db, source_input.user_id)
-    db.refresh(source)
-    if source.deleted_at is not None:
-        return
-
-    pipeline.write_artifact(
+    _text.store_text(
         db,
         source=source,
-        kind=models.ArtifactKind.TEXT,
-        content={"text": extracted.text.replace(_NUL, "")},
-        model=None,
-        prompt_version=None,
+        text_content={content.TEXT_KEY: content.strip_nul(extracted.text)},
+        title=extracted.title,
     )
-    _set_title_if_empty(source, title=extracted.title)
-    pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.ANALYZE, models.JobKind.PRIMER])
+
+
+def _fetch_podcast(db: sqlalchemy.orm.Session, *, source: models.Source, source_input: _SourceInput) -> None:
+    """Resolve the episode, then store its published transcript as the text, or queue `transcribe` when it has none."""
+    link = urls.podcast_link(source_input.url)
+    if link is None:
+        raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
+
+    engine = db.get_bind()
+    assert isinstance(engine, sqlalchemy.Engine)
+    resolved = podcast.resolve(engine, link=link)
+    published = transcripts.fetch_best(resolved.transcripts)
+    if published is None:
+        _text.enqueue_transcribe(db, source=source, episode=resolved.episode)
+        return
+
+    episode_extra = {episode_content.EPISODE_KEY: resolved.episode.to_payload()}
+    text_content = (
+        content.timed_text_content(segments=published.segments, extra=episode_extra)
+        if published.segments
+        else {content.TEXT_KEY: content.strip_nul(published.text), **episode_extra}
+    )
+    _text.store_text(db, source=source, text_content=text_content, title=resolved.episode.title)
 
 
 def _start_processing(db: sqlalchemy.orm.Session, *, source: models.Source) -> _SourceInput | None:
@@ -133,11 +161,29 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
     return article.extract(html=page, url=source_input.url) or content.ExtractedText(title=None, text="")
 
 
-def _set_title_if_empty(source: models.Source, *, title: str | None) -> None:
-    cleaned = " ".join((title or "").replace(_NUL, "").split())[:_MAX_TITLE_LENGTH]
-    if source.title or not cleaned:
-        return
+def _fetch_youtube(db: sqlalchemy.orm.Session, *, source: models.Source, source_input: _SourceInput) -> None:
+    """Store the video's captions as timed text, titling the source from its watch page if it has no title."""
+    video_id = urls.youtube_video_id(source_input.url)
+    if video_id is None:
+        raise errors.PermanentJobError(errors.FailureReason.VIDEO_UNAVAILABLE)
 
-    source.title = cleaned
-    source.updated_at = sqlalchemy.func.now()
-    source.change_seq = changes.next_change_seq()
+    # Read before the commit that ends the transaction, so no connection is held during the outside calls.
+    has_title = bool(source.title)
+    db.commit()
+
+    supadata_api_key = config.Settings().supadata_api_key
+    try:
+        segments = youtube.fetch_segments(video_id=video_id, supadata_api_key=supadata_api_key)
+    except youtube_transcript_api.CouldNotRetrieveTranscript as error:
+        permanent_error = youtube.permanent_error_for(error)
+        if permanent_error is None:
+            raise
+        raise permanent_error from error
+
+    word_count = sum(len(segment.text.split()) for segment in segments)
+    if word_count < _MIN_ARTICLE_WORDS:
+        _logger.info("Video %s has %d caption words, needs %d", video_id, word_count, _MIN_ARTICLE_WORDS)
+        raise errors.PermanentJobError(errors.FailureReason.NO_CAPTIONS)
+
+    title = None if has_title else youtube.fetch_title(video_id=video_id)
+    _text.store_text(db, source=source, text_content=content.timed_text_content(segments=segments), title=title)

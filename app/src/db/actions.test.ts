@@ -15,7 +15,7 @@ function createTables(outboxCheck: string): string {
       id text PRIMARY KEY NOT NULL, url text NOT NULL, title text, kind text NOT NULL, state text NOT NULL,
       intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text,
       processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
-      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text
+      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text, sender text
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,

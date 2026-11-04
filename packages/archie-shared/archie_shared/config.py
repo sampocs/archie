@@ -17,6 +17,11 @@ OWNER_EMAILS_ENV = "OWNER_EMAILS"
 APPLE_AUDIENCE_ENV = "APPLE_AUDIENCE"
 ARCHIE_ENV_ENV = "ARCHIE_ENV"
 ANTHROPIC_API_KEY_ENV = "ANTHROPIC_API_KEY"
+GROQ_API_KEY_ENV = "GROQ_API_KEY"
+OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
+SUPADATA_API_KEY_ENV = "SUPADATA_API_KEY"
+INGEST_SECRET_ENV = "INGEST_SECRET"
+INGEST_EMAIL_DOMAIN_ENV = "INGEST_EMAIL_DOMAIN"
 
 
 class ConfigError(RuntimeError):
@@ -45,6 +50,11 @@ class Settings(BaseSettings):
     apple_audience: str | None = None
     archie_env: str | None = None
     anthropic_api_key: str | None = None
+    groq_api_key: str | None = None
+    openai_api_key: str | None = None
+    supadata_api_key: str | None = None
+    ingest_secret: str | None = None
+    ingest_email_domain: str | None = None
 
     def require_database_url(self) -> str:
         """Return the Postgres URL, raising a clear error if it is missing."""

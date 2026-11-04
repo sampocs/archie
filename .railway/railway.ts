@@ -51,6 +51,11 @@ export default defineRailway(() => {
       ARCHIE_ENV: "prod",
       OWNER_EMAILS: preserve(),
       ANTHROPIC_API_KEY: preserve(),
+      GROQ_API_KEY: preserve(),
+      OPENAI_API_KEY: preserve(),
+      SUPADATA_API_KEY: preserve(),
+      INGEST_SECRET: preserve(),
+      INGEST_EMAIL_DOMAIN: preserve(),
       // Pinned because the generated domain targets port 8000.
       PORT: "8000",
     },

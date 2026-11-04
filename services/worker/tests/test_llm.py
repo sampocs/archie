@@ -19,6 +19,7 @@ from decimal import Decimal
 from typing import Any
 
 import anthropic
+import httpx2
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
@@ -32,6 +33,7 @@ CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 SYSTEM_PROMPT = "Reply with the word ok."
 USER_MESSAGE = "hi"
 ENOUGH_TOKENS = 16
+INVALID_API_KEY = "sk-ant-invalid"
 ANSWER_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {"answer": {"type": "string"}},
@@ -113,6 +115,39 @@ def test_unknown_model_has_no_price() -> None:
     """An unpriced model fails loudly rather than recording a zero cost."""
     with pytest.raises(KeyError):
         llm.cost_usd(model="claude-mystery", input_tokens=1, output_tokens=1)
+
+
+def test_audio_is_priced_per_audio_hour() -> None:
+    """Audio is billed per audio hour, per provider."""
+    assert llm.audio_cost_usd(model=llm.GROQ_WHISPER, audio_seconds=Decimal(3600)) == Decimal("0.04")
+    assert llm.audio_cost_usd(model=llm.OPENAI_TRANSCRIBE, audio_seconds=Decimal(1800)) == Decimal("0.09")
+
+
+def test_unknown_audio_model_has_no_price() -> None:
+    """A transcription model without a known price raises, like an unknown chat model."""
+    with pytest.raises(KeyError):
+        llm.audio_cost_usd(model="whisper-9000", audio_seconds=Decimal(60))
+
+
+@pytest.mark.postgres
+def test_record_audio_call_stores_an_audio_cost_row(engine: sqlalchemy.Engine, context: llm.CallContext) -> None:
+    """One call writes one row: no tokens, the audio length, and its cost."""
+    transcribe_context = llm.CallContext(
+        user_id=context.user_id, source_id=context.source_id, job_id=context.job_id, step=models.JobKind.TRANSCRIBE
+    )
+
+    llm.record_audio_call(
+        engine,
+        context=transcribe_context,
+        provider=models.TranscriptProvider.GROQ,
+        model=llm.GROQ_WHISPER,
+        audio_seconds=Decimal("90.5"),
+    )
+
+    (row,) = _calls(engine)
+    assert (row.input_tokens, row.output_tokens, row.stop_reason) == (0, 0, None)
+    assert (row.audio_seconds, row.provider, row.step) == (Decimal("90.500"), "groq", "transcribe")
+    assert row.cost_usd > 0
 
 
 def test_user_without_the_owners_keys_needs_their_own() -> None:
@@ -216,6 +251,66 @@ def test_both_models_cut_off_is_a_model_output_error(
     assert all(call.cost_usd > 0 for call in calls)
 
 
+@pytest.mark.postgres
+def test_fallback_model_answers_when_the_primary_is_overloaded(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette
+) -> None:
+    """A 529 from the primary hands over to the fallback; only the answered call is recorded.
+
+    The cassette is the `llm_fallback` one with its first response replaced by Anthropic's 529 error body.
+    """
+    with cassette("llm_overloaded"):
+        completion = _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
+
+    assert completion.model == llm.SONNET
+    assert [(call.model, call.stop_reason) for call in _calls(engine)] == [(llm.SONNET, "end_turn")]
+
+
+@pytest.mark.postgres
+def test_an_overloaded_fallback_is_raised_for_the_loop_to_retry(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette
+) -> None:
+    """When the fallback answers 529 too, the error surfaces instead of being swallowed."""
+    with cassette("llm_overloaded_twice"), pytest.raises(anthropic.APIStatusError) as raised:
+        _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
+
+    assert raised.value.status_code == 529
+    assert _calls(engine) == []
+
+
+@pytest.mark.postgres
+def test_a_client_error_from_the_primary_does_not_try_the_fallback(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette
+) -> None:
+    """A 401 would fail the fallback the same way, so it is raised at once (the cassette holds a single call)."""
+    with cassette("llm_unauthorized"), pytest.raises(anthropic.AuthenticationError):
+        _complete(
+            engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS, api_key=INVALID_API_KEY
+        )
+
+    assert _calls(engine) == []
+
+
+@pytest.mark.postgres
+def test_a_dropped_connection_to_the_primary_tries_the_fallback(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The primary's request never reaches the API (a connection error); the fallback's recorded answer is used."""
+    create = anthropic.resources.messages.Messages.create
+
+    def create_unless_primary(self: Any, **kwargs: Any) -> Any:
+        if kwargs["model"] == llm.HAIKU:
+            raise anthropic.APIConnectionError(request=httpx2.Request("POST", "https://api.anthropic.com/v1/messages"))
+        return create(self, **kwargs)
+
+    monkeypatch.setattr(anthropic.resources.messages.Messages, "create", create_unless_primary)
+
+    with cassette("llm_fallback"):
+        completion = _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
+
+    assert completion.model == llm.SONNET
+
+
 def _complete(
     engine: sqlalchemy.Engine,
     context: llm.CallContext,
@@ -223,10 +318,11 @@ def _complete(
     *,
     max_tokens: int,
     json_schema: dict[str, Any] | None = None,
+    api_key: str | None = None,
 ) -> llm.Completion:
     return llm.complete(
         engine,
-        api_key=os.environ[config.ANTHROPIC_API_KEY_ENV],
+        api_key=api_key or os.environ[config.ANTHROPIC_API_KEY_ENV],
         context=context,
         models=model_pair,
         system=SYSTEM_PROMPT,

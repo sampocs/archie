@@ -1,0 +1,142 @@
+interactions:
+- request:
+    body: "--a9a14d16ac4ede7399cb89895b791dc3\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-large-v3-turbo\r\n--a9a14d16ac4ede7399cb89895b791dc3\r\nContent-Disposition:
+      form-data; name=\"response_format\"\r\n\r\nverbose_json\r\n--a9a14d16ac4ede7399cb89895b791dc3\r\nContent-Disposition:
+      form-data; name=\"language\"\r\n\r\nen\r\n--a9a14d16ac4ede7399cb89895b791dc3\r\nContent-Disposition:
+      form-data; name=\"temperature\"\r\n\r\n0\r\n--a9a14d16ac4ede7399cb89895b791dc3\r\nContent-Disposition:
+      form-data; name=\"prompt\"\r\n\r\nUPI Odd News Minute. Alligator in a bagel
+      shop, largest rubber band ball.\r\n--a9a14d16ac4ede7399cb89895b791dc3\r\nContent-Disposition:
+      form-data; name=\"file\"; filename=\"short_chunk.mp3\"\r\nContent-Type: audio/mpeg\r\n\r\n<audio
+      omitted>\r\n--a9a14d16ac4ede7399cb89895b791dc3--\r\n"
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '241298'
+      content-type:
+      - multipart/form-data; boundary=a9a14d16ac4ede7399cb89895b791dc3
+      host:
+      - api.groq.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.groq.com/openai/v1/audio/transcriptions
+  response:
+    body:
+      string: '{"error":{"message":"Invalid API Key","type":"invalid_request_error","code":"invalid_api_key"}}
+
+        '
+    headers:
+      alt-svc:
+      - h3=":443"; ma=86400
+      cache-control:
+      - private, max-age=0, no-store, no-cache, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a550d878dd5561b1-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '96'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 04:23:49 GMT
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000
+      vary:
+      - Origin
+      x-groq-region:
+      - msp
+    status:
+      code: 401
+      message: Unauthorized
+- request:
+    body: "--52c2bfd89913743e51c7463ae1b9fb0c\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\ngpt-4o-mini-transcribe\r\n--52c2bfd89913743e51c7463ae1b9fb0c\r\nContent-Disposition:
+      form-data; name=\"response_format\"\r\n\r\njson\r\n--52c2bfd89913743e51c7463ae1b9fb0c\r\nContent-Disposition:
+      form-data; name=\"language\"\r\n\r\nen\r\n--52c2bfd89913743e51c7463ae1b9fb0c\r\nContent-Disposition:
+      form-data; name=\"prompt\"\r\n\r\nUPI Odd News Minute. Alligator in a bagel
+      shop, largest rubber band ball.\r\n--52c2bfd89913743e51c7463ae1b9fb0c\r\nContent-Disposition:
+      form-data; name=\"file\"; filename=\"short_chunk_part_000.mp3\"\r\nContent-Type:
+      audio/mpeg\r\n\r\n<audio omitted>\r\n--52c2bfd89913743e51c7463ae1b9fb0c--\r\n"
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '241206'
+      content-type:
+      - multipart/form-data; boundary=52c2bfd89913743e51c7463ae1b9fb0c
+      host:
+      - api.openai.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.openai.com/v1/audio/transcriptions
+  response:
+    body:
+      string: '{"text":"I''m Ben Hooper, and this is your UPI Odd News Minute for
+        Tuesday, November 3rd, 2026. A North Carolina bagel shop''s cameras were rolling
+        when a three-foot alligator walked in through the back door and strolled through
+        the store. Surveillance camera footage shared by the Bagel Dock Express in
+        Southport shows the baby alligator walking in through the back door, which
+        had been left open, and walking through the kitchen to reach the front of
+        the store. The video shows owner Jessie Driscoll encountering the gator at
+        the front counter and briefly panicking before calling 911. Driscoll said
+        the store was not open at the time of the incident. The alligator was carted
+        away by Southport police and animal protective services. Moving on from a
+        reptile in search of locks to a Michigan man thinking outside the box, a Detroit
+        man spent over 10 years assembling an 11,578-pound rubber band ball that has
+        now been certified.","usage":{"type":"tokens","total_tokens":819,"input_tokens":618,"input_token_details":{"text_tokens":18,"audio_tokens":600},"output_tokens":201}}'
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a550d87a7be7c365-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '1074'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 04:23:51 GMT
+      openai-processing-ms:
+      - '1365'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-reset-requests:
+      - 12ms
+    status:
+      code: 200
+      message: OK
+version: 1

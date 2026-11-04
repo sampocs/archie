@@ -1,0 +1,342 @@
+interactions:
+- request:
+    body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Source
+      kind: newsletter\\nTitle: \u2615 Putting it to a vote\\nURL: newsletter:096dfb0b93b689dc20d31bf3@example.invalid\\n\\n<text>\\nGood
+      morning and welcome home to Karl Bushby. The UK native finally made it back
+      to his mother\u2019s house in England yesterday, after completing a 28-year,
+      31,000-mile walk home from Punta Arenas, Chile. Bushby\u2019s long walk, which
+      started on Nov. 1, 1998, spanned four continents and 30 countries and included
+      swimming across the English Channel. Upon arrival, his mother asked him, \u201CWhere
+      have you been?\u201D This is a good story to tell your own mom when she asks
+      why you haven\u2019t bought your ticket home for the holidays yet.\\n\u2014Abby
+      Rubenstein, Sam Klebanov, Dave Lozo, Molly Liebergall, Matty Merritt, Neal Freyman\\nIn
+      today\u2019s newsletter, we\u2019ll get into:\\nMarkets\\nNasdaq\\n25,164.32\\n-1.07%\\nS&P\\n7,541.4\\n-0.51%\\nDow\\n51,983.98\\n+0.41%\\n10-Year\\n4.894%\\n-4.0
+      bps\\nBitcoin\\n$76,829.45\\n-1.13%\\nSherwin-Williams\\n$352.37\\n+5.94%\\n*Stock
+      data as of market close, cryptocurrency data as of 5:30pm ET. Here's what these
+      numbers mean.\\nDon\u2019t forget to vote\\nWhat you need to know about the
+      midterms\\nBrandon Bell/Getty Images\\nToday is the day you get to do something
+      even more American than dipping your pizza into ranch dressing: vote. It\u2019s
+      Election Day, and today\u2019s midterm contests will determine which party controls
+      Congress, shaping the end of President Trump\u2019s second term.\\nMission control:
+      Currently, Republicans control both chambers of Congress\u2014but only by narrow
+      margins, with a 218\u2013214 majority in the House and a 53\u201347 advantage
+      in the Senate. Typically, the president\u2019s party loses seats in the midterms,
+      and recent polls suggest Democrats might flip the House. The Senate, where 35
+      seats are up for election, appears to be more of a tossup.\\nIt\u2019s the economy,
+      stupid. That adage, which emerged from Bill Clinton\u2019s presidential campaign,
+      is looking especially true today, with rising consumer prices top of mind for
+      many voters.\\nControl of Congress may inspire the most shouting from pundits,
+      but there are also 36 governorships up for grabs. Plus, local issues including:\\nLooking
+      ahead\u2026while political ad season has mercifully come to a close, we may
+      not get all the answers tonight. Vote counting could take longer in some close
+      races. There could also be legal challenges: Courts have so far rejected the
+      Trump administration\u2019s arguments over there being two candidates named
+      Dan Sullivan in Alaska\u2019s Senate race and its efforts to set aside 20,000
+      California mail-in ballots it claims were sent by noncitizens.\u2014AR\\nNeed
+      to know where to go? You can find your polling place here.\\nSponsored By SmarterAuto\\nIs
+      your car insurance getting\u2026expensive?\\nWhen was the last time you reviewed
+      your auto insurance coverage? Auto insurance needs change over time, as do vehicle
+      values, driving habits, and carrier policy options.\\nIf you\u2019ve had the
+      same policy for a while, taking a few minutes to explore what else is available
+      in your area could reveal significant opportunities to adjust your monthly budget.
+      In fact, drivers who take the time to compare top options could save up to $600
+      per year when they switch to a policy that better fits their current situation.\\nYou
+      don\u2019t need to spend hours navigating complicated paperwork to check your
+      options. Using a quick online tool, you can easily compare top insurance choices
+      side by side. Simply enter your zip code and basic vehicle information to start
+      shopping for a policy that suits your budget.\\nTry it out.\\nWorld\\nTour de
+      headlines\\nWu Xiaoling/Getty Images\\n\U0001F4F1Apple\u2019s revenue is up,
+      but its profit margins are narrowing. In his first bite at the earnings report
+      apple as CEO, John Ternus delivered a mixed bag. Revenue was better-than-expected,
+      growing 12% year over year to $114.5 billion, and the iPhone maker expects solid
+      revenue growth of between 7% and 10% over the holiday season. But investors
+      sent its stock down in after-hours trading anyway, after Ternus revealed on
+      a call with analysts that margins are shrinking due to the high cost of memory
+      and expenses related to Siri AI. With expectations sky-high for Apple as a haven
+      from Big Tech\u2019s AI turmoil, that news made investors wary. Meanwhile, if
+      you\u2019re waiting for an iPhone Duo, it might be a while: Apple said it\u2019s
+      \u201Chard to predict\u201D when supply might catch up to demand.\u2014AR\\n\U0001F4B0
+      Marvell bets $115 billion on lasers for sharks data centers. In an effort to
+      squeeze the data center boom for all its juice, chipmaker Marvell has agreed
+      to buy Lumentum, which builds lasers and other optical hardware that transmit
+      information between chips and servers. At a value of $115 billion including
+      debt, this is the second-most expensive tech transaction in history, behind
+      the SpaceX\u2013xAI merger. Though the acquisition will give Marvell another
+      foothold in AI infrastructure, the size of the deal\u2014which represents more
+      than half of Marvell\u2019s market cap\u2014and broader concerns about a potential
+      AI spending bubble have some investors on edge. Marvell and Lumentum\u2019s
+      stocks fell 13% and 19%, respectively, following yesterday\u2019s announcement.\u2014ML\\n\U0001F4C8
+      Palantir\u2019s commercial revenue outpaced government revenue for the first
+      time. The data software company reported third-quarter earnings yesterday that
+      beat Wall Street estimates and revealed that its private-sector business has
+      caught up with its public-sector business. Palantir reported $2.31 billion in
+      revenue, nearly double from the same period last year. Within that, its US commercial
+      revenue spiked 148% to $984 million as companies adopted more of its AI tools,
+      while revenue from contracts with US government entities like the Army, ICE,
+      and the IRS jumped 96% to $953 million. Palantir also lifted its full-year guidance,
+      saying it now expects $8.53 billion in 2026 revenue.\u2014ML\\nTHINGS GOT HEATED\\nHackers
+      attacked European supermarket fridges\\nFred Tanneau/Getty Images\\nBoiled gelato
+      was the plat du jour after hackers targeted fridges and freezers at dozens of
+      European supermarkets early yesterday morning. The defrosting cyberattacks had
+      temperatures reaching 122 Fahrenheit in some grocery store refrigerators across
+      Belgium, Estonia, Finland, Ireland, Luxembourg, the Netherlands, and Sweden.\\nA
+      similar cyberattack in France last month left dozens of supermarkets dealing
+      with fires (on top of preemptively steamed broccoli), forcing them to toss millions
+      of euros worth of products.\\nHow can this happen? The Belgian company Sabcobel,
+      which operates some of the fridges involved, said that hackers attacked a digital
+      system that remotely controls the devices, putting them into defrost mode. Sabcobel
+      said it had been patching software vulnerabilities over the past few weeks but
+      explained that some fridges require physical modifications. Danfoss, a Danish
+      refrigeration temperature-control systems supplier, said its tech was targeted
+      both in yesterday\u2019s hack and in the earlier French cyberattack, affecting
+      customers with non-updated software.\\nThe US might have endured a similar incident.
+      The Pentagon is investigating August hacks on several military base commissary
+      fridges that led to the mass melting of frozen foods.\\nBig picture: These fridge-to-sauna
+      transformations are heightening concerns about AI-enabled hackers attacking
+      critical infrastructure that relies on digital systems. More than 20 cyberattacks
+      on refrigeration systems have taken place this year, with some linked to Russia-aligned
+      hackers, according to cybersecurity firm Forescout.\u2014SK\\nSponsored By GLOBAL
+      X ETFS\\nAn essential but overlooked AI layer. AI servers can\u2019t run reliably
+      without one specific piece of hardware. Suppliers for it are few and most are
+      based in Asia, out of reach for many US investors. Thankfully, a Global X ETF
+      changes that.\\nDUCK, DUCK, GOOSE\\nDC voters are being served a foie gras referendum\\nNiv
+      Bavarsky\\nIf the people of Washington, DC are tired of having this issue forced
+      down their throats, imagine how the ducks feel\u2014a referendum is on the ballot
+      in the nation\u2019s capital today that would ban the sale of foie gras along
+      with the practice of overfeeding ducks through a metal tube that creates the
+      pricey dish.\\nThe measure made it to the ballot due to the work of Pro-Animal
+      Future, a lobbying group that spent nearly $400,000 and sent a cute duck to
+      DC to sway voters (the group also got a similar measure onto the ballot in Denver).
+      The group estimates that 26 DC-area restaurants serve foie gras, which is made
+      from fattened duck or goose liver.\\nThe measure is expected to pass, but businesses
+      are pushing back on the notion that stuffing ducks right before they die is
+      cruel and raising concerns that banning foods is a slippery slope. Critics also
+      say the ban could unfairly affect suppliers. Hudson Valley Foie Gras, one of
+      the two major US distributors, told Axios it\u2019s already planning a legal
+      challenge.\\nWrap it up: Even if voters say \u201Cget the duck out of here,\u201D
+      the ban wouldn\u2019t take effect until July 2027. And it could be even longer:
+      New York City voted in favor of a similar foie gras ban in 2019, but it remains
+      unenforced amid litigation.\u2014DL\\nReader Poll\\nMatty\u2019s work-life balance\\nDo
+      people care about their jobs anymore?\\nGetty Images\\nOn Tuesdays, the Brew\u2019s
+      Matty Merritt brings you the news you need to make life a little easier during
+      your 9\u20135, 5\u20139, or OOO.\\nYou\u2019re not the only one falling down
+      a Wikipedia rabbit hole on your second monitor; employee engagement at work
+      fell two percentage points last quarter compared with the previous one. Engagement
+      dropped to 29%, its lowest level in 15 years, a recent Gallup poll found.\\nConfusion
+      could be a factor. Workers reported less clarity in their roles, with just 46%
+      of respondents saying they knew what higher-ups expect from them. This was a
+      three percentage point drop compared with the previous quarter and down from
+      the high of 61% in 2015.\u2014MM\\nSponsored By Nuun\\nSip happens. Your hydration
+      routine shouldn\u2019t take more effort than your workout. Nuun turns a plain
+      bottle of water into something worth sipping: electrolytes, great flavor, one
+      tablet. No mixing, no measuring, no mess. Toss a tube in your bag and stay ahead
+      of the afternoon slump. Give your bottle a boost.\\nNews\\nWhat else is brewing\\nrecs\\n*A
+      message from our sponsor. **This is a product recommendation from our writers.
+      When you buy through this link, Morning Brew may earn a commission.\\nPlay\\nBrew
+      Mini: Jack\u2019s puzzle for today is titled \u201CProtractor,\u201D which we
+      think makes sense because it\u2019s\u2026a cute one. Play the Mini here.\\nOn
+      National Sandwich Day, here\u2019s a relevant \u201CFinal Jeopardy\u201D clue
+      from a few years back:\\nThis sandwich was first sold in 1962 as an attempt
+      to give the many Catholics of Cincinnati something to eat on Fridays during
+      Lent. (You must phrase your answer in the form of a question for full credit.)\\nShare
+      the Brew\\nShare the Brew, watch your referral count climb, and unlock brag-worthy
+      swag.\\nYour friends get smarter. You get rewarded. Win-win.\\nYour referral
+      count: 0\\nClick to Share\\nOr copy & paste your referral link to others:\\nmorningbrew.com/r/\\nAnswer\\nWhat
+      is the Filet-o-Fish?\\nWord of the Day\\nToday\u2019s Word of the Day is: adage,
+      meaning \u201Ca short, memorable saying that expresses a general truth.\u201D
+      Thanks to Heather from Milwaukee for a suggestion universally acknowledged to
+      be good. Submit another Word of the Day here.\\n\u2724 A Note From Citi\\nCitibank,
+      N.A., Member FDIC\\nWritten by Abigail Rubenstein, Sam Klebanov, Dave Lozo,
+      Molly Liebergall, Matty Merritt, and Neal Freyman\\nWas this email forwarded
+      to you? Sign up here.\\nGet smarter in just 5 minutes\\nTake The Brew to work\\nInterested
+      in podcasts?\\n</text>\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"summary\":{\"type\":\"object\",\"properties\":{\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"domain\":{\"type\":\"string\",\"enum\":[\"AI\",\"Macro\",\"Crypto\",\"Startups\",\"Finance\",\"Tech\",\"History\",\"Security\",\"Sports\",\"Other\"]},\"topic\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"concepts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"is_educational\":{\"type\":\"boolean\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"}},\"required\":[\"kind\",\"question\",\"answer\"],\"additionalProperties\":false}}},\"required\":[\"summary\",\"domain\",\"topic\",\"tags\",\"concepts\",\"is_educational\",\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
+      process sources for a personal learning app. A source is an article, an X post
+      or thread, or an episode (podcast or video) that the user consumed or plans
+      to. A newsletter is an email digest; summarize its main stories. The user wants
+      \\\"level 2\\\" knowledge of its subject: enough to hold a real conversation
+      about it, including the vocabulary, how things work, the key players, rough
+      numbers, and the current debates.\\n\\nFrom the text, produce:\\n- summary:
+      the gist in 2-3 sentences, the key ideas, and the numbers worth remembering.
+      The text of an episode may carry markers like [12:14] or [1:02:03] at roughly
+      one-minute intervals; give each key idea and number the marker nearest before
+      where it comes up, copied exactly, and null when the text has no markers. Skip
+      ads and sponsor reads.\\n- domain: the one broad domain the source belongs to.\\n-
+      topic: a short, reusable topic name under that domain (e.g. \\\"Stablecoins\\\",
+      \\\"Fed policy\\\", \\\"NFL quarterbacks\\\").\\n- tags: 3-8 short tags.\\n-
+      concepts: the key concepts the source relies on or teaches, as short noun phrases.\\n-
+      is_educational: true when the source teaches something worth remembering (how
+      things work, history, ideas, numbers). false for pure entertainment such as
+      banter, sports chat, jokes or gossip. A mostly entertaining source with real
+      teaching in it (e.g. how a contract works, why a play scheme succeeds) is still
+      true.\\n- cards: when is_educational is true, 3-5 open-recall review cards of
+      kind concept, mechanism (\\\"why does X cause Y\\\") or number (a rough figure
+      worth knowing). Each card asks ONE focused question, never a compound one with
+      several parts. Each answer is what a good response would cover in 1-3 sentences.
+      Avoid trivia that only matters to this one source. Cards come only from the
+      educational stretches of a source: a mostly entertaining show with one educational
+      segment gets cards for that segment; still 3-5. When is_educational is false,
+      cards is an empty list.\\n\\nWrite in plain, conversational English for a smart
+      reader who is new to the subject. Short sentences. Define any jargon the first
+      time it appears. Prefer concrete examples and rough numbers (\\\"~1 GW\\\",
+      not \\\"1.07 GW\\\").\"}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '15346'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CghFfdmmpBJkH12Xti81z","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"{\"summary\":{\"gist\":\"This
+        Morning Brew newsletter covers Election Day for the US midterms, which will
+        decide control of Congress. It also covers Apple''s mixed earnings, Marvell''s
+        huge deal to buy Lumentum, Palantir''s growth, hackers who heated up European
+        supermarket fridges, and a foie gras ban vote in Washington, DC. It ends with
+        a Gallup poll showing worker engagement at a 15-year low.\",\"key_ideas\":[{\"timestamp\":null,\"idea\":\"Midterm
+        elections decide which party controls Congress. Republicans hold narrow majorities:
+        218-214 in the House and 53-47 in the Senate. Democrats might flip the House,
+        while the Senate looks like a tossup.\"},{\"timestamp\":null,\"idea\":\"Rising
+        consumer prices are a major voter concern this cycle. The newsletter notes
+        the old saying ''It''s the economy, stupid.''\"},{\"timestamp\":null,\"idea\":\"Apple
+        revenue grew 12% to $114.5 billion, but profit margins are shrinking. Costs
+        for memory chips and Siri AI are the main reasons. Investors sold the stock
+        after hours, and the company says iPhone supply may take a while to catch
+        up with demand.\"},{\"timestamp\":null,\"idea\":\"Marvell agreed to buy Lumentum,
+        which makes lasers that move data between chips and servers, for about $115
+        billion including debt. That is the second-largest tech deal ever. Both stocks
+        fell after the announcement.\"},{\"timestamp\":null,\"idea\":\"Palantir''s
+        commercial revenue passed its government revenue for the first time. Its AI
+        software sales to companies rose 148%, and it raised its 2026 revenue forecast.\"},{\"timestamp\":null,\"idea\":\"Hackers
+        remotely put supermarket fridges and freezers into defrost mode, heating some
+        to about 122 Fahrenheit. Sabcobel, a Belgian operator, says its digital control
+        system was the target. Software patches are still being applied, and some
+        fridges need physical fixes.\"},{\"timestamp\":null,\"idea\":\"Washington,
+        DC voters will likely pass a referendum banning foie gras sales and force-feeding
+        ducks. The ban would not take effect until July 2027, and a legal challenge
+        is already planned.\"},{\"timestamp\":null,\"idea\":\"Gallup found employee
+        engagement fell to 29%, its lowest level in 15 years. Only 46% of workers
+        say they know what their bosses expect from them.\"}],\"numbers\":[{\"timestamp\":null,\"fact\":\"House
+        majority is 218-214 and Senate majority is 53-47 for Republicans.\"},{\"timestamp\":null,\"fact\":\"35
+        Senate seats and 36 governorships are up for election.\"},{\"timestamp\":null,\"fact\":\"Apple
+        revenue was $114.5 billion, up 12% year over year, with guidance of 7% to
+        10% growth over the holidays.\"},{\"timestamp\":null,\"fact\":\"Marvell''s
+        Lumentum deal is valued at $115 billion including debt.\"},{\"timestamp\":null,\"fact\":\"Palantir
+        Q3 revenue was $2.31 billion, nearly double the prior year. Its 2026 revenue
+        forecast is $8.53 billion.\"},{\"timestamp\":null,\"fact\":\"Fridge temperatures
+        reached 122 Fahrenheit in some European stores. More than 20 cyberattacks
+        on refrigeration systems have happened this year, according to Forescout.\"},{\"timestamp\":null,\"fact\":\"The
+        10-year Treasury yield was 4.894%, down 4.0 basis points. Pro-Animal Future
+        spent nearly $400,000 on the DC foie gras measure.\"},{\"timestamp\":null,\"fact\":\"Gallup''s
+        engagement reading is 29%, and the share of workers who know what is expected
+        of them is 46%, down from 61% in 2015.\"}]},\"domain\":\"Other\",\"topic\":\"Daily
+        news briefing\",\"tags\":[\"US midterms\",\"markets\",\"AI infrastructure\",\"cybersecurity\",\"Apple
+        earnings\",\"workplace engagement\"],\"concepts\":[\"midterm elections\",\"House
+        and Senate majority\",\"basis points\",\"Treasury yield\",\"data center hardware\",\"AI
+        infrastructure\",\"remote defrost hack\",\"employee engagement\"],\"is_educational\":true,\"cards\":[{\"kind\":\"concept\",\"question\":\"What
+        does a US midterm election decide?\",\"answer\":\"Midterms are held halfway
+        through a president''s four-year term. They decide which party controls the
+        House and Senate, and they also pick governors in many states.\"},{\"kind\":\"mechanism\",\"question\":\"Why
+        does the president''s party usually lose seats in midterm elections?\",\"answer\":\"Voters
+        often use midterms to check the sitting president. Supporters of the president''s
+        party may also stay home, which helps the other side win seats.\"},{\"kind\":\"mechanism\",\"question\":\"How
+        can hackers make a supermarket fridge heat up?\",\"answer\":\"Some fridges
+        are controlled remotely by a digital system. Hackers who break into that system
+        can switch the units into defrost mode, which heats them up. Software patches
+        help, but some fridges also need physical changes.\"},{\"kind\":\"number\",\"question\":\"How
+        many cyberattacks on refrigeration systems have been recorded this year, according
+        to Forescout?\",\"answer\":\"More than 20. Some of these attacks have been
+        linked to Russia-aligned hackers.\"},{\"kind\":\"concept\",\"question\":\"What
+        is a basis point, and what does a 4.0 bps drop in the 10-year yield mean?\",\"answer\":\"A
+        basis point is one-hundredth of a percentage point. The 10-year yield is the
+        interest rate the US government pays to borrow money for ten years. A 4.0
+        bps drop means the yield fell by 0.04 percentage points.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":5807,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2846,"output_tokens_details":{"thinking_tokens":1001},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9998000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-04T04:25:59Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1999000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-04T04:26:10Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-04T04:25:58Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11997000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-04T04:25:59Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a550db9c7b2853b3-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '10241'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 04:26:10 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=12399
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-9fd5afa7d80821ee166677706c541299-9149f6780287014a-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

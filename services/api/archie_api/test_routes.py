@@ -7,7 +7,7 @@ from typing import Annotated
 import fastapi
 import pydantic
 import sqlalchemy
-from archie_db import models
+from archie_db import changes, models, user_topics
 from sqlalchemy import orm
 
 from archie_api import deps
@@ -24,6 +24,7 @@ class TestSessionRequest(pydantic.BaseModel):
     apple_sub: str = "test-user"
     email: str | None = None
     is_whitelisted: bool = False
+    seed_topics: bool = False
 
 
 class TestSessionView(pydantic.BaseModel):
@@ -48,6 +49,10 @@ def create_test_session(
     # Whitelisting normally follows OWNER_EMAILS at Apple sign-in; tests that need the owner's keys ask for it.
     if request.is_whitelisted:
         user.is_whitelisted = True
+
+    if request.seed_topics:
+        changes.lock_user_writes(db, user.id)
+        user_topics.seed_owner_topics(db, user=user)
 
     session_key = sessions.create_session(db, user_id=user.id)
     db.commit()

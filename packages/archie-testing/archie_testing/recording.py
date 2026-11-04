@@ -18,6 +18,9 @@ RECORD_MODE_OPTION = "--record-mode"
 DEFAULT_RECORD_MODE = "none"
 
 # Enough of the system prompt to tell steps apart without tying a cassette to its full wording.
+# This is a replay contract: the first 60 characters of ANALYZE_SYSTEM must stay stable, because the recorded analyze
+# cassettes still hold the v1 request and response bodies. Wording past character 60 is not covered by any recording
+# until a timed-source analyze cassette is recorded.
 _SYSTEM_PREFIX_LENGTH = 60
 _ANTHROPIC_PROMPT_MATCHER = "anthropic_prompt"
 

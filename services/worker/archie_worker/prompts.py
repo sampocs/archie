@@ -38,6 +38,9 @@ READING_VOICE = """Write in plain, conversational English for a smart reader who
 sentences. Define any jargon the first time it appears. Prefer concrete examples and \
 rough numbers ("~1 GW", not "1.07 GW")."""
 
+# Replay contract: the recorded analyze cassettes match on only the first 60 characters of this prompt and still hold
+# the v1 request and response bodies. Wording past character 60 is not covered by any recording until a timed-source
+# analyze cassette is recorded.
 ANALYZE_SYSTEM = f"""You process sources for a personal learning app. A source is an article, an X post or thread, or \
 an episode (podcast or video) that the user consumed or plans to. A newsletter is an email digest; summarize its \
 main stories. The user wants "level 2" knowledge of its subject: \

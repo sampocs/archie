@@ -15,6 +15,7 @@ dependencies = [
 
 [project.scripts]
 archie-worker = "archie_worker.main:main"
+archie-refile-sources = "archie_worker.refile:main"
 
 [tool.uv.sources]
 archie-shared = { workspace = true }

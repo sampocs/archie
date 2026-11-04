@@ -1,0 +1,52 @@
+appId: com.sampocs.archie
+---
+# Needs real keys: the worker transcribes the episode (Groq) and calls Anthropic, a few cents per run. Run it only
+# against `make start-local` with the keys in .env; there is no replay mode for the local backend yet (see maestro/README.md).
+# The URL is archie_testing.media.SPOTIFY_EPISODE_URL ("Alligator in a bagel shop, ...", UPI Odd News Minute).
+- runFlow: login.yaml
+# Sign in again as the owner's user, so the worker pays with the owner's keys.
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "tab-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://open.spotify.com/episode/4G2R6Ii1bIj7uLShXTqpCS"
+- tapOn:
+    id: "intent-queue"
+- tapOn:
+    id: "add-save"
+# Saving lands on Library; open the source (its card shows the URL until the worker's title replaces it).
+- tapOn: ".*(open.spotify.com|Alligator).*"
+# One wait only: Maestro shares the timeout across consecutive waits. The primer is written after the summary, so
+# waiting for its toggle also covers the gist; transcription adds minutes, hence 5 minutes.
+- extendedWaitUntil:
+    visible:
+      id: "primer-toggle"
+    timeout: 300000
+- assertVisible:
+    id: "source-gist"
+# A transcribed episode carries timestamps on its key ideas.
+- assertVisible:
+    id: "timestamp"

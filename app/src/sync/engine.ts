@@ -18,6 +18,7 @@ export type PulledSource = {
   note: string | null;
   prep_me: boolean;
   merged_into_id: string | null;
+  sender: string | null;
 };
 export type PulledArtifact = {
   id: string;

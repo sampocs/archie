@@ -24,7 +24,7 @@ export function ProcessingLine({ source }: ProcessingLineProps) {
   if (source.processing === "unsupported") {
     return (
       <Text variant="secondary" tone="ink3">
-        Not processed yet
+        {source.processingError ?? "Not processed yet"}
       </Text>
     );
   }

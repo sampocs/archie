@@ -70,8 +70,8 @@ function topQueuePosition(tx: Tx): number {
   return row?.lowest == null ? 0 : row.lowest - 1;
 }
 
-function topicDomain(tx: Tx, topicId: string): string | null {
-  return tx.select().from(schema.topics).where(eq(schema.topics.id, topicId)).get()?.domain ?? null;
+function topicDomain(tx: Tx, topicId: string): string | undefined {
+  return tx.select().from(schema.topics).where(eq(schema.topics.id, topicId)).get()?.domain;
 }
 
 // Topic names are stored with their whitespace collapsed, as the server stores them.
@@ -255,32 +255,42 @@ export function renameTopic(db: AppDb, topicId: string, name: string): void {
 
 export function mergeTopic(db: AppDb, topicId: string, intoId: string): void {
   db.transaction((tx) => {
+    const now = new Date().toISOString();
     const domain = topicDomain(tx, intoId);
-    tx.update(schema.sources).set({ topicId: intoId, domain }).where(eq(schema.sources.topicId, topicId)).run();
-    tx.update(schema.topics).set({ mergedIntoId: intoId }).where(eq(schema.topics.id, topicId)).run();
+
+    // An unknown target leaves the sources' domain as it was rather than blanking it.
+    tx.update(schema.sources)
+      .set({ topicId: intoId, updatedAt: now, ...(domain && { domain }) })
+      .where(eq(schema.sources.topicId, topicId))
+      .run();
+    tx.update(schema.topics).set({ mergedIntoId: intoId, updatedAt: now }).where(eq(schema.topics.id, topicId)).run();
     enqueue(tx, "merge_topic", { id: topicId, into_id: intoId });
   });
 }
 
 export function removeTopic(db: AppDb, topicId: string): void {
   db.transaction((tx) => {
-    tx.update(schema.topics).set({ removedAt: new Date().toISOString() }).where(eq(schema.topics.id, topicId)).run();
+    const now = new Date().toISOString();
+    tx.update(schema.topics).set({ removedAt: now, updatedAt: now }).where(eq(schema.topics.id, topicId)).run();
+
     // The server re-files these; until then they show without a topic, never under the removed one.
-    tx.update(schema.sources).set({ topicId: null }).where(eq(schema.sources.topicId, topicId)).run();
+    tx.update(schema.sources).set({ topicId: null, updatedAt: now }).where(eq(schema.sources.topicId, topicId)).run();
     enqueue(tx, "remove_topic", { id: topicId });
   });
 }
 
 export function restoreTopic(db: AppDb, topicId: string): void {
   db.transaction((tx) => {
-    tx.update(schema.topics).set({ removedAt: null }).where(eq(schema.topics.id, topicId)).run();
+    tx.update(schema.topics).set({ removedAt: null, updatedAt: new Date().toISOString() }).where(eq(schema.topics.id, topicId)).run();
     enqueue(tx, "restore_topic", { id: topicId });
   });
 }
 
 export function setSourceTopic(db: AppDb, sourceId: string, topicId: string): void {
   db.transaction((tx) => {
-    updateSource(tx, sourceId, { topicId, domain: topicDomain(tx, topicId) });
+    // An unknown topic keeps the source's existing domain.
+    const domain = topicDomain(tx, topicId);
+    updateSource(tx, sourceId, { topicId, ...(domain && { domain }) });
     enqueue(tx, "set_source_topic", { id: sourceId, topic_id: topicId });
   });
 }

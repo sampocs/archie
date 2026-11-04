@@ -84,3 +84,50 @@ def test_0003_gives_existing_users_an_ingest_token(test_database_url: str) -> No
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
     engine.dispose()
+
+
+def test_0004_backfills_queue_positions_and_read_markers(test_database_url: str) -> None:
+    """Queued sources rank oldest first (-1, -2); every source counts its primer opened; only newsletters count as read.
+
+    Each source also gets a newer change_seq, so phones pull the new columns.
+    """
+    migrate.downgrade(test_database_url)
+    migrate.upgrade(test_database_url, "0003")
+    engine = session.engine_for(test_database_url)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, created_at, change_seq) "
+                "SELECT gen_random_uuid(), users.id, row.url, row.url, row.kind, row.state, 'queue', row.created_at, "
+                "nextval('change_seq') "
+                "FROM users, (VALUES "
+                "('https://example.com/older', 'article', 'queued', now() - interval '2 days'), "
+                "('https://example.com/newer', 'article', 'queued', now() - interval '1 day'), "
+                "('newsletter:1', 'newsletter', 'inbox', now())"
+                ") AS row (url, kind, state, created_at)"
+            )
+        )
+        seq_rows = connection.execute(sqlalchemy.text("SELECT url, change_seq FROM sources")).all()
+        old_change_seqs: dict[str, int] = {row.url: row.change_seq for row in seq_rows}
+
+    migrate.upgrade(test_database_url)
+
+    with engine.connect() as connection:
+        rows = {
+            row.url: row
+            for row in connection.execute(
+                sqlalchemy.text("SELECT url, queue_position, primer_opened_at, read_at, change_seq FROM sources")
+            )
+        }
+    assert {url: row.queue_position for url, row in rows.items()} == {
+        "https://example.com/older": -1,
+        "https://example.com/newer": -2,
+        "newsletter:1": None,
+    }
+    assert all(row.primer_opened_at is not None for row in rows.values())
+    assert all(row.change_seq > old_change_seqs[url] for url, row in rows.items())
+    assert [url for url, row in rows.items() if row.read_at is not None] == ["newsletter:1"]
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
+    engine.dispose()

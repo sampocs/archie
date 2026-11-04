@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import datetime
 import difflib
-import email.utils
 import html
 import json
 import re
@@ -18,13 +17,12 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
 
-import defusedxml.ElementTree
 import httpx
 import sqlalchemy
 import sqlalchemy.dialects.postgresql
 import sqlalchemy.orm
 from archie_db import models
-from archie_shared import logging, urls
+from archie_shared import logging, podcast_feed, urls
 
 from archie_worker import errors
 from archie_worker.content import episode as episode_content
@@ -34,39 +32,23 @@ ITUNES_SEARCH_URL = "https://itunes.apple.com/search"
 ITUNES_LOOKUP_URL = "https://itunes.apple.com/lookup"
 SPOTIFY_EPISODE_URL = "https://open.spotify.com/episode/{episode_id}"
 
-_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko)"
-_HEADERS = {"User-Agent": _USER_AGENT}
+_HEADERS = {"User-Agent": podcast_feed.USER_AGENT}
 _SPOTIFY_TIMEOUT_SECONDS = 15
 _SPOTIFY_MAX_BYTES = 5_000_000
-_FEED_TIMEOUT_SECONDS = 30
-_FEED_MAX_BYTES = 50_000_000
 _API_TIMEOUT_SECONDS = 15
 _API_MAX_BYTES = 5_000_000
 _SEARCH_CANDIDATE_COUNT = 5
 _LOOKUP_EPISODE_LIMIT = 200
 _MIN_TITLE_SIMILARITY = 0.6
 _MAX_DAYS_APART = 3
-_MAX_DESCRIPTION_LENGTH = 2000
 # Page statuses that mean the episode is gone; a retry cannot fix them.
 _GONE_STATUSES = frozenset({404, 410})
 
-_PODCAST_NAMESPACES = ("{https://podcastindex.org/namespace/1.0}", "{http://podcastindex.org/namespace/1.0}")
-_ITUNES_NAMESPACE = "{http://www.itunes.com/dtds/podcast-1.0.dtd}"
-_CONTENT_NAMESPACE = "{http://purl.org/rss/1.0/modules/content/}"
 _LD_JSON_PATTERN = re.compile(r'<script type="application/ld\+json">(.+?)</script>', re.DOTALL)
 _SHOW_NAME_PATTERN = re.compile(r"^Listen to this episode from (.+?) on Spotify\.")
-_TAG_PATTERN = re.compile(r"<[^>]*>")
 _NON_WORD_PATTERN = re.compile(r"[^a-z0-9 ]")
 
 _logger = logging.get_logger(logging.LoggerName.WORKER, "podcast")
-
-
-@dataclass(frozen=True)
-class TranscriptLink:
-    """One `<podcast:transcript>` of a feed item."""
-
-    url: str
-    mime_type: str
 
 
 @dataclass(frozen=True)
@@ -74,7 +56,7 @@ class ResolvedEpisode:
     """The episode found in its feed, and the transcripts that item publishes (possibly none)."""
 
     episode: episode_content.PodcastEpisode
-    transcripts: list[TranscriptLink]
+    transcripts: list[podcast_feed.TranscriptLink]
 
 
 @dataclass(frozen=True)
@@ -84,19 +66,6 @@ class SpotifyEpisode:
     title: str
     show_name: str
     published: datetime.date
-
-
-@dataclass(frozen=True)
-class FeedItem:
-    """One `<item>` of a podcast RSS feed."""
-
-    title: str
-    published: datetime.date | None
-    guid: str | None
-    audio_url: str | None
-    duration_s: int | None
-    description: str
-    transcripts: list[TranscriptLink]
 
 
 @dataclass(frozen=True)
@@ -113,7 +82,7 @@ class _Match:
     """The feed item that is the episode, and the show feed it was found in."""
 
     show: _Show
-    item: FeedItem
+    item: podcast_feed.FeedItem
 
 
 def resolve(engine: sqlalchemy.Engine, *, link: urls.PodcastLink) -> ResolvedEpisode:
@@ -155,16 +124,9 @@ def spotify_episode_from_page(page: str) -> SpotifyEpisode:
     )
 
 
-def parse_feed(feed: bytes) -> list[FeedItem]:
-    """The items of an RSS feed, in feed order; malformed or forbidden XML raises ParseError or ValueError."""
-    channel = defusedxml.ElementTree.fromstring(feed).find("channel")
-    if channel is None:
-        raise ValueError("Feed has no channel")
-
-    return [_feed_item(item) for item in channel.findall("item")]
-
-
-def best_match(*, title: str, published: datetime.date, items: Sequence[FeedItem]) -> FeedItem | None:
+def best_match(
+    *, title: str, published: datetime.date, items: Sequence[podcast_feed.FeedItem]
+) -> podcast_feed.FeedItem | None:
     """The item published within 3 days with the closest title (ratio at least 0.6); items without audio never match."""
     candidates = [
         item
@@ -253,7 +215,7 @@ def _resolve_apple(*, show_id: str, episode_id: int) -> ResolvedEpisode:
         raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
 
     items = _read_feed(show["feedUrl"])
-    item = _item_by_guid(items=items, guid=apple_episode.get("episodeGuid")) or best_match(
+    item = podcast_feed.item_by_guid(items=items, guid=apple_episode.get("episodeGuid")) or best_match(
         title=title,
         published=_apple_date(release_date),
         items=items,
@@ -350,10 +312,10 @@ def _apple_date(release_date: str) -> datetime.date:
         raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND) from error
 
 
-def _read_feed(feed_url: str) -> list[FeedItem]:
+def _read_feed(feed_url: str) -> list[podcast_feed.FeedItem]:
     """Fetch and parse a feed; an unparseable or forbidden (DTD/entity) feed can't be fixed by a retry."""
     try:
-        return parse_feed(_fetch_feed(feed_url))
+        return podcast_feed.parse_feed(_fetch_feed(feed_url))
     except (xml.etree.ElementTree.ParseError, ValueError) as error:
         _logger.info("Feed %s unreadable: %s", feed_url, error)
         raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND) from error
@@ -361,7 +323,10 @@ def _read_feed(feed_url: str) -> list[FeedItem]:
 
 def _fetch_feed(feed_url: str) -> bytes:
     return fetch_title.fetch_bytes(
-        url=feed_url, timeout_seconds=_FEED_TIMEOUT_SECONDS, max_bytes=_FEED_MAX_BYTES, headers=_HEADERS
+        url=feed_url,
+        timeout_seconds=podcast_feed.FEED_TIMEOUT_SECONDS,
+        max_bytes=podcast_feed.FEED_MAX_BYTES,
+        headers=_HEADERS,
     )
 
 
@@ -372,13 +337,7 @@ def _fetch_json(*, url: str) -> dict[str, Any]:
     return json.loads(body)
 
 
-def _item_by_guid(*, items: Sequence[FeedItem], guid: str | None) -> FeedItem | None:
-    if not guid:
-        return None
-    return next((item for item in items if item.guid == guid and item.audio_url), None)
-
-
-def _resolved(*, item: FeedItem, show_name: str, feed_url: str) -> ResolvedEpisode:
+def _resolved(*, item: podcast_feed.FeedItem, show_name: str, feed_url: str) -> ResolvedEpisode:
     assert item.audio_url is not None
     episode = episode_content.PodcastEpisode(
         show_name=show_name,
@@ -390,59 +349,6 @@ def _resolved(*, item: FeedItem, show_name: str, feed_url: str) -> ResolvedEpiso
         duration_s=item.duration_s,
     )
     return ResolvedEpisode(episode=episode, transcripts=item.transcripts)
-
-
-def _feed_item(item: Any) -> FeedItem:
-    enclosure = item.find("enclosure")
-    guid = item.findtext("guid")
-    return FeedItem(
-        title=item.findtext("title", default="").strip(),
-        published=_item_date(item.findtext("pubDate")),
-        guid=guid.strip() if guid else None,
-        audio_url=enclosure.get("url") if enclosure is not None else None,
-        duration_s=_duration_seconds(item.findtext(f"{_ITUNES_NAMESPACE}duration")),
-        description=_description(item),
-        transcripts=[
-            TranscriptLink(url=transcript.get("url"), mime_type=transcript.get("type", ""))
-            for namespace in _PODCAST_NAMESPACES
-            for transcript in item.findall(f"{namespace}transcript")
-            if transcript.get("url")
-        ],
-    )
-
-
-def _item_date(pub_date: str | None) -> datetime.date | None:
-    if not pub_date:
-        return None
-    try:
-        return email.utils.parsedate_to_datetime(pub_date).date()
-    except (TypeError, ValueError):
-        return None
-
-
-def _duration_seconds(raw: str | None) -> int | None:
-    """`itunes:duration` as seconds: a bare number of seconds, or `[h:]mm:ss`."""
-    if not raw:
-        return None
-
-    try:
-        parts = [int(float(part)) for part in raw.strip().split(":")]
-    except ValueError:
-        return None
-    seconds = 0
-    for part in parts:
-        seconds = seconds * 60 + part
-    return seconds
-
-
-def _description(item: Any) -> str:
-    raw = (
-        item.findtext("description")
-        or item.findtext(f"{_ITUNES_NAMESPACE}summary")
-        or item.findtext(f"{_CONTENT_NAMESPACE}encoded")
-    )
-    stripped = html.unescape(_TAG_PATTERN.sub(" ", raw or ""))
-    return " ".join(stripped.split())[:_MAX_DESCRIPTION_LENGTH]
 
 
 def _similarity(first: str, second: str) -> float:

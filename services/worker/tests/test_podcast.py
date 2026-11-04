@@ -13,6 +13,7 @@ import pathlib
 
 import httpx
 import pytest
+from archie_shared import podcast_feed
 from archie_worker import content, errors
 from archie_worker.content import podcast, transcripts
 from archie_worker.handlers import fetch_title
@@ -27,8 +28,8 @@ def _read(name: str) -> str:
 
 def _item(
     *, title: str, published: datetime.date | None, audio_url: str | None = "https://example.test/a.mp3"
-) -> podcast.FeedItem:
-    return podcast.FeedItem(
+) -> podcast_feed.FeedItem:
+    return podcast_feed.FeedItem(
         title=title,
         published=published,
         guid=None,
@@ -96,7 +97,7 @@ def test_html_becomes_visible_text_only() -> None:
 
 def test_the_feed_gives_titles_dates_enclosures_durations_and_transcripts() -> None:
     """The real feed's first item carries every field the resolver needs."""
-    items = podcast.parse_feed((FIXTURES / "darknet_diaries_feed.xml").read_bytes())
+    items = podcast_feed.parse_feed((FIXTURES / "darknet_diaries_feed.xml").read_bytes())
 
     assert [item.title for item in items][:2] == ["182: Blackshades", "181: Ricky"]
     assert len(items) == 5
@@ -119,7 +120,7 @@ def test_durations_are_read_as_seconds_or_clock_times() -> None:
       <item><title>d</title><itunes:duration>soon</itunes:duration></item>
       <item><title>e</title></item></channel></rss>"""
 
-    assert [item.duration_s for item in podcast.parse_feed(feed)] == [754, 754, 3723, None, None]
+    assert [item.duration_s for item in podcast_feed.parse_feed(feed)] == [754, 754, 3723, None, None]
 
 
 DAY = datetime.date(2026, 10, 20)
@@ -160,7 +161,7 @@ def test_items_without_audio_or_a_date_are_skipped() -> None:
 
 def test_a_guidless_apple_title_matches_the_feed_title_with_its_number() -> None:
     """The real pair from the Apple lookup and feed: "Blackshades" vs "182: Blackshades"."""
-    items = podcast.parse_feed((FIXTURES / "darknet_diaries_feed.xml").read_bytes())
+    items = podcast_feed.parse_feed((FIXTURES / "darknet_diaries_feed.xml").read_bytes())
     published = items[0].published
     assert published is not None
 
@@ -246,8 +247,8 @@ def served(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return asked
 
 
-def _link(url: str, mime_type: str) -> podcast.TranscriptLink:
-    return podcast.TranscriptLink(url=url, mime_type=mime_type)
+def _link(url: str, mime_type: str) -> podcast_feed.TranscriptLink:
+    return podcast_feed.TranscriptLink(url=url, mime_type=mime_type)
 
 
 def test_the_vtt_is_tried_before_srt_json_and_html(served: list[str]) -> None:

@@ -106,3 +106,33 @@ def test_enqueue_transcribe_queues_one_job_with_the_episode_and_titles_the_sourc
     assert job.max_attempts == pipeline.MAX_ATTEMPTS[models.JobKind.TRANSCRIBE]
     assert episode_content.PodcastEpisode.from_payload(job.payload["episode"]) == EPISODE
     assert source.title == "Episode One"
+
+
+def test_store_text_fills_an_empty_image_and_keeps_an_existing_one(db: sqlalchemy.orm.Session) -> None:
+    """The fetcher's artwork lands on an image-less source; a source that has one keeps it, with no new position."""
+    empty = _source(db, kind=models.SourceKind.ARTICLE)
+    kept = _source(db, kind=models.SourceKind.ARTICLE)
+    kept.image_url = "https://img.example/kept.jpg"
+    kept.title = "Titled"
+    db.flush()
+    db.refresh(kept)
+    kept_seq = kept.change_seq
+
+    for source in (empty, kept):
+        _text.store_text(
+            db, source=source, text_content={"text": "hello"}, title=None, image_url="https://img.example/a.jpg"
+        )
+    db.flush()
+    db.refresh(empty)
+    db.refresh(kept)
+
+    assert empty.image_url == "https://img.example/a.jpg"
+    assert (kept.image_url, kept.change_seq) == ("https://img.example/kept.jpg", kept_seq)
+
+
+def test_episode_payloads_queued_before_artwork_still_load() -> None:
+    """A transcribe job queued by M3 has no `image_url` key; it loads with no image."""
+    payload = EPISODE.to_payload()
+    del payload["image_url"]
+
+    assert episode_content.PodcastEpisode.from_payload(payload) == EPISODE

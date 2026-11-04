@@ -102,6 +102,23 @@ class JobKind(StrEnum):
     ANALYZE = "analyze"
     PRIMER = "primer"
     TRANSCRIBE = "transcribe"
+    FILE_TOPIC = "file_topic"
+    TOPIC_PRIMER = "topic_primer"
+
+
+class TopicOrigin(StrEnum):
+    """Who put a topic on the user's list: the starter list, Archie's filing, or the user."""
+
+    STARTER = "starter"
+    ARCHIE = "archie"
+    USER = "user"
+
+
+class NewsletterKind(StrEnum):
+    """What a newsletter is: a digest of short items, or one piece of writing worth reading whole."""
+
+    NEWS = "news"
+    ESSAY = "essay"
 
 
 class TranscriptProvider(StrEnum):
@@ -152,6 +169,8 @@ class User(Base):
     is_whitelisted: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
     # Names the user's newsletter address; generated in Python so every `User(...)` gets one.
     ingest_token: Mapped[str] = mapped_column(sqlalchemy.String(16), unique=True, default=new_ingest_token)
+    # Set once the user finished the topic picker (or was seeded as the owner).
+    topics_chosen_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
 
 
@@ -203,7 +222,80 @@ class Source(Base):
     # Newsletters only: who sent it, and the email's Message-ID.
     sender: Mapped[str | None] = mapped_column(sqlalchemy.Text)
     newsletter_message_id: Mapped[str | None] = mapped_column(sqlalchemy.String(998))
+    # Filing: null until `file_topic` ran; `topic_id` stays null when the only fit was a removed topic.
+    domain: Mapped[str | None] = mapped_column(sqlalchemy.String(32))
+    topic_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("topics.id", ondelete="SET NULL")
+    )
+    image_url: Mapped[str | None] = mapped_column(sqlalchemy.String(2048))
+    # Queued sources only; lower is higher in the queue.
+    queue_position: Mapped[float | None] = mapped_column(sqlalchemy.Double)
+    read_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    snoozed_until: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    primer_opened_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    newsletter_kind: Mapped[str | None] = mapped_column(sqlalchemy.String(16))
+    # Server only (never pulled): the feed guid the user chose with "Wrong episode?".
+    episode_guid: Mapped[str | None] = mapped_column(sqlalchemy.String(1024))
     # Always assigned via changes.next_change_seq() under changes.lock_user_writes(); see changes.py for why.
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class Topic(Base):
+    """A topic on a user's curated list. Removed topics stay (blocked, restorable); merged ones point at the winner."""
+
+    __tablename__ = "topics"
+    __table_args__ = (
+        sqlalchemy.Index("ix_topics_user_id_change_seq", "user_id", "change_seq"),
+        # Live and removed topics keep their names unique; a merged topic gives its name up.
+        sqlalchemy.Index(
+            "uq_topics_user_id_lower_name",
+            "user_id",
+            sqlalchemy.text("lower(name)"),
+            unique=True,
+            postgresql_where=sqlalchemy.text("merged_into_id IS NULL"),
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    domain: Mapped[str] = mapped_column(sqlalchemy.String(32))
+    name: Mapped[str] = mapped_column(sqlalchemy.String(200))
+    origin: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    removed_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    merged_into_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("topics.id")
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class TopicPrimer(Base):
+    """One version of a topic's general-background primer; exactly one version per topic is current."""
+
+    __tablename__ = "topic_primers"
+    __table_args__ = (
+        sqlalchemy.UniqueConstraint("topic_id", "version", name="uq_topic_primers_version"),
+        sqlalchemy.Index(
+            "uq_topic_primers_current", "topic_id", unique=True, postgresql_where=sqlalchemy.text("is_current")
+        ),
+        sqlalchemy.Index("ix_topic_primers_user_id_change_seq", "user_id", "change_seq"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    topic_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("topics.id", ondelete="CASCADE")
+    )
+    version: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    is_current: Mapped[bool] = mapped_column(sqlalchemy.Boolean)
+    # Markdown under "markdown", the same shape as a source primer artifact.
+    content: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB)
+    model: Mapped[str | None] = mapped_column(sqlalchemy.String(64))
+    prompt_version: Mapped[str | None] = mapped_column(sqlalchemy.String(32))
+    opened_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    snoozed_until: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 

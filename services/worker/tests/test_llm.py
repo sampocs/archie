@@ -115,6 +115,39 @@ def test_unknown_model_has_no_price() -> None:
         llm.cost_usd(model="claude-mystery", input_tokens=1, output_tokens=1)
 
 
+def test_audio_is_priced_per_audio_hour() -> None:
+    """Audio is billed per audio hour, per provider."""
+    assert llm.audio_cost_usd(model=llm.GROQ_WHISPER, audio_seconds=Decimal(3600)) == Decimal("0.04")
+    assert llm.audio_cost_usd(model=llm.OPENAI_TRANSCRIBE, audio_seconds=Decimal(1800)) == Decimal("0.09")
+
+
+def test_unknown_audio_model_has_no_price() -> None:
+    """A transcription model without a known price raises, like an unknown chat model."""
+    with pytest.raises(KeyError):
+        llm.audio_cost_usd(model="whisper-9000", audio_seconds=Decimal(60))
+
+
+@pytest.mark.postgres
+def test_record_audio_call_stores_an_audio_cost_row(engine: sqlalchemy.Engine, context: llm.CallContext) -> None:
+    """One call writes one row: no tokens, the audio length, and its cost."""
+    transcribe_context = llm.CallContext(
+        user_id=context.user_id, source_id=context.source_id, job_id=context.job_id, step=models.JobKind.TRANSCRIBE
+    )
+
+    llm.record_audio_call(
+        engine,
+        context=transcribe_context,
+        provider=models.TranscriptProvider.GROQ,
+        model=llm.GROQ_WHISPER,
+        audio_seconds=Decimal("90.5"),
+    )
+
+    (row,) = _calls(engine)
+    assert (row.input_tokens, row.output_tokens, row.stop_reason) == (0, 0, None)
+    assert (row.audio_seconds, row.provider, row.step) == (Decimal("90.500"), "groq", "transcribe")
+    assert row.cost_usd > 0
+
+
 def test_user_without_the_owners_keys_needs_their_own() -> None:
     """A non-whitelisted user's job fails for good, telling them to add their own key."""
     with pytest.raises(errors.PermanentJobError) as raised:

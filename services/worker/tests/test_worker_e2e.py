@@ -10,11 +10,12 @@ import datetime
 import pathlib
 import uuid
 from collections.abc import Callable, Iterator
+from decimal import Decimal
 
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, jobs, models, session
+from archie_db import changes, jobs, models, pipeline, session
 from archie_testing import recording
 from archie_worker import errors, handlers, loop
 
@@ -213,6 +214,110 @@ def test_the_stale_sweep_runs_the_hook_only_for_jobs_it_fails(engine: sqlalchemy
         assert db.get_one(models.Job, exhausted_id).status == models.JobStatus.FAILED.value
         assert db.get_one(models.Job, retryable_id).status == models.JobStatus.QUEUED.value
     assert calls == [(exhausted_id, errors.FailureReason.GAVE_UP.value)]
+
+
+def test_a_kind_with_a_longer_stale_timeout_is_swept_later(engine: sqlalchemy.Engine) -> None:
+    """A job 1,000 s into a 3,600 s allowance is left running while a default-timeout kind is re-queued."""
+    now = datetime.datetime.now(datetime.UTC)
+    user_id = _add_user(engine)
+    with sqlalchemy.orm.Session(engine) as db:
+        long_job = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(seconds=1000))
+        long_job.kind = models.JobKind.TRANSCRIBE.value
+        default_job = _running_job(db, user_id=user_id, started_at=now - datetime.timedelta(seconds=1000))
+        db.commit()
+        long_id, default_id = long_job.id, default_job.id
+    specs = {
+        models.JobKind.TRANSCRIBE: loop.HandlerSpec(run=lambda db, job: None, stale_after=datetime.timedelta(hours=1)),
+        models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=lambda db, job: None),
+    }
+
+    with sqlalchemy.orm.Session(engine) as db:
+        assert loop.requeue_stale(db, now=now, handlers=specs) == 1
+
+    with sqlalchemy.orm.Session(engine) as db:
+        assert db.get_one(models.Job, long_id).status == models.JobStatus.RUNNING.value
+        assert db.get_one(models.Job, default_id).status == models.JobStatus.QUEUED.value
+
+    # 4,000 s in, past even the long allowance.
+    with sqlalchemy.orm.Session(engine) as db:
+        assert loop.requeue_stale(db, now=now + datetime.timedelta(seconds=3000), handlers=specs) == 1
+    with sqlalchemy.orm.Session(engine) as db:
+        assert db.get_one(models.Job, long_id).status == models.JobStatus.QUEUED.value
+
+
+def test_a_retry_later_error_requeues_after_the_requested_delay(engine: sqlalchemy.Engine) -> None:
+    """The job waits `after_seconds` (read against Postgres' clock), keeps the reason, and no hook runs."""
+    calls: list[str] = []
+
+    def rate_limited(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise errors.RetryLaterError(reason="rate limited", after_seconds=120)
+
+    def record(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+        calls.append(reason)
+
+    _add_source_and_job(engine, url=OG_PAGE_URL)
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=rate_limited, on_final_failure=record)}
+
+    loop.run_one(engine, handlers=specs)
+
+    with engine.connect() as connection:
+        seconds_ahead: Decimal = connection.execute(
+            sqlalchemy.text("SELECT extract(epoch FROM next_run_at - now()) FROM jobs")
+        ).scalar_one()
+    job = _only_job(engine)
+    assert (job.status, job.last_error) == (models.JobStatus.QUEUED.value, "rate limited")
+    assert abs(float(seconds_ahead) - 120) <= 10
+    assert calls == []
+
+
+def test_a_retry_later_error_on_the_last_attempt_fails_with_gave_up(engine: sqlalchemy.Engine) -> None:
+    """Re-queueing counts as an attempt: out of attempts, the job fails and the hook gets GAVE_UP."""
+    calls: list[str] = []
+
+    def rate_limited(db: sqlalchemy.orm.Session, job: models.Job) -> None:
+        raise errors.RetryLaterError(reason="rate limited", after_seconds=120)
+
+    def record(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+        calls.append(reason)
+
+    _add_source_and_job(engine, url=OG_PAGE_URL)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("UPDATE jobs SET max_attempts = 1"))
+    specs = {models.JobKind.FETCH_TITLE: loop.HandlerSpec(run=rate_limited, on_final_failure=record)}
+
+    loop.run_one(engine, handlers=specs)
+
+    assert _only_job(engine).status == models.JobStatus.FAILED.value
+    assert calls == [errors.FailureReason.GAVE_UP.value]
+
+
+def test_enqueue_stores_a_custom_max_attempts_and_transcribe_steps_get_six(engine: sqlalchemy.Engine) -> None:
+    """The default stays 3; `enqueue_steps` gives `transcribe` its larger allowance."""
+    user_id = _add_user(engine)
+    source_id = uuid.uuid4()
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+        source = models.Source(
+            id=source_id,
+            user_id=user_id,
+            url=OG_PAGE_URL,
+            normalized_url=OG_PAGE_URL,
+            kind=models.SourceKind.LINK.value,
+            state=models.SourceState.INBOX.value,
+            intent=models.SourceIntent.QUEUE.value,
+            change_seq=changes.next_change_seq(),
+        )
+        db.add(source)
+        explicit = jobs.enqueue(db, kind=models.JobKind.ANALYZE, user_id=user_id, payload={}, max_attempts=6)
+        default = jobs.enqueue(db, kind=models.JobKind.ANALYZE, user_id=user_id, payload={})
+        pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.TRANSCRIBE, models.JobKind.ANALYZE])
+        db.commit()
+        assert (explicit.max_attempts, default.max_attempts) == (6, 3)
+        by_kind = {
+            job.kind: job.max_attempts
+            for job in db.scalars(sqlalchemy.select(models.Job).where(models.Job.id > default.id))
+        }
+    assert by_kind == {models.JobKind.TRANSCRIBE.value: 6, models.JobKind.ANALYZE.value: 3}
 
 
 def test_an_idle_queue_runs_nothing(engine: sqlalchemy.Engine) -> None:

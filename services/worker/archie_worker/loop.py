@@ -8,7 +8,8 @@ call (HTTP, LLM) first reads what it needs into locals and calls `db.commit()`, 
 transaction is held during the call; it then takes `changes.lock_user_writes` and writes. After the
 handler returns, the loop marks the job done in that same session and commits. A handler fails by
 raising: `PermanentJobError` fails the job at once, anything else is retried with backoff until the
-job's attempts run out. Either way a `HandlerSpec.on_final_failure` hook then runs in the transaction
+job's attempts run out; `RetryLaterError` re-queues the job after the delay the service asked for (still
+counting as an attempt). Either way a `HandlerSpec.on_final_failure` hook then runs in the transaction
 that marks the job failed, so the hook's writes and the failure commit together. The stale sweep
 (`requeue_stale`) does the same for a job whose worker crashed on its last attempt.
 """
@@ -37,8 +38,9 @@ FailureHook = Callable[[sqlalchemy.orm.Session, models.Job, str], None]
 
 # Seconds to wait before attempt 2, 3, ...; the last value repeats.
 BACKOFF_SECONDS = (10, 60, 300)
-# A job running longer than this is assumed orphaned by a crashed worker. A primer step can legitimately take two
-# 300 s model timeouts (primary + fallback), so this must stay above 600 s.
+# A job running longer than this is assumed orphaned by a crashed worker, unless its `HandlerSpec.stale_after` says
+# otherwise. A primer step can legitimately take two 300 s model timeouts (primary + fallback), so this must stay
+# above 600 s.
 STALE_AFTER = datetime.timedelta(seconds=900)
 IDLE_POLL_SECONDS = 2.0
 REQUEUE_STALE_EVERY = datetime.timedelta(seconds=60)
@@ -54,6 +56,8 @@ class HandlerSpec:
 
     run: Handler
     on_final_failure: FailureHook | None = None
+    # How long a running job of this kind may take before the sweep assumes its worker crashed.
+    stale_after: datetime.timedelta = STALE_AFTER
 
 
 def claim_next(db: sqlalchemy.orm.Session) -> models.Job | None:
@@ -101,33 +105,41 @@ def requeue_stale(
 ) -> int:
     """Recover jobs orphaned by a crashed worker: re-queue them, or fail those out of attempts. Returns the count.
 
-    A job failed here runs its kind's `on_final_failure` hook (reason `GAVE_UP`) in the same transaction,
-    exactly as when the loop fails it, so a pipeline source never stays `processing` forever.
+    A running job is stale once it has run longer than its kind's `stale_after` (so a long transcription is not
+    swept mid-run); only kinds in `handlers` are swept. A job failed here runs its kind's `on_final_failure` hook
+    (reason `GAVE_UP`) in the same transaction, exactly as when the loop fails it, so a pipeline source never
+    stays `processing` forever.
     """
-    stale = (
-        models.Job.status == models.JobStatus.RUNNING.value,
-        models.Job.started_at < now - STALE_AFTER,
-    )
-    failed = db.execute(
-        sqlalchemy.update(models.Job)
-        .where(*stale, models.Job.attempts >= models.Job.max_attempts)
-        .values(status=models.JobStatus.FAILED.value, last_error="worker stopped before the job finished")
-        .returning(models.Job.id, models.Job.kind)
-    ).all()
-    requeued_ids = db.scalars(
-        sqlalchemy.update(models.Job)
-        .where(*stale)
-        .values(status=models.JobStatus.QUEUED.value, next_run_at=now)
-        .returning(models.Job.id)
-    ).all()
+    failed: list[tuple[int, models.JobKind]] = []
+    requeued = 0
+    for kind, spec in handlers.items():
+        stale = (
+            models.Job.kind == kind.value,
+            models.Job.status == models.JobStatus.RUNNING.value,
+            models.Job.started_at < now - spec.stale_after,
+        )
+        failed_ids = db.scalars(
+            sqlalchemy.update(models.Job)
+            .where(*stale, models.Job.attempts >= models.Job.max_attempts)
+            .values(status=models.JobStatus.FAILED.value, last_error="worker stopped before the job finished")
+            .returning(models.Job.id)
+        ).all()
+        requeued_ids = db.scalars(
+            sqlalchemy.update(models.Job)
+            .where(*stale)
+            .values(status=models.JobStatus.QUEUED.value, next_run_at=now)
+            .returning(models.Job.id)
+        ).all()
+        failed.extend((job_id, kind) for job_id in failed_ids)
+        requeued += len(requeued_ids)
 
     # Hooks run before the commit so their writes land with the failure.
     for job_id, kind in failed:
-        hook = handlers[models.JobKind(kind)].on_final_failure
+        hook = handlers[kind].on_final_failure
         if hook is not None:
             hook(db, db.get_one(models.Job, job_id), errors.FailureReason.GAVE_UP.value)
     db.commit()
-    return len(failed) + len(requeued_ids)
+    return len(failed) + requeued
 
 
 def run_forever(engine: sqlalchemy.Engine, *, stop: threading.Event) -> None:
@@ -170,7 +182,8 @@ def _record_failure(
     with sqlalchemy.orm.Session(engine) as db:
         job = db.get_one(models.Job, job_id)
         permanent_reason = error.reason if isinstance(error, errors.PermanentJobError) else None
-        job.last_error = (permanent_reason or repr(error))[:_MAX_ERROR_LENGTH]
+        retry_later = error if isinstance(error, errors.RetryLaterError) else None
+        job.last_error = (permanent_reason or (retry_later.reason if retry_later else repr(error)))[:_MAX_ERROR_LENGTH]
 
         if permanent_reason is not None or job.attempts >= job.max_attempts:
             job.status = models.JobStatus.FAILED.value
@@ -178,7 +191,11 @@ def _record_failure(
             if hook is not None:
                 hook(db, job, permanent_reason or errors.FailureReason.GAVE_UP.value)
         else:
-            backoff = datetime.timedelta(seconds=BACKOFF_SECONDS[min(job.attempts - 1, len(BACKOFF_SECONDS) - 1)])
+            backoff = (
+                datetime.timedelta(seconds=max(retry_later.after_seconds, 1))
+                if retry_later
+                else datetime.timedelta(seconds=BACKOFF_SECONDS[min(job.attempts - 1, len(BACKOFF_SECONDS) - 1)])
+            )
             job.status = models.JobStatus.QUEUED.value
             job.next_run_at = sqlalchemy.func.now() + backoff
         db.commit()

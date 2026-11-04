@@ -1,0 +1,59 @@
+// Row factories for Library logic tests: our own rows, filled with neutral defaults.
+import type { LibrarySource, TopicPrimerRow, TopicRow } from "./join";
+
+export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => ({
+  id: "s1",
+  url: "https://example.com/a",
+  title: "A",
+  kind: "article",
+  state: "inbox",
+  intent: "queue",
+  createdAt: "2026-11-01T00:00:00Z",
+  updatedAt: "2026-11-01T00:00:00Z",
+  deletedAt: null,
+  syncError: null,
+  processing: "ready",
+  processingError: null,
+  reaction: null,
+  note: null,
+  prepMe: 0,
+  mergedIntoId: null,
+  sender: null,
+  domain: null,
+  topicId: null,
+  imageUrl: null,
+  queuePosition: null,
+  readAt: null,
+  snoozedUntil: null,
+  primerOpenedAt: null,
+  newsletterKind: null,
+  topic: null,
+  summary: null,
+  primerCreatedAt: null,
+  ...overrides,
+});
+
+export const topicRow = (overrides: Partial<TopicRow>): TopicRow => ({
+  id: "t1",
+  domain: "AI",
+  name: "Agents",
+  origin: "user",
+  removedAt: null,
+  mergedIntoId: null,
+  createdAt: "2026-11-01T00:00:00Z",
+  updatedAt: "2026-11-01T00:00:00Z",
+  primerRequestedAt: null,
+  ...overrides,
+});
+
+export const topicPrimerRow = (overrides: Partial<TopicPrimerRow>): TopicPrimerRow => ({
+  id: "p1",
+  topicId: "t1",
+  version: 1,
+  isCurrent: 1,
+  content: JSON.stringify({ markdown: "# Agents" }),
+  openedAt: null,
+  snoozedUntil: null,
+  createdAt: "2026-11-03T00:00:00Z",
+  ...overrides,
+});

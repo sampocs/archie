@@ -47,6 +47,7 @@ class ModelPair:
 ANALYZE_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 PRIMER_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 CORRECTIONS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+FILE_TOPIC_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 
 
 @dataclass(frozen=True)
@@ -77,7 +78,8 @@ class CallContext:
     """Whom and what a call is for, stored on its cost record."""
 
     user_id: int
-    source_id: uuid.UUID
+    # None for calls that belong to no source, such as a topic primer.
+    source_id: uuid.UUID | None
     job_id: int
     # A `JobKind` value, or a sub-step name such as `CORRECTIONS_STEP`.
     step: str

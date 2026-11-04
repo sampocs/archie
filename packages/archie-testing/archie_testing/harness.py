@@ -37,12 +37,20 @@ class LiveStack:
     _stop_worker: threading.Event = field(default_factory=threading.Event)
     _worker_thread: threading.Thread | None = None
 
-    def sign_in(self, *, apple_sub: str = "test-user", is_whitelisted: bool = False, email: str | None = None) -> str:
+    def sign_in(
+        self,
+        *,
+        apple_sub: str = "test-user",
+        is_whitelisted: bool = False,
+        email: str | None = None,
+        seed_topics: bool = False,
+    ) -> str:
         """Create (or reuse) a user and return a fresh session key, via the test-only route.
 
-        A whitelisted user's processing is paid for by the owner's Anthropic key.
+        A whitelisted user's processing is paid for by the owner's Anthropic key; `seed_topics` gives the user the
+        owner's topic list, as if they had finished the picker.
         """
-        body = {"apple_sub": apple_sub, "is_whitelisted": is_whitelisted, "email": email}
+        body = {"apple_sub": apple_sub, "is_whitelisted": is_whitelisted, "email": email, "seed_topics": seed_topics}
         response = self.client.post("/test/session", json=body)
         response.raise_for_status()
         return response.json()["session_key"]

@@ -63,6 +63,7 @@ def test_og_title_wins_over_the_title_tag(engine: sqlalchemy.Engine, replay: Rep
 
     source = _source(engine, source_id)
     assert source.title == OG_PAGE_TITLE
+    assert source.image_url == "https://ogp.me/logo.png"
     assert source.change_seq > seq_before
     assert _only_job(engine).status == models.JobStatus.DONE.value
 

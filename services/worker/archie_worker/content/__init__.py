@@ -19,10 +19,11 @@ _NUL = "\x00"
 
 @dataclass(frozen=True)
 class ExtractedText:
-    """A source's readable text and, when one was found, its title."""
+    """A source's readable text and, when one was found, its title and artwork."""
 
     title: str | None
     text: str
+    image_url: str | None = None
 
 
 @dataclass(frozen=True)

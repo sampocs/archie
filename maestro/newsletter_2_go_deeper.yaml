@@ -1,0 +1,23 @@
+appId: com.sampocs.archie
+---
+# Run after run_newsletter.sh has delivered the email. Needs real keys (a few cents).
+- tapOn:
+    id: "tab-library"
+- tapOn:
+    id: "filter-inbox"
+- extendedWaitUntil:
+    visible: ".*Putting it to a vote.*"
+    timeout: 180000
+- tapOn: ".*Putting it to a vote.*"
+# The summary has to be ready before Go deeper means anything.
+- extendedWaitUntil:
+    visible:
+      id: "item-go-deeper"
+    timeout: 120000
+- tapOn:
+    id: "item-go-deeper"
+# The cards land below the summary, so scroll down to them while the worker writes them.
+- scrollUntilVisible:
+    element:
+      id: "card-.*"
+    timeout: 300000

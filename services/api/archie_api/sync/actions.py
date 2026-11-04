@@ -2,12 +2,48 @@
 
 from __future__ import annotations
 
+from typing import Protocol
+
 from archie_db import changes, models
 from sqlalchemy import exc, orm
 
-from archie_api.sync import capture, schemas
+from archie_api.sync import capture, episodes, schemas, source_actions, topic_actions
 
 _ACTION_ID_USED = "action id already used"
+NOT_SUPPORTED = "action not supported yet"
+
+
+class ActionHandler(Protocol):
+    """One action type's handler: returns the rejection reason, or None when applied (validate before writing)."""
+
+    def __call__(self, db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
+        """Apply the action for `user`, or return why it is rejected."""
+        ...
+
+
+# Each action type's handler; later work registers its types here.
+HANDLERS: dict[schemas.ActionType, ActionHandler] = {
+    schemas.ActionType.ADD_SOURCE: capture.add_source,
+    schemas.ActionType.RETRY_SOURCE: capture.retry_source,
+    schemas.ActionType.FINISH_SOURCE: source_actions.finish_source,
+    schemas.ActionType.SET_PREP_ME: source_actions.set_prep_me,
+    schemas.ActionType.SET_READ: source_actions.set_read,
+    schemas.ActionType.SET_PRIMER_OPENED: source_actions.set_primer_opened,
+    schemas.ActionType.SNOOZE: source_actions.snooze,
+    schemas.ActionType.SET_QUEUE_POSITION: source_actions.set_queue_position,
+    schemas.ActionType.GO_DEEPER: source_actions.go_deeper,
+    schemas.ActionType.READ_LATER: source_actions.read_later,
+    schemas.ActionType.DELETE_SOURCE: source_actions.delete_source,
+    schemas.ActionType.CHOOSE_EPISODE: episodes.choose_episode,
+    schemas.ActionType.ADD_TOPIC: topic_actions.add_topic,
+    schemas.ActionType.RENAME_TOPIC: topic_actions.rename_topic,
+    schemas.ActionType.MERGE_TOPIC: topic_actions.merge_topic,
+    schemas.ActionType.REMOVE_TOPIC: topic_actions.remove_topic,
+    schemas.ActionType.RESTORE_TOPIC: topic_actions.restore_topic,
+    schemas.ActionType.REQUEST_TOPIC_PRIMER: topic_actions.request_topic_primer,
+    schemas.ActionType.SET_SOURCE_TOPIC: topic_actions.set_source_topic,
+    schemas.ActionType.CHOOSE_TOPICS: topic_actions.choose_topics,
+}
 
 
 def apply_actions(db: orm.Session, *, user: models.User, actions: list[schemas.ActionIn]) -> list[schemas.ActionOut]:
@@ -15,9 +51,14 @@ def apply_actions(db: orm.Session, *, user: models.User, actions: list[schemas.A
 
     The advisory lock is transaction-scoped, so the whole batch must be one transaction: committing per action
     would release the lock and let another writer's positions interleave. A rejected action leaves nothing
-    behind but its `applied_actions` row, because each action's writes sit in a savepoint.
+    behind but its `applied_actions` row, because each action's writes sit in a savepoint. Handlers must validate
+    everything before their first write: a handler that returns a reason does not undo what it already wrote.
     """
     changes.lock_user_writes(db, user.id)
+
+    # `user` was loaded before the lock, so a concurrent batch may have set this since; re-read it once here (not in
+    # the handler, where a refresh would overwrite this batch's own pending `func.now()`).
+    db.refresh(user, attribute_names=["topics_chosen_at"])
     results = [_apply_action(db, user=user, action=action) for action in actions]
     db.commit()
     return results
@@ -41,12 +82,12 @@ def _apply_action(db: orm.Session, *, user: models.User, action: schemas.ActionI
 
             _record(db, user=user, action=action, result=models.ActionResult.APPLIED, reason=None)
     except exc.IntegrityError:
-        # The lock is per user, so another user racing us on a unique key gets here: the same source id, or the
-        # same (globally unique) action id. In the action-id case the winner owns the row, so we record nothing.
+        # The lock is per user, so another user racing us on a unique key gets here: the same source or topic id,
+        # or the same (globally unique) action id. In the action-id case the winner owns the row, so we record nothing.
         if db.get(models.AppliedAction, action.id) is not None:
             return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason=_ACTION_ID_USED)
 
-        reason = "source id already exists"
+        reason = "source id already exists" if action.type == schemas.ActionType.ADD_SOURCE else "id already exists"
         _record(db, user=user, action=action, result=models.ActionResult.REJECTED, reason=reason)
         return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason=reason)
 
@@ -55,11 +96,10 @@ def _apply_action(db: orm.Session, *, user: models.User, action: schemas.ActionI
 
 def _dispatch(db: orm.Session, *, user: models.User, action: schemas.ActionIn) -> str | None:
     """Run the action's handler; returns the rejection reason, or None when applied."""
-    match action.type:
-        case schemas.ActionType.ADD_SOURCE:
-            return capture.add_source(db, user=user, payload=action.payload)
-        case schemas.ActionType.RETRY_SOURCE:
-            return capture.retry_source(db, user=user, payload=action.payload)
+    handler = HANDLERS.get(action.type)
+    if handler is None:
+        return NOT_SUPPORTED
+    return handler(db, user=user, payload=action.payload)
 
 
 def _record(

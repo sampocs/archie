@@ -10,9 +10,11 @@ from __future__ import annotations
 
 import datetime
 import pathlib
+import re
 
 import httpx
 import pytest
+from archie_shared import podcast_feed
 from archie_worker import content, errors
 from archie_worker.content import podcast, transcripts
 from archie_worker.handlers import fetch_title
@@ -27,8 +29,8 @@ def _read(name: str) -> str:
 
 def _item(
     *, title: str, published: datetime.date | None, audio_url: str | None = "https://example.test/a.mp3"
-) -> podcast.FeedItem:
-    return podcast.FeedItem(
+) -> podcast_feed.FeedItem:
+    return podcast_feed.FeedItem(
         title=title,
         published=published,
         guid=None,
@@ -96,7 +98,7 @@ def test_html_becomes_visible_text_only() -> None:
 
 def test_the_feed_gives_titles_dates_enclosures_durations_and_transcripts() -> None:
     """The real feed's first item carries every field the resolver needs."""
-    items = podcast.parse_feed((FIXTURES / "darknet_diaries_feed.xml").read_bytes())
+    items = podcast_feed.parse_feed((FIXTURES / "darknet_diaries_feed.xml").read_bytes())
 
     assert [item.title for item in items][:2] == ["182: Blackshades", "181: Ricky"]
     assert len(items) == 5
@@ -110,6 +112,26 @@ def test_the_feed_gives_titles_dates_enclosures_durations_and_transcripts() -> N
     assert "<" not in blackshades.description
 
 
+def test_every_item_has_artwork_and_a_bare_item_falls_back_to_the_channels() -> None:
+    """Items carry their own artwork; a bare one gets the channel's `itunes:image`, else its `<image><url>`."""
+    feed = (FIXTURES / "darknet_diaries_feed.xml").read_text(encoding="utf-8")
+    items = podcast_feed.parse_feed(feed.encode())
+    assert all(item.image_url and item.image_url.startswith("https://") for item in items)
+
+    item_image = re.compile(r'\s*<itunes:image href="[^"]*Ep182_BlackshadesSquare.jpg" />')
+    assert item_image.search(feed)
+    bare = podcast_feed.parse_feed(item_image.sub("", feed).encode())
+    channel_href = re.search(r'<itunes:image href="([^"]+)"', feed)
+    assert channel_href is not None
+    assert bare[0].image_url == channel_href.group(1)
+    assert bare[1].image_url != bare[0].image_url
+
+    channel_url = re.search(r"<image>\s*<url>([^<]+)</url>", feed)
+    assert channel_url is not None
+    without_channel_itunes_image = re.sub(r'\n    <itunes:image href="[^"]*68ff[^"]*" />', "", item_image.sub("", feed))
+    assert podcast_feed.parse_feed(without_channel_itunes_image.encode())[0].image_url == channel_url.group(1)
+
+
 def test_durations_are_read_as_seconds_or_clock_times() -> None:
     """`itunes:duration` as seconds, `mm:ss` or `h:mm:ss`; anything else is None."""
     feed = b"""<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"><channel>
@@ -119,7 +141,7 @@ def test_durations_are_read_as_seconds_or_clock_times() -> None:
       <item><title>d</title><itunes:duration>soon</itunes:duration></item>
       <item><title>e</title></item></channel></rss>"""
 
-    assert [item.duration_s for item in podcast.parse_feed(feed)] == [754, 754, 3723, None, None]
+    assert [item.duration_s for item in podcast_feed.parse_feed(feed)] == [754, 754, 3723, None, None]
 
 
 DAY = datetime.date(2026, 10, 20)
@@ -160,7 +182,7 @@ def test_items_without_audio_or_a_date_are_skipped() -> None:
 
 def test_a_guidless_apple_title_matches_the_feed_title_with_its_number() -> None:
     """The real pair from the Apple lookup and feed: "Blackshades" vs "182: Blackshades"."""
-    items = podcast.parse_feed((FIXTURES / "darknet_diaries_feed.xml").read_bytes())
+    items = podcast_feed.parse_feed((FIXTURES / "darknet_diaries_feed.xml").read_bytes())
     published = items[0].published
     assert published is not None
 
@@ -246,8 +268,8 @@ def served(monkeypatch: pytest.MonkeyPatch) -> list[str]:
     return asked
 
 
-def _link(url: str, mime_type: str) -> podcast.TranscriptLink:
-    return podcast.TranscriptLink(url=url, mime_type=mime_type)
+def _link(url: str, mime_type: str) -> podcast_feed.TranscriptLink:
+    return podcast_feed.TranscriptLink(url=url, mime_type=mime_type)
 
 
 def test_the_vtt_is_tried_before_srt_json_and_html(served: list[str]) -> None:

@@ -11,10 +11,9 @@ from dataclasses import dataclass
 from typing import Any
 
 import httpx
-from archie_shared import logging
+from archie_shared import logging, podcast_feed
 
 from archie_worker import content
-from archie_worker.content import podcast
 from archie_worker.handlers import fetch_title
 
 _FETCH_TIMEOUT_SECONDS = 30
@@ -45,7 +44,7 @@ class PublishedTranscript:
     segments: list[content.Segment]
 
 
-def fetch_best(links: Sequence[podcast.TranscriptLink]) -> PublishedTranscript | None:
+def fetch_best(links: Sequence[podcast_feed.TranscriptLink]) -> PublishedTranscript | None:
     """The first link, in format preference order, that fetches and parses to at least 200 words; else None."""
     for link in _in_preference_order(links):
         transcript = _try_fetch(link=link)
@@ -88,7 +87,7 @@ def html_to_text(text: str) -> str:
     return " ".join(" ".join(parser.parts).split())
 
 
-def _in_preference_order(links: Sequence[podcast.TranscriptLink]) -> list[podcast.TranscriptLink]:
+def _in_preference_order(links: Sequence[podcast_feed.TranscriptLink]) -> list[podcast_feed.TranscriptLink]:
     ranked = [
         (rank, link)
         for link in links
@@ -102,7 +101,7 @@ def _base_mime(mime_type: str) -> str:
     return mime_type.split(";")[0].strip().lower()
 
 
-def _try_fetch(*, link: podcast.TranscriptLink) -> PublishedTranscript | None:
+def _try_fetch(*, link: podcast_feed.TranscriptLink) -> PublishedTranscript | None:
     """Fetch and parse one link; a fetch or parse failure is logged and gives None so the next link is tried."""
     try:
         raw = fetch_title.fetch_bytes(url=link.url, timeout_seconds=_FETCH_TIMEOUT_SECONDS, max_bytes=_FETCH_MAX_BYTES)

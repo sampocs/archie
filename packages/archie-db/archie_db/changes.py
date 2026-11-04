@@ -23,3 +23,9 @@ def lock_user_writes(db: sqlalchemy.orm.Session, user_id: int) -> None:
 def next_change_seq() -> sqlalchemy.ColumnElement[int]:
     """The next change position. Call only after `lock_user_writes` in the same transaction."""
     return sqlalchemy.func.nextval(models.CHANGE_SEQ_NAME)
+
+
+def touch(row: models.Source | models.Topic) -> None:
+    """Mark a changed row so phones pull it again. Call only after `lock_user_writes` in the same transaction."""
+    row.updated_at = sqlalchemy.func.now()
+    row.change_seq = next_change_seq()

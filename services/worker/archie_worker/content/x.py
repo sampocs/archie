@@ -56,7 +56,11 @@ def thread_text(*, data: dict[str, Any]) -> content.ExtractedText:
     paragraphs = [paragraph for post in posts for paragraph in _post_paragraphs(post=post)]
     first_article = posts[0].get("article")
     title = first_article["title"] if first_article else f"@{handle}: {posts[0]['text'][:TITLE_POST_LENGTH]}"
-    return content.ExtractedText(title=title, text="\n\n".join(paragraphs)[: content.MAX_TEXT_LENGTH])
+    return content.ExtractedText(
+        title=title,
+        text="\n\n".join(paragraphs)[: content.MAX_TEXT_LENGTH],
+        image_url=shared_post["author"].get("avatar_url"),
+    )
 
 
 def _post_paragraphs(*, post: dict[str, Any]) -> list[str]:

@@ -1,0 +1,64 @@
+appId: com.sampocs.archie
+---
+# Needs the owner's keys: the worker calls Anthropic for this article (a few cents). Run it only against
+# `make start-local` with ANTHROPIC_API_KEY in .env (local backend only).
+- runFlow: login.yaml
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "tab-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://paulgraham.com/hwh.html"
+# The keyboard hides Save; tapping the screen's hint text dismisses it.
+- tapOn: "Paste a link to save it."
+- tapOn:
+    id: "intent-queue"
+- tapOn:
+    id: "prep-me"
+- tapOn:
+    id: "add-save"
+- tapOn:
+    id: "tab-today"
+# One wait only (Maestro shares the timeout across consecutive waits).
+- extendedWaitUntil:
+    visible:
+      id: "primer-ready-0"
+    timeout: 240000
+- assertVisible:
+    id: "primer-ready-0-art-unread"
+- tapOn:
+    id: "primer-ready-0"
+- scrollUntilVisible:
+    element:
+      id: "primer-toggle"
+    timeout: 20000
+- assertVisible: "▾ Background you might need"
+- tapOn:
+    id: "screen-back"
+# Opened primers leave Primers ready, so the unread dot is gone too.
+- assertNotVisible:
+    id: "primer-ready-0"
+- assertVisible:
+    id: "up-next-0"

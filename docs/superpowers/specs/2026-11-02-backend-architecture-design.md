@@ -205,9 +205,9 @@ Each milestone gets its own spec → plan → build, and each one ends with some
 | 2 | **Capture → pipeline:** share extension → API; analyze, primer and cards; versions; `llm_calls`; articles/Safari and X first | share an article and read its summary minutes later |
 | 3 | **All sources:** podcasts (Spotify), YouTube, newsletters from the Worker | see everything they consume arrive |
 | 4 | **Library + Today screens:** states, domains/topics, source pages, following the UX spec | actually live in the app |
-| 5 | **Cards + review:** starts with the deferred card-grading spike; then FSRS, review ahead and by topic, the daily notification | do daily reviews, including offline |
-| 6 | **Search + chat:** embeddings, merged search, web search, edits through chat | ask Archie questions |
-| 7 | **Pulse** | read the news brief |
+| 5 | **Pulse:** the newsletter brief, grouped by story | read the news brief |
+| 6 | **Cards + review:** starts with the deferred card-grading spike; then FSRS, review ahead and by topic, the daily notification | do daily reviews, including offline |
+| 7 | **Search + chat:** embeddings, merged search, web search, edits through chat | ask Archie questions |
 | 8 | **Notes import:** Bear, Google Docs | bring in old notes |
 | 9 | **App Store:** bring-your-own-keys in Settings, delete account, privacy policy, reviewer account, submission | install it from the App Store |
 

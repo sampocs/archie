@@ -18,6 +18,24 @@ class ActionType(StrEnum):
 
     ADD_SOURCE = "add_source"
     RETRY_SOURCE = "retry_source"
+    FINISH_SOURCE = "finish_source"
+    SET_PREP_ME = "set_prep_me"
+    SET_READ = "set_read"
+    SET_PRIMER_OPENED = "set_primer_opened"
+    SNOOZE = "snooze"
+    SET_QUEUE_POSITION = "set_queue_position"
+    GO_DEEPER = "go_deeper"
+    READ_LATER = "read_later"
+    DELETE_SOURCE = "delete_source"
+    ADD_TOPIC = "add_topic"
+    RENAME_TOPIC = "rename_topic"
+    MERGE_TOPIC = "merge_topic"
+    REMOVE_TOPIC = "remove_topic"
+    RESTORE_TOPIC = "restore_topic"
+    REQUEST_TOPIC_PRIMER = "request_topic_primer"
+    SET_SOURCE_TOPIC = "set_source_topic"
+    CHOOSE_TOPICS = "choose_topics"
+    CHOOSE_EPISODE = "choose_episode"
 
 
 class ActionIn(pydantic.BaseModel):
@@ -66,6 +84,14 @@ class SourceOut(pydantic.BaseModel):
     prep_me: bool
     merged_into_id: uuid.UUID | None
     sender: str | None
+    domain: str | None
+    topic_id: uuid.UUID | None
+    image_url: str | None
+    queue_position: float | None
+    read_at: datetime.datetime | None
+    snoozed_until: datetime.datetime | None
+    primer_opened_at: datetime.datetime | None
+    newsletter_kind: str | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None
@@ -102,12 +128,46 @@ class CardOut(pydantic.BaseModel):
     change_seq: int
 
 
+class TopicOut(pydantic.BaseModel):
+    """A topic on the user's list as the phone stores it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    domain: str
+    name: str
+    origin: str
+    removed_at: datetime.datetime | None
+    merged_into_id: uuid.UUID | None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    change_seq: int
+
+
+class TopicPrimerOut(pydantic.BaseModel):
+    """A topic primer version as the phone stores it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    topic_id: uuid.UUID
+    version: int
+    is_current: bool
+    content: dict[str, Any]
+    opened_at: datetime.datetime | None
+    snoozed_until: datetime.datetime | None
+    created_at: datetime.datetime
+    change_seq: int
+
+
 class PulledRows(pydantic.BaseModel):
     """Changed rows by table."""
 
     sources: list[SourceOut]
     artifacts: list[ArtifactOut]
     cards: list[CardOut]
+    topics: list[TopicOut]
+    topic_primers: list[TopicPrimerOut]
 
 
 class PullResponse(pydantic.BaseModel):

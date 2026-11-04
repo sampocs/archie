@@ -1,10 +1,12 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+
+import migrations from "../../drizzle/migrations";
+import { goDeeper } from "@/db/actions";
 
 import { ClientError, NetworkError, UnauthorizedError } from "@/api/client";
 import type { AppDb } from "@/db/client";
 import * as schema from "@/db/schema";
+import { makeTestDb } from "@/db/testDb";
 
 import {
   createSyncScheduler,
@@ -12,6 +14,8 @@ import {
   PulledArtifact,
   PulledCard,
   PulledSource,
+  PulledTopic,
+  PulledTopicPrimer,
   PullPage,
   PushResult,
   runSync,
@@ -68,7 +72,13 @@ function makeEntries(count: number): OutboxEntry[] {
 }
 
 const emptyPage = (position: number, more = false): PullPage => ({
-  rows: { sources: [], artifacts: [], cards: [] },
+  rows: {
+    sources: [],
+    artifacts: [],
+    cards: [],
+    topics: [],
+    topic_primers: [],
+  },
   position,
   more,
 });
@@ -295,30 +305,7 @@ describe("runSync pull", () => {
 });
 
 function makeDbStore() {
-  const sqlite = new Database(":memory:");
-  sqlite.exec(`
-    CREATE TABLE sources (
-      id text PRIMARY KEY NOT NULL, url text NOT NULL, title text, kind text NOT NULL, state text NOT NULL,
-      intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text,
-      processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
-      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text, sender text
-    );
-    CREATE TABLE outbox (
-      id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
-      status text NOT NULL, error text
-    );
-    CREATE TABLE artifacts (
-      id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, version integer NOT NULL,
-      content text NOT NULL, is_current integer NOT NULL, created_at text NOT NULL
-    );
-    CREATE TABLE cards (
-      id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, question text NOT NULL,
-      answer text NOT NULL, created_at text NOT NULL, deleted_at text
-    );
-    CREATE TABLE sync_state (id integer PRIMARY KEY NOT NULL, position integer NOT NULL, last_push_failed integer NOT NULL);
-    INSERT INTO sync_state VALUES (1, 0, 0);
-  `);
-  const db = drizzle(sqlite, { schema }) as unknown as AppDb;
+  const db = makeTestDb();
   return { db, store: createDbSyncStore(db) };
 }
 
@@ -339,6 +326,14 @@ const pulledSource = (overrides: Partial<PulledSource>): PulledSource => ({
   prep_me: false,
   merged_into_id: null,
   sender: null,
+  domain: null,
+  topic_id: null,
+  image_url: null,
+  queue_position: null,
+  read_at: null,
+  snoozed_until: null,
+  primer_opened_at: null,
+  newsletter_kind: null,
   ...overrides,
 });
 
@@ -389,6 +384,8 @@ describe("database SyncStore", () => {
         ],
         artifacts: [],
         cards: [],
+        topics: [],
+        topic_primers: [],
       },
       position: 42,
       more: false,
@@ -411,11 +408,19 @@ describe("database SyncStore", () => {
   it("stores a pulled source's sender and updates it on a re-pull", async () => {
     const { db, store } = makeDbStore();
     const page = (sender: string | null) => ({
-      rows: { sources: [pulledSource({ kind: "newsletter", state: "inbox", sender })], artifacts: [], cards: [] },
+      rows: {
+        sources: [pulledSource({ kind: "newsletter", state: "inbox", sender })],
+        artifacts: [],
+        cards: [],
+        topics: [],
+        topic_primers: [],
+      },
       position: 1,
       more: false,
     });
-    const senderOf = () => db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get()?.sender;
+    const senderOf = () =>
+      db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get()
+        ?.sender;
 
     await store.applyPage(page("Ben Thompson <ben@stratechery.com>"));
     expect(senderOf()).toBe("Ben Thompson <ben@stratechery.com>");
@@ -451,6 +456,8 @@ describe("database SyncStore", () => {
         ],
         artifacts: [],
         cards: [],
+        topics: [],
+        topic_primers: [],
       },
       position: 9,
       more: false,
@@ -475,6 +482,8 @@ describe("database SyncStore", () => {
         ],
         artifacts: [artifact],
         cards: [card],
+        topics: [],
+        topic_primers: [],
       },
       position: 5,
       more: false,
@@ -532,6 +541,8 @@ describe("database SyncStore", () => {
         ],
         artifacts: [],
         cards: [],
+        topics: [],
+        topic_primers: [],
       },
       position: 1,
       more: false,
@@ -595,7 +606,12 @@ describe("database SyncStore", () => {
   it("a rejected retry_source puts the source back to failed, undoing the optimistic processing", async () => {
     const { db, store } = makeDbStore();
     db.insert(schema.sources)
-      .values({ ...pulledSource({ id: "src-1" }), processing: "processing", createdAt: "x", updatedAt: "x" })
+      .values({
+        ...pulledSource({ id: "src-1" }),
+        processing: "processing",
+        createdAt: "x",
+        updatedAt: "x",
+      })
       .run();
     db.insert(schema.outbox)
       .values({
@@ -609,10 +625,317 @@ describe("database SyncStore", () => {
 
     await store.rejectAction("retry", "source is not failed");
 
-    const source = db.select().from(schema.sources).where(eq(schema.sources.id, "src-1")).get();
-    expect(source).toMatchObject({ processing: "failed", syncError: "source is not failed" });
+    const source = db
+      .select()
+      .from(schema.sources)
+      .where(eq(schema.sources.id, "src-1"))
+      .get();
+    expect(source).toMatchObject({
+      processing: "failed",
+      syncError: "source is not failed",
+    });
   });
 });
+
+const pulledTopic = (overrides: Partial<PulledTopic>): PulledTopic => ({
+  id: "t1",
+  domain: "Crypto",
+  name: "Bitcoin",
+  origin: "starter",
+  removed_at: null,
+  merged_into_id: null,
+  created_at: "2026-11-01T00:00:00Z",
+  updated_at: "2026-11-01T00:00:00Z",
+  ...overrides,
+});
+
+const pulledTopicPrimer = (
+  overrides: Partial<PulledTopicPrimer>,
+): PulledTopicPrimer => ({
+  id: "p1",
+  topic_id: "t1",
+  version: 1,
+  is_current: true,
+  content: { markdown: "# Bitcoin" },
+  opened_at: null,
+  snoozed_until: null,
+  created_at: "2026-11-02T00:00:00Z",
+  ...overrides,
+});
+
+const topicsPage = (
+  topics: PulledTopic[],
+  topicPrimers: PulledTopicPrimer[] = [],
+): PullPage => ({
+  rows: {
+    sources: [],
+    artifacts: [],
+    cards: [],
+    topics,
+    topic_primers: topicPrimers,
+  },
+  position: 3,
+  more: false,
+});
+
+const topicById = (db: AppDb, id: string) =>
+  db.select().from(schema.topics).where(eq(schema.topics.id, id)).get();
+
+describe("database SyncStore: library rows", () => {
+  it("stores pulled topics and topic primers (content as JSON text)", async () => {
+    const { db, store } = makeDbStore();
+
+    await store.applyPage(
+      topicsPage(
+        [pulledTopic({ removed_at: "2026-11-03T00:00:00Z" })],
+        [pulledTopicPrimer({})],
+      ),
+    );
+
+    expect(topicById(db, "t1")).toMatchObject({
+      domain: "Crypto",
+      name: "Bitcoin",
+      origin: "starter",
+      removedAt: "2026-11-03T00:00:00Z",
+      mergedIntoId: null,
+    });
+    const primer = db.select().from(schema.topicPrimers).get();
+    expect(primer).toMatchObject({
+      topicId: "t1",
+      version: 1,
+      isCurrent: 1,
+      openedAt: null,
+    });
+    expect(JSON.parse(primer!.content)).toEqual({ markdown: "# Bitcoin" });
+  });
+
+  it("keeps a topic's local copy while an action on it is unsent", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(topicsPage([pulledTopic({})]));
+    db.update(schema.topics)
+      .set({ name: "BTC" })
+      .where(eq(schema.topics.id, "t1"))
+      .run();
+    db.insert(schema.outbox)
+      .values({
+        id: "o1",
+        type: "rename_topic",
+        payload: JSON.stringify({ id: "t1", name: "BTC" }),
+        createdAt: "x",
+        status: "pending",
+      })
+      .run();
+
+    await store.applyPage(topicsPage([pulledTopic({ name: "Bitcoin" })]));
+
+    expect(topicById(db, "t1")?.name).toBe("BTC");
+  });
+
+  it("never clears the phone-only primerRequestedAt on a later pull", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(topicsPage([pulledTopic({})]));
+    db.update(schema.topics)
+      .set({ primerRequestedAt: "2026-11-04T00:00:00Z" })
+      .where(eq(schema.topics.id, "t1"))
+      .run();
+
+    await store.applyPage(topicsPage([pulledTopic({ name: "Bitcoin!" })]));
+
+    expect(topicById(db, "t1")).toMatchObject({
+      name: "Bitcoin!",
+      primerRequestedAt: "2026-11-04T00:00:00Z",
+    });
+  });
+
+  it("deletes the optimistic topic when its add_topic is rejected", async () => {
+    const { db, store } = makeDbStore();
+    db.insert(schema.topics)
+      .values({
+        id: "t1",
+        domain: "AI",
+        name: "Evals",
+        origin: "user",
+        createdAt: "x",
+        updatedAt: "x",
+      })
+      .run();
+    db.insert(schema.outbox)
+      .values({
+        id: "o1",
+        type: "add_topic",
+        payload: JSON.stringify({ id: "t1", domain: "AI", name: "Evals" }),
+        createdAt: "x",
+        status: "pending",
+      })
+      .run();
+
+    await store.rejectAction("o1", "a topic with this name exists");
+
+    expect(topicById(db, "t1")).toBeUndefined();
+    expect(db.select().from(schema.outbox).get()).toMatchObject({
+      status: "rejected",
+      error: "a topic with this name exists",
+    });
+  });
+
+  const queueRejectable = (db: AppDb, type: string, payload: object) => {
+    db.insert(schema.outbox)
+      .values({
+        id: "o1",
+        type,
+        payload: JSON.stringify(payload),
+        createdAt: "x",
+        status: "pending",
+      })
+      .run();
+    db.update(schema.syncState).set({ position: 7 }).where(eq(schema.syncState.id, 1)).run();
+  };
+  const position = (db: AppDb) =>
+    db.select().from(schema.syncState).get()?.position;
+
+  it("deletes every optimistic topic when its choose_topics is rejected", async () => {
+    const { db, store } = makeDbStore();
+    for (const id of ["t1", "t2"]) {
+      db.insert(schema.topics)
+        .values({
+          id,
+          domain: "AI",
+          name: id,
+          origin: "starter",
+          createdAt: "x",
+          updatedAt: "x",
+        })
+        .run();
+    }
+    queueRejectable(db, "choose_topics", {
+      topics: [{ id: "t1" }, { id: "t2" }],
+    });
+
+    await store.rejectAction("o1", "bad topics");
+
+    expect(db.select().from(schema.topics).all()).toEqual([]);
+  });
+
+  it("rewinds the position to 0 when a rename_topic is rejected", async () => {
+    const { db, store } = makeDbStore();
+    queueRejectable(db, "rename_topic", { id: "t1", name: "x" });
+
+    await store.rejectAction("o1", "name taken");
+
+    expect(position(db)).toBe(0);
+  });
+
+  it("rewinds the position to 0 when a topic_primer snooze is rejected", async () => {
+    const { db, store } = makeDbStore();
+    queueRejectable(db, "snooze", {
+      target: "topic_primer",
+      id: "t1",
+      until: null,
+    });
+
+    await store.rejectAction("o1", "nope");
+
+    expect(position(db)).toBe(0);
+  });
+
+  it("leaves the position alone when a source action is rejected", async () => {
+    const { db, store } = makeDbStore();
+    queueRejectable(db, "snooze", { target: "source", id: "s1", until: null });
+
+    await store.rejectAction("o1", "nope");
+
+    expect(position(db)).toBe(7);
+  });
+
+  it("stores a pulled source's filing, artwork and reading fields", async () => {
+    const { db, store } = makeDbStore();
+    const fields = {
+      domain: "Crypto",
+      topic_id: "t1",
+      image_url: "https://example.com/art.jpg",
+      queue_position: -2.5,
+      read_at: "2026-11-03T00:00:00Z",
+      snoozed_until: "2026-11-05T14:00:00Z",
+      primer_opened_at: "2026-11-03T01:00:00Z",
+      newsletter_kind: "digest",
+    };
+
+    await store.applyPage({
+      rows: {
+        sources: [pulledSource(fields)],
+        artifacts: [],
+        cards: [],
+        topics: [],
+        topic_primers: [],
+      },
+      position: 1,
+      more: false,
+    });
+
+    expect(db.select().from(schema.sources).get()).toMatchObject({
+      domain: "Crypto",
+      topicId: "t1",
+      imageUrl: "https://example.com/art.jpg",
+      queuePosition: -2.5,
+      readAt: "2026-11-03T00:00:00Z",
+      snoozedUntil: "2026-11-05T14:00:00Z",
+      primerOpenedAt: "2026-11-03T01:00:00Z",
+      newsletterKind: "digest",
+    });
+  });
+});
+
+describe("database SyncStore: M4 migration and rejections", () => {
+  it("applies a page from a pre-M4 server (no topics keys) and saves the position", async () => {
+    const { db, store } = makeDbStore();
+    const legacyRows = { sources: [pulledSource({})], artifacts: [], cards: [] };
+
+    await store.applyPage({ rows: legacyRows, position: 9, more: false });
+
+    expect(db.select().from(schema.sources).all()).toHaveLength(1);
+    expect(await store.getPosition()).toBe(9);
+  });
+
+  it("the repull migration resets a saved position to 0", () => {
+    const { db } = makeDbStore();
+    db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
+    const last = migrations.journal.entries[migrations.journal.entries.length - 1];
+    const sql = (migrations.migrations as Record<string, string>)[`m${String(last.idx).padStart(4, "0")}`];
+    expect(last.tag).toBe("0004_repull_after_library");
+
+    db.run(sqlTag(sql));
+
+    expect(db.select().from(schema.syncState).get()?.position).toBe(0);
+  });
+
+  it("a rejected go_deeper surfaces syncError, rewinds the position, and the next pull restores the server copy", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: { sources: [pulledSource({ state: "inbox", processing: "ready" })], artifacts: [], cards: [] },
+      position: 5,
+      more: false,
+    });
+    goDeeper(db, "s1");
+    const entry = db.select().from(schema.outbox).get()!;
+
+    await store.rejectAction(entry.id, "not ready");
+
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)).toMatchObject({ state: "consumed", processing: "processing", syncError: "not ready" });
+
+    await store.applyPage({
+      rows: { sources: [pulledSource({ state: "inbox", processing: "ready" })], artifacts: [], cards: [] },
+      position: 6,
+      more: false,
+    });
+
+    // The pull restores state/processing; syncError is deliberately outside the upsert set, so it stays.
+    expect(sourceRow(db)).toMatchObject({ state: "inbox", processing: "ready", syncError: "not ready" });
+  });
+});
+
+const sourceRow = (db: AppDb) => db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get();
+const sqlTag = (text: string) => sql.raw(text);
 
 describe("createSyncScheduler", () => {
   it("never overlaps runs and coalesces triggers that arrive mid-run into one rerun", async () => {
@@ -689,6 +1012,8 @@ describe("sign-out during a sync run", () => {
             sources: [pulledSource({ id: "old-account" })],
             artifacts: [],
             cards: [],
+            topics: [],
+            topic_primers: [],
           },
           position: 7,
           more: false,

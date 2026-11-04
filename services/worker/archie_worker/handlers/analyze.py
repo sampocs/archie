@@ -50,8 +50,9 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         prompt_version=prompts.ANALYZE_PROMPT_VERSION,
     )
     _retire_cards_before(db, source_id=source.id, current_artifact_id=summary.id)
-    # Newsletters are summary-only: no cards, whatever the model says.
-    if analysis["is_educational"] and run.kind != models.SourceKind.NEWSLETTER:
+    # A newsletter gets cards only once the user went deeper (it is then consumed); other sources always may.
+    wants_cards = run.kind != models.SourceKind.NEWSLETTER or source.state == models.SourceState.CONSUMED
+    if analysis["is_educational"] and wants_cards:
         _insert_cards(db, source=source, artifact_id=summary.id, cards=analysis["cards"])
     pipeline.finish_step(db, source=source)
 

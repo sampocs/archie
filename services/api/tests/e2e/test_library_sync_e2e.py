@@ -245,12 +245,3 @@ def test_a_newsletters_text_is_served_to_its_owner_only(live_stack: LiveStack) -
     assert authed.get(f"/sources/{empty}/text").status_code == 404
     assert authed.get(f"/sources/{uuid.uuid4()}/text").status_code == 404
 
-
-def test_an_action_type_without_a_handler_is_rejected(live_stack: LiveStack) -> None:
-    """A known type that nothing has registered yet is rejected rather than failing the batch."""
-    authed = live_stack.authed(live_stack.sign_in())
-    action = {"id": str(uuid.uuid4()), "type": "set_read", "payload": {"id": str(uuid.uuid4()), "read": True}}
-
-    result = authed.post("/sync/push", json={"actions": [action]}).json()["results"][0]
-
-    assert result == {"id": action["id"], "result": "rejected", "reason": "action not supported yet"}

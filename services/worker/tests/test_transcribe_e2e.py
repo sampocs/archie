@@ -223,7 +223,9 @@ def test_openai_transcribes_a_chunk_as_one_segment_per_part(
 
     assert len(cassette) == 1
     [openai_call] = _llm_calls(engine, provider=models.TranscriptProvider.OPENAI.value)
-    assert openai_call.audio_seconds == Decimal(f"{SHORT_CHUNK_SECONDS:.3f}")
+    # The part's duration is re-probed after ffmpeg cuts it, and ffmpeg builds differ by a frame or so of padding.
+    assert openai_call.audio_seconds is not None
+    assert abs(openai_call.audio_seconds - Decimal(f"{SHORT_CHUNK_SECONDS:.3f}")) < Decimal("0.5")
     assert openai_call.cost_usd > 0
     [segment] = segments
     assert segment.start == 180.0

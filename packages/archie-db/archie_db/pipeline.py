@@ -16,6 +16,9 @@ from archie_db import changes, jobs, models
 # The job payload key naming the source a pipeline step works on.
 SOURCE_ID_KEY = "source_id"
 
+# Steps that get more attempts than the default: a rate-limited transcription re-queues itself and each try counts.
+MAX_ATTEMPTS: dict[models.JobKind, int] = {models.JobKind.TRANSCRIBE: 6}
+
 
 def current_artifact(
     db: sqlalchemy.orm.Session, *, source_id: uuid.UUID, kind: models.ArtifactKind
@@ -111,4 +114,10 @@ def steps_to_retry(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID) -> list[
 def enqueue_steps(db: sqlalchemy.orm.Session, *, source: models.Source, steps: list[models.JobKind]) -> None:
     """Queue one job per step, in order, in the caller's transaction."""
     for step in steps:
-        jobs.enqueue(db, kind=step, user_id=source.user_id, payload={SOURCE_ID_KEY: str(source.id)})
+        jobs.enqueue(
+            db,
+            kind=step,
+            user_id=source.user_id,
+            payload={SOURCE_ID_KEY: str(source.id)},
+            max_attempts=MAX_ATTEMPTS.get(step),
+        )

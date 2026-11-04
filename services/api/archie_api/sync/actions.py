@@ -7,7 +7,7 @@ from typing import Protocol
 from archie_db import changes, models
 from sqlalchemy import exc, orm
 
-from archie_api.sync import capture, schemas
+from archie_api.sync import capture, episodes, schemas
 
 _ACTION_ID_USED = "action id already used"
 NOT_SUPPORTED = "action not supported yet"
@@ -25,6 +25,7 @@ class ActionHandler(Protocol):
 HANDLERS: dict[schemas.ActionType, ActionHandler] = {
     schemas.ActionType.ADD_SOURCE: capture.add_source,
     schemas.ActionType.RETRY_SOURCE: capture.retry_source,
+    schemas.ActionType.CHOOSE_EPISODE: episodes.choose_episode,
 }
 
 

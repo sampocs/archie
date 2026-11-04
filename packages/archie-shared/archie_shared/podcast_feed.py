@@ -49,6 +49,7 @@ class FeedItem:
     duration_s: int | None
     description: str
     transcripts: list[TranscriptLink]
+    image_url: str | None = None
 
 
 def parse_feed(feed: bytes) -> list[FeedItem]:
@@ -57,7 +58,8 @@ def parse_feed(feed: bytes) -> list[FeedItem]:
     if channel is None:
         raise ValueError("Feed has no channel")
 
-    return [_feed_item(item) for item in channel.findall("item")]
+    channel_image_url = _channel_image_url(channel)
+    return [_feed_item(item, channel_image_url=channel_image_url) for item in channel.findall("item")]
 
 
 def item_by_guid(*, items: Sequence[FeedItem], guid: str | None) -> FeedItem | None:
@@ -85,9 +87,17 @@ def fetch_feed(feed_url: str) -> bytes:
             return bytes(body[:FEED_MAX_BYTES])
 
 
-def _feed_item(item: Any) -> FeedItem:
+def _channel_image_url(channel: Any) -> str | None:
+    """The show's artwork: the channel's `itunes:image`, else its RSS `<image><url>`."""
+    itunes_image = channel.find(f"{_ITUNES_NAMESPACE}image")
+    href = itunes_image.get("href") if itunes_image is not None else None
+    return href or (channel.findtext("image/url") or "").strip() or None
+
+
+def _feed_item(item: Any, *, channel_image_url: str | None) -> FeedItem:
     enclosure = item.find("enclosure")
     guid = item.findtext("guid")
+    item_image = item.find(f"{_ITUNES_NAMESPACE}image")
     return FeedItem(
         title=item.findtext("title", default="").strip(),
         published=_item_date(item.findtext("pubDate")),
@@ -101,6 +111,7 @@ def _feed_item(item: Any) -> FeedItem:
             for transcript in item.findall(f"{namespace}transcript")
             if transcript.get("url")
         ],
+        image_url=(item_image.get("href") if item_image is not None else None) or channel_image_url,
     )
 
 

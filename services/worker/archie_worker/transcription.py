@@ -126,8 +126,13 @@ def split(
             "ffmpeg",
             "-loglevel",
             "error",
+            # The enclosure is untrusted: a playlist (HLS/concat) must not make ffmpeg fetch URLs, and cover art
+            # must not ride along into the chunks sent to Groq/OpenAI.
+            "-protocol_whitelist",
+            "file",
             "-i",
             str(audio),
+            "-vn",
             "-ac",
             "1",
             "-ar",
@@ -202,9 +207,18 @@ def transcribe_groq(*, chunk: AudioChunk, api_key: str, prompt: str) -> list[con
 
 
 def transcribe_openai(
-    *, chunk: AudioChunk, api_key: str, prompt: str, directory: pathlib.Path
+    engine: sqlalchemy.Engine,
+    *,
+    chunk: AudioChunk,
+    api_key: str,
+    prompt: str,
+    context: llm.CallContext,
+    directory: pathlib.Path,
 ) -> list[content.Segment]:
-    """OpenAI's text for `chunk`, one segment per `OPENAI_PART_SECONDS` part (it truncates long requests)."""
+    """OpenAI's text for `chunk`, one segment per `OPENAI_PART_SECONDS` part (it truncates long requests).
+
+    Each part's cost is recorded as soon as it succeeds, so an earlier part's spend survives a later part failing.
+    """
     parts = split(
         audio=chunk.path, directory=directory, chunk_seconds=OPENAI_PART_SECONDS, prefix=f"{chunk.path.stem}_part"
     )
@@ -224,6 +238,9 @@ def transcribe_openai(
             timeout=llm.REQUEST_TIMEOUT_SECONDS,
         )
         response.raise_for_status()
+        _record(
+            engine, context=context, provider=models.TranscriptProvider.OPENAI, model=llm.OPENAI_TRANSCRIBE, chunk=part
+        )
         segments.append(
             content.Segment(start=chunk.start_seconds + part.start_seconds, text=response.json()["text"].strip())
         )
@@ -279,9 +296,8 @@ def _transcribe_with_openai(
     context: llm.CallContext,
     directory: pathlib.Path,
 ) -> ChunkTranscript:
-    segments = transcribe_openai(chunk=chunk, api_key=api_key, prompt=prompt, directory=directory)
-    _record(
-        engine, context=context, provider=models.TranscriptProvider.OPENAI, model=llm.OPENAI_TRANSCRIBE, chunk=chunk
+    segments = transcribe_openai(
+        engine, chunk=chunk, api_key=api_key, prompt=prompt, context=context, directory=directory
     )
     return ChunkTranscript(provider=models.TranscriptProvider.OPENAI, model=llm.OPENAI_TRANSCRIBE, segments=segments)
 

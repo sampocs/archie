@@ -9,6 +9,7 @@ from __future__ import annotations
 import html.parser
 import time
 import uuid
+from collections.abc import Mapping
 
 import httpx
 import sqlalchemy
@@ -104,14 +105,27 @@ def extract_title(*, page: str) -> str | None:
     return title[:_MAX_TITLE_LENGTH] if title else None
 
 
-def fetch_page(*, url: str, timeout_seconds: float, max_bytes: int) -> str:
+def fetch_page(*, url: str, timeout_seconds: float, max_bytes: int, headers: Mapping[str, str] | None = None) -> str:
     """Download `url` as text, reading at most `max_bytes`; raises on any 4xx/5xx or past a total `timeout_seconds`.
 
     httpx's timeout applies to each read, so the deadline is checked per chunk to stop a trickling server
     from holding the worker; the loop's error boundary retries the `TimeoutError`.
     """
+    body, encoding = _download(url=url, timeout_seconds=timeout_seconds, max_bytes=max_bytes, headers=headers)
+    return body.decode(encoding or "utf-8", errors="replace")
+
+
+def fetch_bytes(*, url: str, timeout_seconds: float, max_bytes: int, headers: Mapping[str, str] | None = None) -> bytes:
+    """Download `url` as bytes with the same limits and errors as `fetch_page` (feeds, transcripts, JSON)."""
+    body, _ = _download(url=url, timeout_seconds=timeout_seconds, max_bytes=max_bytes, headers=headers)
+    return body
+
+
+def _download(
+    *, url: str, timeout_seconds: float, max_bytes: int, headers: Mapping[str, str] | None
+) -> tuple[bytes, str | None]:
     deadline = time.monotonic() + timeout_seconds
-    with httpx.Client(timeout=timeout_seconds, follow_redirects=True) as client:
+    with httpx.Client(timeout=timeout_seconds, follow_redirects=True, headers=headers) as client:
         with client.stream("GET", url) as response:
             response.raise_for_status()
 
@@ -122,4 +136,4 @@ def fetch_page(*, url: str, timeout_seconds: float, max_bytes: int) -> str:
                 body.extend(chunk)
                 if len(body) >= max_bytes:
                     break
-            return bytes(body[:max_bytes]).decode(response.encoding or "utf-8", errors="replace")
+            return bytes(body[:max_bytes]), response.encoding

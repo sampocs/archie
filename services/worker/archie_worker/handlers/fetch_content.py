@@ -14,13 +14,15 @@ import uuid
 from dataclasses import dataclass
 
 import httpx
+import sqlalchemy
 import sqlalchemy.orm
 import youtube_transcript_api
 from archie_db import changes, models, pipeline
 from archie_shared import config, logging, urls
 
 from archie_worker import content, errors
-from archie_worker.content import article, x, youtube
+from archie_worker.content import article, podcast, transcripts, x, youtube
+from archie_worker.content import episode as episode_content
 from archie_worker.handlers import _text, fetch_title
 
 _PAGE_TIMEOUT_SECONDS = 15
@@ -59,6 +61,10 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         _fetch_youtube(db, source=source, source_input=source_input)
         return
 
+    if source_input.kind == models.SourceKind.PODCAST:
+        _fetch_podcast(db, source=source, source_input=source_input)
+        return
+
     extracted = _get_text(source_input)
     word_count = len(extracted.text.split())
     minimum_words = _MIN_X_WORDS if source_input.kind == models.SourceKind.X else _MIN_ARTICLE_WORDS
@@ -72,6 +78,29 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         text_content={content.TEXT_KEY: content.strip_nul(extracted.text)},
         title=extracted.title,
     )
+
+
+def _fetch_podcast(db: sqlalchemy.orm.Session, *, source: models.Source, source_input: _SourceInput) -> None:
+    """Resolve the episode, then store its published transcript as the text, or queue `transcribe` when it has none."""
+    link = urls.podcast_link(source_input.url)
+    if link is None:
+        raise errors.PermanentJobError(errors.FailureReason.EPISODE_NOT_FOUND)
+
+    engine = db.get_bind()
+    assert isinstance(engine, sqlalchemy.Engine)
+    resolved = podcast.resolve(engine, link=link)
+    published = transcripts.fetch_best(resolved.transcripts)
+    if published is None:
+        _text.enqueue_transcribe(db, source=source, episode=resolved.episode)
+        return
+
+    episode_extra = {episode_content.EPISODE_KEY: resolved.episode.to_payload()}
+    text_content = (
+        content.timed_text_content(segments=published.segments, extra=episode_extra)
+        if published.segments
+        else {content.TEXT_KEY: content.strip_nul(published.text), **episode_extra}
+    )
+    _text.store_text(db, source=source, text_content=text_content, title=resolved.episode.title)
 
 
 def _start_processing(db: sqlalchemy.orm.Session, *, source: models.Source) -> _SourceInput | None:

@@ -33,6 +33,7 @@ CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 SYSTEM_PROMPT = "Reply with the word ok."
 USER_MESSAGE = "hi"
 ENOUGH_TOKENS = 16
+INVALID_API_KEY = "sk-ant-invalid"
 ANSWER_SCHEMA: dict[str, Any] = {
     "type": "object",
     "properties": {"answer": {"type": "string"}},
@@ -283,7 +284,9 @@ def test_a_client_error_from_the_primary_does_not_try_the_fallback(
 ) -> None:
     """A 401 would fail the fallback the same way, so it is raised at once (the cassette holds a single call)."""
     with cassette("llm_unauthorized"), pytest.raises(anthropic.AuthenticationError):
-        _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
+        _complete(
+            engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS, api_key=INVALID_API_KEY
+        )
 
     assert _calls(engine) == []
 
@@ -302,7 +305,7 @@ def test_a_dropped_connection_to_the_primary_tries_the_fallback(
 
     monkeypatch.setattr(anthropic.resources.messages.Messages, "create", create_unless_primary)
 
-    with cassette("llm_overloaded"):
+    with cassette("llm_fallback"):
         completion = _complete(engine, context, llm.ModelPair(llm.HAIKU, llm.SONNET), max_tokens=ENOUGH_TOKENS)
 
     assert completion.model == llm.SONNET
@@ -315,10 +318,11 @@ def _complete(
     *,
     max_tokens: int,
     json_schema: dict[str, Any] | None = None,
+    api_key: str | None = None,
 ) -> llm.Completion:
     return llm.complete(
         engine,
-        api_key=os.environ[config.ANTHROPIC_API_KEY_ENV],
+        api_key=api_key or os.environ[config.ANTHROPIC_API_KEY_ENV],
         context=context,
         models=model_pair,
         system=SYSTEM_PROMPT,

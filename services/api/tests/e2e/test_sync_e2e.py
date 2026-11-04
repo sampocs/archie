@@ -847,6 +847,8 @@ def _insert_m1_link(
 ) -> uuid.UUID:
     """Insert an `unsupported` source as M1 (kind `link`) or M2 (a real kind, no error) left it."""
     source_id = uuid.uuid4()
+    # M1 stored the URL as shared (migration 0002); only M2 kinds were normalized.
+    normalized_url = url if kind == models.SourceKind.LINK else urls.normalize_url(url)
     engine = session.engine_for(live_stack.database_url)
     with sqlalchemy.orm.Session(engine) as db:
         db.add(
@@ -854,7 +856,7 @@ def _insert_m1_link(
                 id=source_id,
                 user_id=user_id,
                 url=url,
-                normalized_url=urls.normalize_url(url),
+                normalized_url=normalized_url,
                 kind=kind.value,
                 state=models.SourceState.QUEUED.value,
                 intent=models.SourceIntent.QUEUE.value,
@@ -947,7 +949,7 @@ def test_sharing_an_m2_unsupported_spotify_show_link_leaves_it_unsupported(live_
 def test_sharing_an_m1_youtube_channel_link_says_why_it_is_unsupported(live_stack: LiveStack) -> None:
     """An M1 link to a channel is re-classified and shown the channel reason."""
     authed = live_stack.authed(live_stack.sign_in())
-    url = "https://www.youtube.com/@somechannel"
+    url = "https://youtube.com/@somechannel"
     source_id = _insert_m1_link(live_stack, user_id=authed.get("/me").json()["user_id"], url=url)
 
     _push(authed, _add_source(url))

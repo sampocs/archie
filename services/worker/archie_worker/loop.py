@@ -37,8 +37,9 @@ FailureHook = Callable[[sqlalchemy.orm.Session, models.Job, str], None]
 
 # Seconds to wait before attempt 2, 3, ...; the last value repeats.
 BACKOFF_SECONDS = (10, 60, 300)
-# A job running longer than this is assumed orphaned by a crashed worker.
-STALE_AFTER = datetime.timedelta(seconds=600)
+# A job running longer than this is assumed orphaned by a crashed worker. A primer step can legitimately take two
+# 300 s model timeouts (primary + fallback), so this must stay above 600 s.
+STALE_AFTER = datetime.timedelta(seconds=900)
 IDLE_POLL_SECONDS = 2.0
 REQUEUE_STALE_EVERY = datetime.timedelta(seconds=60)
 

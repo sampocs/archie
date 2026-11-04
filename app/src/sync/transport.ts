@@ -59,9 +59,12 @@ export function createDbSyncStore(db: AppDb, runEpoch: number = getSessionEpoch(
 
         // The payload carries the source id for source actions; surface the failure on that row.
         const sourceId = (JSON.parse(entry.payload) as { id?: string }).id;
-        if (sourceId) {
-          tx.update(schema.sources).set({ syncError: reason }).where(eq(schema.sources.id, sourceId)).run();
-        }
+        if (!sourceId) return;
+
+        // A rejected retry never started the pipeline, so undo the optimistic "processing" `retrySource` set.
+        const changes =
+          entry.type === "retry_source" ? { syncError: reason, processing: "failed" } : { syncError: reason };
+        tx.update(schema.sources).set(changes).where(eq(schema.sources.id, sourceId)).run();
       });
     },
 

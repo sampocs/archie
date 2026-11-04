@@ -572,6 +572,28 @@ describe("database SyncStore", () => {
       .where(eq(schema.sources.id, "src-early"))
       .get();
     expect(source?.syncError).toBe("bad url");
+    expect(source?.processing).toBe("pending");
+  });
+
+  it("a rejected retry_source puts the source back to failed, undoing the optimistic processing", async () => {
+    const { db, store } = makeDbStore();
+    db.insert(schema.sources)
+      .values({ ...pulledSource({ id: "src-1" }), processing: "processing", createdAt: "x", updatedAt: "x" })
+      .run();
+    db.insert(schema.outbox)
+      .values({
+        id: "retry",
+        type: "retry_source",
+        payload: JSON.stringify({ id: "src-1" }),
+        createdAt: "2026-11-01T00:00:00Z",
+        status: "pending",
+      })
+      .run();
+
+    await store.rejectAction("retry", "source is not failed");
+
+    const source = db.select().from(schema.sources).where(eq(schema.sources.id, "src-1")).get();
+    expect(source).toMatchObject({ processing: "failed", syncError: "source is not failed" });
   });
 });
 

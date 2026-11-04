@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 
 from archie_worker import content
 
 _SECONDS_PER_HOUR = 3600
+_VALID_TIMESTAMP = re.compile(r"^\d{1,2}:\d{2}(:\d{2})?$")
 
 
 def format_timestamp(seconds: float) -> str:
@@ -36,3 +38,15 @@ def marked_text(segments: Sequence[content.Segment], *, every_seconds: float = 6
         next_boundary = (segment.start // every_seconds + 1) * every_seconds
 
     return "\n".join(" ".join(line) for line in lines)
+
+
+def clean_model_timestamp(raw: str | None) -> str | None:
+    """The model's timestamp with wrapping `[]` removed, or None unless it is `mm:ss` or `h:mm:ss`."""
+    if raw is None:
+        return None
+
+    stripped = raw.strip()
+    if stripped.startswith("[") and stripped.endswith("]"):
+        stripped = stripped[1:-1].strip()
+
+    return stripped if _VALID_TIMESTAMP.match(stripped) else None

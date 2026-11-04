@@ -27,8 +27,7 @@ pytestmark = [pytest.mark.postgres, pytest.mark.worker]
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 
-# The model echoes the prompt's `[mm:ss]` markers with their brackets (analyze-v2 does not say to drop them).
-TIMESTAMP_PATTERN = re.compile(r"^\[?\d{1,2}:\d{2}(:\d{2})?\]?$")
+TIMESTAMP_PATTERN = re.compile(r"^\d{1,2}:\d{2}(:\d{2})?$")
 READY_TIMEOUT_SECONDS = 30.0
 # Live model calls (analyze, then a long Sonnet primer) take much longer than replaying them.
 RECORDING_TIMEOUT_SECONDS = 240.0

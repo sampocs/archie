@@ -79,6 +79,8 @@ def use_recording_api_key(
     """Expose real keys only while recording; replays get placeholders that are never sent."""
     if _record_mode(request) == DEFAULT_RECORD_MODE:
         for env_name in env_names:
+            if env_name not in REPLAY_API_KEYS:
+                pytest.fail(f"No replay placeholder for {env_name}")
             monkeypatch.setenv(env_name, REPLAY_API_KEYS[env_name])
         return
 
@@ -144,11 +146,20 @@ def _transcription_chunks_match(recorded: vcr_request.Request, incoming: vcr_req
     if recorded.host not in TRANSCRIPTION_HOSTS and incoming.host not in TRANSCRIPTION_HOSTS:
         return True
 
-    return _chunk_identity(recorded) == _chunk_identity(incoming)
+    recorded_identity = _chunk_identity(recorded)
+    incoming_identity = _chunk_identity(incoming)
+    # A body we can't parse has no identity, so it must not match anything (including another unparseable body).
+    if recorded_identity is None or incoming_identity is None:
+        return False
+
+    return recorded_identity == incoming_identity
 
 
-def _chunk_identity(request: vcr_request.Request) -> tuple[bytes | None, bytes | None]:
+def _chunk_identity(request: vcr_request.Request) -> tuple[bytes, bytes] | None:
     body = request.body or b""
     model = _MODEL_PATTERN.search(body)
     filename = _FILENAME_PATTERN.search(body)
-    return (model.group(1) if model else None, filename.group(1) if filename else None)
+    if model is None or filename is None:
+        return None
+
+    return model.group(1), filename.group(1)

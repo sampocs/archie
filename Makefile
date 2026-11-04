@@ -93,7 +93,7 @@ reset-local-data: db-up
 
 # The flows that only need a running backend (`make start-local` in another terminal).
 maestro: reset-local-data
-	@PATH="$(MAESTRO_PATH)" maestro test maestro/add_link.yaml maestro/sign_out.yaml
+	@PATH="$(MAESTRO_PATH)" maestro test maestro/add_link.yaml maestro/sign_out.yaml maestro/source_page.yaml
 
 # Starts and stops the backend itself, to take the phone offline mid-flow.
 maestro-offline: reset-local-data

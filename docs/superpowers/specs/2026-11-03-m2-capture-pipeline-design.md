@@ -1,5 +1,7 @@
 # Milestone 2: Capture → pipeline (2026-11-03)
 
+**Status:** Built 2026-11-03; live check pending (the share extension, a Safari capture and a real X share on a device, and the `source_page` Maestro flow against real keys).
+
 The second milestone of the roadmap in `2026-11-02-backend-architecture-design.md`. Product behavior is defined in `2026-10-26-product-scope.md`, the screens in `2026-10-29-ux-and-brand-design.md`, and the models and prompts were measured in `spikes/llm_processing/`.
 
 **How this spec was made:** the owner asked for M2 to be built as far as possible without them, so the decisions below were made without a brainstorming round. Each one the owner might reasonably want differently is listed under **Decisions to confirm** at the end.

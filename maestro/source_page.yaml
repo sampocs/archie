@@ -1,0 +1,53 @@
+appId: com.sampocs.archie
+---
+# Needs real keys: the worker calls Anthropic for this article (a few cents). Run it only against `make start-local`
+# with ANTHROPIC_API_KEY in .env; there is no replay mode for the local backend yet (see maestro/README.md).
+- runFlow: login.yaml
+# Sign in again as the owner's user, so the worker pays for the summary with the owner's key.
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "tab-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://www.paulgraham.com/greatwork.html"
+- tapOn:
+    id: "intent-finished"
+- tapOn:
+    id: "reaction-easy"
+- tapOn:
+    id: "add-save"
+# Saving lands on Library; open the source (its card shows the URL until the worker's title replaces it).
+- tapOn: ".*(paulgraham|How to Do Great Work).*"
+# One wait only: Maestro shares the timeout across consecutive waits. The primer is written after the summary, so
+# waiting for its toggle also covers the gist.
+- extendedWaitUntil:
+    visible:
+      id: "primer-toggle"
+    timeout: 180000
+- assertVisible:
+    id: "source-gist"
+- tapOn:
+    id: "primer-toggle"
+- assertVisible: "▾ Background you might need"

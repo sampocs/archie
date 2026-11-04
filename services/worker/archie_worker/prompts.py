@@ -50,7 +50,8 @@ numbers, and the current debates.
 From the text, produce:
 - summary: the gist in 2-3 sentences, the key ideas, and the numbers worth remembering. The text of an \
 episode may carry markers like [12:14] or [1:02:03] at roughly one-minute intervals; give each key idea and number \
-the marker nearest before where it comes up, copied exactly, and null when the text has no markers. \
+the time of the marker nearest before where it comes up, copied exactly but without the brackets (12:14, 1:02:03), \
+and null when the text has no markers. \
 Skip ads and sponsor reads.
 - domain: the one broad domain the source belongs to.
 - topic: a short, reusable topic name under that domain (e.g. "Stablecoins", "Fed policy", "NFL quarterbacks").

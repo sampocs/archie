@@ -15,11 +15,12 @@ from dataclasses import dataclass
 
 import httpx
 import sqlalchemy.orm
+import youtube_transcript_api
 from archie_db import changes, models, pipeline
-from archie_shared import logging, urls
+from archie_shared import config, logging, urls
 
 from archie_worker import content, errors
-from archie_worker.content import article, x
+from archie_worker.content import article, x, youtube
 from archie_worker.handlers import _text, fetch_title
 
 _PAGE_TIMEOUT_SECONDS = 15
@@ -52,6 +53,10 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
 
     source_input = _start_processing(db, source=source)
     if source_input is None:
+        return
+
+    if source_input.kind == models.SourceKind.YOUTUBE:
+        _fetch_youtube(db, source=source, source_input=source_input)
         return
 
     extracted = _get_text(source_input)
@@ -118,3 +123,31 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
         raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING) from error
 
     return article.extract(html=page, url=source_input.url) or content.ExtractedText(title=None, text="")
+
+
+def _fetch_youtube(db: sqlalchemy.orm.Session, *, source: models.Source, source_input: _SourceInput) -> None:
+    """Store the video's captions as timed text, titling the source from its watch page if it has no title."""
+    video_id = urls.youtube_video_id(source_input.url)
+    if video_id is None:
+        raise errors.PermanentJobError(errors.FailureReason.VIDEO_UNAVAILABLE)
+
+    # Read before the commit that ends the transaction, so no connection is held during the outside calls.
+    has_title = bool(source.title)
+    db.commit()
+
+    supadata_api_key = config.Settings().supadata_api_key
+    try:
+        segments = youtube.fetch_segments(video_id=video_id, supadata_api_key=supadata_api_key)
+    except youtube_transcript_api.CouldNotRetrieveTranscript as error:
+        permanent_error = youtube.permanent_error_for(error, has_supadata_key=bool(supadata_api_key))
+        if permanent_error is None:
+            raise
+        raise permanent_error from error
+
+    word_count = sum(len(segment.text.split()) for segment in segments)
+    if word_count < _MIN_ARTICLE_WORDS:
+        _logger.info("Video %s has %d caption words, needs %d", video_id, word_count, _MIN_ARTICLE_WORDS)
+        raise errors.PermanentJobError(errors.FailureReason.NO_CAPTIONS)
+
+    title = None if has_title else youtube.fetch_title(video_id=video_id)
+    _text.store_text(db, source=source, text_content=content.timed_text_content(segments=segments), title=title)

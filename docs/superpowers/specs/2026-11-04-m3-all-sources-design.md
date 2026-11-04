@@ -254,3 +254,7 @@ Made without the owner; each is easy to change.
 5. **The new Worker keeps copying raw mail to the spike's KV.**
 6. **The show registry is global** (show → feed isn't personal) and starts empty (no seed of the owner's 28 shows).
 7. **A wrong podcast match can't be corrected in the app yet** (M4).
+
+## Follow-ups
+
+- Record a Supadata cassette (`youtube_supadata.yaml`, same video) once `SUPADATA_API_KEY` exists; until then the Supadata branch is untested.

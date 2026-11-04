@@ -17,6 +17,12 @@ OWNER_EMAILS_ENV = "OWNER_EMAILS"
 APPLE_AUDIENCE_ENV = "APPLE_AUDIENCE"
 ARCHIE_ENV_ENV = "ARCHIE_ENV"
 ANTHROPIC_API_KEY_ENV = "ANTHROPIC_API_KEY"
+GROQ_API_KEY_ENV = "GROQ_API_KEY"
+OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
+SUPADATA_API_KEY_ENV = "SUPADATA_API_KEY"
+INGEST_SECRET_ENV = "INGEST_SECRET"
+INGEST_EMAIL_DOMAIN_ENV = "INGEST_EMAIL_DOMAIN"
+INGEST_ALIASES_ENV = "INGEST_ALIASES"
 
 
 class ConfigError(RuntimeError):
@@ -45,6 +51,12 @@ class Settings(BaseSettings):
     apple_audience: str | None = None
     archie_env: str | None = None
     anthropic_api_key: str | None = None
+    groq_api_key: str | None = None
+    openai_api_key: str | None = None
+    supadata_api_key: str | None = None
+    ingest_secret: str | None = None
+    ingest_email_domain: str | None = None
+    ingest_aliases: str | None = None
 
     def require_database_url(self) -> str:
         """Return the Postgres URL, raising a clear error if it is missing."""
@@ -75,6 +87,22 @@ class Settings(BaseSettings):
         if not self.owner_emails:
             return frozenset()
         return frozenset(email.strip().lower() for email in self.owner_emails.split(",") if email.strip())
+
+    def ingest_alias_map(self) -> dict[str, str]:
+        """Newsletter aliases (`news=a@x.com, test=a@x.com`) as {alias: owner email}, trimmed and lower-cased.
+
+        Entries without an `=` or with an empty side are skipped rather than failing the whole setting.
+        """
+        if not self.ingest_aliases:
+            return {}
+
+        aliases: dict[str, str] = {}
+        for entry in self.ingest_aliases.split(","):
+            alias, separator, email = entry.partition("=")
+            alias, email = alias.strip().lower(), email.strip().lower()
+            if separator and alias and email:
+                aliases[alias] = email
+        return aliases
 
     def env(self) -> ArchieEnv:
         """The deployment this process runs as, defaulting to `DEV` when `ARCHIE_ENV` is unset."""

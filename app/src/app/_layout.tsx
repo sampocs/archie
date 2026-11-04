@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useEffect, useState } from "react";
-import { Text as NativeText } from "react-native";
+import { LogBox, Text as NativeText } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { apiFetch, UnauthorizedError } from "@/api/client";
@@ -13,6 +13,10 @@ import { db, seedSyncState, useDbMigrations } from "@/db/client";
 import * as schema from "@/db/schema";
 import { SyncRoot } from "@/sync/SyncRoot";
 import { fontAssets } from "@/theme/type";
+
+// React Native warns this when a native-driven animation (navigation, sheets) updates with no JS listener; it is
+// harmless, and its dev toast sits over the tab bar and swallows taps.
+LogBox.ignoreLogs(["Sending `onAnimatedValueUpdate` with no listeners registered."]);
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts(fontAssets);

@@ -1,13 +1,16 @@
 import { StyleSheet, TextInput, TextInputProps } from "react-native";
 
+import { useAllowFontScaling } from "../fontScaling";
 import { textStyles } from "../type";
 import { useTheme } from "../useTheme";
 
 export function TextField({ style, ...rest }: TextInputProps) {
   const theme = useTheme();
+  const allowFontScaling = useAllowFontScaling();
 
   return (
     <TextInput
+      allowFontScaling={allowFontScaling}
       placeholderTextColor={theme.colors.ink3}
       {...rest}
       style={[

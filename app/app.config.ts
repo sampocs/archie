@@ -27,6 +27,7 @@ const config: ExpoConfig = {
     ],
     // Before expo-share-extension on purpose: mods run last-listed first, and this one patches its target.
     "./plugins/withSharedKeychain.js",
+    "./plugins/withShareSheetFrame.js",
     [
       "expo-share-extension",
       {
@@ -34,7 +35,6 @@ const config: ExpoConfig = {
         preprocessingFile: "./preprocessing.js",
         // The theme's light `bg` (#F4F2EC) as RGBA.
         backgroundColor: { red: 244, green: 242, blue: 236, alpha: 1 },
-        height: 560,
       },
     ],
   ],

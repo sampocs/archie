@@ -6,15 +6,19 @@ on every artifact, so old versions stay attributable.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from typing import Any
 
 from archie_db import models
 
-ANALYZE_PROMPT_VERSION = "analyze-v1"
+from archie_worker import content, timestamps
+
+ANALYZE_PROMPT_VERSION = "analyze-v2"
 PRIMER_PROMPT_VERSION = "primer-v1"
 
-# The model never sees more than this many characters of the source's text.
+# The model never sees more than this many characters of the source's text; timed text carries markers, so it gets more.
 MAX_TEXT_CHARACTERS = 200_000
+MAX_TIMED_TEXT_CHARACTERS = 600_000
 
 DOMAINS = [
     "AI",
@@ -35,14 +39,16 @@ sentences. Define any jargon the first time it appears. Prefer concrete examples
 rough numbers ("~1 GW", not "1.07 GW")."""
 
 ANALYZE_SYSTEM = f"""You process sources for a personal learning app. A source is an article, an X post or thread, or \
-an episode (podcast or video) that the user consumed or plans to. The user wants "level 2" knowledge of its subject: \
+an episode (podcast or video) that the user consumed or plans to. A newsletter is an email digest; summarize its \
+main stories. The user wants "level 2" knowledge of its subject: \
 enough to hold a real conversation about it, including the vocabulary, how things work, the key players, rough \
 numbers, and the current debates.
 
 From the text, produce:
-- summary: the gist in 2-3 sentences, the key ideas, and the numbers worth remembering. Where the text has timestamps \
-like [mm:ss] or [h:mm:ss], cite the one where each idea or number comes up; when it has none, set the timestamp to \
-null. Skip ads and sponsor reads.
+- summary: the gist in 2-3 sentences, the key ideas, and the numbers worth remembering. The text of an \
+episode may carry markers like [12:14] or [1:02:03] at roughly one-minute intervals; give each key idea and number \
+the marker nearest before where it comes up, copied exactly, and null when the text has no markers. \
+Skip ads and sponsor reads.
 - domain: the one broad domain the source belongs to.
 - topic: a short, reusable topic name under that domain (e.g. "Stablecoins", "Fed policy", "NFL quarterbacks").
 - tags: 3-8 short tags.
@@ -53,7 +59,8 @@ teaching in it (e.g. how a contract works, why a play scheme succeeds) is still 
 - cards: when is_educational is true, 3-5 open-recall review cards of kind concept, mechanism ("why does X cause Y") \
 or number (a rough figure worth knowing). Each card asks ONE focused question, never a compound one with several \
 parts. Each answer is what a good response would cover in 1-3 sentences. Avoid trivia that only matters to this one \
-source. When is_educational is false, cards is an empty list.
+source. Cards come only from the educational stretches of a source: a mostly entertaining show with one educational \
+segment gets cards for that segment; still 3-5. When is_educational is false, cards is an empty list.
 
 {READING_VOICE}"""
 
@@ -123,11 +130,14 @@ ANALYSIS_SCHEMA: dict[str, Any] = {
 }
 
 
+def model_text(text_content: Mapping[str, Any]) -> str:
+    """The text the model reads: timed segments with minute markers (capped at 600,000 characters), else plain text."""
+    segments = content.segments_of(text_content)
+    if segments:
+        return timestamps.marked_text(segments)[:MAX_TIMED_TEXT_CHARACTERS]
+    return text_content[content.TEXT_KEY][:MAX_TEXT_CHARACTERS]
+
+
 def user_message(*, kind: models.SourceKind, title: str | None, url: str, text: str) -> str:
-    """The source's details above its text (capped at `MAX_TEXT_CHARACTERS`) wrapped in `<text>` tags."""
-    return (
-        f"Source kind: {kind.value}\n"
-        f"Title: {title or '(none)'}\n"
-        f"URL: {url}\n\n"
-        f"<text>\n{text[:MAX_TEXT_CHARACTERS]}\n</text>"
-    )
+    """The source's details above its text (already capped by `model_text`) wrapped in `<text>` tags."""
+    return f"Source kind: {kind.value}\nTitle: {title or '(none)'}\nURL: {url}\n\n<text>\n{text}\n</text>"

@@ -287,19 +287,19 @@ def test_a_missing_text_artifact_is_retried(engine: sqlalchemy.Engine) -> None:
     assert _llm_calls(engine) == []
 
 
-def test_user_message_caps_the_text() -> None:
-    """Only the first 200,000 characters reach the model, inside <text> tags below the source's details."""
-    message = prompts.user_message(
-        kind=models.SourceKind.ARTICLE,
-        title=None,
-        url="https://example.com/a",
-        text="§" * (prompts.MAX_TEXT_CHARACTERS + 50),
-    )
+def test_user_message_wraps_the_text_below_the_source_details() -> None:
+    """The source's details come first, then the text inside <text> tags."""
+    message = prompts.user_message(kind=models.SourceKind.ARTICLE, title=None, url="https://example.com/a", text="body")
 
-    assert message.count("§") == prompts.MAX_TEXT_CHARACTERS
     assert message.startswith("Source kind: article\nTitle: (none)\nURL: https://example.com/a")
-    assert "<text>\n" in message
-    assert message.endswith("\n</text>")
+    assert message.endswith("<text>\nbody\n</text>")
+
+
+def test_model_text_caps_untimed_text() -> None:
+    """Only the first 200,000 characters of untimed text reach the model."""
+    text = prompts.model_text({"text": "§" * (prompts.MAX_TEXT_CHARACTERS + 50)})
+
+    assert text.count("§") == 200_000
 
 
 def _add_source(

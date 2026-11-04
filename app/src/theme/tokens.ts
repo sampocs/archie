@@ -15,6 +15,9 @@ export type ColorTokens = {
   press: string;
   chrome: string;
   onChrome: string;
+  unread: string;
+  // Text on a domain-colored tile.
+  onDomain: string;
 };
 
 export const colors: Record<ColorScheme, ColorTokens> = {
@@ -28,6 +31,8 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     press: "#EFEDE6",
     chrome: "#1C1B18",
     onChrome: "#FFFFFF",
+    unread: "#3D7BF2",
+    onDomain: "#FFFFFF",
   },
   dark: {
     bg: "#151412",
@@ -40,6 +45,8 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     chrome: "#F1EFE9",
     // Text on chrome flips in dark mode.
     onChrome: "#141311",
+    unread: "#6EA1FF",
+    onDomain: "#151412",
   },
 };
 

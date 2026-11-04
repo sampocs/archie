@@ -16,7 +16,6 @@ export type ArtworkTileProps = {
   testID?: string;
 };
 
-const UNREAD_DOT = { light: "#3D7BF2", dark: "#6EA1FF" } as const;
 const DOT_SIZE = 8;
 
 /** Square (or round) artwork; a domain-colored monogram stands in when there is no image or it fails to load. */
@@ -45,7 +44,7 @@ export function ArtworkTile({ imageUrl, domain, monogram, size, circle, unread, 
             { backgroundColor: theme.domains[asDomain(domain)], alignItems: "center", justifyContent: "center" },
           ]}
         >
-          <Text variant="headline" style={{ color: "#FFFFFF", fontSize: size * 0.42 }}>
+          <Text variant="headline" style={{ color: theme.colors.onDomain, fontSize: size * 0.42 }}>
             {monogram}
           </Text>
         </View>
@@ -60,7 +59,7 @@ export function ArtworkTile({ imageUrl, domain, monogram, size, circle, unread, 
             width: DOT_SIZE,
             height: DOT_SIZE,
             borderRadius: DOT_SIZE / 2,
-            backgroundColor: UNREAD_DOT[theme.scheme],
+            backgroundColor: theme.colors.unread,
           }}
         />
       ) : null}

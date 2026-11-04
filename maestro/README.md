@@ -7,12 +7,12 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `add_link.yaml` | Dev login, add a link, the worker's title appears in Library |
 | `source_page.yaml` | Dev login as the owner's user, add a finished article with a reaction, open it from Library, wait for the primer, read it |
 | `add_podcast.yaml` | Dev login as the owner's user, add a Spotify episode, open it from Library, wait for the primer, see the gist and a timestamp chip (real keys, a few cents) |
-| `library_queue.yaml` | Library queue: reorder, snooze and read later change an item's place in the list |
+| `library_queue.yaml` | Library queue: reorder by drag, snooze from a swipe; Snoozed · 1 |
 | `library_search.yaml` | Library search finds items by title and filters the list |
 | `topics.yaml` | Topics: add, remove and restore a topic |
 | `finish_item.yaml` | Finish an item: it leaves the queue and lands in the finished state |
 | `topic_picker.yaml` | Signs in as `picker-user` (no topics chosen yet), the topic picker appears, pick topics and continue |
-| `today_primer.yaml` | Today shows the topic primer dot, open the primer (real keys, a few cents) |
+| `today_primer.yaml` | a prepped article's primer appears in Primers ready with the unread dot; opening it clears it (real keys, a few cents) |
 | `newsletter_*.yaml` + `run_newsletter.sh` | Log in, deliver a newsletter through `/ingest/email`, Go deeper on it |
 | `sign_out.yaml` | Dev login, Today tab, account button, Sign out, back on the Apple sign-in screen |
 | `offline_*.yaml` + `run_offline.sh` | Add a link with the backend down ("1 change waiting"), restart it, the change syncs and the title arrives |

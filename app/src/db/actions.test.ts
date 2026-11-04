@@ -222,6 +222,15 @@ describe("goDeeper", () => {
     });
     expect(sourceById(db, "unread")?.readAt).not.toBeNull();
   });
+
+  it("clears a snooze", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "snoozed", snoozedUntil: "2099-01-01T00:00:00Z" });
+
+    goDeeper(db, "snoozed");
+
+    expect(sourceById(db, "snoozed")?.snoozedUntil).toBeNull();
+  });
 });
 
 describe("addSource queue position", () => {

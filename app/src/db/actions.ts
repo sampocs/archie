@@ -200,6 +200,7 @@ export function goDeeper(db: AppDb, sourceId: string): void {
     updateSource(tx, sourceId, {
       state: "consumed",
       processing: "processing",
+      snoozedUntil: null,
       readAt: sql`coalesce(${schema.sources.readAt}, ${now})`,
     });
     enqueue(tx, "go_deeper", { id: sourceId });

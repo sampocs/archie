@@ -19,6 +19,7 @@ import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
 import { Kicker } from "@/ui/Kicker";
 import { Markdown } from "@/ui/Markdown";
+import { useNow } from "@/ui/useNow";
 import { kindLabel } from "@/ui/sourceLabels";
 import { SourceRow } from "@/ui/SourceRow";
 
@@ -30,6 +31,7 @@ export default function TopicScreen() {
   const router = useRouter();
   const theme = useTheme();
   const data = useLibraryData();
+  const now = useNow();
   const [menuOpen, setMenuOpen] = useState(false);
   const [primerOpen, setPrimerOpen] = useState(primerParam === "1");
 
@@ -56,7 +58,7 @@ export default function TopicScreen() {
   const done = sources.filter((source) => source.state === "consumed").length;
   const queued = sources.filter((source) => source.state === "queued").length;
   const writing =
-    !primer && topic.primerRequestedAt !== null && Date.now() - new Date(topic.primerRequestedAt).getTime() < PRIMER_WAIT_MS;
+    !primer && topic.primerRequestedAt !== null && now.getTime() - new Date(topic.primerRequestedAt).getTime() < PRIMER_WAIT_MS;
 
   const menuButton = isLiveTopic(topic) ? (
     <Pressable testID="topic-more" accessibilityLabel="Topic actions" hitSlop={12} onPress={() => setMenuOpen(true)}>

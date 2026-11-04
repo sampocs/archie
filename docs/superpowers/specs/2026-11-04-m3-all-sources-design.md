@@ -156,8 +156,9 @@ New module `archie_worker.content.youtube`. In order:
 
 **Address:** each user gets an `ingest_token` (users column, 10 lowercase letters/digits, unique, made by the
 migration for existing users and at user creation). Their address is `<ingest_token>@<INGEST_EMAIL_DOMAIN>`. The
-spike addresses `news@` and `test@example.com` (both used by real subscriptions) keep working through
-`INGEST_ALIASES` (`news=<owner email>,test=<owner email>`), so existing subscriptions don't move.
+owner's subscriptions already use `news@example.com`, so `archie-set-ingest-address --email <owner email>
+--address news` (run once in the deployed container, see `docs/deploy.md`) sets the owner's token to `news`. There is
+no alias setting: every address, chosen or random, is a user's `ingest_token`.
 
 **Worker:** `workers/newsletter/` (new, deployable with wrangler; replaces the spike worker on the same route):
 on `email`, read the raw message and POST it to `POST /ingest/email` with headers `x-ingest-secret`
@@ -167,7 +168,7 @@ response throws, so Cloudflare's retry/bounce behaviour applies.
 
 **API `POST /ingest/email`:**
 - Rejects a missing/wrong secret with 401 (constant-time compare). Body is the raw RFC 822 message, 10 MB cap (413).
-- Maps the recipient's local part to a user (token, then alias); unknown → 202 and dropped (logged), so senders don't
+- Maps the recipient's local part to a user (its `ingest_token`); unknown → 202 and dropped (logged), so senders don't
   learn which addresses exist.
 - Parses with the stdlib `email` package (`policy.default`): subject (decoded), `From` display name and address,
   `Date`, `Message-ID`, `List-Unsubscribe`, and the best body: HTML converted to text with `trafilatura` (falling back
@@ -240,7 +241,7 @@ timestamp shows. `share_sheet.yaml` keeps passing.
 
 - Dockerfile installs `ffmpeg`; CI installs it for the tests.
 - `.railway/railway.ts`: `GROQ_API_KEY`, `OPENAI_API_KEY`, `SUPADATA_API_KEY`, `INGEST_SECRET`,
-  `INGEST_EMAIL_DOMAIN`, `INGEST_ALIASES` as `preserve()`.
+  `INGEST_EMAIL_DOMAIN` as `preserve()`.
 - The newsletter Worker is deployed with wrangler after the API is live, replacing the spike Worker on the domain's
   catch-all route.
 
@@ -252,7 +253,8 @@ Made without the owner; each is easy to change.
    fail with "needs setup" on Railway (they work in local dev).
 2. **Transcription is Groq turbo with an OpenAI fallback, then a Haiku corrections pass without web search.**
 3. **Newsletters are Inbox items with a summary and no cards or primer**; Pulse uses them in M7.
-4. **The spike addresses `news@` and `test@` map to the owner**, and each user also gets a token address.
+4. **The owner's address is `news@`** (their token, set once with `archie-set-ingest-address`); every other user gets a
+   random token address. `test@` is retired.
 5. **The new Worker keeps copying raw mail to the spike's KV.**
 6. **The show registry is global** (show → feed isn't personal) and starts empty (no seed of the owner's 28 shows).
 7. **A wrong podcast match can't be corrected in the app yet** (M4).

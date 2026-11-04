@@ -56,7 +56,6 @@ export default defineRailway(() => {
       SUPADATA_API_KEY: preserve(),
       INGEST_SECRET: preserve(),
       INGEST_EMAIL_DOMAIN: preserve(),
-      INGEST_ALIASES: preserve(),
       // Pinned because the generated domain targets port 8000.
       PORT: "8000",
     },

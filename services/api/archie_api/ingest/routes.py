@@ -82,20 +82,8 @@ def ingest_email(
 
 
 def find_recipient(db: orm.Session, *, local_part: str) -> models.User | None:
-    """The user whose ingest token is `local_part`, else the oldest user whose email the alias map names."""
-    by_token = db.scalars(sqlalchemy.select(models.User).where(models.User.ingest_token == local_part)).one_or_none()
-    if by_token is not None:
-        return by_token
-
-    alias_email = config.get_settings().ingest_alias_map().get(local_part)
-    if alias_email is None:
-        return None
-    return db.scalars(
-        sqlalchemy.select(models.User)
-        .where(sqlalchemy.func.lower(models.User.email) == alias_email)
-        .order_by(models.User.id)
-        .limit(1)
-    ).one_or_none()
+    """The user whose newsletter address is `local_part@<domain>`."""
+    return db.scalars(sqlalchemy.select(models.User).where(models.User.ingest_token == local_part)).one_or_none()
 
 
 def _insert_newsletter(db: orm.Session, *, user: models.User, parsed: email_message.ParsedEmail) -> None:

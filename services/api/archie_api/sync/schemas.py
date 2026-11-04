@@ -65,6 +65,7 @@ class SourceOut(pydantic.BaseModel):
     note: str | None
     prep_me: bool
     merged_into_id: uuid.UUID | None
+    sender: str | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None

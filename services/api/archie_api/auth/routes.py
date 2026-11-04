@@ -21,12 +21,15 @@ class MeView(pydantic.BaseModel):
     """The signed-in user, as the app sees it."""
 
     user_id: int
+    ingest_address: str | None
 
 
 @router.get("/me")
 def me(user: Annotated[models.User, fastapi.Depends(deps.current_user)]) -> MeView:
     """Return the signed-in user; 401 means the app must sign in again."""
-    return MeView(user_id=user.id)
+    domain = config.get_settings().ingest_email_domain
+    ingest_address = f"{user.ingest_token}@{domain}" if domain else None
+    return MeView(user_id=user.id, ingest_address=ingest_address)
 
 
 class AppleSignInRequest(pydantic.BaseModel):

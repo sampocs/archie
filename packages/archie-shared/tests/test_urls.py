@@ -103,3 +103,60 @@ def test_x_post_id(url: str, expected: str | None) -> None:
 def test_normalize_params_and_ports(url: str, expected: str) -> None:
     """Tracking params match case-insensitively; only the scheme's default port is dropped."""
     assert urls.normalize_url(url) == expected
+
+
+def test_podcast_link_spotify_episode_ignores_share_noise() -> None:
+    """A Spotify episode link yields its id and no show id."""
+    link = urls.podcast_link("https://open.spotify.com/episode/abc?si=123")
+
+    assert link == urls.PodcastLink(urls.PodcastPlatform.SPOTIFY, "abc", None)
+
+
+def test_podcast_link_spotify_show_is_none() -> None:
+    """A show link is not an episode."""
+    assert urls.podcast_link("https://open.spotify.com/show/4rOoJ6Egrf8K2IrywzwOMk") is None
+
+
+def test_podcast_link_apple_episode() -> None:
+    """An Apple link with `?i=` yields the episode id and the show id after `id`."""
+    link = urls.podcast_link("https://podcasts.apple.com/us/podcast/darknet-diaries/id1296350485?i=1000712345678")
+
+    assert link == urls.PodcastLink(urls.PodcastPlatform.APPLE, "1000712345678", "1296350485")
+
+
+def test_podcast_link_apple_without_episode_is_none() -> None:
+    """An Apple show link (no `?i=`) is not an episode."""
+    assert urls.podcast_link("https://podcasts.apple.com/us/podcast/darknet-diaries/id1296350485") is None
+
+
+def test_podcast_link_other_url_is_none() -> None:
+    """Non-podcast URLs are not podcast links."""
+    assert urls.podcast_link("https://example.com/episode/abc") is None
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.youtube.com/watch?v=e0gVE3YxZs8&t=10",
+        "https://youtu.be/e0gVE3YxZs8",
+        "https://www.youtube.com/shorts/e0gVE3YxZs8",
+        "https://www.youtube.com/live/e0gVE3YxZs8",
+        "https://m.youtube.com/watch?v=e0gVE3YxZs8",
+    ],
+)
+def test_youtube_video_id(url: str) -> None:
+    """Every video link form yields the same id."""
+    assert urls.youtube_video_id(url) == "e0gVE3YxZs8"
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://www.youtube.com/@channel",
+        "https://www.youtube.com/playlist?list=PL123",
+        "https://example.com/watch?v=a",
+    ],
+)
+def test_youtube_video_id_none_for_non_videos(url: str) -> None:
+    """Channels, playlists and other hosts have no video id."""
+    assert urls.youtube_video_id(url) is None

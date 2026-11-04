@@ -33,8 +33,12 @@ _SECRET_ENV_VARS = (
     config.APPLE_AUDIENCE_ENV,
     config.ARCHIE_ENV_ENV,
     config.ANTHROPIC_API_KEY_ENV,
-    "OPENAI_API_KEY",
-    "GROQ_API_KEY",
+    config.OPENAI_API_KEY_ENV,
+    config.GROQ_API_KEY_ENV,
+    config.SUPADATA_API_KEY_ENV,
+    config.INGEST_SECRET_ENV,
+    config.INGEST_EMAIL_DOMAIN_ENV,
+    config.INGEST_ALIASES_ENV,
 )
 
 NETWORK_REFUSED_MESSAGE = "Tests must not open network connections; replay a recorded cassette instead."
@@ -87,6 +91,8 @@ def test_database_url(request: pytest.FixtureRequest) -> str:
 
 # Emptied after every Postgres test so tests never see each other's rows.
 _TRUNCATE_TABLES = (
+    "transcript_chunks",
+    "podcast_shows",
     "source_captures",
     "source_artifacts",
     "cards",

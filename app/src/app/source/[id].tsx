@@ -12,14 +12,9 @@ import { useTheme } from "@/theme/useTheme";
 import { Markdown } from "@/ui/Markdown";
 import { ProcessingLine } from "@/ui/ProcessingLine";
 import { sourceByline } from "@/ui/sourceLabels";
+import { parseSummary, SummaryContent } from "@/ui/summaryContent";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
-type TimedItem = { timestamp: string | null };
-type SummaryContent = {
-  gist: string;
-  key_ideas: (TimedItem & { idea: string })[];
-  numbers: (TimedItem & { fact: string })[];
-};
 
 const REACTION_LABELS: Record<string, string> = { easy: "Easy", mostly: "Mostly followed", lost: "Parts lost me" };
 
@@ -55,7 +50,7 @@ export default function SourceScreen() {
 
   const summary = artifacts.find((artifact) => artifact.kind === "summary");
   const primer = artifacts.find((artifact) => artifact.kind === "primer");
-  const summaryContent = summary ? (JSON.parse(summary.content) as SummaryContent) : null;
+  const summaryContent = summary ? parseSummary(summary.content) : null;
   const primerMarkdown = primer ? (JSON.parse(primer.content) as { markdown: string }).markdown : null;
 
   return (

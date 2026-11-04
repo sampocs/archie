@@ -105,8 +105,11 @@ def _record_mode(request: pytest.FixtureRequest) -> str:
 
 
 def _anthropic_prompts_match(recorded: vcr_request.Request, incoming: vcr_request.Request) -> bool:
-    """Anthropic calls match on model and system prompt; every other host matches unconditionally."""
-    if ANTHROPIC_HOST not in (recorded.host, incoming.host):
+    """Anthropic calls match on model and system prompt; every other pair matches unconditionally here."""
+    # Only parse when both are Anthropic calls: vcrpy runs every matcher on every recorded request, and a non-JSON
+    # body from another host (a transcription upload, an audio download) must not raise. The host matcher already
+    # tells an Anthropic call from another host's.
+    if recorded.host != ANTHROPIC_HOST or incoming.host != ANTHROPIC_HOST:
         return True
 
     return _prompt_identity(recorded) == _prompt_identity(incoming)

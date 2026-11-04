@@ -1,0 +1,83 @@
+interactions:
+- request:
+    body: "--b0f12898138ac5579e47de35a05350fe\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\ngpt-4o-mini-transcribe\r\n--b0f12898138ac5579e47de35a05350fe\r\nContent-Disposition:
+      form-data; name=\"response_format\"\r\n\r\njson\r\n--b0f12898138ac5579e47de35a05350fe\r\nContent-Disposition:
+      form-data; name=\"language\"\r\n\r\nen\r\n--b0f12898138ac5579e47de35a05350fe\r\nContent-Disposition:
+      form-data; name=\"prompt\"\r\n\r\nUPI Odd News Minute. Alligator in a bagel
+      shop, largest rubber band ball.\r\n--b0f12898138ac5579e47de35a05350fe\r\nContent-Disposition:
+      form-data; name=\"file\"; filename=\"short_chunk_part_000.mp3\"\r\nContent-Type:
+      audio/mpeg\r\n\r\n<audio omitted>\r\n--b0f12898138ac5579e47de35a05350fe--\r\n"
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '241206'
+      content-type:
+      - multipart/form-data; boundary=b0f12898138ac5579e47de35a05350fe
+      host:
+      - api.openai.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.openai.com/v1/audio/transcriptions
+  response:
+    body:
+      string: '{"text":"I''m Ben Cooper, and this is your UPI Odd News Minute for
+        Tuesday, November 3rd, 2026. A North Carolina bagel shop''s cameras were rolling
+        when a three-foot alligator walked in through the back door and strolled through
+        the store. Surveillance camera footage shared by the Bagel Dock Express in
+        Southport shows the baby alligator walking in through the back door, which
+        had been left open, and walking through the kitchen to reach the front of
+        the store. The video shows owner Jessie Driscoll encountering the gator at
+        the front counter and briefly panicking before calling 9-1-1. Driscoll said
+        the store was not open at the time of the incident. The alligator was carted
+        away by Southport police and animal protective services. Moving on from a
+        reptile in search of locks to a Michigan man thinking outside the box, a Detroit
+        man spent over 10 years assembling an 11,578-pound rubber band ball that has
+        now been certified.","usage":{"type":"tokens","total_tokens":822,"input_tokens":618,"input_token_details":{"text_tokens":18,"audio_tokens":600},"output_tokens":204}}'
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a550d868e8b410cb-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '1076'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 04:23:49 GMT
+      openai-processing-ms:
+      - '1401'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-reset-requests:
+      - 12ms
+    status:
+      code: 200
+      message: OK
+version: 1

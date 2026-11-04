@@ -7,7 +7,7 @@ from typing import Protocol
 from archie_db import changes, models
 from sqlalchemy import exc, orm
 
-from archie_api.sync import capture, episodes, schemas, source_actions
+from archie_api.sync import capture, episodes, schemas, source_actions, topic_actions
 
 _ACTION_ID_USED = "action id already used"
 NOT_SUPPORTED = "action not supported yet"
@@ -35,6 +35,14 @@ HANDLERS: dict[schemas.ActionType, ActionHandler] = {
     schemas.ActionType.READ_LATER: source_actions.read_later,
     schemas.ActionType.DELETE_SOURCE: source_actions.delete_source,
     schemas.ActionType.CHOOSE_EPISODE: episodes.choose_episode,
+    schemas.ActionType.ADD_TOPIC: topic_actions.add_topic,
+    schemas.ActionType.RENAME_TOPIC: topic_actions.rename_topic,
+    schemas.ActionType.MERGE_TOPIC: topic_actions.merge_topic,
+    schemas.ActionType.REMOVE_TOPIC: topic_actions.remove_topic,
+    schemas.ActionType.RESTORE_TOPIC: topic_actions.restore_topic,
+    schemas.ActionType.REQUEST_TOPIC_PRIMER: topic_actions.request_topic_primer,
+    schemas.ActionType.SET_SOURCE_TOPIC: topic_actions.set_source_topic,
+    schemas.ActionType.CHOOSE_TOPICS: topic_actions.choose_topics,
 }
 
 
@@ -47,6 +55,10 @@ def apply_actions(db: orm.Session, *, user: models.User, actions: list[schemas.A
     everything before their first write: a handler that returns a reason does not undo what it already wrote.
     """
     changes.lock_user_writes(db, user.id)
+
+    # `user` was loaded before the lock, so a concurrent batch may have set this since; re-read it once here (not in
+    # the handler, where a refresh would overwrite this batch's own pending `func.now()`).
+    db.refresh(user, attribute_names=["topics_chosen_at"])
     results = [_apply_action(db, user=user, action=action) for action in actions]
     db.commit()
     return results

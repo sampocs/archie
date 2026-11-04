@@ -1,0 +1,172 @@
+interactions:
+- request:
+    body: "{\"max_tokens\":400,\"messages\":[{\"role\":\"user\",\"content\":\"Source
+      kind: newsletter\\nTitle: \u2615 Putting it to a vote\\nAnalysis hints: domain
+      Finance, topic US midterm elections, tags midterms, Congress, markets, data
+      centers\\n\\nGist: Morning Brew's Election Day issue: a quick market recap,
+      what is at stake in the US midterms, and a round of short business headlines.\\nKey
+      ideas:\\n- The midterms decide control of Congress, where Republicans hold narrow
+      218-214 House and 53-47 Senate majorities; polls suggest Democrats might flip
+      the House.\\n- Local ballots include 40+ data-center initiatives and California's
+      proposed one-time 5% wealth tax on billionaires.\\n- Chipmaker Marvell agreed
+      to buy Lumentum, which builds lasers and optical hardware for data centers,
+      in a $115 billion bet on the AI build-out.\\n\\nThe user's topics (domain \u203A
+      name):\\n- AI \u203A AI business & economics\\n- AI \u203A AI policy & safety\\n-
+      AI \u203A AI products & agents\\n- AI \u203A Chips & Nvidia\\n- AI \u203A Data
+      centers & hyperscalers\\n- AI \u203A Energy & power\\n- AI \u203A Models & AI
+      labs\\n- Crypto \u203A Bitcoin\\n- Crypto \u203A Cosmos & IBC\\n- Crypto \u203A
+      Crypto investing\\n- Crypto \u203A Crypto regulation\\n- Crypto \u203A Data
+      availability & modular chains\\n- Crypto \u203A DeFi\\n- Crypto \u203A Ethereum\\n-
+      Crypto \u203A Rollups & L2s\\n- Crypto \u203A Solana\\n- Crypto \u203A Stablecoins\\n-
+      Crypto \u203A Staking & restaking\\n- Crypto \u203A Tokenomics\\n- Crypto \u203A
+      Zero knowledge\\n- Finance \u203A Banking\\n- Finance \u203A Investing fundamentals\\n-
+      Finance \u203A IPOs & M&A\\n- Finance \u203A Private equity\\n- Finance \u203A
+      Stocks & public markets\\n- Finance \u203A Valuing companies\\n- Finance \u203A
+      Venture capital\\n- Geography \u203A Borders & regions\\n- Geography \u203A
+      Climate\\n- Geography \u203A Countries & capitals\\n- Geography \u203A Natural
+      resources\\n- Geography \u203A Physical geography\\n- Geography \u203A Population
+      & cities\\n- Geopolitics \u203A Defense & military\\n- Geopolitics \u203A Europe\\n-
+      Geopolitics \u203A Global institutions\\n- Geopolitics \u203A Middle East\\n-
+      Geopolitics \u203A Russia & Ukraine\\n- Geopolitics \u203A Taiwan & chips\\n-
+      Geopolitics \u203A Trade wars & sanctions\\n- Geopolitics \u203A US\u2013China\\n-
+      History \u203A Ancient history\\n- History \u203A Economic & financial history\\n-
+      History \u203A Empires\\n- History \u203A History of technology\\n- History
+      \u203A The Cold War\\n- History \u203A The world wars\\n- History \u203A US
+      history\\n- Macro \u203A Dollar & currencies\\n- Macro \u203A Fed & monetary
+      policy\\n- Macro \u203A Government debt & deficits\\n- Macro \u203A Inflation\\n-
+      Macro \u203A Interest rates & bonds\\n- Macro \u203A Jobs & the labor market\\n-
+      Macro \u203A Liquidity & the Fed's balance sheet\\n- Macro \u203A Macro & risk
+      assets\\n- Macro \u203A Recessions & the business cycle\\n- Macro \u203A Tariffs
+      & trade\\n- Politics \u203A Congress & legislation\\n- Politics \u203A Courts
+      & the law\\n- Politics \u203A Political economy\\n- Politics \u203A Regulation\\n-
+      Politics \u203A The Trump administration\\n- Politics \u203A US politics & elections\\n-
+      Software engineering \u203A AI/ML engineering\\n- Software engineering \u203A
+      Backend & APIs\\n- Software engineering \u203A Data engineering & databases\\n-
+      Software engineering \u203A DevOps & cloud\\n- Software engineering \u203A Frontend
+      & mobile\\n- Software engineering \u203A Languages & tools\\n- Sports \u203A
+      NFL contracts & the salary cap\\n- Sports \u203A NFL draft & team building\\n-
+      Sports \u203A NFL play schemes\\n- Sports \u203A Quarterbacks\\n- Sports \u203A
+      Sports business\\n- Startups \u203A Founder lessons\\n- Startups \u203A Fundraising\\n-
+      Startups \u203A Growth & marketing\\n- Startups \u203A Product-market fit\\n-
+      Startups \u203A Startup ideas\\n- Trading \u203A Derivatives & options\\n- Trading
+      \u203A Liquidity & volume\\n- Trading \u203A Market making\\n- Trading \u203A
+      Market structure\\n- Trading \u203A Perpetual futures\\n- Trading \u203A Quant
+      trading\\n- Trading \u203A Risk management\\n- Trading \u203A Trading strategies\\n\\nRemoved
+      topics (never propose these or anything close):\\n- College football\\n- Insurance\\n-
+      Personal finance & taxes\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"domain\":{\"type\":\"string\",\"enum\":[\"Macro\",\"Finance\",\"Trading\",\"Crypto\",\"Startups\",\"AI\",\"Politics\",\"Geopolitics\",\"Sports\",\"Geography\",\"History\",\"Software
+      engineering\",\"Other\"]},\"topic\":{\"type\":\"string\"},\"is_new\":{\"type\":\"boolean\"},\"newsletter_kind\":{\"anyOf\":[{\"type\":\"string\",\"enum\":[\"news\",\"essay\"]},{\"type\":\"null\"}]}},\"required\":[\"domain\",\"topic\",\"is_new\",\"newsletter_kind\"],\"additionalProperties\":false}}},\"system\":\"You
+      file sources for a personal learning app into the user's own list of topics.
+      Each topic sits under one domain.\\n\\nRules:\\n- Reuse one of the user's topics
+      whenever one fits, even loosely. Copy its name exactly and set is_new to false.\\n-
+      Only when none of them fits, propose a new topic and set is_new to true. Make
+      it short (2-5 words) and reusable for many future sources, in the style of the
+      user's topics. Never propose a near-duplicate of an existing or removed topic
+      (no rewording, plural, abbreviation or synonym of one).\\n- Never propose a
+      removed topic or anything close to one: the user removed those on purpose. If
+      the only fit is a removed topic, reuse a broader existing topic or propose a
+      different one.\\n- domain: the domain of the topic you chose (an existing topic's
+      own domain when you reuse one).\\n- newsletter_kind: for a newsletter only,
+      otherwise null. \\\"news\\\" is a digest of several short items; \\\"essay\\\"
+      is one piece of writing worth reading whole.\\n\\nThe analysis hints (domain,
+      topic, tags) come from an earlier step with a different domain list; treat them
+      as hints.\"}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '5546'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CgiRv6mHkCdQoz1CMKeSE","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSjgYKEAgTGAI4AUIIdGhpbmtpbmcSDD9EsYFFb6naXI35UxoMmUTWEWIWdy7ScZgiIjDf5OGRg+HCc+xu0pKOAFVJIqdKwac5G0FvIO6TPLfTT6E8GcjEBGOIH0jlHtw34IQqqwVLsv49CgMl8DB/mcGbOeEtyy+BGafchCzGlRWVgiRlL5xjyO65Gz4o5jPPD9viznKXth/ONlUIGxYiY3ml8Zo2aQ1QGxlD+FVs6a7EcVe2/kKKwcQQihV3DuUwiSVjPyZB8skaH8vNQ4dQBwZN1OBJeJV5QW1NFmwQYKjU9o6CkqaO968pn7/p37nbSneDZZMZPltkHqTEYAqasDrEwZRolueRK+WC3mLAC1rdbTad6hrqPYSuI24ejGIGZvlJ55tw24UB/wp7QLHKJ2tsyBryiYJz4x2gKsHkcBSgaBXF/H8uLsvn2aPN54ZkQpI7Re+GFagzlLT6Mzs58HYLfOhqjbKHG+zlDhAZ/80ifB13/msZHyE2alsrRDGGfe9OvsvMAaoqI6rQE8FFGlYBfsbU4aVB+Dp78URCb/T6wQsJIKaAT+/MgXvx+LeYc0bnhHsOMCZXBc3k95bJm/uupa/rZRVhOjEJv7oGa3pU7tHLa0V+Z5SMGmP8uGgjM3xR8YTUvGZHykkn8ln0h36LxFZE1+cDcZDCVRZkmFZyt9cwc0LNhjgroKTzduLEgwCkpBXQErPVaKIn1Y/lY7KgaX0k3GwgANjvGMpVEHN3oQquPWwvFxBWhTM+OVedaOINm4VKTlAC1l19IZElWkrbl5tOzWvVubMKlGsWUhQlkyVQ9L5KFNOBcu17AkMVJ3TEInG4pe8vXS0F+cBxEDJKTyoCdTGBm5FFyxz7DCJelszdy3EGHF8o2bwVbiV9nH/LqARfTgsK/wxksBJfjBozDvC2y8PgGuPysLqm5rEfZtOcPjYfbwN2AS+4X81q9Sz5qlw+wRq0bNYa6gdy/Juoptiac1k1cJQ972RilOXc35l+rQkyXz/Nh9k+Kt65mEIsacF0ZnnVecc14/ufcxgB"},{"type":"text","text":"{\"domain\":\"Politics\",\"topic\":\"US
+        politics & elections\",\"is_new\":false,\"newsletter_kind\":\"news\"}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2241,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":107,"output_tokens_details":{"thinking_tokens":65},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9999000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-04T19:20:59Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-04T19:20:59Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-04T19:20:58Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11999000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-04T19:20:59Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a555faa62ad00bf0-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '1756'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 19:20:59 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=1065
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-e127faf3de5fd5496d3a4148e91f6dd0-2578d3253809a748-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

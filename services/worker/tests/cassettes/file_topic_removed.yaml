@@ -1,0 +1,133 @@
+interactions:
+- request:
+    body: "{\"max_tokens\":400,\"messages\":[{\"role\":\"user\",\"content\":\"Source
+      kind: article\\nTitle: How to Do Great Work\\nAnalysis hints: domain Other,
+      topic Doing great work, tags careers, ambition, curiosity, creativity\\n\\nGist:
+      Paul Graham distills what people who did great work in many fields have in common:
+      pick work you have both aptitude for and deep interest in, follow your curiosity
+      to the frontier of a field, notice the gaps others overlook, and keep working
+      on it steadily for years.\\nKey ideas:\\n- Choose work you have a natural aptitude
+      for and a deep interest in; if unsure, guess and start.\\n- Learn enough to
+      reach the frontier of a field, then look for gaps: things that seem odd, missing
+      or wrong to you but that others take for granted.\\n- Consistent effort compounds:
+      working a few hours a day on something you care about beats occasional heroic
+      bursts, and curiosity is the engine that keeps it going.\\n\\nThe user's topics
+      (domain \u203A name):\\n- Sports \u203A NFL play schemes\\n- Sports \u203A Quarterbacks\\n\\nRemoved
+      topics (never propose these or anything close):\\n- Careers & doing great work\\n-
+      Founder lessons\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"domain\":{\"type\":\"string\",\"enum\":[\"Macro\",\"Finance\",\"Trading\",\"Crypto\",\"Startups\",\"AI\",\"Politics\",\"Geopolitics\",\"Sports\",\"Geography\",\"History\",\"Software
+      engineering\",\"Other\"]},\"topic\":{\"type\":\"string\"},\"is_new\":{\"type\":\"boolean\"},\"newsletter_kind\":{\"anyOf\":[{\"type\":\"string\",\"enum\":[\"news\",\"essay\"]},{\"type\":\"null\"}]}},\"required\":[\"domain\",\"topic\",\"is_new\",\"newsletter_kind\"],\"additionalProperties\":false}}},\"system\":\"You
+      file sources for a personal learning app into the user's own list of topics.
+      Each topic sits under one domain.\\n\\nRules:\\n- Reuse one of the user's topics
+      whenever one fits, even loosely. Copy its name exactly and set is_new to false.\\n-
+      Only when none of them fits, propose a new topic and set is_new to true. Make
+      it short (2-5 words) and reusable for many future sources, in the style of the
+      user's topics. Never propose a near-duplicate of an existing or removed topic
+      (no rewording, plural, abbreviation or synonym of one).\\n- Never propose a
+      removed topic or anything close to one: the user removed those on purpose. If
+      the only fit is a removed topic, reuse a broader existing topic or propose a
+      different one.\\n- domain: the domain of the topic you chose (an existing topic's
+      own domain when you reuse one).\\n- newsletter_kind: for a newsletter only,
+      otherwise null. \\\"news\\\" is a digest of several short items; \\\"essay\\\"
+      is one piece of writing worth reading whole.\\n\\nThe analysis hints (domain,
+      topic, tags) come from an earlier step with a different domain list; treat them
+      as hints.\"}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '2755'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CgiRua8ZQSsvyEoTXNFsE","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSlQsKEAgTGAI4AUIIdGhpbmtpbmcSDCPAuxdrH8mcoUEjpxoMa9qX3mP079Uh4a/iIjCFSdZndBGow5DO8EJYmnccWmXhxBJdYpk9s69hRdDrhyicdDUM1MyFmE+5WDO+xywqsgqWNBYenKB7BqQlgaFGJbxZ9ZJGMSOJPzvbj2CzjdzPovcepc89jpY36V3iQ6F5wDogXbCfsnrZRLNlvs7li03hnEV5tMXIat+FYH8qJeaD+WAQvUzFoHbhkU3CHEWfVEcM+42oPhCJ6z6Llyt2AmiPP2uXMiUEnbLIPH6CWRHkzuTj+0TNWHsXXdrwnJZ2WjQpi7dA8ux4I9s2O5vo2L0V9EQzQR2LIH/QsHJgiH9tK/CtA+CYQihKF6J5xum1LtdocrWTcMFH5ZFdx7mcAd5UOW0Zyr/sOQD3SnBkguvm77kt0JVorNuK+RiZ2YZozOtLChHKvhnts3NUvK8oiQoqV/YJfU9UNWdHXPSb/P/022WIpoUcDMFHR0+uXsIivowgEwdA3GRFjmc00NTNavIgb1qHwytfOJRd83yWmA3/L9UrR0duYFTs4/s/sRa2PbLTQZKkb2RI462d7UTBRM2VWRiVSh6XMPkX6ifYXFJwuso6PiYSxKQM8ffW6DgiF0iTuJEVQbaxkC0hpS622PnpbIdYJ3eTwNvLq1hxA//qmeRwwwCmO106JCL1Ps74T3ND9OGIyi64FThlB5D0Q91JgpqMddG5trtdIOEsWc6Aw1MbvZg3hgBPZa2ZAQymTLDd5LVogBjmGCyll9lTEeulqUyDKNbEZdPYpOuc5yxCxOQD8gOY0cSU54HxAlGXurfBTN5UOgt+gvYDPq0wIHPOOes/YEiTe4bXqH/p0J863Vi3pqJjONy78ttoW2115gTfuhoDLzc8bjmxhSm95QOHkApmTu4ZvWUt+25hn6sho18MnpuBvu4r1QrRO2PZUO9bJ804cMsKn2ffjsCa1mDbx00t+mbwL5iN0rHr0EeD+TQ4rbl8ZBvfGzpKLVsHi8zkozavQtbCR+xAJtSWn7VjgPh6g8dnamrWfV9cqVHSTNYnyWaVVfHN+Bw8OxbXpztS4F4W+tYlxthCdCMDl88rZcFUaMxTpHIirkzvkEdcoynDBYFsvca/l7OL4uwcuFxNm/eRYsA7cY1rQtAGxv0JM2w39NW2W2gonaCGFEbFNAu+oEqMPPek2cjTz7+0cx6xdEHmKWk6DdSOYPvITRq6bfBPtAYjA+Yiqfl1ZPMsmGLm3WtcznBwpzQ8L6G2bivGN/rRRm9t60cfIrIetoj3pyCaGZgg9GZFU22P0gkhKsnoifTlPw3y5HS+zywTirQWHAe0xCo4sVXD3RudL9L7iNEarGfsI7pTdmobe2QlHO/0GqQBzEznKv7ozyAyRhL7ey/cDnmGu5am1F2fFQe6n0lk4nFmmyyrSFHV0pOdMOly6Lyb6L3qpJdn6KDB0AwgX2SuwTGdlxCrjoG34XQ4RCJDLg6XmUPm5BRlpoaKAbTbXR4N1ZX+QOp2E804GpLVijT5wJwlag5dKhAxreXGxrOqffQ2ERz+C9S2dWOtO76fYSv0ac/zNBVj+uzNMBogAF4gqqP+kI9J3D1p1XwTDvtWctBOkLIns3TSkulKRSwb3dw7EjV1x417zBY6Or81MaMd+xNR57B4YMqE1U/vhMhoDlEQOlEQkDjYmuGeImUli8kZKys/r6VBRty0SRjVwj8QVGtSiPu8cgW1CU8zS1d+yxAeFMikL0taqYVk1td49dd6xPYmoRTfOx42q+yrmGYJFX0EIW0iyWaD0TXwosVwENTHdF8Nhry1/1HYdMTbdoJnF8NwBSCWzpem7nh2yUlJFMkArfaNobh9T4yDpZFRCrVGVBmcaIW9cS5WQvakGAE="},{"type":"text","text":"{\"domain\":\"Other\",\"topic\":\"Learning
+        and curiosity\",\"is_new\":true,\"newsletter_kind\":null}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1149,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":360,"output_tokens_details":{"thinking_tokens":319},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-04T19:20:54Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-04T19:20:56Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-04T19:20:51Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-04T19:20:54Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a555fa794a7ddada-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '2612'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 04 Nov 2026 19:20:56 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=4980
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-95b3905869b487e73892bec55234f0d1-a909ad328bac8286-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

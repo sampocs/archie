@@ -134,11 +134,17 @@ name = "archie-shared"
 version = "0.1.0"
 source = { editable = "packages/archie-shared" }
 dependencies = [
+    { name = "defusedxml" },
+    { name = "httpx" },
     { name = "pydantic-settings" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pydantic-settings", specifier = ">=2.6" }]
+requires-dist = [
+    { name = "defusedxml", specifier = ">=0.7.1" },
+    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic-settings", specifier = ">=2.6" },
+]
 
 [[package]]
 name = "archie-testing"

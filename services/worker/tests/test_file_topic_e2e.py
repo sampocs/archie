@@ -165,6 +165,30 @@ def test_a_name_matching_a_removed_topic_keeps_the_domain_but_no_topic(engine: s
     assert len(_topics(engine, user_id)) == 1
 
 
+def test_a_name_of_a_merged_topic_files_on_the_winner_and_creates_nothing(engine: sqlalchemy.Engine) -> None:
+    """Filing doesn't bring a merged topic back: it follows the merge to the topic that took its place."""
+    user_id = _add_user(engine)
+    _add_topics(engine, user_id=user_id, live={Domain.MACRO: ("Fed & monetary policy", "Monetary history")})
+    winner_id = _merge(engine, user_id=user_id, loser_name="Monetary history", winner_name="Fed & monetary policy")
+    source_id = _add_analyzed_source(engine, user_id=user_id)
+
+    _apply(engine, source_id, _decision(domain=Domain.HISTORY, topic="monetary history"))
+
+    source = _source(engine, source_id)
+    assert (source.topic_id, source.domain) == (winner_id, Domain.MACRO.value)
+    assert len(_topics(engine, user_id)) == 2
+
+
+def _merge(engine: sqlalchemy.Engine, *, user_id: int, loser_name: str, winner_name: str) -> uuid.UUID:
+    """Point the loser at the winner, as the merge action does; returns the winner's id."""
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+        by_name = {topic.name: topic for topic in db.scalars(sqlalchemy.select(models.Topic))}
+        by_name[loser_name].merged_into_id = by_name[winner_name].id
+        db.commit()
+        return by_name[winner_name].id
+
+
 def test_a_new_name_becomes_an_archie_topic_in_the_decisions_domain(engine: sqlalchemy.Engine) -> None:
     """Nothing matches, so exactly one `archie` topic is created and the source points at it."""
     user_id = _add_user(engine)

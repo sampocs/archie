@@ -33,6 +33,21 @@ def named_topic(db: sqlalchemy.orm.Session, *, user_id: int, name: str) -> model
     return next((topic for topic in candidates if topics.normalize_topic_name(topic.name) == wanted), None)
 
 
+def merge_winner(db: sqlalchemy.orm.Session, *, user_id: int, name: str) -> models.Topic | None:
+    """The topic that now stands in for the user's merged topic named like `name`, or None if no merged topic matches.
+
+    Follows `merged_into_id` to the end of the chain, so the result is never itself merged (it may be removed).
+    """
+    wanted = topics.normalize_topic_name(name)
+    merged = db.scalars(
+        sqlalchemy.select(models.Topic).where(models.Topic.user_id == user_id, models.Topic.merged_into_id.is_not(None))
+    )
+    topic = next((candidate for candidate in merged if topics.normalize_topic_name(candidate.name) == wanted), None)
+    while topic is not None and topic.merged_into_id is not None:
+        topic = db.get_one(models.Topic, topic.merged_into_id)
+    return topic
+
+
 def create_topic(
     db: sqlalchemy.orm.Session,
     *,

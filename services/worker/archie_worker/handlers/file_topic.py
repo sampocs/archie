@@ -1,8 +1,9 @@
 """`file_topic`: decide a source's domain and topic from its summary, reusing the user's topics wherever one fits.
 
 The model proposes; the server guard decides. A name matching a live topic (case and punctuation aside) files the
-source there; one matching a removed topic leaves it without a topic (domain kept); anything else becomes a new
-`archie` topic. Filing never blocks a source from being ready, so this step has no failure hook.
+source there; one matching a removed topic leaves it without a topic (domain kept); one matching a merged-away topic
+follows the merge to its winner; anything else becomes a new `archie` topic. Filing never blocks a source from being
+ready, so this step has no failure hook.
 """
 
 from __future__ import annotations
@@ -85,7 +86,7 @@ def parse_decision(raw: Mapping[str, Any], *, is_newsletter: bool) -> FilingDeci
 
 def apply_filing(db: sqlalchemy.orm.Session, *, source: models.Source, decision: FilingDecision) -> None:
     """Write the decision through the server guard; the caller holds the user's write lock."""
-    existing = user_topics.named_topic(db, user_id=source.user_id, name=decision.topic) if decision.topic else None
+    existing = _matching_topic(db, user_id=source.user_id, name=decision.topic) if decision.topic else None
     if existing is not None and existing.removed_at is None:
         source.topic_id = existing.id
         source.domain = existing.domain
@@ -107,6 +108,12 @@ def apply_filing(db: sqlalchemy.orm.Session, *, source: models.Source, decision:
     if decision.newsletter_kind is not None:
         source.newsletter_kind = decision.newsletter_kind.value
     changes.touch(source)
+
+
+def _matching_topic(db: sqlalchemy.orm.Session, *, user_id: int, name: str) -> models.Topic | None:
+    """The live or removed topic for `name`, else the winner of a merged topic of that name."""
+    named = user_topics.named_topic(db, user_id=user_id, name=name)
+    return named or user_topics.merge_winner(db, user_id=user_id, name=name)
 
 
 def _prepare(db: sqlalchemy.orm.Session, job: models.Job) -> _FilingRun | None:

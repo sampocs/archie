@@ -57,14 +57,20 @@ export function createDbSyncStore(db: AppDb, runEpoch: number = getSessionEpoch(
         tx.update(schema.outbox).set({ status: "rejected", error: reason }).where(eq(schema.outbox.id, id)).run();
         if (!entry) return;
 
-        // The payload carries the source id for source actions; surface the failure on that row.
-        const sourceId = (JSON.parse(entry.payload) as { id?: string }).id;
-        if (!sourceId) return;
+        // The payload carries the changed row's id; surface the failure on that row.
+        const rowId = (JSON.parse(entry.payload) as { id?: string }).id;
+        if (!rowId) return;
+
+        // The server never created this topic, so the optimistic row would otherwise linger forever.
+        if (entry.type === "add_topic") {
+          tx.delete(schema.topics).where(eq(schema.topics.id, rowId)).run();
+          return;
+        }
 
         // A rejected retry never started the pipeline, so undo the optimistic "processing" `retrySource` set.
         const changes =
           entry.type === "retry_source" ? { syncError: reason, processing: "failed" } : { syncError: reason };
-        tx.update(schema.sources).set(changes).where(eq(schema.sources.id, sourceId)).run();
+        tx.update(schema.sources).set(changes).where(eq(schema.sources.id, rowId)).run();
       });
     },
 
@@ -77,8 +83,9 @@ export function createDbSyncStore(db: AppDb, runEpoch: number = getSessionEpoch(
       db.transaction((tx) => {
         if (signedOutSinceStart()) return;
 
-        // A source with an unsent local action keeps its local copy; it returns on a later pull once the
-        // push bumps its change_seq. No timestamp comparison: phone and server clocks can't be trusted.
+        // A row (source, topic or topic primer) with an unsent local action keeps its local copy; it returns on a
+        // later pull once the push bumps its change_seq. No timestamp comparison: phone and server clocks can't be
+        // trusted.
         const unsent = new Set(
           tx
             .select()
@@ -110,6 +117,14 @@ export function createDbSyncStore(db: AppDb, runEpoch: number = getSessionEpoch(
             prepMe: source.prep_me ? 1 : 0,
             mergedIntoId: source.merged_into_id,
             sender: source.sender,
+            domain: source.domain,
+            topicId: source.topic_id,
+            imageUrl: source.image_url,
+            queuePosition: source.queue_position,
+            readAt: source.read_at,
+            snoozedUntil: source.snoozed_until,
+            primerOpenedAt: source.primer_opened_at,
+            newsletterKind: source.newsletter_kind,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })
@@ -144,6 +159,41 @@ export function createDbSyncStore(db: AppDb, runEpoch: number = getSessionEpoch(
           tx.insert(schema.cards)
             .values({ id: card.id, ...values })
             .onConflictDoUpdate({ target: schema.cards.id, set: values })
+            .run();
+        }
+
+        for (const topic of page.rows.topics) {
+          if (unsent.has(topic.id)) continue;
+          // primerRequestedAt is phone-only and deliberately left out.
+          const values = {
+            domain: topic.domain,
+            name: topic.name,
+            origin: topic.origin,
+            removedAt: topic.removed_at,
+            mergedIntoId: topic.merged_into_id,
+            createdAt: topic.created_at,
+            updatedAt: topic.updated_at,
+          };
+          tx.insert(schema.topics)
+            .values({ id: topic.id, ...values })
+            .onConflictDoUpdate({ target: schema.topics.id, set: values })
+            .run();
+        }
+
+        for (const primer of page.rows.topic_primers) {
+          if (unsent.has(primer.id)) continue;
+          const values = {
+            topicId: primer.topic_id,
+            version: primer.version,
+            isCurrent: primer.is_current ? 1 : 0,
+            content: JSON.stringify(primer.content),
+            openedAt: primer.opened_at,
+            snoozedUntil: primer.snoozed_until,
+            createdAt: primer.created_at,
+          };
+          tx.insert(schema.topicPrimers)
+            .values({ id: primer.id, ...values })
+            .onConflictDoUpdate({ target: schema.topicPrimers.id, set: values })
             .run();
         }
 

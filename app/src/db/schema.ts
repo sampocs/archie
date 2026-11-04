@@ -1,4 +1,4 @@
-import { integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const sources = sqliteTable("sources", {
   id: text("id").primaryKey(),
@@ -20,6 +20,15 @@ export const sources = sqliteTable("sources", {
   mergedIntoId: text("merged_into_id"),
   // Newsletter sender (display name or address); null for other kinds.
   sender: text("sender"),
+  // Filing, artwork and reading state (M4). `queuePosition`: lower is higher in the queue.
+  domain: text("domain"),
+  topicId: text("topic_id"),
+  imageUrl: text("image_url"),
+  queuePosition: real("queue_position"),
+  readAt: text("read_at"),
+  snoozedUntil: text("snoozed_until"),
+  primerOpenedAt: text("primer_opened_at"),
+  newsletterKind: text("newsletter_kind"),
 });
 
 export const artifacts = sqliteTable("artifacts", {
@@ -41,6 +50,32 @@ export const cards = sqliteTable("cards", {
   answer: text("answer").notNull(),
   createdAt: text("created_at").notNull(),
   deletedAt: text("deleted_at"),
+});
+
+export const topics = sqliteTable("topics", {
+  id: text("id").primaryKey(),
+  domain: text("domain").notNull(),
+  name: text("name").notNull(),
+  // starter | archie | user
+  origin: text("origin").notNull(),
+  removedAt: text("removed_at"),
+  mergedIntoId: text("merged_into_id"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  // Phone only (a pull never writes it): when this phone asked for a primer, so the topic page can say it's coming.
+  primerRequestedAt: text("primer_requested_at"),
+});
+
+export const topicPrimers = sqliteTable("topic_primers", {
+  id: text("id").primaryKey(),
+  topicId: text("topic_id").notNull(),
+  version: integer("version").notNull(),
+  isCurrent: integer("is_current").notNull(),
+  // JSON-encoded { markdown }.
+  content: text("content").notNull(),
+  openedAt: text("opened_at"),
+  snoozedUntil: text("snoozed_until"),
+  createdAt: text("created_at").notNull(),
 });
 
 export const outbox = sqliteTable("outbox", {

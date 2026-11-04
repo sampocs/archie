@@ -19,6 +19,14 @@ export type PulledSource = {
   prep_me: boolean;
   merged_into_id: string | null;
   sender: string | null;
+  domain: string | null;
+  topic_id: string | null;
+  image_url: string | null;
+  queue_position: number | null;
+  read_at: string | null;
+  snoozed_until: string | null;
+  primer_opened_at: string | null;
+  newsletter_kind: string | null;
 };
 export type PulledArtifact = {
   id: string;
@@ -38,8 +46,34 @@ export type PulledCard = {
   created_at: string;
   deleted_at: string | null;
 };
+export type PulledTopic = {
+  id: string;
+  domain: string;
+  name: string;
+  origin: string;
+  removed_at: string | null;
+  merged_into_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+export type PulledTopicPrimer = {
+  id: string;
+  topic_id: string;
+  version: number;
+  is_current: boolean;
+  content: unknown;
+  opened_at: string | null;
+  snoozed_until: string | null;
+  created_at: string;
+};
 export type PullPage = {
-  rows: { sources: PulledSource[]; artifacts: PulledArtifact[]; cards: PulledCard[] };
+  rows: {
+    sources: PulledSource[];
+    artifacts: PulledArtifact[];
+    cards: PulledCard[];
+    topics: PulledTopic[];
+    topic_primers: PulledTopicPrimer[];
+  };
   position: number;
   more: boolean;
 };
@@ -47,7 +81,7 @@ export type PullPage = {
 export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;
   removeActions(ids: string[]): Promise<void>;
-  // Also sets sources.syncError for that action's source.
+  // Also sets sources.syncError for that action's source; a rejected add_topic deletes its optimistic topic.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
   // Upserts rows and saves the position in one transaction.

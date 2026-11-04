@@ -91,12 +91,16 @@ def _prepare(db: sqlalchemy.orm.Session, *, job: models.Job, source: models.Sour
 
 
 def _transcribe_missing_chunks(engine: sqlalchemy.Engine, *, run: _Run) -> None:
-    """Download and chunk the audio, then transcribe and store every chunk not finished by an earlier attempt."""
+    """Download the audio, refuse one that is too long or unreadable, chunk it, then transcribe and store every chunk
+    not finished by an earlier attempt."""
     prompt = f"{run.episode.show_name}. {run.episode.title}."
     with tempfile.TemporaryDirectory() as directory_name:
         directory = pathlib.Path(directory_name)
         audio = transcription.download(url=run.episode.audio_url, directory=directory)
-        chunks = transcription.split(audio=audio, directory=directory, chunk_seconds=transcription.CHUNK_SECONDS)
+        audio_seconds = transcription.episode_seconds(audio)
+        chunks = transcription.split(
+            audio=audio, audio_seconds=audio_seconds, directory=directory, chunk_seconds=transcription.CHUNK_SECONDS
+        )
 
         for chunk in chunks:
             if chunk.index in run.finished_chunks:

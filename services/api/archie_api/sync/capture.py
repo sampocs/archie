@@ -245,11 +245,10 @@ def _build_source(
 def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSourcePayload) -> None:
     """Fold a duplicate capture into `existing`: state moves forward only, given fields overwrite.
 
-    An M1 `link` row was never classified or processed, so a fresh share of its page classifies it now and starts the
-    pipeline when its kind is one the pipeline handles.
+    An `unsupported` source (an M1 `link` row, or a YouTube/podcast share M2 stored without processing) is classified
+    afresh by a new share of its page, and starts the pipeline when its URL is one the pipeline handles.
     """
-    if existing.kind == models.SourceKind.LINK:
-        _reclassify_m1_source(db, existing=existing)
+    _start_if_now_processable(db, existing=existing)
 
     if payload.intent == models.SourceIntent.FINISHED:
         existing.intent = models.SourceIntent.FINISHED.value
@@ -279,9 +278,14 @@ def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSource
     db.flush()
 
 
-def _reclassify_m1_source(db: orm.Session, *, existing: models.Source) -> None:
-    """Give an M1 `link` source its real kind, and start the pipeline if its URL is processable."""
-    existing.kind = models.SourceKind(urls.detect_kind(existing.url)).value
+def _start_if_now_processable(db: orm.Session, *, existing: models.Source) -> None:
+    """Give an M1 `link` source its real kind; start an `unsupported` source whose URL the pipeline can now process."""
+    if existing.kind == models.SourceKind.LINK:
+        existing.kind = models.SourceKind(urls.detect_kind(existing.url)).value
+
+    if existing.processing != models.ProcessingStatus.UNSUPPORTED:
+        return
+
     start = _start_for(existing.url)
     if start.processing != models.ProcessingStatus.PENDING:
         return

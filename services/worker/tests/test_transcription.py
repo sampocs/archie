@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import pathlib
+import subprocess
+
 import pytest
-from archie_worker import content, corrections, transcription
+from archie_worker import content, corrections, errors, transcription
+
+SHORT_CHUNK = pathlib.Path(__file__).parent / "fixtures" / "audio" / "short_chunk.mp3"
 
 
 def _words(count: int) -> str:
@@ -120,3 +125,51 @@ def test_a_context_with_no_word_beyond_heard_changes_nothing(context: str) -> No
     correction = corrections.Correction(heard="Gary", correct="Gabby", context=context)
 
     assert _texts(corrections.apply(segments, [correction])) == _texts(segments)
+
+
+def test_audio_over_the_duration_cap_is_refused_before_splitting(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The 60-second fixture against a 10-second cap is too long, and says so permanently."""
+    monkeypatch.setattr(transcription, "MAX_AUDIO_SECONDS", 10)
+
+    with pytest.raises(errors.PermanentJobError) as raised:
+        transcription.episode_seconds(SHORT_CHUNK)
+
+    assert raised.value.reason == errors.FailureReason.EPISODE_TOO_LONG
+
+
+def test_audio_under_the_duration_cap_reports_its_length() -> None:
+    """The real 60-second fixture is accepted and measured."""
+    assert transcription.episode_seconds(SHORT_CHUNK) == pytest.approx(60, abs=2)
+
+
+def test_undecodable_audio_is_permanently_unreadable(tmp_path: pathlib.Path) -> None:
+    """Garbage bytes fail ffprobe, which would fail every retry, so the job fails at once."""
+    garbage = tmp_path / "episode.audio"
+    garbage.write_bytes(b"this is not audio" * 100)
+
+    with pytest.raises(errors.PermanentJobError) as probe_raised:
+        transcription.episode_seconds(garbage)
+    with pytest.raises(errors.PermanentJobError) as split_raised:
+        transcription.split(audio=garbage, audio_seconds=60, directory=tmp_path, chunk_seconds=600)
+
+    assert probe_raised.value.reason == errors.FailureReason.AUDIO_UNREADABLE
+    assert split_raised.value.reason == errors.FailureReason.AUDIO_UNREADABLE
+
+
+def test_ffprobe_output_that_is_not_a_number_is_unreadable(tmp_path: pathlib.Path) -> None:
+    """A file ffprobe accepts but gives no duration for (empty output) is unreadable rather than a ValueError retry."""
+    empty = tmp_path / "empty.audio"
+    empty.write_bytes(b"")
+
+    with pytest.raises(errors.PermanentJobError):
+        transcription.episode_seconds(empty)
+
+
+def test_a_split_that_exceeds_its_time_limit_stays_retryable(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: pathlib.Path
+) -> None:
+    """A stuck ffmpeg raises TimeoutExpired, which is not permanent: the loop retries it."""
+    monkeypatch.setattr(transcription, "_FFMPEG_MIN_TIMEOUT_SECONDS", 0.001)
+
+    with pytest.raises(subprocess.TimeoutExpired):
+        transcription.split(audio=SHORT_CHUNK, audio_seconds=0, directory=tmp_path, chunk_seconds=600)

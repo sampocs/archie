@@ -24,6 +24,7 @@ CHUNK_SECONDS = 600
 OPENAI_PART_SECONDS = 300
 DOWNLOAD_TIMEOUT_SECONDS = 600
 MAX_AUDIO_BYTES = 600_000_000
+MAX_AUDIO_SECONDS = 6 * 3600
 MIN_WORDS_PER_MINUTE = 100
 MIN_CHECKED_CHUNK_SECONDS = 30
 GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
@@ -32,6 +33,10 @@ OPENAI_URL = "https://api.openai.com/v1/audio/transcriptions"
 # Each read of the download may wait this long; the whole download is bounded by `DOWNLOAD_TIMEOUT_SECONDS`.
 _READ_TIMEOUT_SECONDS = 60
 _GROQ_DEFAULT_RETRY_AFTER_SECONDS = 60
+_FFPROBE_TIMEOUT_SECONDS = 60
+_FFMPEG_MIN_TIMEOUT_SECONDS = 300
+# ffmpeg re-encodes far faster than real time; a run slower than a quarter of that is treated as stuck.
+_FFMPEG_AUDIO_SECONDS_PER_TIMEOUT_SECOND = 4
 _CHUNK_PREFIX = "chunk"
 _AUDIO_MEDIA_TYPE = "audio/mpeg"
 _LANGUAGE = "en"
@@ -114,13 +119,54 @@ def download(*, url: str, directory: pathlib.Path) -> pathlib.Path:
     return path
 
 
+def episode_seconds(audio: pathlib.Path) -> float:
+    """The duration of the downloaded `audio`.
+
+    Raises `PermanentJobError` when it is over `MAX_AUDIO_SECONDS` (`EPISODE_TOO_LONG`) or ffprobe can't read it
+    (`AUDIO_UNREADABLE`), so no ffmpeg time is spent on it.
+    """
+    seconds = _duration_seconds(audio)
+    if seconds > MAX_AUDIO_SECONDS:
+        raise errors.PermanentJobError(errors.FailureReason.EPISODE_TOO_LONG)
+    return seconds
+
+
 def split(
-    *, audio: pathlib.Path, directory: pathlib.Path, chunk_seconds: float, prefix: str = _CHUNK_PREFIX
+    *,
+    audio: pathlib.Path,
+    audio_seconds: float,
+    directory: pathlib.Path,
+    chunk_seconds: float,
+    prefix: str = _CHUNK_PREFIX,
 ) -> list[AudioChunk]:
     """Re-encode `audio` as mono 16 kHz 32 kbps MP3 slices of `chunk_seconds`, named `<prefix>_000.mp3`, ...
 
-    Each slice's start is the sum of the durations before it, so segment times can be made absolute.
+    Each slice's start is the sum of the durations before it, so segment times can be made absolute. `audio_seconds`
+    sets ffmpeg's time limit (`subprocess.TimeoutExpired` is retried by the loop); audio ffmpeg can't decode raises
+    `PermanentJobError` (`AUDIO_UNREADABLE`), since a retry would only download it again.
     """
+    ffmpeg_timeout = max(_FFMPEG_MIN_TIMEOUT_SECONDS, audio_seconds / _FFMPEG_AUDIO_SECONDS_PER_TIMEOUT_SECOND)
+    try:
+        _run_ffmpeg(
+            audio=audio, directory=directory, chunk_seconds=chunk_seconds, prefix=prefix, timeout=ffmpeg_timeout
+        )
+    except subprocess.CalledProcessError as error:
+        raise errors.PermanentJobError(errors.FailureReason.AUDIO_UNREADABLE) from error
+
+    chunks: list[AudioChunk] = []
+    start_seconds = 0.0
+    for index, path in enumerate(sorted(directory.glob(f"{prefix}_[0-9][0-9][0-9].mp3"))):
+        duration_seconds = _duration_seconds(path)
+        chunks.append(
+            AudioChunk(index=index, path=path, start_seconds=start_seconds, duration_seconds=duration_seconds)
+        )
+        start_seconds += duration_seconds
+    return chunks
+
+
+def _run_ffmpeg(
+    *, audio: pathlib.Path, directory: pathlib.Path, chunk_seconds: float, prefix: str, timeout: float
+) -> None:
     subprocess.run(
         [
             "ffmpeg",
@@ -146,17 +192,8 @@ def split(
             str(directory / f"{prefix}_%03d.mp3"),
         ],
         check=True,
+        timeout=timeout,
     )
-
-    chunks: list[AudioChunk] = []
-    start_seconds = 0.0
-    for index, path in enumerate(sorted(directory.glob(f"{prefix}_[0-9][0-9][0-9].mp3"))):
-        duration_seconds = _duration_seconds(path)
-        chunks.append(
-            AudioChunk(index=index, path=path, start_seconds=start_seconds, duration_seconds=duration_seconds)
-        )
-        start_seconds += duration_seconds
-    return chunks
 
 
 def needs_fallback(*, segments: Sequence[content.Segment], duration_seconds: float) -> bool:
@@ -220,7 +257,11 @@ def transcribe_openai(
     Each part's cost is recorded as soon as it succeeds, so an earlier part's spend survives a later part failing.
     """
     parts = split(
-        audio=chunk.path, directory=directory, chunk_seconds=OPENAI_PART_SECONDS, prefix=f"{chunk.path.stem}_part"
+        audio=chunk.path,
+        audio_seconds=chunk.duration_seconds,
+        directory=directory,
+        chunk_seconds=OPENAI_PART_SECONDS,
+        prefix=f"{chunk.path.stem}_part",
     )
 
     segments: list[content.Segment] = []
@@ -320,10 +361,25 @@ def _record(
 
 
 def _duration_seconds(path: pathlib.Path) -> float:
-    probe = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(path)],
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return float(probe.stdout)
+    try:
+        probe = subprocess.run(
+            [
+                "ffprobe",
+                "-v",
+                "error",
+                "-protocol_whitelist",
+                "file",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "csv=p=0",
+                str(path),
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=_FFPROBE_TIMEOUT_SECONDS,
+        )
+        return float(probe.stdout)
+    except (subprocess.CalledProcessError, ValueError) as error:
+        raise errors.PermanentJobError(errors.FailureReason.AUDIO_UNREADABLE) from error

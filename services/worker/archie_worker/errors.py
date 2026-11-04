@@ -14,6 +14,7 @@ class FailureReason(StrEnum):
     SPOTIFY_ONLY = "This show is only on Spotify, so Archie can't get its audio."
     EPISODE_NOT_FOUND = "Couldn't find this episode's audio. If the show is only on Spotify, Archie can't get it."
     EPISODE_TOO_LONG = "This episode is too long to transcribe"
+    AUDIO_UNREADABLE = "Couldn't read this episode's audio."
     TRANSCRIPTION_NOT_SET_UP = "Transcription isn't set up on the server."
     YOUTUBE_NEEDS_SETUP = "YouTube transcripts need setup on the server (a Supadata key)."
     NO_CAPTIONS = "This video has no captions."

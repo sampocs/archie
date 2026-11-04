@@ -50,6 +50,8 @@ export default function RootLayout() {
             <Stack.Screen name="index" />
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="source/[id]" />
+            <Stack.Screen name="topic/[id]" />
+            <Stack.Screen name="settings/removed-topics" />
             <Stack.Screen name="share" />
           </Stack.Protected>
         </Stack>

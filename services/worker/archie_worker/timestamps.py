@@ -25,15 +25,14 @@ def marked_text(segments: Sequence[content.Segment], *, every_seconds: float = 6
     The first segment always gets a marker; after that, the first segment at or past the next boundary does, and the
     boundary moves to the next multiple of `every_seconds` after it.
     """
-    parts: list[str] = []
+    lines: list[list[str]] = []
     next_boundary = 0.0
     for segment in segments:
-        if segment.start < next_boundary:
-            parts.append(segment.text)
+        if lines and segment.start < next_boundary:
+            lines[-1].append(segment.text)
             continue
 
-        prefix = "\n" if parts else ""
-        parts.append(f"{prefix}[{format_timestamp(segment.start)}] {segment.text}")
+        lines.append([f"[{format_timestamp(segment.start)}]", segment.text])
         next_boundary = (segment.start // every_seconds + 1) * every_seconds
 
-    return " ".join(parts).replace(" \n", "\n")
+    return "\n".join(" ".join(line) for line in lines)

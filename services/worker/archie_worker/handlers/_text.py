@@ -8,11 +8,10 @@ import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, jobs, models, pipeline
 
+from archie_worker import content
 from archie_worker.content import episode as episode_content
 
 _MAX_TITLE_LENGTH = 500
-# Postgres text values reject NUL, so a title containing one would fail the job forever.
-_NUL = "\x00"
 
 
 def store_text(
@@ -58,7 +57,7 @@ def _lock_live(db: sqlalchemy.orm.Session, *, source: models.Source) -> bool:
 
 
 def _set_title_if_empty(source: models.Source, *, title: str | None) -> None:
-    cleaned = " ".join((title or "").replace(_NUL, "").split())[:_MAX_TITLE_LENGTH]
+    cleaned = " ".join(content.strip_nul(title or "").split())[:_MAX_TITLE_LENGTH]
     if source.title or not cleaned:
         return
 

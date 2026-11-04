@@ -3,6 +3,8 @@
 > Milestone 3 of the [backend architecture roadmap](2026-11-02-backend-architecture-design.md#roadmap). Builds on
 > [M2](2026-11-03-m2-capture-pipeline-design.md): same jobs, artifacts, `llm_calls`, processing status and sync.
 
+**Status:** Implemented on `m3-sources`; not deployed.
+
 **How this spec was made:** the owner asked for M3 to be built overnight without them, so the decisions below were
 made without a brainstorming round. Anything the owner might reasonably want differently is listed under
 **Decisions to confirm** at the end. Inputs: the de-risk findings and the `podcast_resolve`, `transcription`,
@@ -258,3 +260,9 @@ Made without the owner; each is easy to change.
 ## Follow-ups
 
 - Record a Supadata cassette (`youtube_supadata.yaml`, same video) once `SUPADATA_API_KEY` exists; until then the Supadata branch is untested.
+- Deploy M3: set the Railway variables listed in `docs/deploy.md`, `railway config plan` then `railway config apply`,
+  deploy the newsletter Worker from `workers/newsletter/README.md`, then switch Email Routing to it.
+- Feed-supplied URLs (enclosure, transcript) are fetched without a private-address check; SSRF hardening is needed
+  before this is exposed to untrusted feeds.
+- Dynamic ad insertion can change a feed's audio between `transcribe` retries, so resumed chunks could misalign with
+  freshly transcribed ones.

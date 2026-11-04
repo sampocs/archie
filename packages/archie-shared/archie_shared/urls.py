@@ -121,14 +121,14 @@ def podcast_link(url: str) -> PodcastLink | None:
 
     if host == "open.spotify.com":
         match = _SPOTIFY_EPISODE_PATH.match(parts.path)
-        return PodcastLink(PodcastPlatform.SPOTIFY, match.group(1), None) if match else None
+        return PodcastLink(platform=PodcastPlatform.SPOTIFY, episode_id=match.group(1), show_id=None) if match else None
 
     if host == "podcasts.apple.com":
         match = _APPLE_PODCAST_PATH.match(parts.path)
         episode_ids = urllib.parse.parse_qs(parts.query).get("i", [])
         if not match or not episode_ids or not _APPLE_EPISODE_ID.match(episode_ids[0]):
             return None
-        return PodcastLink(PodcastPlatform.APPLE, episode_ids[0], match.group(1))
+        return PodcastLink(platform=PodcastPlatform.APPLE, episode_id=episode_ids[0], show_id=match.group(1))
 
     return None
 

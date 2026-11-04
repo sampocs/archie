@@ -301,7 +301,7 @@ function makeDbStore() {
       id text PRIMARY KEY NOT NULL, url text NOT NULL, title text, kind text NOT NULL, state text NOT NULL,
       intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text,
       processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
-      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text
+      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text, sender text
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
@@ -338,6 +338,7 @@ const pulledSource = (overrides: Partial<PulledSource>): PulledSource => ({
   note: null,
   prep_me: false,
   merged_into_id: null,
+  sender: null,
   ...overrides,
 });
 
@@ -405,6 +406,22 @@ describe("database SyncStore", () => {
       syncError: "boom",
     });
     expect(await store.getPosition()).toBe(42);
+  });
+
+  it("stores a pulled source's sender and updates it on a re-pull", async () => {
+    const { db, store } = makeDbStore();
+    const page = (sender: string | null) => ({
+      rows: { sources: [pulledSource({ kind: "newsletter", state: "inbox", sender })], artifacts: [], cards: [] },
+      position: 1,
+      more: false,
+    });
+    const senderOf = () => db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get()?.sender;
+
+    await store.applyPage(page("Ben Thompson <ben@stratechery.com>"));
+    expect(senderOf()).toBe("Ben Thompson <ben@stratechery.com>");
+
+    await store.applyPage(page("Stratechery"));
+    expect(senderOf()).toBe("Stratechery");
   });
 
   it("skips rows whose source has an unsent local action but still saves the position", async () => {

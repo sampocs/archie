@@ -10,6 +10,7 @@ import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { ProcessingLine } from "@/ui/ProcessingLine";
+import { sourceByline, stateLabel } from "@/ui/sourceLabels";
 import { useTheme } from "@/theme/useTheme";
 
 type SourceRow = typeof schema.sources.$inferSelect;
@@ -51,12 +52,18 @@ function SourceItem({ source }: { source: SourceRow }) {
           }}
         >
           <Text variant="monoLabel" tone="ink2">
-            {source.state}
+            {stateLabel(source.state)}
           </Text>
         </View>
-        <Text variant="secondary" tone="ink3">
-          {source.kind}
-        </Text>
+        {source.kind === "newsletter" ? (
+          <Text testID={`source-sender-${source.id}`} variant="secondary" tone="ink3" numberOfLines={1} style={{ flexShrink: 1 }}>
+            {sourceByline(source)}
+          </Text>
+        ) : (
+          <Text variant="secondary" tone="ink3">
+            {source.kind}
+          </Text>
+        )}
         {source.syncError ? (
           <Pressable testID={`source-error-${source.id}`} onPress={() => setExpanded((open) => !open)} hitSlop={8}>
             <Text variant="secondary" style={{ color: theme.signals.missed }}>

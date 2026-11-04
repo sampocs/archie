@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { Text as NativeText } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { apiFetch, UnauthorizedError } from "@/api/client";
 import { clearSession, useSession } from "@/auth/session";
@@ -34,7 +35,7 @@ export default function RootLayout() {
   if (!migrations.success || !fontsLoaded || session.status === "loading") return null;
 
   return (
-    <>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style="auto" />
       {session.status === "signedIn" && (
         <SyncRoot sessionKey={session.sessionKey} onUnauthorized={() => void clearSession()} />
@@ -53,6 +54,6 @@ export default function RootLayout() {
           </Stack.Protected>
         </Stack>
       </SignOutContext.Provider>
-    </>
+    </GestureHandlerRootView>
   );
 }

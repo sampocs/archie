@@ -244,4 +244,3 @@ def test_a_newsletters_text_is_served_to_its_owner_only(live_stack: LiveStack) -
     assert authed.get(f"/sources/{article}/text").status_code == 404
     assert authed.get(f"/sources/{empty}/text").status_code == 404
     assert authed.get(f"/sources/{uuid.uuid4()}/text").status_code == 404
-

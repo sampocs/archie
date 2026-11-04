@@ -1,5 +1,5 @@
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useEffect, useState } from "react";
@@ -65,6 +65,18 @@ function AppStack() {
 
   const needsPicker = session.status === "signedIn" && topicsChosen === false && localTopics.length === 0;
 
+  // The picker is a route, not a guard: flipping a Stack.Protected guard rebuilds the stack (re-opening the launch
+  // link) and doesn't move the screen already showing. So the user is sent to the picker while it is owed (dev login
+  // lands on Library before /me answers) and into the app once topics exist.
+  const router = useRouter();
+  const segments = useSegments();
+  const onPicker = segments[0] === "topic-picker";
+  const onDevLogin = segments[0] === "dev";
+  useEffect(() => {
+    if (needsPicker && !onPicker && !onDevLogin) router.replace("/topic-picker");
+    if (!needsPicker && onPicker) router.replace("/");
+  }, [needsPicker, onPicker, onDevLogin, router]);
+
   return (
     <SignOutContext.Provider value={() => void clearSession()}>
       <Stack screenOptions={{ headerShown: false }}>
@@ -72,15 +84,13 @@ function AppStack() {
           <Stack.Screen name="sign-in" />
         </Stack.Protected>
         {/* The guard covers only the screens listed here: a new top-level route must be added to this block or it is reachable signed out. */}
-        <Stack.Protected guard={session.status === "signedIn" && !needsPicker}>
+        <Stack.Protected guard={session.status === "signedIn"}>
           <Stack.Screen name="index" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="source/[id]" />
           <Stack.Screen name="topic/[id]" />
           <Stack.Screen name="settings/removed-topics" />
           <Stack.Screen name="share" />
-        </Stack.Protected>
-        <Stack.Protected guard={needsPicker}>
           <Stack.Screen name="topic-picker" />
         </Stack.Protected>
       </Stack>

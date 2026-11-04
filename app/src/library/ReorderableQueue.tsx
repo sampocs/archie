@@ -156,7 +156,13 @@ function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRow
 
   const handle = (
     <GestureDetector gesture={pan}>
-      <View testID={`queue-handle-${index}`} hitSlop={12} style={{ paddingLeft: theme.spacing.sm }}>
+      <View
+        testID={`queue-handle-${index}`}
+        accessible
+        accessibilityLabel="Reorder"
+        hitSlop={12}
+        style={{ paddingLeft: theme.spacing.sm, paddingRight: theme.spacing.md }}
+      >
         <Text tone="ink3" style={{ fontSize: 18 }}>
           ≡
         </Text>

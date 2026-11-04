@@ -158,9 +158,16 @@ function QueueBody({ data, now, rowActions }: { data: LibraryData; now: Date; ro
           <ReorderableQueue
             sources={queue}
             renderRow={(source, _index, handle) => (
-              <SwipeRow actions={swipeActions({ kind: "source", source }, "queued", rowActions)}>
-                <LibraryItem source={source} trailing={handle} />
-              </SwipeRow>
+              // The handle sits beside the row, not inside it: the row's Pressable would swallow it for accessibility
+              // (and Maestro), and the swipe would compete with the drag.
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ flex: 1 }}>
+                  <SwipeRow actions={swipeActions({ kind: "source", source }, "queued", rowActions)}>
+                    <LibraryItem source={source} trailing={<></>} />
+                  </SwipeRow>
+                </View>
+                {handle}
+              </View>
             )}
           />
         </GroupedList>

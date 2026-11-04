@@ -19,19 +19,19 @@ appId: com.sampocs.archie
     timeout: 5000
 - tapOn:
     id: "add-url"
-- inputText: "https://example.com/"
+- inputText: "https://paulgraham.com/hwh.html"
 - tapOn:
     id: "intent-queue"
 - tapOn:
     id: "add-save"
-# Saving lands on Library; the worker's title replaces the URL.
+# Saving lands on Library; the worker's title replaces the URL. (example.com no longer yields readable text, so its title never arrives.)
 - extendedWaitUntil:
-    visible: ".*Example Domain.*"
+    visible: ".*How to Work Hard.*"
     timeout: 60000
 - tapOn:
     id: "library-search"
-- inputText: "example domain"
-- assertVisible: ".*Example Domain.*"
+- inputText: "work hard"
+- assertVisible: ".*How to Work Hard.*"
 - eraseText
 - inputText: "zzqx nothing"
 - assertVisible:

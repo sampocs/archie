@@ -8,6 +8,7 @@ import { CaptureOptions } from "@/capture/CaptureOptions";
 import { CaptureChoice, EMPTY_CHOICE } from "@/capture/types";
 import { Button } from "@/theme/components/Button";
 import { Text } from "@/theme/components/Text";
+import { FontScalingContext } from "@/theme/fontScaling";
 import { fontAssets } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 
@@ -29,8 +30,9 @@ export function ShareSheet(props: InitialProps) {
   const [choice, setChoice] = useState<CaptureChoice>(EMPTY_CHOICE);
   const [phase, setPhase] = useState<Phase>({ name: "editing" });
 
-  // Not awaited: the sheet renders in the system font until Geist loads rather than waiting on it.
-  useFonts(fontAssets);
+  // Wait for Geist (or its failure) before drawing, as the root layout does, so the sheet doesn't
+  // flash the system font.
+  const [fontsLoaded, fontError] = useFonts(fontAssets);
 
   useEffect(() => {
     if (phase.name !== "saved") return;
@@ -50,22 +52,29 @@ export function ShareSheet(props: InitialProps) {
     }
   }
 
+  if (!fontsLoaded && !fontError) return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
+
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.bg, padding: theme.spacing.gutterCards, gap: theme.spacing.lg }}>
-      {url ? (
-        <ShareBody
-          {...{ url, title, choice, phase }}
-          onChange={setChoice}
-          onSave={save}
-          onOpenArchie={() => openHostApp(shareDeepLink({ url, choice }))}
-        />
-      ) : (
-        <View style={{ gap: theme.spacing.lg }}>
-          <Text variant="headline">Nothing to save here</Text>
-          <Button label="Close" onPress={close} />
-        </View>
-      )}
-    </View>
+    <FontScalingContext.Provider value={false}>
+      <View
+        testID="share-sheet"
+        style={{ flex: 1, backgroundColor: theme.colors.bg, padding: theme.spacing.gutterCards, gap: theme.spacing.lg }}
+      >
+        {url ? (
+          <ShareBody
+            {...{ url, title, choice, phase }}
+            onChange={setChoice}
+            onSave={save}
+            onOpenArchie={() => openHostApp(shareDeepLink({ url, choice }))}
+          />
+        ) : (
+          <View style={{ gap: theme.spacing.lg }}>
+            <Text variant="headline">Nothing to save here</Text>
+            <Button label="Close" onPress={close} />
+          </View>
+        )}
+      </View>
+    </FontScalingContext.Provider>
   );
 }
 

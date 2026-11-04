@@ -203,6 +203,23 @@ def test_choosing_an_episode_is_rejected_for_an_article_a_busy_source_and_anothe
     assert guids[ready.id] == CHOSEN_GUID
 
 
+@pytest.mark.postgres
+def test_a_malformed_stored_feed_url_is_a_bad_gateway(live_stack: LiveStack) -> None:
+    """httpx raises InvalidURL (not an HTTPError) for it; the API answers 502 and makes no request."""
+    authed = live_stack.authed(live_stack.sign_in())
+    source = _insert_podcast(live_stack, user_id=_user_id(authed), episode_guid=CURRENT_GUID)
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        text = db.scalars(
+            sqlalchemy.select(models.SourceArtifact).where(models.SourceArtifact.source_id == source.id)
+        ).one()
+        text.content = {**text.content, podcast_feed.EPISODE_KEY: {"feed_url": "http://[::1", "guid": CURRENT_GUID}}
+        db.commit()
+    engine.dispose()
+
+    assert authed.get(f"/sources/{source.id}/episodes").status_code == 502
+
+
 def _file_and_open_primer(live_stack: LiveStack, *, user_id: int, source_id: uuid.UUID) -> None:
     """Give the source a domain, a topic and an opened primer, as after filing and reading."""
     engine = session.engine_for(live_stack.database_url)

@@ -1,7 +1,7 @@
 """`archie-refile-sources`: queue `file_topic` for every live, analyzed source of every user who has chosen topics.
 
-Run once after deploying M4, after the owner opened the app (which seeds their topics); see docs/deploy.md.
-Re-running only files sources again.
+The owner's sources are filed when their topics are seeded, so this is only for other users who already have topics
+(including existing users who chose topics before); see docs/deploy.md. Re-running only files sources again.
 """
 
 from __future__ import annotations

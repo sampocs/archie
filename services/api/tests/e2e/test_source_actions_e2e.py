@@ -333,6 +333,32 @@ def test_go_deeper_consumes_a_ready_inbox_item_and_queues_analysis_then_primer(
     assert results[1]["reason"] == "source is not ready"
     assert _jobs(live_stack, busy) == []
 
+    queued = _add(authed)
+    jobs_before = _jobs(live_stack, queued)
+    refused = _push(authed, _action("go_deeper", {"id": queued}))
+    assert refused[0]["reason"] == "source is not in the inbox"
+    assert _jobs(live_stack, queued) == jobs_before
+
+
+def test_go_deeper_clears_a_snooze_so_the_consumed_item_is_not_hidden(
+    live_stack: LiveStack, authed: httpx.Client
+) -> None:
+    """Going deeper on a snoozed inbox item consumes it and drops the snooze."""
+    inbox = _insert_source(
+        live_stack,
+        user_id=_user_id(authed),
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.INBOX,
+        processing=models.ProcessingStatus.READY,
+    )
+
+    _push(authed, _action("snooze", {"target": "source", "id": inbox, "until": SNOOZE_UNTIL}))
+    _push(authed, _action("go_deeper", {"id": inbox}))
+
+    row = _source(authed, inbox)
+    assert row["state"] == "consumed"
+    assert row["snoozed_until"] is None
+
 
 def test_read_later_puts_an_inbox_item_at_the_top_of_the_queue(live_stack: LiveStack, authed: httpx.Client) -> None:
     """The item becomes queued below every other position number; a queued source is refused."""

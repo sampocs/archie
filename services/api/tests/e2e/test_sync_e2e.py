@@ -818,3 +818,56 @@ def test_pull_pages_across_sources_artifacts_and_cards(live_stack: LiveStack) ->
         "created_at",
         "change_seq",
     }
+
+
+def _insert_m1_link(live_stack: LiveStack, *, user_id: int, url: str) -> uuid.UUID:
+    """Insert a source the way the M1 migration left it: kind `link`, `unsupported`, normalized_url = url."""
+    source_id = uuid.uuid4()
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        db.add(
+            models.Source(
+                id=source_id,
+                user_id=user_id,
+                url=url,
+                normalized_url=url,
+                kind=models.SourceKind.LINK.value,
+                state=models.SourceState.QUEUED.value,
+                intent=models.SourceIntent.QUEUE.value,
+                processing=models.ProcessingStatus.UNSUPPORTED.value,
+                change_seq=changes.next_change_seq(),
+            )
+        )
+        db.commit()
+    return source_id
+
+
+def test_sharing_an_m1_article_link_classifies_it_and_starts_the_pipeline(live_stack: LiveStack) -> None:
+    """A fresh share of an M1 `link` row's page re-classifies it and queues fetch_content instead of staying stuck."""
+    authed = live_stack.authed(live_stack.sign_in())
+    url = "https://example.com/old"
+    source_id = _insert_m1_link(live_stack, user_id=authed.get("/me").json()["user_id"], url=url)
+    before = _pull_sources(authed)[str(source_id)]
+
+    result = _push(authed, _add_source(url))[0]
+    row = _pull_sources(authed)[str(source_id)]
+
+    assert result["result"] == "applied"
+    assert (row["kind"], row["processing"]) == ("article", "pending")
+    assert row["change_seq"] > before["change_seq"]
+    assert _queued_jobs(live_stack) == [("fetch_content", {"source_id": str(source_id)})]
+
+
+def test_sharing_an_m1_youtube_link_classifies_it_but_leaves_it_unsupported(live_stack: LiveStack) -> None:
+    """A kind the pipeline doesn't process is re-classified only: it stays unsupported and queues no fetch."""
+    authed = live_stack.authed(live_stack.sign_in())
+    url = "https://youtube.com/watch?v=abc123"
+    source_id = _insert_m1_link(live_stack, user_id=authed.get("/me").json()["user_id"], url=url)
+    before = _pull_sources(authed)[str(source_id)]
+
+    _push(authed, _add_source(url))
+    row = _pull_sources(authed)[str(source_id)]
+
+    assert (row["kind"], row["processing"]) == ("youtube", "unsupported")
+    assert row["change_seq"] > before["change_seq"]
+    assert "fetch_content" not in [kind for kind, _ in _queued_jobs(live_stack)]

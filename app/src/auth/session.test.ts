@@ -33,6 +33,10 @@ jest.mock("@/db/client", () => {
       intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text,
       processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
       prep_me integer DEFAULT 0 NOT NULL, merged_into_id text);
+    CREATE TABLE artifacts (id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, version integer NOT NULL,
+      content text NOT NULL, is_current integer NOT NULL, created_at text NOT NULL);
+    CREATE TABLE cards (id text PRIMARY KEY NOT NULL, source_id text NOT NULL, kind text NOT NULL, question text NOT NULL,
+      answer text NOT NULL, created_at text NOT NULL, deleted_at text);
     CREATE TABLE outbox (id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
       status text NOT NULL, error text);
     CREATE TABLE sync_state (id integer PRIMARY KEY NOT NULL, position integer NOT NULL, last_push_failed integer NOT NULL);
@@ -122,6 +126,8 @@ describe("clearSession", () => {
     await setSessionKey("key-1");
     mockCalls.length = 0;
     db.insert(schema.sources).values({ id: "s1", url: "u", kind: "link", state: "queued", intent: "queue", createdAt: "x", updatedAt: "x" }).run();
+    db.insert(schema.artifacts).values({ id: "a1", sourceId: "s1", kind: "summary", version: 1, content: "{}", isCurrent: 1, createdAt: "x" }).run();
+    db.insert(schema.cards).values({ id: "c1", sourceId: "s1", kind: "qa", question: "q", answer: "a", createdAt: "x" }).run();
   });
 
   it("bumps the epoch, revokes the session with the current key, then deletes the keychain item and wipes", async () => {
@@ -133,6 +139,8 @@ describe("clearSession", () => {
     expect(mockCalls).toEqual(["/auth/logout:key-1", "keychain-delete", "keychain-delete"]);
     expect(mockKeychain.has(SHARED_SLOT)).toBe(false);
     expect(db.select().from(schema.sources).all()).toEqual([]);
+    expect(db.select().from(schema.artifacts).all()).toEqual([]);
+    expect(db.select().from(schema.cards).all()).toEqual([]);
     expect(db.select().from(schema.syncState).get()).toMatchObject({ position: 0 });
   });
 

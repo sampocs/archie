@@ -11,7 +11,9 @@ import {
   mergeTopic,
   readLater,
   removeTopic,
+  restoreTopic,
   retrySource,
+  setSourceTopic,
   snooze,
 } from "./actions";
 import type { AppDb } from "./client";
@@ -248,6 +250,44 @@ describe("topic actions", () => {
     expect(sourceById(db, "s1")).toMatchObject({ topicId: "into", domain: "Finance" });
     expect(db.select().from(schema.topics).where(eq(schema.topics.id, "from")).get()?.mergedIntoId).toBe("into");
     expect(outboxEntries(db)).toEqual([{ type: "merge_topic", payload: { id: "from", into_id: "into" } }]);
+  });
+
+  it("setSourceTopic to an unknown topic keeps the source's domain", () => {
+    const db = makeTestDb();
+    seedSource(db, { domain: "Crypto" });
+
+    setSourceTopic(db, "s1", "missing");
+
+    expect(sourceById(db, "s1")).toMatchObject({ topicId: "missing", domain: "Crypto" });
+  });
+
+  it("mergeTopic bumps updatedAt on the topic and its sources", () => {
+    const db = makeTestDb();
+    seedTopic(db, { id: "from", updatedAt: "2026-11-01T00:00:00Z" });
+    seedTopic(db, { id: "into", name: "Other" });
+    seedSource(db, { topicId: "from" });
+
+    mergeTopic(db, "from", "into");
+    expect(sourceById(db, "s1")?.updatedAt).not.toBe("2026-11-01T00:00:00Z");
+    expect(db.select().from(schema.topics).where(eq(schema.topics.id, "from")).get()?.updatedAt).not.toBe(
+      "2026-11-01T00:00:00Z",
+    );
+  });
+
+  it("removeTopic and restoreTopic bump the topic's updatedAt, and removeTopic the sources'", () => {
+    const db = makeTestDb();
+    const stale = "2026-11-01T00:00:00Z";
+    const topicUpdatedAt = () => db.select().from(schema.topics).get()?.updatedAt;
+    seedTopic(db, {});
+    seedSource(db, { topicId: "t1" });
+
+    removeTopic(db, "t1");
+    expect(topicUpdatedAt()).not.toBe(stale);
+    expect(sourceById(db, "s1")?.updatedAt).not.toBe(stale);
+
+    db.update(schema.topics).set({ updatedAt: stale }).run();
+    restoreTopic(db, "t1");
+    expect(topicUpdatedAt()).not.toBe(stale);
   });
 
   it("removeTopic marks it removed and clears it from its sources", () => {

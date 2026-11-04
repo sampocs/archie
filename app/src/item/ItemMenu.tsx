@@ -16,9 +16,6 @@ type SourceRow = typeof schema.sources.$inferSelect;
 type ItemMenuProps = { source: SourceRow; visible: boolean; onClose: () => void };
 type Panel = "topic" | "snooze" | "episodes" | null;
 
-// iOS drops a modal presented while another is still dismissing, so the next sheet waits for the menu to leave.
-const MENU_DISMISS_MS = 400;
-
 /** The ••• menu and the sheets its entries open. */
 export function ItemMenu({ source, visible, onClose }: ItemMenuProps) {
   const router = useRouter();
@@ -26,13 +23,9 @@ export function ItemMenu({ source, visible, onClose }: ItemMenuProps) {
   const canToggleRead = source.kind === "newsletter" && (source.state === "inbox" || source.state === "briefed");
   const isRead = source.readAt !== null;
 
-  function openPanel(next: Panel): void {
-    setTimeout(() => setPanel(next), MENU_DISMISS_MS);
-  }
-
   const items = [
-    { testID: "menu-change-topic", label: "Change topic", onPress: () => openPanel("topic") },
-    { testID: "menu-snooze", label: "Snooze", onPress: () => openPanel("snooze") },
+    { testID: "menu-change-topic", label: "Change topic", onPress: () => setPanel("topic") },
+    { testID: "menu-snooze", label: "Snooze", onPress: () => setPanel("snooze") },
     ...(canToggleRead
       ? [
           {
@@ -46,7 +39,7 @@ export function ItemMenu({ source, visible, onClose }: ItemMenuProps) {
         ]
       : []),
     ...(source.kind === "podcast"
-      ? [{ testID: "menu-episode", label: "Wrong episode?", onPress: () => openPanel("episodes") }]
+      ? [{ testID: "menu-episode", label: "Wrong episode?", onPress: () => setPanel("episodes") }]
       : []),
     {
       testID: "menu-delete",

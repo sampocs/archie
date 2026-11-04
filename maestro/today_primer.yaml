@@ -50,6 +50,10 @@ appId: com.sampocs.archie
     id: "primer-ready-0-art-unread"
 - tapOn:
     id: "primer-ready-0"
+- scrollUntilVisible:
+    element:
+      id: "primer-toggle"
+    timeout: 20000
 - assertVisible: "▾ Background you might need"
 - tapOn:
     id: "screen-back"

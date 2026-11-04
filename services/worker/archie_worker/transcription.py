@@ -229,8 +229,9 @@ def transcribe_groq(*, chunk: AudioChunk, api_key: str, prompt: str) -> list[con
     )
 
     if response.status_code == _HTTP_TOO_MANY_REQUESTS:
-        retry_after = float(response.headers.get("retry-after") or _GROQ_DEFAULT_RETRY_AFTER_SECONDS)
-        raise errors.RetryLaterError(reason="Groq rate limit", after_seconds=retry_after)
+        raise errors.RetryLaterError(
+            reason="Groq rate limit", after_seconds=retry_after_seconds(response.headers.get("retry-after"))
+        )
     if response.status_code in _HTTP_CLIENT_ERRORS:
         raise GroqRejectedError(f"Groq answered {response.status_code}: {response.text[:200]}")
     response.raise_for_status()
@@ -241,6 +242,17 @@ def transcribe_groq(*, chunk: AudioChunk, api_key: str, prompt: str) -> list[con
         for raw in raw_segments
     )
     return [segment for segment in timed if segment.text]
+
+
+def retry_after_seconds(header: str | None) -> float:
+    """Seconds to wait from a `retry-after` header; the default when it is missing or not a number (an HTTP date)."""
+    if header is None:
+        return _GROQ_DEFAULT_RETRY_AFTER_SECONDS
+
+    try:
+        return float(header)
+    except ValueError:
+        return _GROQ_DEFAULT_RETRY_AFTER_SECONDS
 
 
 def transcribe_openai(

@@ -26,6 +26,8 @@ _SOURCE_ID_EXISTS = "source id already exists"
 
 _SHOW_LINK_REASON = "Share an episode, not the show."
 _CHANNEL_LINK_REASON = "Share a video, not the channel."
+_PLAYLIST_LINK_REASON = "Share a video, not the playlist."
+_PLAYLIST_PATH = "/playlist"
 
 
 @dataclass(frozen=True)
@@ -173,7 +175,8 @@ def _start_for(url: str) -> _Start:
     if url_kind == urls.UrlKind.PODCAST and urls.podcast_link(url) is None:
         unsupported_reason = _SHOW_LINK_REASON
     if url_kind == urls.UrlKind.YOUTUBE and urls.youtube_video_id(url) is None:
-        unsupported_reason = _CHANNEL_LINK_REASON
+        is_playlist = parse.urlsplit(url).path.rstrip("/") == _PLAYLIST_PATH
+        unsupported_reason = _PLAYLIST_LINK_REASON if is_playlist else _CHANNEL_LINK_REASON
     if unsupported_reason is not None:
         return _Start(
             processing=models.ProcessingStatus.UNSUPPORTED,
@@ -279,7 +282,10 @@ def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSource
 
 
 def _start_if_now_processable(db: orm.Session, *, existing: models.Source) -> None:
-    """Give an M1 `link` source its real kind; start an `unsupported` source whose URL the pipeline can now process."""
+    """Give an M1 `link` source its real kind; start an `unsupported` source whose URL the pipeline can now process.
+
+    A source whose URL is still not processable keeps `unsupported` and gets the reason it is shown.
+    """
     if existing.kind == models.SourceKind.LINK:
         existing.kind = models.SourceKind(urls.detect_kind(existing.url)).value
 
@@ -287,7 +293,9 @@ def _start_if_now_processable(db: orm.Session, *, existing: models.Source) -> No
         return
 
     start = _start_for(existing.url)
-    if start.processing != models.ProcessingStatus.PENDING:
+    if start.processing == models.ProcessingStatus.UNSUPPORTED:
+        # Still not processable (a show, channel or playlist link), but now it can say why.
+        pipeline.set_processing(db, source=existing, status=start.processing, error=start.error)
         return
 
     pipeline.set_processing(db, source=existing, status=start.processing)

@@ -45,11 +45,11 @@ def fetch_segments(*, video_id: str, supadata_api_key: str | None) -> list[Segme
     return _clean_segments((snippet.start, snippet.text) for snippet in fetched)
 
 
-def permanent_error_for(error: Exception, *, has_supadata_key: bool) -> errors.PermanentJobError | None:
+def permanent_error_for(error: Exception) -> errors.PermanentJobError | None:
     """The permanent failure a caption-library error means, or None when a retry could still help."""
     if isinstance(error, youtube_transcript_api.RequestBlocked):
-        # Includes IpBlocked. With a Supadata key the block is transient on their side, so the loop retries.
-        return None if has_supadata_key else errors.PermanentJobError(errors.FailureReason.YOUTUBE_NEEDS_SETUP)
+        # Includes IpBlocked. Only the library path raises it (with a Supadata key it is never called).
+        return errors.PermanentJobError(errors.FailureReason.YOUTUBE_NEEDS_SETUP)
     if isinstance(error, youtube_transcript_api.TranscriptsDisabled | youtube_transcript_api.NoTranscriptFound):
         return errors.PermanentJobError(errors.FailureReason.NO_CAPTIONS)
     if isinstance(error, youtube_transcript_api.VideoUnavailable):

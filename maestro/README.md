@@ -21,10 +21,11 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 ## Running
 
 1. Boot an iOS simulator (e.g. iPhone 17 Pro) and install the debug build: `cd app && npx expo run:ios`. Leave Metro running.
-2. `make maestro` with the backend up in another terminal (`make start-local`). Runs `add_link`, `sign_out`, `source_page` and `add_podcast`.
+2. `make maestro` with the backend up in another terminal (`make start-local`). Runs `add_link`, `sign_out` and `source_page`.
+   `make maestro-podcast` runs `add_podcast` separately because it spends real API credits.
 3. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
 
-Both targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
+These targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
 
 ## Notes
 

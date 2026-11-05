@@ -87,7 +87,7 @@ export default function PrimerScreen() {
         />
       ) : null}
       {markdown === null ? null : (
-        <View testID="primer-body">
+        <View testID="primer-body" collapsable={false}>
           <Markdown text={markdown} />
         </View>
       )}

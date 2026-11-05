@@ -19,6 +19,15 @@ SOURCE_ID_KEY = "source_id"
 # Steps that get more attempts than the default: a rate-limited transcription re-queues itself and each try counts.
 MAX_ATTEMPTS: dict[models.JobKind, int] = {models.JobKind.TRANSCRIBE: 6}
 
+# True in the content of a `text` artifact `clean_text` wrote (the text before cleaning stays an older version).
+CLEANED_KEY = "cleaned"
+
+# The artifact each generation step writes, which tells a retry whether the step still has to run.
+_STEP_OUTPUTS: dict[models.JobKind, models.ArtifactKind] = {
+    models.JobKind.ANALYZE: models.ArtifactKind.SUMMARY,
+    models.JobKind.PRIMER: models.ArtifactKind.PRIMER,
+}
+
 
 def current_artifact(
     db: sqlalchemy.orm.Session, *, source_id: uuid.UUID, kind: models.ArtifactKind
@@ -95,14 +104,21 @@ def required_artifacts(kind: models.SourceKind) -> tuple[models.ArtifactKind, ..
 
 
 def steps_after_text(kind: models.SourceKind) -> list[models.JobKind]:
-    """The jobs that follow a source's text, in order: newsletters are only analyzed, the rest also get a primer."""
+    """The jobs that follow a source's text, in order.
+
+    Newsletters have their boilerplate cleaned out and are then analyzed (a primer only on request); the rest are
+    analyzed and get a primer.
+    """
     if kind == models.SourceKind.NEWSLETTER:
-        return [models.JobKind.ANALYZE]
+        return [models.JobKind.CLEAN_TEXT, models.JobKind.ANALYZE]
     return [models.JobKind.ANALYZE, models.JobKind.PRIMER]
 
 
 def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
-    """Mark the source READY once all the outputs its kind needs exist; otherwise leave it as is."""
+    """Mark the source READY once all the outputs its kind needs exist; otherwise leave it as is.
+
+    A newsletter needs only its summary, so a requested primer finishing also returns it to READY.
+    """
     required = required_artifacts(models.SourceKind(source.kind))
     if any(current_artifact(db, source_id=source.id, kind=kind) is None for kind in required):
         return
@@ -113,18 +129,25 @@ def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
 def steps_to_retry(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID) -> list[models.JobKind]:
     """The jobs a retry should run: fetch when there is no text, else whichever of the kind's steps has no output.
 
-    When everything exists the user asked to redo it, so all of the kind's generation steps run again.
+    Cleaning is done once the current text is a cleaned one, so a retry skips it; when it is not done, every later
+    step runs too, since it changes their input. When everything exists the user asked to redo it, so all of the
+    kind's generation steps run again.
     """
-    if current_artifact(db, source_id=source_id, kind=models.ArtifactKind.TEXT) is None:
+    text = current_artifact(db, source_id=source_id, kind=models.ArtifactKind.TEXT)
+    if text is None:
         return [models.JobKind.FETCH_CONTENT]
 
     source = db.get_one(models.Source, source_id)
-    steps = steps_after_text(models.SourceKind(source.kind))
-    step_outputs = {
-        models.JobKind.ANALYZE: models.ArtifactKind.SUMMARY,
-        models.JobKind.PRIMER: models.ArtifactKind.PRIMER,
-    }
-    missing = [step for step in steps if current_artifact(db, source_id=source_id, kind=step_outputs[step]) is None]
+    is_cleaned = text.content.get(CLEANED_KEY) is True
+    steps = [
+        step
+        for step in steps_after_text(models.SourceKind(source.kind))
+        if not (step == models.JobKind.CLEAN_TEXT and is_cleaned)
+    ]
+    if models.JobKind.CLEAN_TEXT in steps:
+        return steps
+
+    missing = [step for step in steps if current_artifact(db, source_id=source_id, kind=_STEP_OUTPUTS[step]) is None]
     return missing or steps
 
 

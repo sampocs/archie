@@ -6,7 +6,16 @@ import uuid
 import sqlalchemy.orm
 from archie_db import changes, models, pipeline
 
-from archie_worker.handlers import analyze, fetch_content, fetch_title, file_topic, primer, topic_primer, transcribe
+from archie_worker.handlers import (
+    analyze,
+    clean_text,
+    fetch_content,
+    fetch_title,
+    file_topic,
+    primer,
+    topic_primer,
+    transcribe,
+)
 from archie_worker.loop import HandlerSpec
 
 
@@ -38,4 +47,6 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     ),
     # No failure hook: filing never blocks a source from being ready.
     models.JobKind.FILE_TOPIC: HandlerSpec(run=file_topic.handle),
+    # No failure hook: when cleaning fails, the newsletter is analyzed from its text as it was.
+    models.JobKind.CLEAN_TEXT: HandlerSpec(run=clean_text.handle),
 }

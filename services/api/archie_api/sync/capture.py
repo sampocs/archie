@@ -52,7 +52,7 @@ class _AddSourcePayload(pydantic.BaseModel):
     intent: str
     reaction: str | None = None
     note: str | None = None
-    prep_me: bool | None = None
+    queue_primer: bool | None = None
     capture: _CapturePayload | None = None
 
 
@@ -126,8 +126,8 @@ def _validate_add_source(db: orm.Session, *, payload: _AddSourcePayload) -> str 
         return "reaction must be easy, mostly or lost"
     if payload.reaction is not None and not finished:
         return "reaction needs intent finished"
-    if payload.prep_me and finished:
-        return "prep_me needs intent queue"
+    if payload.queue_primer and finished:
+        return "queue_primer needs intent queue"
     if payload.note is not None and len(payload.note) > MAX_NOTE_LENGTH:
         return f"note is longer than {MAX_NOTE_LENGTH} characters"
 
@@ -199,6 +199,8 @@ def _insert_source(db: orm.Session, *, user: models.User, payload: _AddSourcePay
         source.queue_position = rows.top_queue_position(db, user_id=user.id)
     db.add(source)
     db.flush()
+    if payload.queue_primer:
+        rows.queue_primer(db, source=source)
     if payload.capture is not None:
         _add_capture(db, source_id=source.id, capture=payload.capture)
 
@@ -244,7 +246,6 @@ def _build_source(
         processing=processing.value,
         reaction=payload.reaction,
         note=payload.note,
-        prep_me=bool(payload.prep_me),
         change_seq=changes.next_change_seq(),
     )
 
@@ -266,9 +267,11 @@ def _merge_into(db: orm.Session, *, existing: models.Source, payload: _AddSource
         existing.reaction = payload.reaction
     if payload.note is not None:
         existing.note = payload.note
-    # A finished source with prep_me is the combination validation rejects ("prep_me needs intent queue").
-    if payload.prep_me is not None and existing.intent != models.SourceIntent.FINISHED:
-        existing.prep_me = payload.prep_me
+    # A finished source with a queued primer is the combination validation rejects ("queue_primer needs intent
+    # queue"); a primer already in the queue keeps its place.
+    wants_primer = payload.queue_primer and existing.intent != models.SourceIntent.FINISHED
+    if wants_primer and existing.primer_queue_position is None:
+        rows.queue_primer(db, source=existing)
 
     stored_capture = False
     if payload.capture is not None and db.get(models.SourceCapture, existing.id) is None:

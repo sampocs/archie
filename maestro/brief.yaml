@@ -3,13 +3,17 @@ appId: com.sampocs.archie
 # Run after run_brief.sh has delivered the two newsletters (Morning Brew as news, ByteByteGo as an essay). Needs real keys
 # (a few cents: Haiku to clean and analyze, then Sonnet to write the brief).
 # The worker cleans, analyzes and files both before it writes the brief, so this is one long wait.
+# Login lands on Library; the brief preview lives on Today.
+- tapOn:
+    id: "tab-today"
 - extendedWaitUntil:
     visible:
       id: "today-brief"
     timeout: 300000
 - waitForAnimationToEnd
+# The whole card opens the brief (its inner link is grouped into the card for accessibility).
 - tapOn:
-    id: "today-brief-open"
+    id: "today-brief"
 - waitForAnimationToEnd
 - assertVisible:
     id: "brief-screen"

@@ -899,12 +899,12 @@ describe("database SyncStore: M4 migration and rejections", () => {
     expect(await store.getPosition()).toBe(9);
   });
 
-  it("the queued-primers migration ends by resetting a saved position to 0, so the new columns are re-pulled", () => {
+  // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
+  it.each(["0005_queued_primers", "0006_briefs"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
-    const last = migrations.journal.entries[migrations.journal.entries.length - 1];
-    const sql = (migrations.migrations as Record<string, string>)[`m${String(last.idx).padStart(4, "0")}`];
-    expect(last.tag).toBe("0005_queued_primers");
+    const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;
+    const sql = (migrations.migrations as Record<string, string>)[`m${String(entry.idx).padStart(4, "0")}`];
 
     // Only the reset is replayed: the column changes before it have already run on this database.
     db.run(sqlTag(sql.split("--> statement-breakpoint").at(-1)!));

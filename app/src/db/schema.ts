@@ -96,3 +96,19 @@ export const syncState = sqliteTable("sync_state", {
   position: integer("position").notNull(),
   lastPushFailed: integer("last_push_failed").notNull(),
 });
+
+// The rolling newsletter brief (M5): the open one and recently finished ones, as the server sends them.
+export const briefs = sqliteTable("briefs", {
+  id: text("id").primaryKey(),
+  // open | done
+  status: text("status").notNull(),
+  // JSON-encoded { domains, also, essays }; null while the first version is being written.
+  content: text("content"),
+  // JSON-encoded array of the newsletter ids the content covers.
+  sourceIds: text("source_ids").notNull(),
+  since: text("since"),
+  version: integer("version").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  doneAt: text("done_at"),
+});

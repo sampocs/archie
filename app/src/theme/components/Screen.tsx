@@ -1,5 +1,12 @@
 import { ReactNode } from "react";
-import { KeyboardAvoidingView, Pressable, StyleSheet, View } from "react-native";
+import {
+  KeyboardAvoidingView,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 // Gesture handler's ScrollView lets a drag handle's pan (the queue) win over scrolling.
 import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,9 +21,15 @@ type ScreenProps = {
   onBack?: () => void;
   // Pinned below the scrolling content, e.g. a long form's submit button.
   footer?: ReactNode;
+  // Pinned between the header and the scrolling content, e.g. a reading-progress bar.
+  subheader?: ReactNode;
+  onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
 };
 
-export function Screen({ title, children, headerRight, onBack, footer }: ScreenProps) {
+// Enough scroll events for a smooth progress bar without re-rendering on every frame.
+const SCROLL_EVENT_THROTTLE_MS = 32;
+
+export function Screen({ title, children, headerRight, onBack, footer, subheader, onScroll }: ScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -39,7 +52,10 @@ export function Screen({ title, children, headerRight, onBack, footer }: ScreenP
         </View>
         {headerRight}
       </View>
+      {subheader}
       <ScrollView
+        onScroll={onScroll}
+        scrollEventThrottle={onScroll ? SCROLL_EVENT_THROTTLE_MS : undefined}
         contentContainerStyle={{ padding: theme.spacing.gutterCards, gap: theme.spacing.section }}
         keyboardShouldPersistTaps="handled"
         // Scrolls a focused field (search, adding a topic) above the keyboard.

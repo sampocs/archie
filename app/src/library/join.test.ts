@@ -19,7 +19,6 @@ const source = (overrides: Partial<SourceRow>): SourceRow => ({
   processingError: null,
   reaction: null,
   note: null,
-  prepMe: 0,
   mergedIntoId: null,
   sender: null,
   domain: null,
@@ -29,6 +28,8 @@ const source = (overrides: Partial<SourceRow>): SourceRow => ({
   readAt: null,
   snoozedUntil: null,
   primerOpenedAt: null,
+  primerQueuePosition: null,
+  primerSnoozedUntil: null,
   newsletterKind: null,
   ...overrides,
 });
@@ -59,18 +60,28 @@ const artifact = (overrides: Partial<ArtifactRow>): ArtifactRow => ({
 });
 
 describe("joinLibrary", () => {
-  it("attaches a source's topic, parsed summary and primer time", () => {
+  it("attaches a source's topic, parsed summary, primer time and primer length", () => {
     const data = joinLibrary({
       sources: [source({ topicId: "t1" })],
       artifacts: [
         artifact({}),
-        artifact({ id: "a2", kind: "primer", content: "{}", createdAt: "2026-11-03T00:00:00Z" }),
+        artifact({
+          id: "a2",
+          kind: "primer",
+          content: JSON.stringify({ markdown: "# Grid\n\nPower sets  the pace." }),
+          createdAt: "2026-11-03T00:00:00Z",
+        }),
       ],
       topics: [topic],
       topicPrimers: [],
     });
 
-    expect(data.sources[0]).toMatchObject({ topic, summary, primerCreatedAt: "2026-11-03T00:00:00Z" });
+    expect(data.sources[0]).toMatchObject({
+      topic,
+      summary,
+      primerCreatedAt: "2026-11-03T00:00:00Z",
+      primerWords: 6,
+    });
     expect(data.topics).toEqual([topic]);
   });
 
@@ -82,6 +93,6 @@ describe("joinLibrary", () => {
       topicPrimers: [],
     });
 
-    expect(data.sources[0]).toMatchObject({ topic: null, summary: null, primerCreatedAt: null });
+    expect(data.sources[0]).toMatchObject({ topic: null, summary: null, primerCreatedAt: null, primerWords: null });
   });
 });

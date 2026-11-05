@@ -16,7 +16,6 @@ export const sources = sqliteTable("sources", {
   processingError: text("processing_error"),
   reaction: text("reaction"),
   note: text("note"),
-  prepMe: integer("prep_me").notNull().default(0),
   mergedIntoId: text("merged_into_id"),
   // Newsletter sender (display name or address); null for other kinds.
   sender: text("sender"),
@@ -28,6 +27,9 @@ export const sources = sqliteTable("sources", {
   readAt: text("read_at"),
   snoozedUntil: text("snoozed_until"),
   primerOpenedAt: text("primer_opened_at"),
+  // The source's primer as its own queue entry: same position space as `queuePosition`; null = not queued.
+  primerQueuePosition: real("primer_queue_position"),
+  primerSnoozedUntil: text("primer_snoozed_until"),
   newsletterKind: text("newsletter_kind"),
 });
 

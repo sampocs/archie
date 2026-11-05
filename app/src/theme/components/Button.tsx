@@ -7,9 +7,11 @@ type ButtonProps = Omit<PressableProps, "children" | "style"> & {
   label: string;
   // Primary is chrome (graphite); secondary is the quiet press-colored chip.
   variant?: "primary" | "secondary";
+  // Overrides the label's tone, e.g. a signal color for a done state.
+  labelColor?: string;
 };
 
-export function Button({ label, variant = "primary", disabled, ...rest }: ButtonProps) {
+export function Button({ label, variant = "primary", labelColor, disabled, ...rest }: ButtonProps) {
   const theme = useTheme();
   const isPrimary = variant === "primary";
 
@@ -28,7 +30,11 @@ export function Button({ label, variant = "primary", disabled, ...rest }: Button
         },
       ]}
     >
-      <Text variant="headline" tone={isPrimary ? "onChrome" : "ink"}>
+      <Text
+        variant="headline"
+        tone={isPrimary ? "onChrome" : "ink"}
+        style={labelColor ? { color: labelColor } : undefined}
+      >
         {label}
       </Text>
     </Pressable>

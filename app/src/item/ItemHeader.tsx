@@ -8,7 +8,8 @@ import { ArtworkTile } from "@/ui/ArtworkTile";
 import { Kicker } from "@/ui/Kicker";
 import { monogramFor } from "@/ui/monogram";
 import { ProcessingLine } from "@/ui/ProcessingLine";
-import { kindLabel, sourceByline, stateLabel } from "@/ui/sourceLabels";
+import { datedByline, kindLabel } from "@/ui/sourceLabels";
+import { useNow } from "@/ui/useNow";
 
 type SourceRow = typeof schema.sources.$inferSelect;
 
@@ -17,11 +18,6 @@ export const REACTION_LABELS: Record<string, string> = {
   mostly: "Mostly followed",
   lost: "Parts lost me",
 };
-
-function savedLine(source: SourceRow): string {
-  const weekday = new Date(source.createdAt).toLocaleDateString("en-US", { weekday: "long" });
-  return `Saved ${weekday} · ${stateLabel(source.state)}`;
-}
 
 function Chip({ testID, label, onPress }: { testID: string; label: string; onPress?: () => void }) {
   const theme = useTheme();
@@ -42,10 +38,11 @@ function Chip({ testID, label, onPress }: { testID: string; label: string; onPre
   );
 }
 
-/** Cover, kicker, by-line, saved line and the reaction/topic chips. */
+/** Cover, kicker, dated by-line and the reaction/topic chips. */
 export function ItemHeader({ source, topicName }: { source: SourceRow; topicName: string | null }) {
   const theme = useTheme();
   const router = useRouter();
+  const now = useNow();
   const showTopic = source.topicId !== null && topicName !== null;
 
   return (
@@ -60,11 +57,8 @@ export function ItemHeader({ source, topicName }: { source: SourceRow; topicName
         />
         <View style={{ flex: 1, gap: theme.spacing.xs }}>
           <Kicker domain={source.domain} suffix={kindLabel(source.kind)} />
-          <Text variant="secondary" tone="ink2">
-            {sourceByline(source)}
-          </Text>
-          <Text variant="secondary" tone="ink3">
-            {savedLine(source)}
+          <Text testID="item-byline" variant="secondary" tone="ink2">
+            {datedByline(source, now)}
           </Text>
         </View>
       </View>

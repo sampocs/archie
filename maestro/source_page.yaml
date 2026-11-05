@@ -50,10 +50,10 @@ appId: com.sampocs.archie
     timeout: 180000
 - assertVisible:
     id: "source-gist"
-- scrollUntilVisible:
-    element:
-      id: "primer-toggle"
-    timeout: 20000
+# A finished item keeps the primer button alone; opening the primer marks it read.
+- tapOn: "◆ Primer · .* min"
+- assertVisible:
+    id: "primer-body"
 - tapOn:
-    id: "primer-toggle"
-- assertVisible: "▾ Background you might need"
+    id: "screen-back"
+- assertVisible: "✓ Primed"

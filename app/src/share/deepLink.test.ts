@@ -25,13 +25,13 @@ describe("sharedSourceFromParams", () => {
       intent: "finished",
       reaction: "easy",
       note,
-      prepMe: false,
+      queuePrimer: false,
     });
   });
 
-  it("keeps prep_me for a queued share and drops reaction and note", () => {
+  it("keeps queue_primer for a queued share and drops reaction and note", () => {
     const params = routeParams(
-      shareDeepLink({ url: "https://a.com/?x=1&y=2", choice: { ...EMPTY_CHOICE, intent: "queue", prepMe: true } }),
+      shareDeepLink({ url: "https://a.com/?x=1&y=2", choice: { ...EMPTY_CHOICE, intent: "queue", queuePrimer: true } }),
     );
 
     expect(sharedSourceFromParams({ ...params, reaction: "easy", note: "ignored" })).toEqual({
@@ -39,7 +39,7 @@ describe("sharedSourceFromParams", () => {
       intent: "queue",
       reaction: null,
       note: null,
-      prepMe: true,
+      queuePrimer: true,
     });
   });
 

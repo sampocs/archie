@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 
 import migrations from "../../drizzle/migrations";
-import { goDeeper } from "@/db/actions";
+import { goDeeper, queuePrimer, requestPrimer, returnToInbox } from "@/db/actions";
 
 import { ClientError, NetworkError, UnauthorizedError } from "@/api/client";
 import type { AppDb } from "@/db/client";
@@ -323,7 +323,6 @@ const pulledSource = (overrides: Partial<PulledSource>): PulledSource => ({
   processing_error: null,
   reaction: null,
   note: null,
-  prep_me: false,
   merged_into_id: null,
   sender: null,
   domain: null,
@@ -333,6 +332,8 @@ const pulledSource = (overrides: Partial<PulledSource>): PulledSource => ({
   read_at: null,
   snoozed_until: null,
   primer_opened_at: null,
+  primer_queue_position: null,
+  primer_snoozed_until: null,
   newsletter_kind: null,
   ...overrides,
 });
@@ -476,7 +477,8 @@ describe("database SyncStore", () => {
         sources: [
           pulledSource({
             processing: "ready",
-            prep_me: true,
+            primer_queue_position: -2.5,
+            primer_snoozed_until: "2026-11-05T14:00:00Z",
             reaction: "easy",
           }),
         ],
@@ -493,7 +495,8 @@ describe("database SyncStore", () => {
 
     expect(db.select().from(schema.sources).get()).toMatchObject({
       processing: "ready",
-      prepMe: 1,
+      primerQueuePosition: -2.5,
+      primerSnoozedUntil: "2026-11-05T14:00:00Z",
       reaction: "easy",
     });
     const stored = db.select().from(schema.artifacts).get();
@@ -896,14 +899,15 @@ describe("database SyncStore: M4 migration and rejections", () => {
     expect(await store.getPosition()).toBe(9);
   });
 
-  it("the repull migration resets a saved position to 0", () => {
+  it("the queued-primers migration ends by resetting a saved position to 0, so the new columns are re-pulled", () => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const last = migrations.journal.entries[migrations.journal.entries.length - 1];
     const sql = (migrations.migrations as Record<string, string>)[`m${String(last.idx).padStart(4, "0")}`];
-    expect(last.tag).toBe("0004_repull_after_library");
+    expect(last.tag).toBe("0005_queued_primers");
 
-    db.run(sqlTag(sql));
+    // Only the reset is replayed: the column changes before it have already run on this database.
+    db.run(sqlTag(sql.split("--> statement-breakpoint").at(-1)!));
 
     expect(db.select().from(schema.syncState).get()?.position).toBe(0);
   });
@@ -932,6 +936,30 @@ describe("database SyncStore: M4 migration and rejections", () => {
     // The pull restores state/processing; syncError is deliberately outside the upsert set, so it stays.
     expect(sourceRow(db)).toMatchObject({ state: "inbox", processing: "ready", syncError: "not ready" });
   });
+
+  it.each(["queue_primer", "request_primer", "return_to_inbox"])(
+    "a rejected %s rewinds the position so the next pull restores the server copy",
+    async (type) => {
+      const { db, store } = makeDbStore();
+      await store.applyPage({
+        rows: { sources: [pulledSource({ state: "queued" })], artifacts: [], cards: [] },
+        position: 5,
+        more: false,
+      });
+      const actions = {
+        queue_primer: () => queuePrimer(db, "s1", true),
+        request_primer: () => requestPrimer(db, "s1"),
+        return_to_inbox: () => returnToInbox(db, "s1"),
+      };
+      actions[type as keyof typeof actions]();
+      const entry = db.select().from(schema.outbox).get()!;
+
+      await store.rejectAction(entry.id, "nope");
+
+      expect(await store.getPosition()).toBe(0);
+      expect(sourceRow(db)?.syncError).toBe("nope");
+    },
+  );
 });
 
 const sourceRow = (db: AppDb) => db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get();

@@ -16,7 +16,6 @@ export type PulledSource = {
   processing_error: string | null;
   reaction: string | null;
   note: string | null;
-  prep_me: boolean;
   merged_into_id: string | null;
   sender: string | null;
   domain: string | null;
@@ -26,6 +25,8 @@ export type PulledSource = {
   read_at: string | null;
   snoozed_until: string | null;
   primer_opened_at: string | null;
+  primer_queue_position: number | null;
+  primer_snoozed_until: string | null;
   newsletter_kind: string | null;
 };
 export type PulledArtifact = {
@@ -83,7 +84,8 @@ export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;
   removeActions(ids: string[]): Promise<void>;
   // Also sets sources.syncError for that action's source. A rejected add_topic / choose_topics deletes its optimistic
-  // topics; any other rejected topic, topic-primer, go_deeper or choose_episode action rewinds the position so the next pull restores the server copy.
+  // topics; any other rejected topic or topic-primer action, and the source actions in transport's
+  // REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the server copy.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
   // Upserts rows and saves the position in one transaction.

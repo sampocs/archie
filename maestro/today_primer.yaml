@@ -1,6 +1,7 @@
 appId: com.sampocs.archie
 ---
-# Needs the owner's keys: the worker calls Anthropic for this article (a few cents). Run it only against
+# A queued primer, end to end: finish an article with "Parts lost me", its primer lands in Up next, open it, Mark
+# as done. Needs the owner's keys: the worker calls Anthropic for this article (a few cents). Run it only against
 # `make start-local` with ANTHROPIC_API_KEY in .env (local backend only).
 - runFlow: login.yaml
 - openLink: archie://dev/login?whitelisted=1
@@ -36,29 +37,41 @@ appId: com.sampocs.archie
 - tapOn:
     id: "intent-queue"
 - tapOn:
-    id: "prep-me"
-- tapOn:
     id: "add-save"
-- tapOn:
-    id: "tab-today"
-# One wait only (Maestro shares the timeout across consecutive waits).
+# Saving lands on Library; open the queued article (its row shows the URL until the worker's title replaces it).
+- tapOn: ".*(paulgraham|How to Work Hard).*"
+# One wait only (Maestro shares the timeout across consecutive waits): the primer button shows its reading time once
+# the primer has synced.
 - extendedWaitUntil:
-    visible:
-      id: "primer-ready-0"
+    visible: "◆ Primer · .* min"
     timeout: 240000
-- assertVisible:
-    id: "primer-ready-0-art-unread"
 - tapOn:
-    id: "primer-ready-0"
-- scrollUntilVisible:
-    element:
-      id: "primer-toggle"
-    timeout: 20000
-- assertVisible: "▾ Background you might need"
+    id: "item-finish"
+- tapOn:
+    id: "finish-lost"
+# "Parts lost me" offers to queue the primer, ticked by default.
+- assertVisible:
+    id: "finish-queue-primer"
+- assertVisible: "Queue the primer"
+- tapOn:
+    id: "finish-save"
 - tapOn:
     id: "screen-back"
-# Opened primers leave Primers ready, so the unread dot is gone too.
-- assertNotVisible:
-    id: "primer-ready-0"
+- tapOn:
+    id: "tab-today"
+# The queued primer is the top of the queue, as its own row.
 - assertVisible:
     id: "up-next-0"
+- assertVisible: "Primer: .*"
+- tapOn:
+    id: "up-next-0"
+- assertVisible:
+    id: "primer-for"
+- assertVisible:
+    id: "primer-body"
+- tapOn:
+    id: "primer-done"
+# Mark as done takes it off the queue; the finished article had nothing else queued.
+- assertNotVisible: "Primer: .*"
+- assertVisible:
+    id: "today-empty"

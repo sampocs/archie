@@ -3,7 +3,7 @@ import { randomUUID } from "expo-crypto";
 import type { Intent, Reaction } from "@/capture/types";
 import type { DomainName } from "@/topics/domains";
 
-import { and, eq, isNull, min, sql } from "drizzle-orm";
+import { and, eq, isNotNull, isNull, min, sql } from "drizzle-orm";
 import type { SQLiteUpdateSetSource } from "drizzle-orm/sqlite-core";
 
 import type { AppDb } from "./client";
@@ -16,12 +16,14 @@ export type ActionType =
   | "add_source"
   | "retry_source"
   | "finish_source"
-  | "set_prep_me"
   | "set_read"
   | "set_primer_opened"
   | "snooze"
   | "set_queue_position"
   | "go_deeper"
+  | "queue_primer"
+  | "request_primer"
+  | "return_to_inbox"
   | "read_later"
   | "delete_source"
   | "add_topic"
@@ -34,6 +36,10 @@ export type ActionType =
   | "choose_topics"
   | "choose_episode";
 export type PrimerTarget = "source" | "topic_primer";
+// What a snooze applies to: a source, a topic primer, or a source's queued primer.
+export type SnoozeTarget = PrimerTarget | "source_primer";
+// Which queue entry a move repositions: the source itself or its queued primer.
+export type QueueTarget = "source" | "source_primer";
 export type ChosenTopic = { domain: DomainName; name: string; origin: "starter" | "user" };
 
 type Tx = Parameters<Parameters<AppDb["transaction"]>[0]>[0];
@@ -60,14 +66,47 @@ function updateSource(tx: Tx, sourceId: string, values: SQLiteUpdateSetSource<ty
     .run();
 }
 
-// Mirrors the server's rule: one above the current top, or 0 for an empty queue.
+// Mirrors the server's rule: one above the current top, or 0 for an empty queue. Queued sources and queued
+// primers share one position space.
 function topQueuePosition(tx: Tx): number {
-  const row = tx
+  const sourceTop = tx
     .select({ lowest: min(schema.sources.queuePosition) })
     .from(schema.sources)
     .where(and(eq(schema.sources.state, "queued"), isNull(schema.sources.deletedAt)))
+    .get()?.lowest;
+  const primerTop = tx
+    .select({ lowest: min(schema.sources.primerQueuePosition) })
+    .from(schema.sources)
+    .where(and(isNotNull(schema.sources.primerQueuePosition), isNull(schema.sources.deletedAt)))
+    .get()?.lowest;
+  const tops = [sourceTop, primerTop].filter((top): top is number => top != null);
+  return tops.length === 0 ? 0 : Math.min(...tops) - 1;
+}
+
+// Queueing a newsletter's primer also writes it when it has none and nothing is running, as the server does; the
+// pulled status replaces the optimistic "processing".
+function primerQueuedValues(tx: Tx, sourceId: string): SQLiteUpdateSetSource<typeof schema.sources> {
+  const source = tx.select().from(schema.sources).where(eq(schema.sources.id, sourceId)).get();
+  const values = { primerQueuePosition: topQueuePosition(tx), primerSnoozedUntil: null };
+  if (source?.kind !== "newsletter" || source.processing === "pending" || source.processing === "processing") {
+    return values;
+  }
+  return hasPrimer(tx, sourceId) ? values : { ...values, processing: "processing", processingError: null };
+}
+
+function hasPrimer(tx: Tx, sourceId: string): boolean {
+  const primer = tx
+    .select({ id: schema.artifacts.id })
+    .from(schema.artifacts)
+    .where(
+      and(
+        eq(schema.artifacts.sourceId, sourceId),
+        eq(schema.artifacts.kind, "primer"),
+        eq(schema.artifacts.isCurrent, 1),
+      ),
+    )
     .get();
-  return row?.lowest == null ? 0 : row.lowest - 1;
+  return primer !== undefined;
 }
 
 function topicDomain(tx: Tx, topicId: string): string | undefined {
@@ -81,12 +120,15 @@ function cleanTopicName(name: string): string {
 
 export async function addSource(
   db: AppDb,
-  input: { url: string; intent: Intent; reaction?: Reaction | null; note?: string | null; prepMe?: boolean },
+  input: { url: string; intent: Intent; reaction?: Reaction | null; note?: string | null; queuePrimer?: boolean },
 ): Promise<string> {
   const id = randomUUID();
   const now = new Date().toISOString();
+  // The server accepts a queued primer only with the queued intent.
+  const queuePrimer = input.intent === "queue" && Boolean(input.queuePrimer);
 
   db.transaction((tx) => {
+    const top = topQueuePosition(tx);
     tx.insert(schema.sources)
       .values({
         id,
@@ -96,8 +138,9 @@ export async function addSource(
         intent: input.intent,
         reaction: input.reaction ?? null,
         note: input.note || null,
-        prepMe: input.prepMe ? 1 : 0,
-        queuePosition: input.intent === "queue" ? topQueuePosition(tx) : null,
+        queuePosition: input.intent === "queue" ? top : null,
+        // Optimistically just above the item, so it's read first; the pulled row has the server's position.
+        primerQueuePosition: queuePrimer ? top - 1 : null,
         createdAt: now,
         updatedAt: now,
       })
@@ -110,7 +153,7 @@ export async function addSource(
       // Unset options are omitted from the wire payload, not sent as null.
       ...(input.reaction ? { reaction: input.reaction } : {}),
       ...(input.note ? { note: input.note } : {}),
-      ...(input.prepMe ? { prep_me: true } : {}),
+      ...(queuePrimer ? { queue_primer: true } : {}),
     });
   });
 
@@ -130,29 +173,60 @@ export async function retrySource(db: AppDb, sourceId: string): Promise<void> {
 
 export function finishSource(
   db: AppDb,
-  input: { sourceId: string; reaction: Reaction | null; note: string | null },
+  input: { sourceId: string; reaction: Reaction | null; note: string | null; queuePrimer?: boolean },
 ): void {
   db.transaction((tx) => {
+    const source = tx.select().from(schema.sources).where(eq(schema.sources.id, input.sourceId)).get();
+    // A finished newsletter is analyzed again so it gets cards, as the server does.
+    const reanalyze = source?.kind === "newsletter" ? { processing: "processing", processingError: null } : {};
     updateSource(tx, input.sourceId, {
       state: "consumed",
       snoozedUntil: null,
       ...(input.reaction ? { reaction: input.reaction } : {}),
       ...(input.note ? { note: input.note } : {}),
-      // "Parts lost me" pushes the primer to Today, as the server does.
-      ...(input.reaction === "lost" ? { prepMe: 1 } : {}),
+      ...(input.queuePrimer ? primerQueuedValues(tx, input.sourceId) : {}),
+      ...reanalyze,
     });
     enqueue(tx, "finish_source", {
       id: input.sourceId,
       ...(input.reaction ? { reaction: input.reaction } : {}),
       ...(input.note ? { note: input.note } : {}),
+      ...(input.queuePrimer ? { queue_primer: true } : {}),
     });
   });
 }
 
-export function setPrepMe(db: AppDb, sourceId: string, prepMe: boolean): void {
+/** Puts the source's primer in the queue as its own entry (at the top), or takes it out. */
+export function queuePrimer(db: AppDb, sourceId: string, queued: boolean): void {
   db.transaction((tx) => {
-    updateSource(tx, sourceId, { prepMe: prepMe ? 1 : 0 });
-    enqueue(tx, "set_prep_me", { id: sourceId, prep_me: prepMe });
+    const values = queued ? primerQueuedValues(tx, sourceId) : { primerQueuePosition: null };
+    updateSource(tx, sourceId, values);
+    enqueue(tx, "queue_primer", { id: sourceId, queued });
+  });
+}
+
+/** "Mark as done" on a queued primer: it leaves the queue and counts as read. */
+export function finishPrimer(db: AppDb, sourceId: string): void {
+  db.transaction((tx) => {
+    updateSource(tx, sourceId, { primerQueuePosition: null, primerOpenedAt: new Date().toISOString() });
+    enqueue(tx, "queue_primer", { id: sourceId, queued: false });
+    enqueue(tx, "set_primer_opened", { target: "source", id: sourceId, opened: true });
+  });
+}
+
+/** A newsletter's primer, written on request; the button reads "Writing primer…" until it syncs. */
+export function requestPrimer(db: AppDb, sourceId: string): void {
+  db.transaction((tx) => {
+    updateSource(tx, sourceId, { processing: "processing", processingError: null });
+    enqueue(tx, "request_primer", { id: sourceId });
+  });
+}
+
+/** Undoes "Add to queue" on a newsletter: back to the inbox, out of the queue. */
+export function returnToInbox(db: AppDb, sourceId: string): void {
+  db.transaction((tx) => {
+    updateSource(tx, sourceId, { state: "inbox", queuePosition: null });
+    enqueue(tx, "return_to_inbox", { id: sourceId });
   });
 }
 
@@ -172,11 +246,17 @@ export function setPrimerOpened(db: AppDb, target: PrimerTarget, id: string, ope
   });
 }
 
-export function snooze(db: AppDb, target: PrimerTarget, id: string, until: Date | null): void {
+export function snooze(db: AppDb, target: SnoozeTarget, id: string, until: Date | null): void {
   const snoozedUntil = until ? until.toISOString() : null;
   db.transaction((tx) => {
     if (target === "topic_primer") {
       tx.update(schema.topicPrimers).set({ snoozedUntil }).where(eq(schema.topicPrimers.id, id)).run();
+    } else if (target === "source_primer") {
+      const source = tx.select().from(schema.sources).where(eq(schema.sources.id, id)).get();
+      // A snoozed queued primer comes back at the top of the queue, like a source.
+      const queued = until && source?.primerQueuePosition != null;
+      const position = queued ? { primerQueuePosition: topQueuePosition(tx) } : {};
+      updateSource(tx, id, { primerSnoozedUntil: snoozedUntil, ...position });
     } else {
       const source = tx.select().from(schema.sources).where(eq(schema.sources.id, id)).get();
       // A snoozed queued item comes back at the top of the queue.
@@ -187,10 +267,10 @@ export function snooze(db: AppDb, target: PrimerTarget, id: string, until: Date 
   });
 }
 
-export function setQueuePosition(db: AppDb, sourceId: string, position: number): void {
+export function setQueuePosition(db: AppDb, sourceId: string, position: number, target: QueueTarget = "source"): void {
   db.transaction((tx) => {
-    updateSource(tx, sourceId, { queuePosition: position });
-    enqueue(tx, "set_queue_position", { id: sourceId, position });
+    updateSource(tx, sourceId, target === "source" ? { queuePosition: position } : { primerQueuePosition: position });
+    enqueue(tx, "set_queue_position", { id: sourceId, position, target });
   });
 }
 

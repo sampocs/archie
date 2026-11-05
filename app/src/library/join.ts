@@ -1,6 +1,8 @@
 import * as schema from "@/db/schema";
 import { parseSummary, type SummaryContent } from "@/ui/summaryContent";
 
+import { primerMarkdown, wordCount } from "./primer";
+
 export type SourceRow = typeof schema.sources.$inferSelect;
 export type TopicRow = typeof schema.topics.$inferSelect;
 export type TopicPrimerRow = typeof schema.topicPrimers.$inferSelect;
@@ -11,6 +13,8 @@ export type LibrarySource = SourceRow & {
   summary: SummaryContent | null;
   // When the current primer artifact was written; null when the source has no primer.
   primerCreatedAt: string | null;
+  // The current primer's length in words, for its reading time; null when the source has no primer.
+  primerWords: number | null;
 };
 
 export type LibraryData = { sources: LibrarySource[]; topics: TopicRow[]; topicPrimers: TopicPrimerRow[] };
@@ -19,7 +23,7 @@ export function isLiveTopic(topic: TopicRow): boolean {
   return !topic.removedAt && !topic.mergedIntoId;
 }
 
-/** Attaches each source's topic, current summary and primer time; `artifacts` must be current ones only. */
+/** Attaches each source's topic, current summary and primer time and length; `artifacts` must be current ones only. */
 export function joinLibrary(input: {
   sources: SourceRow[];
   artifacts: ArtifactRow[];
@@ -28,10 +32,13 @@ export function joinLibrary(input: {
 }): LibraryData {
   const topicsById = new Map(input.topics.map((topic) => [topic.id, topic]));
   const summaries = new Map<string, SummaryContent>();
-  const primerTimes = new Map<string, string>();
+  const primers = new Map<string, { createdAt: string; words: number }>();
   for (const artifact of input.artifacts) {
     if (artifact.kind === "summary") summaries.set(artifact.sourceId, parseSummary(artifact.content));
-    if (artifact.kind === "primer") primerTimes.set(artifact.sourceId, artifact.createdAt);
+    if (artifact.kind === "primer") {
+      const words = wordCount(primerMarkdown(artifact.content));
+      primers.set(artifact.sourceId, { createdAt: artifact.createdAt, words });
+    }
   }
 
   return {
@@ -39,7 +46,8 @@ export function joinLibrary(input: {
       ...source,
       topic: source.topicId ? (topicsById.get(source.topicId) ?? null) : null,
       summary: summaries.get(source.id) ?? null,
-      primerCreatedAt: primerTimes.get(source.id) ?? null,
+      primerCreatedAt: primers.get(source.id)?.createdAt ?? null,
+      primerWords: primers.get(source.id)?.words ?? null,
     })),
     topics: input.topics,
     topicPrimers: input.topicPrimers,

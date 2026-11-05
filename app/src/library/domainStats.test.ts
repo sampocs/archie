@@ -1,5 +1,6 @@
 import { domainCards } from "./domainStats";
-import type { LibraryData, LibrarySource, TopicRow } from "./join";
+import type { LibraryData, LibrarySource, TopicPrimerRow, TopicRow } from "./join";
+import { topicPrimerRow } from "./testRows";
 
 const topic = (overrides: Partial<TopicRow>): TopicRow => ({
   id: "t1",
@@ -16,7 +17,11 @@ const topic = (overrides: Partial<TopicRow>): TopicRow => ({
 
 const source = (overrides: Record<string, unknown>) => ({ state: "inbox", domain: "Macro", topicId: null, ...overrides }) as unknown as LibrarySource;
 
-const data = (sources: LibrarySource[], topics: TopicRow[]): LibraryData => ({ sources, topics, topicPrimers: [] });
+const data = (sources: LibrarySource[], topics: TopicRow[], topicPrimers: TopicPrimerRow[] = []): LibraryData => ({
+  sources,
+  topics,
+  topicPrimers,
+});
 
 describe("domainCards", () => {
   it("splits a domain's items into done, queued and inbox", () => {
@@ -69,5 +74,33 @@ describe("domainCards", () => {
       ),
     );
     expect(cards.map((card) => card.domain)).toEqual(["Macro", "Finance", "AI"]);
+  });
+
+  it("marks a topic whose current primer is unopened, and only that one", () => {
+    const [card] = domainCards(
+      data(
+        ["unread", "opened", "old", "none"].map((topicId) => source({ topicId })),
+        [
+          topic({ id: "unread", name: "Unread" }),
+          topic({ id: "opened", name: "Opened" }),
+          topic({ id: "old", name: "Old" }),
+          topic({ id: "none", name: "None" }),
+          topic({ id: "own", name: "Own", origin: "user" }),
+        ],
+        [
+          topicPrimerRow({ id: "p1", topicId: "unread" }),
+          topicPrimerRow({ id: "p2", topicId: "opened", openedAt: "2026-11-03T00:00:00Z" }),
+          topicPrimerRow({ id: "p3", topicId: "old", isCurrent: 0 }),
+          topicPrimerRow({ id: "p4", topicId: "own" }),
+        ],
+      ),
+    );
+    expect(Object.fromEntries(card.chips.map((chip) => [chip.topic.name, chip.unreadPrimer]))).toEqual({
+      Unread: true,
+      Opened: false,
+      Old: false,
+      None: false,
+      Own: true,
+    });
   });
 });

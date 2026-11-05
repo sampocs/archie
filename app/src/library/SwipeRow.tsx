@@ -14,7 +14,7 @@ type SwipeRowProps = { actions: SwipeAction[]; children: ReactNode; testID?: str
 
 const ACTION_WIDTH = 72;
 
-/** Swipe left to reveal one or two actions; the row closes after any of them. No actions, no swipe. */
+/** Swipe left to reveal up to three actions; the row closes after any of them. No actions, no swipe. */
 export function SwipeRow({ actions, children, testID }: SwipeRowProps) {
   const theme = useTheme();
 

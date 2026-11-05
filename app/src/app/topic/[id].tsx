@@ -27,13 +27,13 @@ import { SourceRow } from "@/ui/SourceRow";
 const PRIMER_WAIT_MS = 10 * 60 * 1000;
 
 export default function TopicScreen() {
-  const { id, primer: primerParam } = useLocalSearchParams<{ id: string; primer?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
   const data = useLibraryData();
   const now = useNow();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [primerOpen, setPrimerOpen] = useState(primerParam === "1");
+  const [primerOpen, setPrimerOpen] = useState(false);
 
   const topic = data.topics.find((candidate) => candidate.id === id);
   const primer = data.topicPrimers.find((candidate) => candidate.topicId === id);
@@ -44,7 +44,7 @@ export default function TopicScreen() {
     if (mergedIntoId) router.replace({ pathname: "/topic/[id]", params: { id: mergedIntoId } });
   }, [mergedIntoId, router]);
 
-  // Opening the primer marks it opened (once), so it leaves "Primers ready".
+  // Opening the primer marks it opened (once), which clears its unread dot in Domains.
   const unopenedPrimerId = primerOpen && primer && !primer.openedAt ? primer.id : null;
   useEffect(() => {
     if (!unopenedPrimerId) return;

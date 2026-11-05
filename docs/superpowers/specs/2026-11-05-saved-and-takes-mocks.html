@@ -210,6 +210,21 @@ body { background: var(--page); color: var(--page-ink); font-family: var(--sans)
 .bodyfield .caret { display: inline-block; width: 2px; height: 17px; background: var(--chrome); vertical-align: -3px; }
 .bodyfield .mic { position: absolute; right: 12px; bottom: 12px; width: 42px; height: 42px; border-radius: 50%; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 17px; }
 .navbtn.primary { background: var(--chrome); color: #fff; }
+.dd { margin-top: 8px; height: 40px; border-radius: 10px; background: var(--press); display: flex; align-items: center; justify-content: space-between; padding: 0 12px; font-size: 14.5px; font-weight: 600; }
+.dd span { color: var(--ink3); font-size: 12px; }
+.ddmenu { position: absolute; left: 34px; right: 34px; top: 452px; z-index: 60; background: var(--surface); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.22), 0 0 0 1px rgba(0,0,0,.06); overflow: hidden; }
+.ddmenu div { padding: 12px 14px; border-top: 1px solid var(--line); font-size: 15px; display: flex; justify-content: space-between; }
+.ddmenu div:first-child { border-top: 0; }
+.ddmenu .ck { color: var(--chrome); font-weight: 700; }
+.ddmenu .newc { color: var(--ink2); font-weight: 600; }
+.swrow { border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+.swrow .t { flex: 1; }
+.swrow .t b { display: block; font-size: 15px; font-weight: 600; }
+.swrow .t span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 2px; line-height: 1.35; }
+.sw { width: 46px; height: 28px; border-radius: 14px; background: var(--got); position: relative; flex: none; }
+.sw::after { content: ""; position: absolute; top: 2px; right: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.origin { padding: 8px 22px 0; font-size: 13px; color: var(--ink3); }
+.origin u { color: var(--ink2); text-decoration: none; font-weight: 600; }
 </style>
 
 <div class="wrap">
@@ -255,12 +270,13 @@ const addSheet = SHELL(`<div class="view" style="filter:saturate(.9)">${LIBHDR}$
     <div class="choice"><b>Finished</b><span>Summary, primer and cards</span></div>
     <div class="choice"><b>Queue it</b><span>Save it to read or listen to later</span></div>
     <div class="choice on"><b>Save to a collection</b><span>Just keep it. No summary, no cards</span>
-      <div class="cchips"><div class="on">Bears hype</div><div>Funny</div><div class="new">＋ New</div></div></div>
+      <div class="dd">Bears hype<span>▾</span></div></div>
   </div>
   <div class="btn primary">Save</div>
   <div class="orline">or</div>
   <div class="linkrow">✎ Write a take<span>›</span></div>
-</div>`, TABS("Library"));
+</div>
+<div class="ddmenu"><div>Bears hype<span class="ck">✓</span></div><div>Funny</div><div class="newc">＋ New collection…</div></div>`, TABS("Library"));
 
 const mosaic = colors => `<div class="mosaic">${colors.map(c => `<i style="background:${c}"></i>`).join("")}</div>`;
 const libSaved = SHELL(`<div class="view">
@@ -335,6 +351,7 @@ const takePage = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div st
   <div style="padding:0 22px"><div class="kindtag tp">Talking point</div></div>
   <div class="ititle" style="margin-top:6px">The argument for crypto</div>
   <div style="padding:6px 22px 0;font:500 11px var(--mono);color:var(--ink3);text-transform:uppercase">Updated Nov 2 · version 3</div>
+  <div class="origin">Cleaned up from your dictation · <u>See what you said ›</u></div>
   <div class="take-body">
     <p>Crypto's lasting use isn't speculation. It's moving dollars, and it already works.</p>
     <h4>Main points</h4>
@@ -355,7 +372,8 @@ const takeEditor = SHELL(`<div class="navbar"><div class="navbtn">Cancel</div><d
 <div class="view editor">
   <div class="kseg"><div>Opinion</div><div class="on">Talking point</div></div>
   <div class="tfield">The argument for crypto</div>
-  <div class="bodyfield">Crypto's lasting use isn't speculation. It's moving dollars, and it already works.<br><br>Main points<br>- Stablecoins settle ~$10T a year, already Visa scale<br>- Dollar demand abroad<br>- Open rails: anyone can build payments on them<span class="caret"></span></div>
+  <div class="bodyfield" style="min-height:250px">ok so the main thing is people think it's all speculation and like most of it is, fine, but the actual use that's working is moving dollars. stablecoins did something like ten trillion last year which is basically visa. and people in argentina or turkey want dollars and this is the easiest way. and the other thing is anyone can build on it, you don't need a bank partner<span class="caret"></span></div>
+  <div class="swrow"><div class="t"><b>Clean it up</b><span>Archie turns this into a short take with main points. Your words and claims only.</span></div><div class="sw"></div></div>
   <div class="small">Saving makes version 4 and rewrites this take's cards. Version 3 stays under Earlier versions.</div>
 </div>`);
 
@@ -367,7 +385,7 @@ const SCENES = [
    `<strong>Open question</strong>Should the ＋ also show on Today? It's the other screen you're on when you think "save this". My suggestion: Library only for now, since most saves come from the share sheet anyway.`],
   ["Add sheet", addSheet, `<p>Tapping ＋ slides this sheet over Library. It replaces the old Add tab and offers the same choices as the share sheet.</p>
     <ul><li><b>Finished / Queue it</b> work as today, including "How'd it go?" and "Queue the primer too".</li>
-    <li><b>Save to a collection</b> shows your collections as chips, with the last one used preselected. "＋ New" asks for a name inline. Save drops the link into that collection only: no summary, no cards, nothing in the Library.</li>
+    <li><b>Save to a collection</b> shows a dropdown preselected to the last collection used (shown open here). Its last entry, "＋ New collection…", asks for a name. Save drops the link into that collection only: no summary, no cards, nothing in the Library.</li>
     <li><b>Write a take</b> opens the take editor (screen 9). It needs no link, so it sits under the link choices.</li>
     <li><b>The share sheet</b> gets the same third choice, "Save to a collection", with the same chips.</li></ul>`, ""],
   ["Library · Saved", libSaved, `<p>Everything you chose to keep: Favorites on top, Collections below.</p>
@@ -391,14 +409,15 @@ const SCENES = [
     <li><b>Each row</b> shows when it was last updated, how many versions it has, and how many cards it made.</li>
     <li><b>Takes aren't filed under domains</b> and don't show up in search or Ask in this version.</li></ul>`, ""],
   ["A take", takePage, `<p>Your text, exactly as you wrote it (markdown: headings and bullets render), with the kind, the date and the version.</p>
-    <ul><li><b>Cards from this:</b> Archie writes 2–4 cards from every take, graded against your own wording. When you save a new version, these cards are rewritten and the old ones retired. Swipe a card away if you don't want it.</li>
+    <ul><li><b>"Cleaned up from your dictation"</b> appears when this version was written by Clean it up. "See what you said" shows your raw text read-only.</li><li><b>Cards from this:</b> Archie writes 2–4 cards from every take, graded against your own wording. When you save a new version, these cards are rewritten and the old ones retired. Swipe a card away if you don't want it.</li>
     <li><b>Earlier versions</b> lists every saved version with its date. Opening one shows it read-only, with "Restore this version", which saves it as a new version.</li>
     <li><b>Edit</b> opens the editor. The ••• menu has Change kind and Delete take.</li></ul>`,
    `<strong>Open question</strong>Your 2024 election take should probably keep its original date even if you fix a typo. My suggestion: Archie writes a new version only when you tap Save with a changed body, and the list shows "Written" for the first version's date next to "Updated" for the latest.`],
   ["Writing a take", takeEditor, `<p>A full-screen editor: kind, title, then the body. To dictate, use the keyboard's mic button (iOS dictation), so there's nothing extra to build.</p>
-    <ul><li><b>Archie doesn't rewrite your text.</b> Dictation is transcribed as you said it, and you edit it yourself.</li>
+    <ul><li><b>Clean it up</b> (off by default, remembered per take): on Save, Archie rewrites what you typed or dictated into a short take (a one-line thesis plus main points, like screen 8). It keeps only your claims and numbers, adds nothing, and the raw text is kept. Leave it off when you've already typed tidy bullets, and Archie saves your text exactly as written.</li>
+    <li><b>While it's cleaning</b>, the take page shows your raw text with "Cleaning up…". Edit the result like any other version.</li>
     <li><b>Save</b> stores a new version and starts the card job. Cancel throws away unsaved changes.</li>
-    <li><b>Offline:</b> writing and saving work offline. Cards are written once you're back online.</li></ul>`, ""],
+    <li><b>Offline:</b> writing and saving work offline. Cleanup and cards happen once you're back online.</li></ul>`, ""],
 ];
 document.getElementById("scenes").innerHTML = SCENES.map(([title, phone, body, ask], i) => `<section class="scene">${phone}<div class="note"><span class="num">${String(i + 1).padStart(2, "0")}</span><h2>${title}</h2>${body}${ask ? `<div class="ask">${ask}</div>` : ""}</div></section>`).join("");
 </script>

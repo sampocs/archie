@@ -17,8 +17,12 @@ the two differ, this spec wins and the scope doc is updated when each piece ship
 - **Collections stay out of the learning side completely.** Collection items are not `sources`. They never appear
   in the Library's All list, Domains, search, Today, Pulse, Ask, or the pipeline. The only places they show up are
   Library → Saved and the collection's own page.
-- **A Take is your own writing.** Archie never rewrites the text and offers no evidence finding or steelman in this
-  version. Dictation uses the iOS keyboard mic.
+- **A Take is your own writing.** There's no evidence finding or steelman in this version. Dictation uses the iOS
+  keyboard mic.
+- **Clean it up is an opt-in toggle in the editor.** When it's off, Archie saves the text exactly as written (for
+  bullets you've already typed). When it's on, Archie rewrites the typed or dictated text into a short take: a
+  one-line thesis plus main points, and an objection section when the text answers one. It keeps only the owner's
+  own claims and numbers and adds nothing. The raw text is always kept.
 - **Every take gets cards.** Archie writes 2–4 cards from every saved take, graded against the owner's own wording.
   Unwanted cards are swiped away like source cards. Saving a new version rewrites the take's cards and retires the
   old ones.
@@ -35,8 +39,9 @@ the two differ, this spec wins and the scope doc is updated when each piece ship
 - **Add sheet** (mock 02, `app/src/app/add.tsx` as a modal route): URL field with Paste, then three choices.
   - **Finished** and **Queue it** work exactly as `CaptureOptions` does today, including "How'd it go?" and "Queue the
     primer too".
-  - **Save to a collection** shows the collections as chips, with the last one used preselected, plus "＋ New",
-    which asks for a name inline.
+  - **Save to a collection** shows a dropdown (a native menu) preselected to the last collection used. Its last
+    entry, "＋ New collection…", asks for a name. With no collections yet, the dropdown reads "New collection…" and
+    asks on Save.
   - Below an "or" divider, **Write a take ›** opens the take editor. It needs no URL.
   - Save closes the sheet and stays on Library.
   - **The share extension** gets the same third choice with the same chips. That needs the collection list in the
@@ -65,6 +70,8 @@ the two differ, this spec wins and the scope doc is updated when each piece ship
   "N versions" is hidden at 1).
 - **Take page** (mock 08, `app/src/app/take/[id].tsx`):
   - The kind kicker, the title, and mono "Updated <date> · version N".
+  - When the current version came from Clean it up: "Cleaned up from your dictation · See what you said ›", which
+    shows the raw text read-only. While the cleanup is running, the page shows the raw text under "Cleaning up…".
   - The body, rendered as markdown (headings, bullets, emphasis).
   - **Cards from this · N:** each card's question with its due date. A card can be swiped away.
   - **Earlier versions › N:** the version list. Opening a version shows it read-only with "Restore this version",
@@ -72,7 +79,10 @@ the two differ, this spec wins and the scope doc is updated when each piece ship
   - The navbar has **Edit**. The ••• menu has Change kind and Delete take.
 - **Take editor** (mock 09, `app/src/app/take/edit.tsx`, with `?id=` for an existing take): an Opinion | Talking
   point toggle (default Talking point), a title field and a multiline markdown body. Save is disabled until there is
-  a title and body. Cancel discards. The hint reads "Saving makes version N+1 and rewrites this take's cards."
+  a title and body. Below the body, a **Clean it up** switch ("Archie turns this into a short take with main points.
+  Your words and claims only."). It's off for a new take and remembers its last setting per take. Editing a cleaned
+  version opens the cleaned text, not the raw text. Cancel discards. The hint reads "Saving makes version N+1 and
+  rewrites this take's cards."
 - **Empty states:** Takes shows "Things you think, in your own words" with a "Write a take" button. Saved with
   nothing in it shows "Star items to keep them here, or save something just for fun to a collection."
 
@@ -105,7 +115,10 @@ takes
 
 take_versions
   id uuid pk, user_id, take_id uuid fk takes on delete cascade, version int not null,
-  body text not null, created_at, change_seq
+  body text null,                              -- what the take page shows; null while cleanup is running
+  raw_body text not null,                      -- what the owner typed or dictated
+  cleaned boolean not null,                    -- Clean it up was on for this version
+  created_at, change_seq
   unique (take_id, version)
 
 cards
@@ -131,9 +144,9 @@ Each one is applied to the local database right away and has a handler in `servi
 | `update_collection` | id, name?, position?, deleted? | rename, reorder, delete (soft-deletes its items too) |
 | `add_collection_item` | id, collection_id, url, note? | inserts it and queues a `fetch_collection_item` job |
 | `update_collection_item` | id, note?, collection_id?, deleted? | edit note, move or remove |
-| `save_take` | id, kind, title, body | creates or updates the take; inserts a new `take_versions` row when the body changed; queues `take_cards` |
+| `save_take` | id, kind, title, body, clean (bool) | creates or updates the take; inserts a new `take_versions` row when the body changed (`raw_body` = body; `body` = body, or null with `clean`); queues `clean_take` when `clean`, otherwise `take_cards` |
 | `update_take` | id, kind?, title?, deleted? | change kind, rename or delete without a new version |
-| `restore_take_version` | take_id, version | copies that body into a new version, the same as `save_take` |
+| `restore_take_version` | take_id, version | copies that version (body, raw_body, cleaned) into a new version without re-cleaning; queues `take_cards` |
 
 Client-made ids (like `add_source`) let a just-saved item show up offline. A collection item saved to an unknown or
 deleted collection is rejected.
@@ -147,6 +160,11 @@ deleted collection is rejected.
   - Anything else: the page's `og:title` / `og:image`.
   - One attempt plus the standard retries. A failure leaves the post with its URL and a neutral tile. There's no
     Retry button, since nothing is lost.
+- **`clean_take`** (Sonnet 5.5 for writing quality, in the reading voice) turns `raw_body` into markdown and sets
+  `body`, then queues `take_cards`.
+  - The prompt forbids new facts, numbers or arguments, and keeps the owner's hedges and stance.
+  - It writes only to the version it was queued for. If retries run out, `body` falls back to `raw_body`, and the
+    page says "Couldn't clean this up" with a Try again that re-queues it.
 - **`take_cards`** (Haiku 5.5, retried with the fallback model like other steps) reads the take's current version and
   writes 2–4 cards. It soft-deletes the take's previous cards first, so review history stays on the old card rows.
   - The answers must use the owner's own words and claims. The prompt forbids adding facts or arguments that aren't
@@ -165,6 +183,8 @@ deleted collection is rejected.
   - saving a take with an unchanged body makes no new version.
 - **Worker:**
   - `fetch_collection_item` for an X video and a YouTube link, replayed from recorded cassettes;
+  - `clean_take` with a recorded cassette on a rambling dictation, checking it keeps the take's claims and adds no
+    numbers that aren't in the raw text;
   - `take_cards` with a recorded Anthropic cassette, checking 2–4 cards that cite only the take's own claims;
   - retiring old cards on a new version.
 - **App jest:**
@@ -175,7 +195,8 @@ deleted collection is rejected.
   - star an item, then find it under Saved → its domain;
   - make a collection from the add sheet and save a link into it, checking it shows on the collection page and not
     in All;
-  - write a take, edit it, and see version 2 and "Earlier versions".
+  - write a take, edit it, and see version 2 and "Earlier versions";
+  - write a take with Clean it up on, against the recorded cleanup, and see "See what you said".
 - **Manual:** the share extension's collection choice, since the share sheet can't be automated.
 
 ## Build order
@@ -193,7 +214,7 @@ Each piece gets its own plan and PR, in this order. Pieces 1 and 2 don't depend 
    - Key decision: collection items live in their own tables, so no existing query needs a filter.
 3. **Takes.** Depends on: 1 (the Takes segment) and M6 merged (FSRS, Review and card rows on the phone).
    - The `takes` and `take_versions` tables and the cards change, `save_take` / `update_take` /
-     `restore_take_version`, the `take_cards` job, and the Takes list, take page, version viewer and editor.
+     `restore_take_version`, the `clean_take` and `take_cards` jobs, and the Takes list, take page, version viewer and editor.
    - Key decision: the cards' `source_id` / `artifact_id` become nullable, with the exactly-one check. Review shows
      take cards with a "Your take" kicker instead of a domain.
 

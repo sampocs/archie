@@ -1,0 +1,1490 @@
+[
+ {
+  "id": 0,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "Why do midterm elections often hurt the president's party?",
+   "answer": "Voters often use midterms to register approval or frustration with the sitting president, and the president's party usually loses House and Senate seats as a result. Rising prices and a weak economy can make this effect stronger."
+  },
+  "style": "reworded",
+  "answer": "The president's party tends to lose congressional seats because voters take the midterm as a chance to punish or voice displeasure with the president, especially when prices are up.",
+  "expected": "got_it"
+ },
+ {
+  "id": 1,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "Why do midterm elections often hurt the president's party?",
+   "answer": "Voters often use midterms to register approval or frustration with the sitting president, and the president's party usually loses House and Senate seats as a result. Rising prices and a weak economy can make this effect stronger."
+  },
+  "style": "sloppy",
+  "answer": "voters use it to like vent at the president so his party loses seats esp if inflation is bad",
+  "expected": "got_it"
+ },
+ {
+  "id": 2,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "Why do midterm elections often hurt the president's party?",
+   "answer": "Voters often use midterms to register approval or frustration with the sitting president, and the president's party usually loses House and Senate seats as a result. Rising prices and a weak economy can make this effect stronger."
+  },
+  "style": "half",
+  "answer": "People are unhappy with the president so they vote against his party.",
+  "expected": "partly"
+ },
+ {
+  "id": 3,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "Why do midterm elections often hurt the president's party?",
+   "answer": "Voters often use midterms to register approval or frustration with the sitting president, and the president's party usually loses House and Senate seats as a result. Rising prices and a weak economy can make this effect stronger."
+  },
+  "style": "wrong",
+  "answer": "Because turnout is lower in midterms and the president isn't on the ballot, so independents all vote for third parties.",
+  "expected": "missed"
+ },
+ {
+  "id": 4,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "concept",
+   "question": "What does Marvell's Lumentum deal involve, and why does it matter for AI?",
+   "answer": "Lumentum makes lasers and optical hardware that carry data between chips and servers inside data centers. Buying it helps Marvell own more of the infrastructure AI depends on, but the size of the deal raises concerns about an AI spending bubble."
+  },
+  "style": "reworded",
+  "answer": "Marvell is buying Lumentum, a maker of optical lasers that move data between chips and servers in data centers; it gives Marvell more AI infrastructure, though the price fuels AI bubble worries.",
+  "expected": "got_it"
+ },
+ {
+  "id": 5,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "concept",
+   "question": "What does Marvell's Lumentum deal involve, and why does it matter for AI?",
+   "answer": "Lumentum makes lasers and optical hardware that carry data between chips and servers inside data centers. Buying it helps Marvell own more of the infrastructure AI depends on, but the size of the deal raises concerns about an AI spending bubble."
+  },
+  "style": "sloppy",
+  "answer": "marvel buying lumentum, they make optical stuff that moves data in data centres, AI infra, kinda bubbly price",
+  "expected": "got_it"
+ },
+ {
+  "id": 6,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "concept",
+   "question": "What does Marvell's Lumentum deal involve, and why does it matter for AI?",
+   "answer": "Lumentum makes lasers and optical hardware that carry data between chips and servers inside data centers. Buying it helps Marvell own more of the infrastructure AI depends on, but the size of the deal raises concerns about an AI spending bubble."
+  },
+  "style": "half",
+  "answer": "Marvell is buying Lumentum, which makes optical lasers for data centers.",
+  "expected": "partly"
+ },
+ {
+  "id": 7,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "concept",
+   "question": "What does Marvell's Lumentum deal involve, and why does it matter for AI?",
+   "answer": "Lumentum makes lasers and optical hardware that carry data between chips and servers inside data centers. Buying it helps Marvell own more of the infrastructure AI depends on, but the size of the deal raises concerns about an AI spending bubble."
+  },
+  "style": "wrong",
+  "answer": "Marvell is buying Lumentum, a memory chip maker, to compete with Nvidia on GPUs.",
+  "expected": "missed"
+ },
+ {
+  "id": 8,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "How can hackers make supermarket fridges overheat?",
+   "answer": "Hackers broke into the digital system that remotely controls the fridges and switched them into defrost mode. Some units also needed physical fixes beyond software patches, so the attack kept working until both were addressed."
+  },
+  "style": "reworded",
+  "answer": "Attackers got into the remote management system for the fridges and set them to defrost, and some units also needed physical repairs besides software fixes.",
+  "expected": "got_it"
+ },
+ {
+  "id": 9,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "How can hackers make supermarket fridges overheat?",
+   "answer": "Hackers broke into the digital system that remotely controls the fridges and switched them into defrost mode. Some units also needed physical fixes beyond software patches, so the attack kept working until both were addressed."
+  },
+  "style": "sloppy",
+  "answer": "they hacked the remote control system n put the fridges in defrost mode, some needed hands on fixes too",
+  "expected": "got_it"
+ },
+ {
+  "id": 10,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "How can hackers make supermarket fridges overheat?",
+   "answer": "Hackers broke into the digital system that remotely controls the fridges and switched them into defrost mode. Some units also needed physical fixes beyond software patches, so the attack kept working until both were addressed."
+  },
+  "style": "half",
+  "answer": "They hacked the system that controls the fridges and turned on defrost mode.",
+  "expected": "partly"
+ },
+ {
+  "id": 11,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "How can hackers make supermarket fridges overheat?",
+   "answer": "Hackers broke into the digital system that remotely controls the fridges and switched them into defrost mode. Some units also needed physical fixes beyond software patches, so the attack kept working until both were addressed."
+  },
+  "style": "wrong",
+  "answer": "They sent a power surge through the supermarket's electrical grid that fried the compressors.",
+  "expected": "missed"
+ },
+ {
+  "id": 12,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "number",
+   "question": "What is the approximate scale of Palantir's government versus commercial revenue split in its latest quarter?",
+   "answer": "Palantir's total quarterly revenue was about $2.31 billion. US commercial revenue reached about $984 million, roughly equal to the $953 million from US government contracts, so the two segments are now about even."
+  },
+  "style": "reworded",
+  "answer": "Revenue was roughly 2.3 billion; US commercial was around 980 million, basically level with US government at about 950 million, so the two are now about equal.",
+  "expected": "got_it"
+ },
+ {
+  "id": 13,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "number",
+   "question": "What is the approximate scale of Palantir's government versus commercial revenue split in its latest quarter?",
+   "answer": "Palantir's total quarterly revenue was about $2.31 billion. US commercial revenue reached about $984 million, roughly equal to the $953 million from US government contracts, so the two segments are now about even."
+  },
+  "style": "sloppy",
+  "answer": "about 2.3 bil total, us commercial like 1 bil, same as government, so even split",
+  "expected": "got_it"
+ },
+ {
+  "id": 14,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "number",
+   "question": "What is the approximate scale of Palantir's government versus commercial revenue split in its latest quarter?",
+   "answer": "Palantir's total quarterly revenue was about $2.31 billion. US commercial revenue reached about $984 million, roughly equal to the $953 million from US government contracts, so the two segments are now about even."
+  },
+  "style": "half",
+  "answer": "Total revenue was about 2.3 billion and US commercial was about a billion.",
+  "expected": "partly"
+ },
+ {
+  "id": 15,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "number",
+   "question": "What is the approximate scale of Palantir's government versus commercial revenue split in its latest quarter?",
+   "answer": "Palantir's total quarterly revenue was about $2.31 billion. US commercial revenue reached about $984 million, roughly equal to the $953 million from US government contracts, so the two segments are now about even."
+  },
+  "style": "wrong",
+  "answer": "Government revenue was about three times commercial revenue, around 1.5 billion versus 500 million.",
+  "expected": "missed"
+ },
+ {
+  "id": 16,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "concept",
+   "question": "What is the difference between inclusive time and self time in a profiler?",
+   "answer": "Inclusive time is the total time a function spends running, including every function it calls. Self time is only the time spent in the function's own code, not in anything it calls."
+  },
+  "style": "reworded",
+  "answer": "Inclusive time counts everything a function takes including the functions it calls; self time counts just the function's own code.",
+  "expected": "got_it"
+ },
+ {
+  "id": 17,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "concept",
+   "question": "What is the difference between inclusive time and self time in a profiler?",
+   "answer": "Inclusive time is the total time a function spends running, including every function it calls. Self time is only the time spent in the function's own code, not in anything it calls."
+  },
+  "style": "sloppy",
+  "answer": "inclusive is whole time incl callees, self is only its own code not what it calls",
+  "expected": "got_it"
+ },
+ {
+  "id": 18,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "concept",
+   "question": "What is the difference between inclusive time and self time in a profiler?",
+   "answer": "Inclusive time is the total time a function spends running, including every function it calls. Self time is only the time spent in the function's own code, not in anything it calls."
+  },
+  "style": "half",
+  "answer": "Inclusive time is the total time the function takes.",
+  "expected": "partly"
+ },
+ {
+  "id": 19,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "concept",
+   "question": "What is the difference between inclusive time and self time in a profiler?",
+   "answer": "Inclusive time is the total time a function spends running, including every function it calls. Self time is only the time spent in the function's own code, not in anything it calls."
+  },
+  "style": "wrong",
+  "answer": "Self time is the time a function waits on I/O and inclusive time is CPU time.",
+  "expected": "missed"
+ },
+ {
+  "id": 20,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does an LLM alone often miss performance problems in code it writes?",
+   "answer": "An LLM checks syntax and local logic, so the code compiles and passes unit tests. It cannot see the runtime environment, the full call stack, or how often a function runs under production load, so waste only shows up at scale."
+  },
+  "style": "reworded",
+  "answer": "The model only sees syntax and local logic, so the code runs and passes tests, but it has no view of the runtime, call stack or production frequency, so inefficiency only shows at scale.",
+  "expected": "got_it"
+ },
+ {
+  "id": 21,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does an LLM alone often miss performance problems in code it writes?",
+   "answer": "An LLM checks syntax and local logic, so the code compiles and passes unit tests. It cannot see the runtime environment, the full call stack, or how often a function runs under production load, so waste only shows up at scale."
+  },
+  "style": "sloppy",
+  "answer": "llm sees the code not the runtime so it compiles n passes tests but cant tell how hot a function is in prod",
+  "expected": "got_it"
+ },
+ {
+  "id": 22,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does an LLM alone often miss performance problems in code it writes?",
+   "answer": "An LLM checks syntax and local logic, so the code compiles and passes unit tests. It cannot see the runtime environment, the full call stack, or how often a function runs under production load, so waste only shows up at scale."
+  },
+  "style": "half",
+  "answer": "It can't see how the code behaves at runtime.",
+  "expected": "partly"
+ },
+ {
+  "id": 23,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does an LLM alone often miss performance problems in code it writes?",
+   "answer": "An LLM checks syntax and local logic, so the code compiles and passes unit tests. It cannot see the runtime environment, the full call stack, or how often a function runs under production load, so waste only shows up at scale."
+  },
+  "style": "wrong",
+  "answer": "LLMs are trained mostly on slow, older code so they reproduce its inefficiencies.",
+  "expected": "missed"
+ },
+ {
+  "id": 24,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does Netflix pair a stateless LLM with a Pattern Catalog?",
+   "answer": "LLMs start every prompt with no memory of past bugs. The catalog is a shared store of known anti-patterns that gets injected into prompts, so one team's findings can help every other team and the same bug is not rediscovered repeatedly."
+  },
+  "style": "reworded",
+  "answer": "LLMs forget everything between prompts, so a shared catalog of known anti-patterns is fed into prompts so teams share findings and don't rediscover the same bugs.",
+  "expected": "got_it"
+ },
+ {
+  "id": 25,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does Netflix pair a stateless LLM with a Pattern Catalog?",
+   "answer": "LLMs start every prompt with no memory of past bugs. The catalog is a shared store of known anti-patterns that gets injected into prompts, so one team's findings can help every other team and the same bug is not rediscovered repeatedly."
+  },
+  "style": "sloppy",
+  "answer": "llm has no memory so the catalog stores known bad patterns and gets put in the prompt so everyone benefits",
+  "expected": "got_it"
+ },
+ {
+  "id": 26,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does Netflix pair a stateless LLM with a Pattern Catalog?",
+   "answer": "LLMs start every prompt with no memory of past bugs. The catalog is a shared store of known anti-patterns that gets injected into prompts, so one team's findings can help every other team and the same bug is not rediscovered repeatedly."
+  },
+  "style": "half",
+  "answer": "The catalog stores known anti-patterns that get added to prompts.",
+  "expected": "partly"
+ },
+ {
+  "id": 27,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does Netflix pair a stateless LLM with a Pattern Catalog?",
+   "answer": "LLMs start every prompt with no memory of past bugs. The catalog is a shared store of known anti-patterns that gets injected into prompts, so one team's findings can help every other team and the same bug is not rediscovered repeatedly."
+  },
+  "style": "wrong",
+  "answer": "The catalog makes the LLM cheaper because it caches previous responses so fewer tokens are billed.",
+  "expected": "missed"
+ },
+ {
+  "id": 28,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "number",
+   "question": "How much CPU did a per-request regex sanitizer use in one Netflix service, and how much faster was the fix?",
+   "answer": "The regex used 46% of the service's CPU time. The agent replaced it with a precomputed lookup table, which ran about 22 times faster."
+  },
+  "style": "reworded",
+  "answer": "About 46 percent of the service's CPU went to the regex, and the lookup table replacement was around 22x quicker.",
+  "expected": "got_it"
+ },
+ {
+  "id": 29,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "number",
+   "question": "How much CPU did a per-request regex sanitizer use in one Netflix service, and how much faster was the fix?",
+   "answer": "The regex used 46% of the service's CPU time. The agent replaced it with a precomputed lookup table, which ran about 22 times faster."
+  },
+  "style": "sloppy",
+  "answer": "regex was 46% cpu, lookup table fix about 22x faster",
+  "expected": "got_it"
+ },
+ {
+  "id": 30,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "number",
+   "question": "How much CPU did a per-request regex sanitizer use in one Netflix service, and how much faster was the fix?",
+   "answer": "The regex used 46% of the service's CPU time. The agent replaced it with a precomputed lookup table, which ran about 22 times faster."
+  },
+  "style": "half",
+  "answer": "The regex took 46% of CPU time.",
+  "expected": "partly"
+ },
+ {
+  "id": 31,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "number",
+   "question": "How much CPU did a per-request regex sanitizer use in one Netflix service, and how much faster was the fix?",
+   "answer": "The regex used 46% of the service's CPU time. The agent replaced it with a precomputed lookup table, which ran about 22 times faster."
+  },
+  "style": "wrong",
+  "answer": "The regex used about 5% of CPU and the fix was twice as fast.",
+  "expected": "missed"
+ },
+ {
+  "id": 32,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why do strict package prefix rules help an agent analyze a profile?",
+   "answer": "Without them, the model spends effort on JVM garbage collection, kernel calls, and third-party framework overhead that developers cannot change. Prefix rules keep the analysis on the application code they can actually fix."
+  },
+  "style": "reworded",
+  "answer": "It stops the model wasting effort on garbage collection, kernel and framework overhead that developers can't change, focusing it on the application code that can be fixed.",
+  "expected": "got_it"
+ },
+ {
+  "id": 33,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why do strict package prefix rules help an agent analyze a profile?",
+   "answer": "Without them, the model spends effort on JVM garbage collection, kernel calls, and third-party framework overhead that developers cannot change. Prefix rules keep the analysis on the application code they can actually fix."
+  },
+  "style": "sloppy",
+  "answer": "keeps it focused on our own code not gc and kernel and framework stuff we cant change",
+  "expected": "got_it"
+ },
+ {
+  "id": 34,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why do strict package prefix rules help an agent analyze a profile?",
+   "answer": "Without them, the model spends effort on JVM garbage collection, kernel calls, and third-party framework overhead that developers cannot change. Prefix rules keep the analysis on the application code they can actually fix."
+  },
+  "style": "half",
+  "answer": "It filters out noise like garbage collection from the profile.",
+  "expected": "partly"
+ },
+ {
+  "id": 35,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why do strict package prefix rules help an agent analyze a profile?",
+   "answer": "Without them, the model spends effort on JVM garbage collection, kernel calls, and third-party framework overhead that developers cannot change. Prefix rules keep the analysis on the application code they can actually fix."
+  },
+  "style": "wrong",
+  "answer": "They make the profile file smaller so it fits within the model's context window.",
+  "expected": "missed"
+ },
+ {
+  "id": 36,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does Graham say consistent daily work matters more than bursts of effort?",
+   "answer": "Work compounds. A small daily amount adds up over years, such as a page a day becoming a book a year. Early exponential growth looks flat, so people underrate it and quit before the curve takes off."
+  },
+  "style": "reworded",
+  "answer": "Effort compounds: a little every day accumulates over years, like a page a day making a book a year, and since early exponential growth looks flat people undervalue it and give up too soon.",
+  "expected": "got_it"
+ },
+ {
+  "id": 37,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does Graham say consistent daily work matters more than bursts of effort?",
+   "answer": "Work compounds. A small daily amount adds up over years, such as a page a day becoming a book a year. Early exponential growth looks flat, so people underrate it and quit before the curve takes off."
+  },
+  "style": "sloppy",
+  "answer": "small daily work compounds, page a day = book a year, people quit cause the early part looks flat",
+  "expected": "got_it"
+ },
+ {
+  "id": 38,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does Graham say consistent daily work matters more than bursts of effort?",
+   "answer": "Work compounds. A small daily amount adds up over years, such as a page a day becoming a book a year. Early exponential growth looks flat, so people underrate it and quit before the curve takes off."
+  },
+  "style": "half",
+  "answer": "A little work each day adds up over time, like a page a day becoming a book.",
+  "expected": "partly"
+ },
+ {
+  "id": 39,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does Graham say consistent daily work matters more than bursts of effort?",
+   "answer": "Work compounds. A small daily amount adds up over years, such as a page a day becoming a book a year. Early exponential growth looks flat, so people underrate it and quit before the curve takes off."
+  },
+  "style": "wrong",
+  "answer": "Because sprints cause burnout and the body needs eight hours of sleep to be creative.",
+  "expected": "missed"
+ },
+ {
+  "id": 40,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What are the four steps Graham gives for doing great work?",
+   "answer": "Choose a field you have aptitude and interest in, learn enough to reach its frontier, notice the gaps where knowledge is incomplete, and explore the promising gaps. The second and fourth steps require hard work."
+  },
+  "style": "reworded",
+  "answer": "Pick a field matching your aptitude and interest, learn until you reach the frontier, spot gaps in knowledge, then dig into the promising ones; steps two and four are the hard work.",
+  "expected": "got_it"
+ },
+ {
+  "id": 41,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What are the four steps Graham gives for doing great work?",
+   "answer": "Choose a field you have aptitude and interest in, learn enough to reach its frontier, notice the gaps where knowledge is incomplete, and explore the promising gaps. The second and fourth steps require hard work."
+  },
+  "style": "sloppy",
+  "answer": "choose field, learn to frontier, notice gaps, explore gaps. 2 and 4 are hard",
+  "expected": "got_it"
+ },
+ {
+  "id": 42,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What are the four steps Graham gives for doing great work?",
+   "answer": "Choose a field you have aptitude and interest in, learn enough to reach its frontier, notice the gaps where knowledge is incomplete, and explore the promising gaps. The second and fourth steps require hard work."
+  },
+  "style": "half",
+  "answer": "Choose a field and learn enough to get to the frontier.",
+  "expected": "partly"
+ },
+ {
+  "id": 43,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What are the four steps Graham gives for doing great work?",
+   "answer": "Choose a field you have aptitude and interest in, learn enough to reach its frontier, notice the gaps where knowledge is incomplete, and explore the promising gaps. The second and fourth steps require hard work."
+  },
+  "style": "wrong",
+  "answer": "Find a mentor, copy the masters, publish early, and iterate on feedback.",
+  "expected": "missed"
+ },
+ {
+  "id": 44,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does a broken mental model make new ideas hard to see?",
+   "answer": "People see the world through models that both help and constrain them. Breaks in those models leave clues where they conflict with reality, but people tend to ignore those clues. Fixing a broken model makes the new idea look obvious afterward."
+  },
+  "style": "reworded",
+  "answer": "We view the world through models that help but also limit us; where they break there are clues that people ignore, and once fixed the new idea seems obvious.",
+  "expected": "got_it"
+ },
+ {
+  "id": 45,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does a broken mental model make new ideas hard to see?",
+   "answer": "People see the world through models that both help and constrain them. Breaks in those models leave clues where they conflict with reality, but people tend to ignore those clues. Fixing a broken model makes the new idea look obvious afterward."
+  },
+  "style": "sloppy",
+  "answer": "we see thru mental models, breaks in them leave clues we ignore, fix it and the idea looks obvious after",
+  "expected": "got_it"
+ },
+ {
+  "id": 46,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does a broken mental model make new ideas hard to see?",
+   "answer": "People see the world through models that both help and constrain them. Breaks in those models leave clues where they conflict with reality, but people tend to ignore those clues. Fixing a broken model makes the new idea look obvious afterward."
+  },
+  "style": "half",
+  "answer": "People see things through models that limit them.",
+  "expected": "partly"
+ },
+ {
+  "id": 47,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does a broken mental model make new ideas hard to see?",
+   "answer": "People see the world through models that both help and constrain them. Breaks in those models leave clues where they conflict with reality, but people tend to ignore those clues. Fixing a broken model makes the new idea look obvious afterward."
+  },
+  "style": "wrong",
+  "answer": "Because people are afraid of being wrong in public, so they hide unconventional ideas.",
+  "expected": "missed"
+ },
+ {
+  "id": 48,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What does it mean to stay upwind when choosing work?",
+   "answer": "Instead of making a fixed plan and executing it, at each stage do whatever seems most interesting and keeps your future options best. This suits discoveries you cannot describe in advance."
+  },
+  "style": "reworded",
+  "answer": "Rather than a fixed plan, you do what's most interesting at each step while keeping the best future options open; it fits discoveries you can't describe up front.",
+  "expected": "got_it"
+ },
+ {
+  "id": 49,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What does it mean to stay upwind when choosing work?",
+   "answer": "Instead of making a fixed plan and executing it, at each stage do whatever seems most interesting and keeps your future options best. This suits discoveries you cannot describe in advance."
+  },
+  "style": "sloppy",
+  "answer": "dont plan ahead, just do the most interesting thing that keeps options open",
+  "expected": "got_it"
+ },
+ {
+  "id": 50,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What does it mean to stay upwind when choosing work?",
+   "answer": "Instead of making a fixed plan and executing it, at each stage do whatever seems most interesting and keeps your future options best. This suits discoveries you cannot describe in advance."
+  },
+  "style": "half",
+  "answer": "Do whatever seems most interesting at each point.",
+  "expected": "partly"
+ },
+ {
+  "id": 51,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What does it mean to stay upwind when choosing work?",
+   "answer": "Instead of making a fixed plan and executing it, at each stage do whatever seems most interesting and keeps your future options best. This suits discoveries you cannot describe in advance."
+  },
+  "style": "wrong",
+  "answer": "Choose work that benefits from tailwinds, like trends that are already popular and well funded.",
+  "expected": "missed"
+ },
+ {
+  "id": 52,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "number",
+   "question": "According to Graham, how long might some of the hardest work be sustainable per day?",
+   "answer": "About four or five hours a day. Graham suggests arranging those hours in contiguous blocks, because interruptions make hard tasks easier to avoid."
+  },
+  "style": "reworded",
+  "answer": "Roughly four to five hours a day, ideally in contiguous blocks so interruptions don't make hard tasks easy to avoid.",
+  "expected": "got_it"
+ },
+ {
+  "id": 53,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "number",
+   "question": "According to Graham, how long might some of the hardest work be sustainable per day?",
+   "answer": "About four or five hours a day. Graham suggests arranging those hours in contiguous blocks, because interruptions make hard tasks easier to avoid."
+  },
+  "style": "sloppy",
+  "answer": "4-5 hours, in one block so you dont get interrupted",
+  "expected": "got_it"
+ },
+ {
+  "id": 54,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "number",
+   "question": "According to Graham, how long might some of the hardest work be sustainable per day?",
+   "answer": "About four or five hours a day. Graham suggests arranging those hours in contiguous blocks, because interruptions make hard tasks easier to avoid."
+  },
+  "style": "half",
+  "answer": "Around eight hours a day.",
+  "expected": "missed"
+ },
+ {
+  "id": 55,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "number",
+   "question": "According to Graham, how long might some of the hardest work be sustainable per day?",
+   "answer": "About four or five hours a day. Graham suggests arranging those hours in contiguous blocks, because interruptions make hard tasks easier to avoid."
+  },
+  "style": "wrong",
+  "answer": "Maybe 12 hours if you really love it.",
+  "expected": "missed"
+ },
+ {
+  "id": 56,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "concept",
+   "question": "What is a remote access trojan (RAT)?",
+   "answer": "A RAT is malware that lets an attacker take remote control of a victim's computer without the victim knowing. It works like legitimate remote-support software, but it runs silently and the attacker can see files, keystrokes, passwords, and the webcam."
+  },
+  "style": "reworded",
+  "answer": "It's malware that gives an attacker secret remote control of a victim's machine, like remote-support software but silent, letting them see files, keystrokes, passwords and the webcam.",
+  "expected": "got_it"
+ },
+ {
+  "id": 57,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "concept",
+   "question": "What is a remote access trojan (RAT)?",
+   "answer": "A RAT is malware that lets an attacker take remote control of a victim's computer without the victim knowing. It works like legitimate remote-support software, but it runs silently and the attacker can see files, keystrokes, passwords, and the webcam."
+  },
+  "style": "sloppy",
+  "answer": "malware that lets someone control your pc remotely w/o you knowing, can see files keystrokes webcam",
+  "expected": "got_it"
+ },
+ {
+  "id": 58,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "concept",
+   "question": "What is a remote access trojan (RAT)?",
+   "answer": "A RAT is malware that lets an attacker take remote control of a victim's computer without the victim knowing. It works like legitimate remote-support software, but it runs silently and the attacker can see files, keystrokes, passwords, and the webcam."
+  },
+  "style": "half",
+  "answer": "A RAT is malware that lets someone control a computer.",
+  "expected": "partly"
+ },
+ {
+  "id": 59,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "concept",
+   "question": "What is a remote access trojan (RAT)?",
+   "answer": "A RAT is malware that lets an attacker take remote control of a victim's computer without the victim knowing. It works like legitimate remote-support software, but it runs silently and the attacker can see files, keystrokes, passwords, and the webcam."
+  },
+  "style": "wrong",
+  "answer": "A RAT is ransomware that encrypts your files and demands payment.",
+  "expected": "missed"
+ },
+ {
+  "id": 60,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why did RAT operators rely on social engineering instead of infecting computers directly?",
+   "answer": "A RAT cannot install itself on a machine that is not already compromised, and almost no one knowingly installs spyware. Attackers therefore trick the victim into running it, using fake photos, fake delivery emails, pirated software, or infected USB sticks."
+  },
+  "style": "reworded",
+  "answer": "Because a RAT can't install on a machine on its own and nobody willingly installs spyware, operators tricked victims into running it with fake photos, delivery emails and pirated software.",
+  "expected": "got_it"
+ },
+ {
+  "id": 61,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why did RAT operators rely on social engineering instead of infecting computers directly?",
+   "answer": "A RAT cannot install itself on a machine that is not already compromised, and almost no one knowingly installs spyware. Attackers therefore trick the victim into running it, using fake photos, fake delivery emails, pirated software, or infected USB sticks."
+  },
+  "style": "sloppy",
+  "answer": "rat cant get on a clean pc itself and no one installs spyware on purpose so they trick ppl w fake emails n pirated software",
+  "expected": "got_it"
+ },
+ {
+  "id": 62,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why did RAT operators rely on social engineering instead of infecting computers directly?",
+   "answer": "A RAT cannot install itself on a machine that is not already compromised, and almost no one knowingly installs spyware. Attackers therefore trick the victim into running it, using fake photos, fake delivery emails, pirated software, or infected USB sticks."
+  },
+  "style": "half",
+  "answer": "They tricked people into running it.",
+  "expected": "partly"
+ },
+ {
+  "id": 63,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why did RAT operators rely on social engineering instead of infecting computers directly?",
+   "answer": "A RAT cannot install itself on a machine that is not already compromised, and almost no one knowingly installs spyware. Attackers therefore trick the victim into running it, using fake photos, fake delivery emails, pirated software, or infected USB sticks."
+  },
+  "style": "wrong",
+  "answer": "Because direct infection was too expensive in terms of servers, and social engineering is just cheaper than buying exploits.",
+  "expected": "missed"
+ },
+ {
+  "id": 64,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why does intent decide whether selling a tool like Blackshades is illegal?",
+   "answer": "Many monitoring tools are legal, so courts look at what the seller knew and what the buyers were likely to do. Selling a tool to people who will use it for crimes, or marketing it as a cover for spying, counts as clear intent to facilitate crime."
+  },
+  "style": "reworded",
+  "answer": "Many monitoring tools are legal, so what matters is what the seller knew and what buyers would do; selling to people who'll commit crimes or marketing it for covert spying shows intent to facilitate crime.",
+  "expected": "got_it"
+ },
+ {
+  "id": 65,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why does intent decide whether selling a tool like Blackshades is illegal?",
+   "answer": "Many monitoring tools are legal, so courts look at what the seller knew and what the buyers were likely to do. Selling a tool to people who will use it for crimes, or marketing it as a cover for spying, counts as clear intent to facilitate crime."
+  },
+  "style": "sloppy",
+  "answer": "lots of monitoring tools are legal so its about what the seller knew and meant, marketing it for spying = intent",
+  "expected": "got_it"
+ },
+ {
+  "id": 66,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why does intent decide whether selling a tool like Blackshades is illegal?",
+   "answer": "Many monitoring tools are legal, so courts look at what the seller knew and what the buyers were likely to do. Selling a tool to people who will use it for crimes, or marketing it as a cover for spying, counts as clear intent to facilitate crime."
+  },
+  "style": "half",
+  "answer": "Because it depends on how the tool is used.",
+  "expected": "partly"
+ },
+ {
+  "id": 67,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why does intent decide whether selling a tool like Blackshades is illegal?",
+   "answer": "Many monitoring tools are legal, so courts look at what the seller knew and what the buyers were likely to do. Selling a tool to people who will use it for crimes, or marketing it as a cover for spying, counts as clear intent to facilitate crime."
+  },
+  "style": "wrong",
+  "answer": "Because the law bans any software that accesses another computer, and intent only affects the sentence length.",
+  "expected": "missed"
+ },
+ {
+  "id": 68,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "number",
+   "question": "Roughly how many computers did the FBI count as infected by Blackshades?",
+   "answer": "The FBI counted over 500,000 infected computers in more than 100 countries. The source also reports that by May 2014 the total had reached over a million worldwide, so the exact figure depends on the count used."
+  },
+  "style": "reworded",
+  "answer": "The FBI counted more than half a million infected computers across over 100 countries, though other reporting said a million by May 2014.",
+  "expected": "got_it"
+ },
+ {
+  "id": 69,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "number",
+   "question": "Roughly how many computers did the FBI count as infected by Blackshades?",
+   "answer": "The FBI counted over 500,000 infected computers in more than 100 countries. The source also reports that by May 2014 the total had reached over a million worldwide, so the exact figure depends on the count used."
+  },
+  "style": "sloppy",
+  "answer": "fbi said over 500k in 100+ countries",
+  "expected": "got_it"
+ },
+ {
+  "id": 70,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "number",
+   "question": "Roughly how many computers did the FBI count as infected by Blackshades?",
+   "answer": "The FBI counted over 500,000 infected computers in more than 100 countries. The source also reports that by May 2014 the total had reached over a million worldwide, so the exact figure depends on the count used."
+  },
+  "style": "half",
+  "answer": "Tens of thousands of computers.",
+  "expected": "missed"
+ },
+ {
+  "id": 71,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "number",
+   "question": "Roughly how many computers did the FBI count as infected by Blackshades?",
+   "answer": "The FBI counted over 500,000 infected computers in more than 100 countries. The source also reports that by May 2014 the total had reached over a million worldwide, so the exact figure depends on the count used."
+  },
+  "style": "wrong",
+  "answer": "Around five million computers in the US alone.",
+  "expected": "missed"
+ },
+ {
+  "id": 72,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is the Fed's policy interest rate?",
+   "answer": "It is the benchmark rate the Federal Reserve sets for overnight lending between banks. Changes to it ripple out to mortgages, car loans, savings, and business borrowing across the economy."
+  },
+  "style": "reworded",
+  "answer": "It's the benchmark rate the Fed sets for overnight interbank lending, which feeds through to mortgages, car loans, savings and business borrowing.",
+  "expected": "got_it"
+ },
+ {
+  "id": 73,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is the Fed's policy interest rate?",
+   "answer": "It is the benchmark rate the Federal Reserve sets for overnight lending between banks. Changes to it ripple out to mortgages, car loans, savings, and business borrowing across the economy."
+  },
+  "style": "sloppy",
+  "answer": "rate the fed sets for banks lending to each other overnight, affects mortgages loans etc",
+  "expected": "got_it"
+ },
+ {
+  "id": 74,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is the Fed's policy interest rate?",
+   "answer": "It is the benchmark rate the Federal Reserve sets for overnight lending between banks. Changes to it ripple out to mortgages, car loans, savings, and business borrowing across the economy."
+  },
+  "style": "half",
+  "answer": "It's the interest rate set by the Fed.",
+  "expected": "partly"
+ },
+ {
+  "id": 75,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is the Fed's policy interest rate?",
+   "answer": "It is the benchmark rate the Federal Reserve sets for overnight lending between banks. Changes to it ripple out to mortgages, car loans, savings, and business borrowing across the economy."
+  },
+  "style": "wrong",
+  "answer": "It's the rate the US Treasury pays on 10-year bonds.",
+  "expected": "missed"
+ },
+ {
+  "id": 76,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is core inflation and why do central banks watch it?",
+   "answer": "Core inflation measures price changes while excluding food and energy, which swing a lot from month to month. Central banks watch it to see the underlying trend in prices."
+  },
+  "style": "reworded",
+  "answer": "It's inflation excluding food and energy because they are volatile, so central banks use it to see the underlying price trend.",
+  "expected": "got_it"
+ },
+ {
+  "id": 77,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is core inflation and why do central banks watch it?",
+   "answer": "Core inflation measures price changes while excluding food and energy, which swing a lot from month to month. Central banks watch it to see the underlying trend in prices."
+  },
+  "style": "sloppy",
+  "answer": "inflation without food n energy since those jump around, shows the underlying trend",
+  "expected": "got_it"
+ },
+ {
+  "id": 78,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is core inflation and why do central banks watch it?",
+   "answer": "Core inflation measures price changes while excluding food and energy, which swing a lot from month to month. Central banks watch it to see the underlying trend in prices."
+  },
+  "style": "half",
+  "answer": "Core inflation excludes food and energy prices.",
+  "expected": "partly"
+ },
+ {
+  "id": 79,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is core inflation and why do central banks watch it?",
+   "answer": "Core inflation measures price changes while excluding food and energy, which swing a lot from month to month. Central banks watch it to see the underlying trend in prices."
+  },
+  "style": "wrong",
+  "answer": "It's inflation in the core cities, measured by the cost of housing.",
+  "expected": "missed"
+ },
+ {
+  "id": 80,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "mechanism",
+   "question": "Why would the Fed keep rates high even after it has stopped raising them?",
+   "answer": "High rates slow borrowing and spending, which cools demand and eventually brings prices down. Cutting too early can let inflation rebound, so the Fed waits until inflation is clearly falling."
+  },
+  "style": "reworded",
+  "answer": "High rates cool borrowing and spending which brings prices down, and cutting early could let inflation come back, so they wait until it's clearly falling.",
+  "expected": "got_it"
+ },
+ {
+  "id": 81,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "mechanism",
+   "question": "Why would the Fed keep rates high even after it has stopped raising them?",
+   "answer": "High rates slow borrowing and spending, which cools demand and eventually brings prices down. Cutting too early can let inflation rebound, so the Fed waits until inflation is clearly falling."
+  },
+  "style": "sloppy",
+  "answer": "high rates slow spending and bring down prices, cut too early and inflation bounces back so wait til its clearly falling",
+  "expected": "got_it"
+ },
+ {
+  "id": 82,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "mechanism",
+   "question": "Why would the Fed keep rates high even after it has stopped raising them?",
+   "answer": "High rates slow borrowing and spending, which cools demand and eventually brings prices down. Cutting too early can let inflation rebound, so the Fed waits until inflation is clearly falling."
+  },
+  "style": "half",
+  "answer": "Because high rates reduce inflation.",
+  "expected": "partly"
+ },
+ {
+  "id": 83,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "mechanism",
+   "question": "Why would the Fed keep rates high even after it has stopped raising them?",
+   "answer": "High rates slow borrowing and spending, which cools demand and eventually brings prices down. Cutting too early can let inflation rebound, so the Fed waits until inflation is clearly falling."
+  },
+  "style": "wrong",
+  "answer": "Because the Fed wants to keep the dollar weak to help exporters.",
+  "expected": "missed"
+ },
+ {
+  "id": 84,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "number",
+   "question": "What inflation rate does the Fed target?",
+   "answer": "The Fed targets about 2% inflation per year. It treats this level as consistent with stable prices and a healthy economy."
+  },
+  "style": "reworded",
+  "answer": "Two percent per year.",
+  "expected": "got_it"
+ },
+ {
+  "id": 85,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "number",
+   "question": "What inflation rate does the Fed target?",
+   "answer": "The Fed targets about 2% inflation per year. It treats this level as consistent with stable prices and a healthy economy."
+  },
+  "style": "sloppy",
+  "answer": "2 percent",
+  "expected": "got_it"
+ },
+ {
+  "id": 86,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "number",
+   "question": "What inflation rate does the Fed target?",
+   "answer": "The Fed targets about 2% inflation per year. It treats this level as consistent with stable prices and a healthy economy."
+  },
+  "style": "half",
+  "answer": "About 3 percent, I think.",
+  "expected": "missed"
+ },
+ {
+  "id": 87,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "number",
+   "question": "What inflation rate does the Fed target?",
+   "answer": "The Fed targets about 2% inflation per year. It treats this level as consistent with stable prices and a healthy economy."
+  },
+  "style": "wrong",
+  "answer": "Zero, stable prices means no inflation.",
+  "expected": "missed"
+ },
+ {
+  "id": 88,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why does Graham say that following your interests makes you resistant to pressures like fashion, money, and other people's wishes?",
+   "answer": "Because genuine interest keeps you on a path you care about, so outside pulls have less hold on you. If you're interested in the work, you're not astray. Interest also drives you to work harder than diligence alone."
+  },
+  "style": "reworded",
+  "answer": "Real interest keeps you on a path you care about and makes you work hard, so pressures like fashion, money or other people's wishes pull on you less.",
+  "expected": "got_it"
+ },
+ {
+  "id": 89,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why does Graham say that following your interests makes you resistant to pressures like fashion, money, and other people's wishes?",
+   "answer": "Because genuine interest keeps you on a path you care about, so outside pulls have less hold on you. If you're interested in the work, you're not astray. Interest also drives you to work harder than diligence alone."
+  },
+  "style": "sloppy",
+  "answer": "if your genuinely interested you stay on track and work harder so fashion and money dont pull you off",
+  "expected": "got_it"
+ },
+ {
+  "id": 90,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why does Graham say that following your interests makes you resistant to pressures like fashion, money, and other people's wishes?",
+   "answer": "Because genuine interest keeps you on a path you care about, so outside pulls have less hold on you. If you're interested in the work, you're not astray. Interest also drives you to work harder than diligence alone."
+  },
+  "style": "half",
+  "answer": "When you're interested you don't get pulled off course.",
+  "expected": "partly"
+ },
+ {
+  "id": 91,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why does Graham say that following your interests makes you resistant to pressures like fashion, money, and other people's wishes?",
+   "answer": "Because genuine interest keeps you on a path you care about, so outside pulls have less hold on you. If you're interested in the work, you're not astray. Interest also drives you to work harder than diligence alone."
+  },
+  "style": "wrong",
+  "answer": "Because interest makes you less intelligent about trends, so you ignore criticism.",
+  "expected": "missed"
+ },
+ {
+  "id": 92,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "concept",
+   "question": "What does 'staying upwind' mean in Graham's essay?",
+   "answer": "It means not planning too far ahead. At each stage you do whatever seems most interesting and keeps the best options open for the future. The approach is like a sailor reading the wind rather than following a fixed route."
+  },
+  "style": "reworded",
+  "answer": "Not planning far ahead: at each point you do what's most interesting and keeps your options open, like a sailor reading the wind rather than following a set route.",
+  "expected": "got_it"
+ },
+ {
+  "id": 93,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "concept",
+   "question": "What does 'staying upwind' mean in Graham's essay?",
+   "answer": "It means not planning too far ahead. At each stage you do whatever seems most interesting and keeps the best options open for the future. The approach is like a sailor reading the wind rather than following a fixed route."
+  },
+  "style": "sloppy",
+  "answer": "dont plan far ahead, do the most interesting thing keep options open, like a sailor reading the wind",
+  "expected": "got_it"
+ },
+ {
+  "id": 94,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "concept",
+   "question": "What does 'staying upwind' mean in Graham's essay?",
+   "answer": "It means not planning too far ahead. At each stage you do whatever seems most interesting and keeps the best options open for the future. The approach is like a sailor reading the wind rather than following a fixed route."
+  },
+  "style": "half",
+  "answer": "Keeping your options open.",
+  "expected": "partly"
+ },
+ {
+  "id": 95,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "concept",
+   "question": "What does 'staying upwind' mean in Graham's essay?",
+   "answer": "It means not planning too far ahead. At each stage you do whatever seems most interesting and keeps the best options open for the future. The approach is like a sailor reading the wind rather than following a fixed route."
+  },
+  "style": "wrong",
+  "answer": "Staying close to the established leaders in your field so you benefit from their momentum.",
+  "expected": "missed"
+ },
+ {
+  "id": 96,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why is per-project procrastination more dangerous than per-day procrastination?",
+   "answer": "Per-project procrastination often looks like real work, since you are busy with other tasks, so it doesn't set off alarms. Delaying a big project for years can leave a lot undone."
+  },
+  "style": "reworded",
+  "answer": "Delaying a whole project looks like real work because you're busy with other things, so no alarm goes off, and years of a big project can go undone.",
+  "expected": "got_it"
+ },
+ {
+  "id": 97,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why is per-project procrastination more dangerous than per-day procrastination?",
+   "answer": "Per-project procrastination often looks like real work, since you are busy with other tasks, so it doesn't set off alarms. Delaying a big project for years can leave a lot undone."
+  },
+  "style": "sloppy",
+  "answer": "per project looks like work since your busy w other stuff so no alarms go off, big thing stays undone for yrs",
+  "expected": "got_it"
+ },
+ {
+  "id": 98,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why is per-project procrastination more dangerous than per-day procrastination?",
+   "answer": "Per-project procrastination often looks like real work, since you are busy with other tasks, so it doesn't set off alarms. Delaying a big project for years can leave a lot undone."
+  },
+  "style": "half",
+  "answer": "Because delaying a project for years leaves a lot undone.",
+  "expected": "partly"
+ },
+ {
+  "id": 99,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why is per-project procrastination more dangerous than per-day procrastination?",
+   "answer": "Per-project procrastination often looks like real work, since you are busy with other tasks, so it doesn't set off alarms. Delaying a big project for years can leave a lot undone."
+  },
+  "style": "wrong",
+  "answer": "Because projects have deadlines set by other people, whereas per-day tasks you control yourself.",
+  "expected": "missed"
+ },
+ {
+  "id": 100,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "concept",
+   "question": "What is the 'frontier of knowledge' in Graham's recipe, and why does it matter?",
+   "answer": "The frontier is the edge where known knowledge stops. From a distance it looks smooth, but up close it is full of gaps. Those gaps are where new discoveries come from, which is why you need to learn enough to reach the frontier."
+  },
+  "style": "reworded",
+  "answer": "It's the edge of what's known; from afar it looks smooth but up close it's full of gaps, and those gaps are where discoveries come from, so you must reach it.",
+  "expected": "got_it"
+ },
+ {
+  "id": 101,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "concept",
+   "question": "What is the 'frontier of knowledge' in Graham's recipe, and why does it matter?",
+   "answer": "The frontier is the edge where known knowledge stops. From a distance it looks smooth, but up close it is full of gaps. Those gaps are where new discoveries come from, which is why you need to learn enough to reach the frontier."
+  },
+  "style": "sloppy",
+  "answer": "edge of known knowledge, looks smooth far away but full of gaps up close, gaps = discoveries so you need to get there",
+  "expected": "got_it"
+ },
+ {
+  "id": 102,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "concept",
+   "question": "What is the 'frontier of knowledge' in Graham's recipe, and why does it matter?",
+   "answer": "The frontier is the edge where known knowledge stops. From a distance it looks smooth, but up close it is full of gaps. Those gaps are where new discoveries come from, which is why you need to learn enough to reach the frontier."
+  },
+  "style": "half",
+  "answer": "The frontier is the edge of what is known.",
+  "expected": "partly"
+ },
+ {
+  "id": 103,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "concept",
+   "question": "What is the 'frontier of knowledge' in Graham's recipe, and why does it matter?",
+   "answer": "The frontier is the edge where known knowledge stops. From a distance it looks smooth, but up close it is full of gaps. Those gaps are where new discoveries come from, which is why you need to learn enough to reach the frontier."
+  },
+  "style": "wrong",
+  "answer": "It's the boundary between established companies and startups where funding is available.",
+  "expected": "missed"
+ },
+ {
+  "id": 104,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "number",
+   "question": "About how many hours a day can you sustain the hardest kinds of work?",
+   "answer": "Graham suggests that some of the hardest types of work may only be sustainable for four or five hours a day. Past that point, fatigue leads to diminishing returns."
+  },
+  "style": "reworded",
+  "answer": "Roughly four or five hours a day, after which fatigue gives diminishing returns.",
+  "expected": "got_it"
+ },
+ {
+  "id": 105,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "number",
+   "question": "About how many hours a day can you sustain the hardest kinds of work?",
+   "answer": "Graham suggests that some of the hardest types of work may only be sustainable for four or five hours a day. Past that point, fatigue leads to diminishing returns."
+  },
+  "style": "sloppy",
+  "answer": "4 to 5 hrs then you get diminishing returns",
+  "expected": "got_it"
+ },
+ {
+  "id": 106,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "number",
+   "question": "About how many hours a day can you sustain the hardest kinds of work?",
+   "answer": "Graham suggests that some of the hardest types of work may only be sustainable for four or five hours a day. Past that point, fatigue leads to diminishing returns."
+  },
+  "style": "half",
+  "answer": "Around two hours.",
+  "expected": "missed"
+ },
+ {
+  "id": 107,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "number",
+   "question": "About how many hours a day can you sustain the hardest kinds of work?",
+   "answer": "Graham suggests that some of the hardest types of work may only be sustainable for four or five hours a day. Past that point, fatigue leads to diminishing returns."
+  },
+  "style": "wrong",
+  "answer": "Ten to twelve hours.",
+  "expected": "missed"
+ },
+ {
+  "id": 108,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "number",
+   "question": "What is the approximate scale of Palantir's government versus commercial revenue split in its latest quarter?",
+   "answer": "Palantir's total quarterly revenue was about $2.31 billion. US commercial revenue reached about $984 million, roughly equal to the $953 million from US government contracts, so the two segments are now about even."
+  },
+  "style": "extra",
+  "answer": "revenue 2.31 billion with commercial and government close to even",
+  "expected": "got_it"
+ },
+ {
+  "id": 109,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "number",
+   "question": "How much CPU did a per-request regex sanitizer use in one Netflix service, and how much faster was the fix?",
+   "answer": "The regex used 46% of the service's CPU time. The agent replaced it with a precomputed lookup table, which ran about 22 times faster."
+  },
+  "style": "extra",
+  "answer": "about 45% of cpu and the fix was roughly 20 times faster",
+  "expected": "got_it"
+ },
+ {
+  "id": 110,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "number",
+   "question": "According to Graham, how long might some of the hardest work be sustainable per day?",
+   "answer": "About four or five hours a day. Graham suggests arranging those hours in contiguous blocks, because interruptions make hard tasks easier to avoid."
+  },
+  "style": "extra",
+  "answer": "about 4 hours",
+  "expected": "got_it"
+ },
+ {
+  "id": 111,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "number",
+   "question": "Roughly how many computers did the FBI count as infected by Blackshades?",
+   "answer": "The FBI counted over 500,000 infected computers in more than 100 countries. The source also reports that by May 2014 the total had reached over a million worldwide, so the exact figure depends on the count used."
+  },
+  "style": "extra",
+  "answer": "around 600 thousand",
+  "expected": "got_it"
+ },
+ {
+  "id": 112,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "number",
+   "question": "What inflation rate does the Fed target?",
+   "answer": "The Fed targets about 2% inflation per year. It treats this level as consistent with stable prices and a healthy economy."
+  },
+  "style": "extra",
+  "answer": "two ish percent annual",
+  "expected": "got_it"
+ },
+ {
+  "id": 113,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "number",
+   "question": "About how many hours a day can you sustain the hardest kinds of work?",
+   "answer": "Graham suggests that some of the hardest types of work may only be sustainable for four or five hours a day. Past that point, fatigue leads to diminishing returns."
+  },
+  "style": "extra",
+  "answer": "5 hours a day",
+  "expected": "got_it"
+ },
+ {
+  "id": 114,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "mechanism",
+   "question": "Why do midterm elections often hurt the president's party?",
+   "answer": "Voters often use midterms to register approval or frustration with the sitting president, and the president's party usually loses House and Senate seats as a result. Rising prices and a weak economy can make this effect stronger."
+  },
+  "style": "extra",
+  "answer": "Because the economy is always worse at midterm time.",
+  "expected": "missed"
+ },
+ {
+  "id": 115,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does an LLM alone often miss performance problems in code it writes?",
+   "answer": "An LLM checks syntax and local logic, so the code compiles and passes unit tests. It cannot see the runtime environment, the full call stack, or how often a function runs under production load, so waste only shows up at scale."
+  },
+  "style": "extra",
+  "answer": "It's slow because of memory leaks the model can't see.",
+  "expected": "missed"
+ },
+ {
+  "id": 116,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "concept",
+   "question": "What is a remote access trojan (RAT)?",
+   "answer": "A RAT is malware that lets an attacker take remote control of a victim's computer without the victim knowing. It works like legitimate remote-support software, but it runs silently and the attacker can see files, keystrokes, passwords, and the webcam."
+  },
+  "style": "extra",
+  "answer": "it's something that spies on you",
+  "expected": "partly"
+ },
+ {
+  "id": 117,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "concept",
+   "question": "What are the four steps Graham gives for doing great work?",
+   "answer": "Choose a field you have aptitude and interest in, learn enough to reach its frontier, notice the gaps where knowledge is incomplete, and explore the promising gaps. The second and fourth steps require hard work."
+  },
+  "style": "extra",
+  "answer": "Choose a field, then explore gaps.",
+  "expected": "partly"
+ },
+ {
+  "id": 118,
+  "card": {
+   "source": "ingest_morning_brew",
+   "kind": "concept",
+   "question": "What does Marvell's Lumentum deal involve, and why does it matter for AI?",
+   "answer": "Lumentum makes lasers and optical hardware that carry data between chips and servers inside data centers. Buying it helps Marvell own more of the infrastructure AI depends on, but the size of the deal raises concerns about an AI spending bubble."
+  },
+  "style": "idk",
+  "answer": "",
+  "expected": "missed"
+ },
+ {
+  "id": 119,
+  "card": {
+   "source": "ingest_substack",
+   "kind": "mechanism",
+   "question": "Why does Netflix pair a stateless LLM with a Pattern Catalog?",
+   "answer": "LLMs start every prompt with no memory of past bugs. The catalog is a shared store of known anti-patterns that gets injected into prompts, so one team's findings can help every other team and the same bug is not rediscovered repeatedly."
+  },
+  "style": "idk",
+  "answer": "I don't know",
+  "expected": "missed"
+ },
+ {
+  "id": 120,
+  "card": {
+   "source": "pipeline_article",
+   "kind": "mechanism",
+   "question": "Why does a broken mental model make new ideas hard to see?",
+   "answer": "People see the world through models that both help and constrain them. Breaks in those models leave clues where they conflict with reality, but people tend to ignore those clues. Fixing a broken model makes the new idea look obvious afterward."
+  },
+  "style": "idk",
+  "answer": "no idea, blank",
+  "expected": "missed"
+ },
+ {
+  "id": 121,
+  "card": {
+   "source": "pipeline_podcast_apple",
+   "kind": "mechanism",
+   "question": "Why does intent decide whether selling a tool like Blackshades is illegal?",
+   "answer": "Many monitoring tools are legal, so courts look at what the seller knew and what the buyers were likely to do. Selling a tool to people who will use it for crimes, or marketing it as a cover for spying, counts as clear intent to facilitate crime."
+  },
+  "style": "idk",
+  "answer": "forgot this one",
+  "expected": "missed"
+ },
+ {
+  "id": 122,
+  "card": {
+   "source": "pipeline_youtube",
+   "kind": "concept",
+   "question": "What is core inflation and why do central banks watch it?",
+   "answer": "Core inflation measures price changes while excluding food and energy, which swing a lot from month to month. Central banks watch it to see the underlying trend in prices."
+  },
+  "style": "idk",
+  "answer": "idk",
+  "expected": "missed"
+ },
+ {
+  "id": 123,
+  "card": {
+   "source": "analyze_greatwork",
+   "kind": "mechanism",
+   "question": "Why is per-project procrastination more dangerous than per-day procrastination?",
+   "answer": "Per-project procrastination often looks like real work, since you are busy with other tasks, so it doesn't set off alarms. Delaying a big project for years can leave a lot undone."
+  },
+  "style": "idk",
+  "answer": "umm... something about procrastination? not sure",
+  "expected": "missed"
+ }
+]

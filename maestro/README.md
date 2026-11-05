@@ -5,15 +5,15 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | Flow | What it proves |
 | --- | --- |
 | `add_link.yaml` | Dev login, add a link, the worker's title appears in Library |
-| `source_page.yaml` | Dev login as the owner's user, add a finished article with a reaction, open it from Library, wait for the primer, read it |
-| `add_podcast.yaml` | Dev login as the owner's user, add a Spotify episode, open it from Library, wait for the primer, see the gist and a timestamp chip (real keys, a few cents) |
+| `source_page.yaml` | Dev login as the owner's user, add a finished article with a reaction, open it from Library, wait for the primer, open it from the primer button, see "✓ Primed" |
+| `add_podcast.yaml` | Dev login as the owner's user, add a Spotify episode, open it from Library, wait for the primer, see the gist, a timestamp chip and the primer button (real keys, a few cents) |
 | `library_queue.yaml` | Library queue: reorder by drag, snooze from a swipe; Snoozed · 1 |
 | `library_search.yaml` | Library search finds items by title and filters the list |
 | `topics.yaml` | Topics: add, remove and restore a topic |
 | `finish_item.yaml` | Finish an item: it leaves the queue and lands in the finished state |
 | `topic_picker.yaml` | Signs in as `picker-user` (no topics chosen yet), the topic picker appears, pick topics and continue |
-| `today_primer.yaml` | a prepped article's primer appears in Primers ready with the unread dot; opening it clears it (real keys, a few cents) |
-| `newsletter_*.yaml` + `run_newsletter.sh` | Log in, deliver a newsletter through `/ingest/email`, Go deeper on it |
+| `today_primer.yaml` | finish an article with "Parts lost me", its queued primer appears in Up next, open it, Mark as done (real keys, a few cents) |
+| `newsletter_*.yaml` + `run_newsletter.sh` | Log in, deliver a newsletter through `/ingest/email`, Add to queue then Undo (toast), Make review cards from the ••• menu |
 | `sign_out.yaml` | Dev login, Today tab, account button, Sign out, back on the Apple sign-in screen |
 | `offline_*.yaml` + `run_offline.sh` | Add a link with the backend down ("1 change waiting"), restart it, the change syncs and the title arrives |
 | `share_sheet.yaml` | Safari → Share → Archie opens the share sheet, and a screenshot of it matches `screenshots/share_sheet.png` (text drawn, Cancel on screen) |

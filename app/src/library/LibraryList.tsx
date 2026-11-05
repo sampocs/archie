@@ -2,7 +2,15 @@ import { useRouter } from "expo-router";
 import { ReactNode, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 
-import { deleteSource, setPrimerOpened, setRead, type PrimerTarget } from "@/db/actions";
+import {
+  deleteSource,
+  finishPrimer,
+  queuePrimer,
+  setPrimerOpened,
+  setRead,
+  type PrimerTarget,
+  type SnoozeTarget,
+} from "@/db/actions";
 import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
 import { Text } from "@/theme/components/Text";
@@ -12,6 +20,7 @@ import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
 import { ItemRow } from "@/ui/ItemRow";
 import { ProcessingLine } from "@/ui/ProcessingLine";
+import { QueuedPrimerRow } from "@/ui/QueuedPrimerRow";
 import { SnoozeSheet } from "@/ui/SnoozeSheet";
 import { SourceRow } from "@/ui/SourceRow";
 import { StatusTagView } from "@/ui/StatusTagView";
@@ -32,7 +41,7 @@ import {
 } from "./sections";
 import { formatReturnTime } from "./snooze";
 import { SwipeRow, type SwipeAction } from "./SwipeRow";
-import { isSnoozed, queueOrder, statusTag } from "./visibility";
+import { statusTag, upNext, type QueueEntry } from "./visibility";
 
 type LibraryListProps = {
   data: LibraryData;
@@ -41,10 +50,10 @@ type LibraryListProps = {
   onFilterChange: (filter: LibraryFilter) => void;
 };
 
-type Sheet = { kind: "snooze"; target: PrimerTarget; id: string } | { kind: "finish"; id: string };
+type Sheet = { kind: "snooze"; target: SnoozeTarget; id: string } | { kind: "finish"; id: string };
 
 // Swipe buttons and sheets are opened from any row, so the list hands rows these instead of each owning a sheet.
-type RowActions = { openSnooze: (target: PrimerTarget, id: string) => void; openFinish: (id: string) => void };
+type RowActions = { openSnooze: (target: SnoozeTarget, id: string) => void; openFinish: (id: string) => void };
 
 const FILTER_LABELS: Record<LibraryFilter, string> = {
   all: "All",
@@ -91,7 +100,13 @@ export function LibraryList({ data, query, filter, onFilterChange }: LibraryList
         <SnoozeSheet target={sheet.target} id={sheet.id} visible={sheetOpen} onClose={() => setSheetOpen(false)} />
       ) : null}
       {sheet?.kind === "finish" ? (
-        <FinishSheet key={sheet.id} sourceId={sheet.id} visible={sheetOpen} onClose={() => setSheetOpen(false)} />
+        <FinishSheet
+          key={sheet.id}
+          sourceId={sheet.id}
+          primerWords={data.sources.find((source) => source.id === sheet.id)?.primerWords ?? null}
+          visible={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+        />
       ) : null}
     </View>
   );
@@ -146,7 +161,7 @@ function FilterChips(props: {
 }
 
 function QueueBody({ data, now, rowActions }: { data: LibraryData; now: Date; rowActions: RowActions }) {
-  const queue = queueOrder(data.sources).filter((source) => !isSnoozed(source, now));
+  const queue = upNext(data.sources, now);
   const snoozed = byWeek(filterEntries(data, "queued"), now).snoozed;
 
   if (queue.length === 0 && snoozed.length === 0) return <EmptyFilter />;
@@ -156,14 +171,18 @@ function QueueBody({ data, now, rowActions }: { data: LibraryData; now: Date; ro
       {queue.length > 0 ? (
         <GroupedList title="Your queue · drag to reorder">
           <ReorderableQueue
-            sources={queue}
-            renderRow={(source, _index, handle) => (
+            entries={queue}
+            renderRow={(entry, _index, handle) => (
               // The handle sits beside the row, not inside it: the row's Pressable would swallow it for accessibility
               // (and Maestro), and the swipe would compete with the drag.
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View style={{ flex: 1 }}>
-                  <SwipeRow actions={swipeActions({ kind: "source", source }, "queued", rowActions)}>
-                    <LibraryItem source={source} trailing={<></>} />
+                  <SwipeRow actions={swipeActions(queueLibraryEntry(entry), "queued", rowActions)}>
+                    {entry.kind === "source" ? (
+                      <LibraryItem source={entry.source} trailing={<></>} />
+                    ) : (
+                      <QueuedPrimerRow source={entry.source} testID={`queued-primer-${entry.source.id}`} />
+                    )}
                   </SwipeRow>
                 </View>
                 {handle}
@@ -249,6 +268,8 @@ function EntryRow(props: { entry: LibraryEntry; filter: LibraryFilter; rowAction
     <SwipeRow actions={swipeActions(entry, props.filter, props.rowActions)}>
       {entry.kind === "source" ? (
         <LibraryItem source={entry.source} trailing={props.trailing} filter={props.filter} />
+      ) : entry.kind === "queuedPrimer" ? (
+        <QueuedPrimerRow source={entry.source} testID={`queued-primer-${entry.source.id}`} end={props.trailing} />
       ) : (
         <TopicPrimerItem primer={entry.primer} topic={entry.topic} trailing={props.trailing} />
       )}
@@ -270,7 +291,7 @@ function LibraryItem(props: { source: LibrarySource; trailing?: ReactNode; filte
         testID={`source-row-${source.id}`}
         onPress={
           asPrimer
-            ? () => router.push({ pathname: "/source/[id]", params: { id: source.id, primer: "1" } })
+            ? () => router.push({ pathname: "/primer/[id]", params: { id: source.id } })
             : undefined
         }
         end={
@@ -321,9 +342,16 @@ function EmptyFilter() {
   );
 }
 
+function queueLibraryEntry(entry: QueueEntry): LibraryEntry {
+  return { kind: entry.kind === "source" ? "source" : "queuedPrimer", source: entry.source };
+}
+
 /** The swipe buttons for a row: what fits its state, or none. Every action syncs right away. */
 function swipeActions(entry: LibraryEntry, filter: LibraryFilter, rowActions: RowActions): SwipeAction[] {
-  if (entry.kind === "topicPrimer") return primerActions("topic_primer", entry.primer.id, entry.primer.openedAt, rowActions);
+  if (entry.kind === "topicPrimer") {
+    return primerActions("topic_primer", entry.primer.id, entry.primer.openedAt, rowActions);
+  }
+  if (entry.kind === "queuedPrimer") return queuedPrimerActions(entry.source.id, rowActions);
 
   const source = entry.source;
   const snoozeAction: SwipeAction = {
@@ -398,6 +426,41 @@ function primerActions(target: PrimerTarget, id: string, openedAt: string | null
       onPress: () => {
         setPrimerOpened(db, target, id, !openedAt);
         haptic("light");
+        requestSync();
+      },
+    },
+  ];
+}
+
+// A queued primer swipes like a queued source: done (off the queue, read), snooze, or just off the queue.
+function queuedPrimerActions(sourceId: string, rowActions: RowActions): SwipeAction[] {
+  return [
+    {
+      key: "snooze",
+      label: "Snooze",
+      tone: "neutral",
+      testID: `swipe-snooze-primer-${sourceId}`,
+      onPress: () => rowActions.openSnooze("source_primer", sourceId),
+    },
+    {
+      key: "remove",
+      label: "Remove",
+      tone: "chrome",
+      testID: `swipe-remove-primer-${sourceId}`,
+      onPress: () => {
+        queuePrimer(db, sourceId, false);
+        haptic("light");
+        requestSync();
+      },
+    },
+    {
+      key: "done",
+      label: "Done",
+      tone: "gotIt",
+      testID: `swipe-done-primer-${sourceId}`,
+      onPress: () => {
+        finishPrimer(db, sourceId);
+        haptic("success");
         requestSync();
       },
     },

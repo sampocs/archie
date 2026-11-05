@@ -7,6 +7,8 @@ import { Text } from "@/theme/components/Text";
 import { BottomSheet } from "@/ui/BottomSheet";
 import { Markdown } from "@/ui/Markdown";
 
+import { emailParagraphs } from "./emailText";
+
 type FullEmailSheetProps = { sourceId: string; visible: boolean; onClose: () => void };
 type LoadState = { status: "loading" } | { status: "offline" } | { status: "ready"; text: string };
 
@@ -39,7 +41,7 @@ export function FullEmailSheet({ sourceId, visible, onClose }: FullEmailSheetPro
       {state.status === "offline" ? <Text testID="full-email-offline">Needs a connection.</Text> : null}
       {state.status === "ready" ? (
         <ScrollView style={{ maxHeight: 520 }}>
-          <Markdown text={state.text} />
+          <Markdown text={emailParagraphs(state.text)} />
         </ScrollView>
       ) : null}
     </BottomSheet>

@@ -9,13 +9,26 @@ appId: com.sampocs.archie
     visible: ".*Putting it to a vote.*"
     timeout: 180000
 - tapOn: ".*Putting it to a vote.*"
-# The summary has to be ready before Go deeper means anything.
+# The summary has to be ready before Make review cards is offered.
 - extendedWaitUntil:
-    visible:
-      id: "item-go-deeper"
+    notVisible: "Processing…"
     timeout: 120000
+# Add to queue confirms with a toast; Undo puts it back in the inbox.
 - tapOn:
-    id: "item-go-deeper"
+    id: "item-add-to-queue"
+- assertVisible: "Added to your queue"
+- assertVisible:
+    id: "item-finish"
+- tapOn:
+    id: "toast-action"
+- assertVisible:
+    id: "item-add-to-queue"
+- assertNotVisible:
+    id: "item-finish"
+- tapOn:
+    id: "item-more"
+- tapOn:
+    id: "menu-review-cards"
 # The cards land below the summary, so scroll down to them while the worker writes them.
 - scrollUntilVisible:
     element:

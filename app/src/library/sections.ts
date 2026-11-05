@@ -7,6 +7,8 @@ export const LIBRARY_FILTERS: LibraryFilter[] = ["all", "queued", "done", "inbox
 
 export type LibraryEntry =
   | { kind: "source"; source: LibrarySource }
+  // A source's primer queued as its own entry; only the Queued filter lists it.
+  | { kind: "queuedPrimer"; source: LibrarySource }
   | { kind: "topicPrimer"; primer: TopicPrimerRow; topic: TopicRow };
 
 export type WeekSections = { thisWeek: LibraryEntry[]; earlier: LibraryEntry[]; snoozed: LibraryEntry[] };
@@ -18,27 +20,39 @@ export function isLibraryFilter(value: unknown): value is LibraryFilter {
 }
 
 export function entryKey(entry: LibraryEntry): string {
-  return entry.kind === "source" ? `source-${entry.source.id}` : `topic-primer-${entry.primer.id}`;
+  if (entry.kind === "source") return `source-${entry.source.id}`;
+  if (entry.kind === "queuedPrimer") return `queued-primer-${entry.source.id}`;
+  return `topic-primer-${entry.primer.id}`;
 }
 
 export function entryCreatedAt(entry: LibraryEntry): string {
-  return entry.kind === "source" ? entry.source.createdAt : entry.primer.createdAt;
+  return entry.kind === "topicPrimer" ? entry.primer.createdAt : entry.source.createdAt;
 }
 
 export function entrySnoozedUntil(entry: LibraryEntry): string | null {
-  return entry.kind === "source" ? entry.source.snoozedUntil : entry.primer.snoozedUntil;
+  if (entry.kind === "source") return entry.source.snoozedUntil;
+  if (entry.kind === "queuedPrimer") return entry.source.primerSnoozedUntil;
+  return entry.primer.snoozedUntil;
 }
 
-/** The entries a filter shows, snoozed ones included (Decision 12); topic primers of removed or merged topics never show. */
+/**
+ * The entries a filter shows, snoozed ones included (Decision 12); topic primers of removed or merged topics never
+ * show. Queued lists queued primers too; Primers lists every source with a primer, plus topic primers.
+ */
 export function filterEntries(data: LibraryData, filter: LibraryFilter): LibraryEntry[] {
   const sources = (keep: (source: LibrarySource) => boolean): LibraryEntry[] =>
     data.sources.filter(keep).map((source) => ({ kind: "source", source }));
 
-  if (filter === "queued") return sources((source) => source.state === "queued");
+  if (filter === "queued") {
+    const queuedPrimers: LibraryEntry[] = data.sources
+      .filter((source) => source.primerQueuePosition !== null)
+      .map((source) => ({ kind: "queuedPrimer", source }));
+    return [...sources((source) => source.state === "queued"), ...queuedPrimers];
+  }
   if (filter === "done") return sources((source) => source.state === "consumed");
   if (filter === "inbox") return sources((source) => source.state === "inbox" || source.state === "briefed");
   if (filter === "primers") {
-    return [...sources((source) => source.prepMe === 1 && source.primerCreatedAt !== null), ...topicPrimerEntries(data)];
+    return [...sources((source) => source.primerCreatedAt !== null), ...topicPrimerEntries(data)];
   }
   return [...sources(() => true), ...topicPrimerEntries(data)];
 }

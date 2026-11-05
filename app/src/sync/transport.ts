@@ -46,6 +46,15 @@ const TOPIC_ACTIONS = new Set([
   "request_topic_primer",
 ]);
 
+// Source actions whose optimistic edit a rejection must undo by re-pulling the server copy.
+const REWOUND_SOURCE_ACTIONS = new Set([
+  "go_deeper",
+  "choose_episode",
+  "queue_primer",
+  "request_primer",
+  "return_to_inbox",
+]);
+
 export function createDbSyncStore(
   db: AppDb,
   runEpoch: number = getSessionEpoch(),
@@ -107,13 +116,12 @@ export function createDbSyncStore(
 
         // A rejection doesn't bump the row's change_seq, so no pull would undo the optimistic edit; rewinding the
         // position makes the next pull re-send the server's topic or topic primer.
-        // go_deeper / choose_episode also change state/processing optimistically, so they rewind too, and still
-        // surface syncError on the source below.
+        // Source actions that change state, processing or the primer's queue entry optimistically rewind too, and
+        // still surface syncError on the source below.
         const rewind =
           TOPIC_ACTIONS.has(entry.type) ||
           payload.target === "topic_primer" ||
-          entry.type === "go_deeper" ||
-          entry.type === "choose_episode";
+          REWOUND_SOURCE_ACTIONS.has(entry.type);
         if (rewind) {
           tx.update(schema.syncState)
             .set({ position: 0 })
@@ -188,7 +196,6 @@ export function createDbSyncStore(
             processingError: source.processing_error,
             reaction: source.reaction,
             note: source.note,
-            prepMe: source.prep_me ? 1 : 0,
             mergedIntoId: source.merged_into_id,
             sender: source.sender,
             domain: source.domain,
@@ -198,6 +205,8 @@ export function createDbSyncStore(
             readAt: source.read_at,
             snoozedUntil: source.snoozed_until,
             primerOpenedAt: source.primer_opened_at,
+            primerQueuePosition: source.primer_queue_position,
+            primerSnoozedUntil: source.primer_snoozed_until,
             newsletterKind: source.newsletter_kind,
           };
           tx.insert(schema.sources)

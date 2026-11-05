@@ -1,12 +1,12 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
-import { deleteSource, setRead, setSourceTopic } from "@/db/actions";
+import { deleteSource, goDeeper, queuePrimer, setRead, setSourceTopic } from "@/db/actions";
 import { db } from "@/db/client";
 import type * as schema from "@/db/schema";
 import { requestSync } from "@/sync/useSync";
 import { haptic } from "@/ui/haptics";
-import { MenuSheet } from "@/ui/MenuSheet";
+import { MenuSheet, type MenuItem } from "@/ui/MenuSheet";
 import { SnoozeSheet } from "@/ui/SnoozeSheet";
 import { TopicChooserSheet } from "@/ui/TopicChooserSheet";
 
@@ -16,21 +16,24 @@ type SourceRow = typeof schema.sources.$inferSelect;
 type ItemMenuProps = { source: SourceRow; visible: boolean; onClose: () => void };
 type Panel = "topic" | "snooze" | "episodes" | null;
 
-/** The ••• menu and the sheets its entries open. */
+/**
+ * The ••• menu, grouped by how often each is used: [Remind me later…, Mark as read/unread]
+ * [Queue the primer, Make review cards, Change topic, Wrong episode?] [Delete]; and the sheets its entries open.
+ */
 export function ItemMenu({ source, visible, onClose }: ItemMenuProps) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>(null);
-  const canToggleRead = source.kind === "newsletter" && (source.state === "inbox" || source.state === "briefed");
+  const inInbox = source.state === "inbox" || source.state === "briefed";
   const isRead = source.readAt !== null;
+  const primerQueued = source.primerQueuePosition !== null;
 
-  const items = [
-    { testID: "menu-change-topic", label: "Change topic", onPress: () => setPanel("topic") },
-    { testID: "menu-snooze", label: "Snooze", onPress: () => setPanel("snooze") },
-    ...(canToggleRead
+  const items: MenuItem[] = [
+    { testID: "menu-snooze", label: "Remind me later…", onPress: () => setPanel("snooze") },
+    ...(source.kind === "newsletter" && inInbox
       ? [
           {
             testID: "menu-read",
-            label: isRead ? "Mark unread" : "Mark read",
+            label: isRead ? "Mark as unread" : "Mark as read",
             onPress: () => {
               setRead(db, source.id, !isRead);
               requestSync();
@@ -38,6 +41,33 @@ export function ItemMenu({ source, visible, onClose }: ItemMenuProps) {
           },
         ]
       : []),
+    {
+      testID: "menu-queue-primer",
+      label: primerQueued ? "Primer is queued" : "Queue the primer",
+      subtitle: primerQueued ? undefined : "Adds it to your queue as its own item",
+      startsGroup: true,
+      onPress: () => {
+        queuePrimer(db, source.id, !primerQueued);
+        haptic("success");
+        requestSync();
+      },
+    },
+    // The server rejects go_deeper until the source is ready.
+    ...(inInbox && source.processing === "ready"
+      ? [
+          {
+            testID: "menu-review-cards",
+            label: "Make review cards",
+            subtitle: "Marks it done and writes a primer",
+            onPress: () => {
+              goDeeper(db, source.id);
+              haptic("success");
+              requestSync();
+            },
+          },
+        ]
+      : []),
+    { testID: "menu-change-topic", label: "Change topic", onPress: () => setPanel("topic") },
     ...(source.kind === "podcast"
       ? [{ testID: "menu-episode", label: "Wrong episode?", onPress: () => setPanel("episodes") }]
       : []),
@@ -45,6 +75,7 @@ export function ItemMenu({ source, visible, onClose }: ItemMenuProps) {
       testID: "menu-delete",
       label: "Delete",
       destructive: true,
+      startsGroup: true,
       onPress: () => {
         deleteSource(db, source.id);
         haptic("success");

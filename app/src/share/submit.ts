@@ -37,7 +37,7 @@ export function buildShareAction(input: ShareInput): OutboxEntry {
       intent: choice.intent,
       ...(choice.reaction ? { reaction: choice.reaction } : {}),
       ...(choice.note ? { note: choice.note } : {}),
-      ...(choice.prepMe ? { prep_me: true } : {}),
+      ...(choice.queuePrimer ? { queue_primer: true } : {}),
       ...(keepCapture ? { capture: { title: truncateTitle(capture.title), text: capture.text } } : {}),
     },
   };
@@ -82,7 +82,7 @@ export function shareDeepLink(input: { url: string; choice: CaptureChoice }): st
   if (choice.intent) params.push(`intent=${choice.intent}`);
   if (choice.reaction) params.push(`reaction=${choice.reaction}`);
   if (choice.note) params.push(`note=${encodeShareParam(choice.note)}`);
-  if (choice.prepMe) params.push("prep_me=1");
+  if (choice.queuePrimer) params.push("queue_primer=1");
   return `share?${params.join("&")}`;
 }
 

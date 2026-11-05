@@ -11,13 +11,13 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
 
-import type { LibrarySource } from "./join";
 import { dropIndex, positionAfterMove } from "./queue";
+import type { QueueEntry } from "./visibility";
 
 type ReorderableQueueProps = {
-  sources: LibrarySource[];
+  entries: QueueEntry[];
   // `handle` is the row's drag handle; the row places it as its trailing view.
-  renderRow: (source: LibrarySource, index: number, handle: ReactNode) => ReactNode;
+  renderRow: (entry: QueueEntry, index: number, handle: ReactNode) => ReactNode;
 };
 
 // The expected row height; each row reports its real one once laid out.
@@ -34,15 +34,18 @@ type DragState = {
   heights: SharedValue<number[]>;
 };
 
-/** The queue in order, reordered by dragging a row's ≡ handle; rows in between slide aside while dragging. */
-export function ReorderableQueue({ sources, renderRow }: ReorderableQueueProps) {
+/**
+ * The queue in order (sources and queued primers), reordered by dragging a row's ≡ handle; rows in between slide
+ * aside while dragging.
+ */
+export function ReorderableQueue({ entries, renderRow }: ReorderableQueueProps) {
   const theme = useTheme();
   const from = useSharedValue(NOT_DRAGGING);
   const to = useSharedValue(NOT_DRAGGING);
   const translationY = useSharedValue(0);
   const heights = useSharedValue<number[]>([]);
   const drag = useMemo<DragState>(() => ({ from, to, translationY, heights }), [from, to, translationY, heights]);
-  const order = sources.map((source) => source.id).join(",");
+  const order = entries.map((entry) => entry.key).join(",");
   const latestOrder = useRef(order);
   latestOrder.current = order;
   // Row heights live on the JS side and are copied to the UI thread: reading a shared value on the JS thread returns
@@ -50,7 +53,7 @@ export function ReorderableQueue({ sources, renderRow }: ReorderableQueueProps) 
   const heightsById = useRef(new Map<string, number>());
 
   function publishHeights(): void {
-    drag.heights.value = sources.map((source) => heightsById.current.get(source.id) ?? QUEUE_ROW_HEIGHT);
+    drag.heights.value = entries.map((entry) => heightsById.current.get(entry.key) ?? QUEUE_ROW_HEIGHT);
   }
 
   function release(): void {
@@ -67,8 +70,11 @@ export function ReorderableQueue({ sources, renderRow }: ReorderableQueueProps) 
   }, [order]);
 
   function onMove(moveFrom: number, moveTo: number): void {
-    const positions = sources.map((source, index) => source.queuePosition ?? index);
-    setQueuePosition(db, sources[moveFrom].id, positionAfterMove(positions, moveFrom, moveTo));
+    // Sources and primers share one position space; the moved entry says which of its source's positions changes.
+    const positions = entries.map((entry, index) => entry.position ?? index);
+    const moved = entries[moveFrom];
+    const target = moved.kind === "primer" ? "source_primer" : "source";
+    setQueuePosition(db, moved.source.id, positionAfterMove(positions, moveFrom, moveTo), target);
     haptic("light");
     requestSync();
 
@@ -86,16 +92,16 @@ export function ReorderableQueue({ sources, renderRow }: ReorderableQueueProps) 
 
   return (
     <View>
-      {sources.map((source, index) => (
+      {entries.map((entry, index) => (
         <QueueRow
-          key={source.id}
+          key={entry.key}
           index={index}
           drag={drag}
           onMove={onMove}
-          onLayout={(height) => onLayoutRow(source.id, height)}
+          onLayout={(height) => onLayoutRow(entry.key, height)}
           divider={index > 0 ? theme.colors.line : null}
         >
-          {(handle) => renderRow(source, index, handle)}
+          {(handle) => renderRow(entry, index, handle)}
         </QueueRow>
       ))}
     </View>

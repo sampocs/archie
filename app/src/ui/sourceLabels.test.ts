@@ -1,4 +1,4 @@
-import { kindLabel, sourceByline, sourceMeta, stateLabel } from "./sourceLabels";
+import { datedByline, itemBadge, kindLabel, sourceByline, sourceMeta } from "./sourceLabels";
 
 describe("sourceByline", () => {
   it("uses a newsletter's sender, or 'Newsletter' without one", () => {
@@ -19,15 +19,6 @@ describe("sourceByline", () => {
   });
 });
 
-describe("stateLabel", () => {
-  it("maps the known states and capitalizes the rest", () => {
-    expect(stateLabel("inbox")).toBe("Inbox");
-    expect(stateLabel("queued")).toBe("Queued");
-    expect(stateLabel("consumed")).toBe("Done");
-    expect(stateLabel("archived")).toBe("Archived");
-  });
-});
-
 describe("kindLabel and sourceMeta", () => {
   it("labels each kind, defaulting to Link", () => {
     expect(["podcast", "youtube", "article", "x", "newsletter", "other"].map(kindLabel)).toEqual([
@@ -44,5 +35,38 @@ describe("kindLabel and sourceMeta", () => {
     expect(sourceMeta({ kind: "newsletter", url: "https://x.test", sender: "Morning Brew" })).toBe(
       "Newsletter · Morning Brew",
     );
+  });
+});
+
+describe("datedByline", () => {
+  // jest.config.js pins TZ to America/New_York.
+  const now = new Date(2026, 10, 4, 9);
+
+  it("gives a newsletter its full send date, however old", () => {
+    const createdAt = new Date(2026, 9, 21, 7).toISOString();
+    expect(datedByline({ kind: "newsletter", url: "newsletter:1", sender: "Morning Brew", createdAt }, now)).toBe(
+      "Morning Brew · Wed, Oct 21",
+    );
+  });
+
+  it("says when anything else was added: the weekday within six days, else the date", () => {
+    const pod = { kind: "podcast", url: "https://open.spotify.com/episode/1", sender: null };
+    expect(datedByline({ ...pod, createdAt: new Date(2026, 10, 2, 8).toISOString() }, now)).toBe(
+      "open.spotify.com · Added Mon",
+    );
+    expect(datedByline({ ...pod, createdAt: new Date(2026, 9, 25, 8).toISOString() }, now)).toBe(
+      "open.spotify.com · Added Oct 25",
+    );
+  });
+});
+
+describe("itemBadge", () => {
+  it.each([
+    ["inbox", "Inbox"],
+    ["briefed", "Inbox"],
+    ["queued", "Queued"],
+    ["consumed", "Done"],
+  ])("%s → %s", (state, badge) => {
+    expect(itemBadge(state)).toBe(badge);
   });
 });

@@ -54,12 +54,13 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     wants_cards = run.kind != models.SourceKind.NEWSLETTER or source.state == models.SourceState.CONSUMED
     if analysis["is_educational"] and wants_cards:
         _insert_cards(db, source=source, artifact_id=summary.id, cards=analysis["cards"])
-    pipeline.finish_step(db, source=source)
 
-    # File each source once, after its first summary; a re-analysis never overrides a topic the user chose.
+    # File each source once, after its first summary; a re-analysis never overrides a topic the user chose. Queued
+    # before `finish_step` so a newsletter's kind (news or essay) is known when the brief rewrite it queues runs.
     user = db.get_one(models.User, source.user_id)
     if source.domain is None and user.topics_chosen_at is not None:
         user_topics.enqueue_file_topic(db, source=source)
+    pipeline.finish_step(db, source=source)
 
 
 def _clean_timestamps(analysis: dict[str, Any]) -> None:

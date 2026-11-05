@@ -1,0 +1,130 @@
+{
+  "summary": {
+    "gist": "Netflix built an AI performance agent that reads raw profiler output, finds wasteful code, tests fixes on a canary server, and asks a human to approve the change. A shared Git-based Pattern Catalog of known anti-patterns lets the system remember findings across teams and check pull requests before they merge.",
+    "key_ideas": [
+      {
+        "timestamp": null,
+        "idea": "Performance engineering means making software fast and cheap to run. Traditionally, finding slow code was manual and depended on a few expert developers reading flame graphs (charts showing where a program spends its time)."
+      },
+      {
+        "timestamp": null,
+        "idea": "AI coding tools let developers write code up to 10 times faster, but fast-to-write code often hides performance problems. LLMs check syntax and local logic well, but they cannot see the runtime environment or the full call stack at scale."
+      },
+      {
+        "timestamp": null,
+        "idea": "Profilers across languages share a common idea. They break execution into call stacks and report inclusive time (everything a function triggers) and self time (work done inside the function itself). So one analysis pipeline can work across many runtimes."
+      },
+      {
+        "timestamp": null,
+        "idea": "LLMs know classic anti-patterns such as quadratic loops, loop invariants, excessive allocation, and N+1 queries. So the workflow can pattern-match known bugs against real call stacks instead of asking the model to guess."
+      },
+      {
+        "timestamp": null,
+        "idea": "Scoping matters. Without boundaries, the model wastes effort on JVM garbage collection, kernel calls, and third-party framework code. Strict package prefix rules keep it focused on the application's own code."
+      },
+      {
+        "timestamp": null,
+        "idea": "Safety comes from a standard software release process. Changes must pass unit, integration, and contract tests. Then a canary (a small share of live traffic runs the new code next to an unchanged baseline). Telemetry is compared without using an AI judge. A human makes the final deploy decision."
+      },
+      {
+        "timestamp": null,
+        "idea": "Production-only profiling has limits. Waste is paid for while it runs, teams hesitate to change healthy services, and the same mistake gets found again in many services. So Netflix moved checks earlier, into development."
+      },
+      {
+        "timestamp": null,
+        "idea": "LLMs are stateless, so the Pattern Catalog acts as shared memory. It is a plain Markdown Git repository, inspired by Andrej Karpathy's LLM-wiki idea, with no vector database. Git gives diffs, pull requests, and history, and humans can review entries."
+      },
+      {
+        "timestamp": null,
+        "idea": "There are two paths. The reactive path profiles production, tests fixes on canaries, and records new findings in the catalog. The proactive path runs a fast regex or symbol match on each pull request, and an LLM leaves an inline comment with the resource impact and a suggested fix before merge."
+      },
+      {
+        "timestamp": null,
+        "idea": "Netflix describes a four-level maturity ladder. Level 0 is manual work. Level 1 is an AI assistant that reads stack dumps. Level 2 is orchestration with proactive scanning and the catalog, which is where Netflix is now. Level 3 is a long-term goal where agents create and benchmark their own optimization strategies."
+      }
+    ],
+    "numbers": [
+      {
+        "timestamp": null,
+        "fact": "Developers using AI tools can generate and ship code up to 10 times faster than before."
+      },
+      {
+        "timestamp": null,
+        "fact": "A utility function on a critical request path might run 10 million times per second, so small inefficiencies multiply hard."
+      },
+      {
+        "timestamp": null,
+        "fact": "JVM async-profiler and Java Flight Recorder can sample at 100 Hz (100 samples per second)."
+      },
+      {
+        "timestamp": null,
+        "fact": "An O(N^2) stream reduction that copied the map on every step wasted 8.8% of CPU."
+      },
+      {
+        "timestamp": null,
+        "fact": "A per-request regex sanitizer used 46% of one service's CPU. A precomputed lookup table made it 22 times faster."
+      },
+      {
+        "timestamp": null,
+        "fact": "Creating a new HashSet on every call used 47% of one service's heap allocations and caused OOM crashes."
+      },
+      {
+        "timestamp": null,
+        "fact": "Metric counter lookups on every call consumed 66% of CPU, while the real business logic used only 0.3%. The same bug appeared in three services."
+      }
+    ]
+  },
+  "domain": "Tech",
+  "topic": "AI-assisted performance engineering",
+  "tags": [
+    "performance engineering",
+    "profiling",
+    "LLM agents",
+    "Netflix",
+    "canary deployment",
+    "code review",
+    "observability"
+  ],
+  "concepts": [
+    "flame graph",
+    "call stack",
+    "inclusive time",
+    "self CPU time",
+    "profiler sampling",
+    "anti-pattern",
+    "quadratic complexity",
+    "canary deployment",
+    "stateless LLM",
+    "Pattern Catalog",
+    "shift left testing",
+    "maturity spectrum"
+  ],
+  "is_educational": true,
+  "cards": [
+    {
+      "kind": "concept",
+      "question": "What is the difference between inclusive time and self time in a profiler?",
+      "answer": "Inclusive time is the total time a function spends running, including every function it calls. Self time is only the time spent in the function's own code, not in anything it calls."
+    },
+    {
+      "kind": "mechanism",
+      "question": "Why does an LLM alone often miss performance problems in code it writes?",
+      "answer": "An LLM checks syntax and local logic, so the code compiles and passes unit tests. It cannot see the runtime environment, the full call stack, or how often a function runs under production load, so waste only shows up at scale."
+    },
+    {
+      "kind": "mechanism",
+      "question": "Why does Netflix pair a stateless LLM with a Pattern Catalog?",
+      "answer": "LLMs start every prompt with no memory of past bugs. The catalog is a shared store of known anti-patterns that gets injected into prompts, so one team's findings can help every other team and the same bug is not rediscovered repeatedly."
+    },
+    {
+      "kind": "number",
+      "question": "How much CPU did a per-request regex sanitizer use in one Netflix service, and how much faster was the fix?",
+      "answer": "The regex used 46% of the service's CPU time. The agent replaced it with a precomputed lookup table, which ran about 22 times faster."
+    },
+    {
+      "kind": "mechanism",
+      "question": "Why do strict package prefix rules help an agent analyze a profile?",
+      "answer": "Without them, the model spends effort on JVM garbage collection, kernel calls, and third-party framework overhead that developers cannot change. Prefix rules keep the analysis on the application code they can actually fix."
+    }
+  ]
+}

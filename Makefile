@@ -89,7 +89,7 @@ MAESTRO_PATH := /opt/homebrew/opt/openjdk@17/bin:$(HOME)/.maestro/bin:$(PATH)
 
 # Empty the local development database's synced data so a flow never sees leftovers from an earlier run.
 reset-local-data: db-up
-	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, topic_primers, topics, sources, sessions, users RESTART IDENTITY CASCADE"
+	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, briefs, topic_primers, topics, sources, sessions, users RESTART IDENTITY CASCADE"
 
 # The flows that only need a running backend (`make start-local` in another terminal).
 # source_page and today_primer call Anthropic for real, so a run spends a few cents.
@@ -104,8 +104,12 @@ maestro-podcast: reset-local-data
 maestro-newsletter: reset-local-data
 	@maestro/run_newsletter.sh
 
+# Delivers a news newsletter and an essay, then reads the brief (needs INGEST_SECRET and the owner's keys in .env; a few cents).
+maestro-brief: reset-local-data
+	@maestro/run_brief.sh
+
 # Starts and stops the backend itself, to take the phone offline mid-flow.
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-brief maestro-offline

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
@@ -8,16 +9,19 @@ import { newsletterAddressFrom } from "@/account/newsletterAddress";
 import { apiFetch } from "@/api/client";
 import { useSession } from "@/auth/session";
 import { useSignOut } from "@/context/SignOutContext";
-import { upNext, waitingNewsletters } from "@/library/visibility";
+import { todayBrief } from "@/brief/brief";
+import { BriefPreviewCard } from "@/brief/BriefPreviewCard";
+import { db } from "@/db/client";
+import * as schema from "@/db/schema";
+import { upNext } from "@/library/visibility";
 import { useLibraryData } from "@/library/useLibraryData";
 import { Button } from "@/theme/components/Button";
 import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
-import { sinceLabel, newslettersLine, todayDate } from "@/today/todayLabels";
+import { todayDate } from "@/today/todayLabels";
 import { GroupedList } from "@/ui/GroupedList";
-import { ItemRow } from "@/ui/ItemRow";
 import { QueuedPrimerRow } from "@/ui/QueuedPrimerRow";
 import { SourceRow } from "@/ui/SourceRow";
 import { useNow } from "@/ui/useNow";
@@ -29,6 +33,7 @@ export default function TodayScreen() {
   const router = useRouter();
   const now = useNow();
   const data = useLibraryData();
+  const { data: briefs } = useLiveQuery(db.select().from(schema.briefs));
   const signOut = useSignOut();
   const session = useSession();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -56,8 +61,8 @@ export default function TodayScreen() {
   // Up next is the combined queue: queued sources and queued primers.
   const queued = upNext(data.sources, now);
   const upNextItems = queued.slice(0, UP_NEXT_COUNT);
-  const newsletters = waitingNewsletters(data.sources, now);
-  const isEmpty = upNextItems.length === 0 && newsletters.count === 0;
+  const brief = todayBrief(briefs, data.sources);
+  const isEmpty = upNextItems.length === 0 && brief === null;
 
   const accountButton = (
     <View
@@ -121,6 +126,8 @@ export default function TodayScreen() {
         </Card>
       ) : null}
 
+      {brief ? <BriefPreviewCard state={brief} /> : null}
+
       {upNextItems.length > 0 ? (
         <GroupedList
           title="Up next"
@@ -146,23 +153,6 @@ export default function TodayScreen() {
               <QueuedPrimerRow key={entry.key} source={entry.source} testID={`up-next-${index}`} />
             ),
           )}
-        </GroupedList>
-      ) : null}
-
-      {newsletters.count > 0 && newsletters.since ? (
-        <GroupedList title="Newsletters">
-          <ItemRow
-            testID="today-newsletters"
-            artwork={{ imageUrl: null, domain: "Finance", monogram: "✉" }}
-            kicker={{ domain: "Finance", label: "Inbox" }}
-            title={newslettersLine(newsletters.count)}
-            meta={`${newsletters.senders.join(", ")} · ${sinceLabel(newsletters.since, now)}`}
-            end={<Text tone="ink3">›</Text>}
-            onPress={() => router.push({
-                pathname: "/(tabs)/library",
-                params: { filter: "inbox", at: String(Date.now()) },
-              })}
-          />
         </GroupedList>
       ) : null}
 

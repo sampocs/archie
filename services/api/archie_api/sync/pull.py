@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import dataclasses
+import datetime
 from collections.abc import Mapping, Sequence
 from enum import StrEnum
 from typing import Protocol
@@ -14,6 +15,9 @@ from sqlalchemy import orm
 from archie_api.sync import schemas
 
 PULL_PAGE_SIZE = 500
+
+# Done briefs older than this are not sent: the phone shows only the open brief and recent ones.
+DONE_BRIEF_WINDOW = datetime.timedelta(days=7)
 
 
 class _Positioned(Protocol):
@@ -29,6 +33,7 @@ class PulledTable(StrEnum):
     CARDS = "cards"
     TOPICS = "topics"
     TOPIC_PRIMERS = "topic_primers"
+    BRIEFS = "briefs"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -41,8 +46,15 @@ class MergedPage[RowT: _Positioned]:
 
 
 def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL_PAGE_SIZE) -> schemas.PullResponse:
-    """Rows (deleted ones included) from the five synced tables with a position above `since`, oldest first."""
+    """Rows (deleted ones included) from the six synced tables with a position above `since`, oldest first.
+
+    Of the briefs, only the open one and those done in the last 7 days are sent.
+    """
     artifact_kinds = models.SourceArtifact.kind.in_([kind.value for kind in models.SYNCED_ARTIFACT_KINDS])
+    recent_brief = sqlalchemy.or_(
+        models.Brief.status == models.BriefStatus.OPEN.value,
+        models.Brief.done_at >= sqlalchemy.func.now() - DONE_BRIEF_WINDOW,
+    )
     tables: dict[str, Sequence[_Positioned]] = {
         PulledTable.SOURCES: _changed_rows(db, models.Source, user_id=user_id, since=since, limit=limit),
         PulledTable.ARTIFACTS: _changed_rows(
@@ -51,6 +63,7 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
         PulledTable.CARDS: _changed_rows(db, models.Card, user_id=user_id, since=since, limit=limit),
         PulledTable.TOPICS: _changed_rows(db, models.Topic, user_id=user_id, since=since, limit=limit),
         PulledTable.TOPIC_PRIMERS: _changed_rows(db, models.TopicPrimer, user_id=user_id, since=since, limit=limit),
+        PulledTable.BRIEFS: _changed_rows(db, models.Brief, recent_brief, user_id=user_id, since=since, limit=limit),
     }
     page = merge_page(tables=tables, since=since, limit=limit)
 
@@ -61,6 +74,7 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
             cards=[schemas.CardOut.model_validate(row) for row in page.rows[PulledTable.CARDS]],
             topics=[schemas.TopicOut.model_validate(row) for row in page.rows[PulledTable.TOPICS]],
             topic_primers=[schemas.TopicPrimerOut.model_validate(row) for row in page.rows[PulledTable.TOPIC_PRIMERS]],
+            briefs=[schemas.BriefOut.model_validate(row) for row in page.rows[PulledTable.BRIEFS]],
         ),
         position=page.position,
         more=page.more,
@@ -85,7 +99,9 @@ def merge_page[RowT: _Positioned](*, tables: Mapping[str, Sequence[RowT]], since
     )
 
 
-def _changed_rows[RowT: (models.Source, models.SourceArtifact, models.Card, models.Topic, models.TopicPrimer)](
+def _changed_rows[
+    RowT: (models.Source, models.SourceArtifact, models.Card, models.Topic, models.TopicPrimer, models.Brief)
+](
     db: orm.Session, model: type[RowT], *criteria: sqlalchemy.ColumnElement[bool], user_id: int, since: int, limit: int
 ) -> list[RowT]:
     """The user's `limit` oldest `model` rows above `since` that match `criteria`."""

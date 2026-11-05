@@ -47,14 +47,3 @@ export function queueOrder(sources: LibrarySource[]): QueueEntry[] {
 export function upNext(sources: LibrarySource[], now: Date): QueueEntry[] {
   return queueOrder(sources).filter((entry) => !isSnoozed({ snoozedUntil: queueEntrySnoozedUntil(entry) }, now));
 }
-
-export type WaitingNewsletters = { count: number; senders: string[]; since: string | null };
-
-/** Newsletters in the inbox (not briefed, not snoozed): how many, the two newest distinct senders, the oldest time. */
-export function waitingNewsletters(sources: LibrarySource[], now: Date): WaitingNewsletters {
-  const waiting = sources
-    .filter((source) => source.kind === "newsletter" && source.state === "inbox" && !isSnoozed(source, now))
-    .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
-  const senders = [...new Set(waiting.map((source) => source.sender ?? "Newsletter"))].slice(0, 2);
-  return { count: waiting.length, senders, since: waiting.at(-1)?.createdAt ?? null };
-}

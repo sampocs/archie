@@ -46,6 +46,9 @@ const TOPIC_ACTIONS = new Set([
   "request_topic_primer",
 ]);
 
+// Actions whose payload id is a brief: a rejection rewinds and touches no source row.
+const BRIEF_ACTIONS = new Set(["finish_brief"]);
+
 // Source actions whose optimistic edit a rejection must undo by re-pulling the server copy.
 const REWOUND_SOURCE_ACTIONS = new Set([
   "go_deeper",
@@ -117,9 +120,11 @@ export function createDbSyncStore(
         // A rejection doesn't bump the row's change_seq, so no pull would undo the optimistic edit; rewinding the
         // position makes the next pull re-send the server's topic or topic primer.
         // Source actions that change state, processing or the primer's queue entry optimistically rewind too, and
-        // still surface syncError on the source below.
+        // still surface syncError on the source below. A rejected finish_brief (a brief already closed) re-pulls the brief
+        // and the newsletters it marked briefed.
         const rewind =
           TOPIC_ACTIONS.has(entry.type) ||
+          BRIEF_ACTIONS.has(entry.type) ||
           payload.target === "topic_primer" ||
           payload.target === "source_primer" ||
           REWOUND_SOURCE_ACTIONS.has(entry.type);
@@ -128,7 +133,9 @@ export function createDbSyncStore(
             .set({ position: 0 })
             .where(eq(schema.syncState.id, 1))
             .run();
-          if (TOPIC_ACTIONS.has(entry.type) || payload.target === "topic_primer") return;
+          if (TOPIC_ACTIONS.has(entry.type) || BRIEF_ACTIONS.has(entry.type) || payload.target === "topic_primer") {
+            return;
+          }
         }
 
         // The payload carries the changed row's id; surface the failure on that row.
@@ -166,8 +173,8 @@ export function createDbSyncStore(
       db.transaction((tx) => {
         if (signedOutSinceStart()) return;
 
-        // A row (source, topic or topic primer) with an unsent local action keeps its local copy; it returns on a
-        // later pull once the push bumps its change_seq. No timestamp comparison: phone and server clocks can't be
+        // A row (source, topic, topic primer or brief) with an unsent local action keeps its local copy; it returns on
+        // a later pull once the push bumps its change_seq. No timestamp comparison: phone and server clocks can't be
         // trusted.
         const unsent = new Set(
           tx
@@ -278,6 +285,24 @@ export function createDbSyncStore(
           tx.insert(schema.topicPrimers)
             .values({ id: primer.id, ...values })
             .onConflictDoUpdate({ target: schema.topicPrimers.id, set: values })
+            .run();
+        }
+
+        for (const brief of page.rows.briefs ?? []) {
+          if (unsent.has(brief.id)) continue;
+          const values = {
+            status: brief.status,
+            content: brief.content == null ? null : JSON.stringify(brief.content),
+            sourceIds: JSON.stringify(brief.source_ids),
+            since: brief.since,
+            version: brief.version,
+            createdAt: brief.created_at,
+            updatedAt: brief.updated_at,
+            doneAt: brief.done_at,
+          };
+          tx.insert(schema.briefs)
+            .values({ id: brief.id, ...values })
+            .onConflictDoUpdate({ target: schema.briefs.id, set: values })
             .run();
         }
 

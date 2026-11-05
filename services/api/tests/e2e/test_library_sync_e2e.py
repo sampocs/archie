@@ -161,7 +161,7 @@ def test_topics_topic_primers_and_sources_page_in_position_order(live_stack: Liv
     assert page_sizes == [PAGE_SIZE, 21]
     assert len(row_ids) == 521 and set(row_ids) == expected
     assert positions == sorted(positions)
-    assert set(pages[0]["rows"]) == {"sources", "artifacts", "cards", "topics", "topic_primers"}
+    assert set(pages[0]["rows"]) == {"sources", "artifacts", "cards", "topics", "topic_primers", "briefs"}
 
 
 def test_a_new_user_has_not_chosen_topics(live_stack: LiveStack) -> None:

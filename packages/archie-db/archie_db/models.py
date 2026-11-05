@@ -105,6 +105,7 @@ class JobKind(StrEnum):
     FILE_TOPIC = "file_topic"
     TOPIC_PRIMER = "topic_primer"
     CLEAN_TEXT = "clean_text"
+    UPDATE_BRIEF = "update_brief"
 
 
 class TopicOrigin(StrEnum):
@@ -120,6 +121,13 @@ class NewsletterKind(StrEnum):
 
     NEWS = "news"
     ESSAY = "essay"
+
+
+class BriefStatus(StrEnum):
+    """Whether a newsletter brief is still being rewritten as newsletters arrive, or the user tapped Done on it."""
+
+    OPEN = "open"
+    DONE = "done"
 
 
 class TranscriptProvider(StrEnum):
@@ -300,6 +308,39 @@ class TopicPrimer(Base):
     opened_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     snoozed_until: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class Brief(Base):
+    """The rolling newsletter brief: rewritten by `update_brief` while open, closed when the user taps Done.
+
+    One brief per user is open at a time, which the partial unique index enforces.
+    """
+
+    __tablename__ = "briefs"
+    __table_args__ = (
+        sqlalchemy.Index("ix_briefs_user_id_change_seq", "user_id", "change_seq"),
+        sqlalchemy.Index(
+            "uq_briefs_user_id_open", "user_id", unique=True, postgresql_where=sqlalchemy.text("status = 'open'")
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    status: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    # Domains of stories, "also happening" lines and essays, already ordered; null until the first version is written.
+    content: Mapped[dict[str, Any] | None] = mapped_column(postgresql.JSONB)
+    # Every newsletter the current content covers (news and essays): Done marks these briefed.
+    source_ids: Mapped[list[uuid.UUID]] = mapped_column(
+        postgresql.ARRAY(postgresql.UUID(as_uuid=True)), server_default=sqlalchemy.text("'{}'")
+    )
+    # The oldest covered newsletter's `created_at`.
+    since: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    # Bumped on every rewrite, so each version is distinguishable.
+    version: Mapped[int] = mapped_column(sqlalchemy.Integer, server_default="0")
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    done_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 

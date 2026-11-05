@@ -24,7 +24,7 @@ import sqlalchemy.orm
 from archie_db import briefs, changes, jobs, models, pipeline, session, user_topics
 from archie_shared.domains import Domain
 from archie_testing import recording
-from archie_worker import brief_content, content, errors, handlers, llm, loop
+from archie_worker import brief_content, content, errors, handlers, llm, loop, prompts
 
 pytestmark = pytest.mark.postgres
 
@@ -119,6 +119,10 @@ def test_a_news_issue_and_an_essay_become_ranked_stories_and_a_pitch(engine: sql
         [story.importance for story in group.stories]
         == sorted((story.importance for story in group.stories), reverse=True)
         for group in stored.domains
+    )
+    assert all(
+        len(story.headline.split()) <= prompts.MAX_HEADLINE_WORDS and not story.headline.rstrip().endswith(".")
+        for story in stories
     )
     assert len({group.domain for group in stored.domains}) == len(stored.domains)
     assert all(story.headline.strip() and story.body.strip() and story.detail.strip() for story in stories)

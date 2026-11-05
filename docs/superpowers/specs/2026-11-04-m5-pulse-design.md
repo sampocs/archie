@@ -6,7 +6,7 @@ background: "Pulse" in `2026-10-26-product-scope.md`; where they differ, this sp
 
 ## Decisions
 
-- **The brief is read, not browsed.** Every story is a complete headline + two or three sentences (what happened, then
+- **The brief is read, not browsed.** Every story is a short newspaper headline (at most `MAX_HEADLINE_WORDS` = 10 words, no trailing period) + two or three sentences (what happened, then
   why it matters). Going deeper is optional: "Sources · N ›" opens the story page.
 - **Rolling.** The open brief is rewritten in the background whenever a newsletter finishes processing, so it is ready
   (and offline) when the owner opens Today. One brief is open per user at a time.
@@ -91,7 +91,10 @@ The phone applies it optimistically (brief done, those newsletters briefed).
 ## Worker: `update_brief`
 
 - New `JobKind.UPDATE_BRIEF`, payload `{user_id}`. Enqueued when a newsletter source becomes READY (from
-  `pipeline.finish_step`) and when `finish_brief` leaves unbriefed newsletters behind. At most one QUEUED
+  `pipeline.finish_step`, or file_topic filing an essay the brief had treated as news) and when `finish_brief` leaves
+  unbriefed newsletters behind. Arrivals are debounced: they enqueue it due `Settings.brief_rewrite_delay()` later
+  (15 minutes in prod, none for `dev`/`test`), so a morning burst of newsletters shares one rewrite, which reads every
+  ready newsletter when it runs; `jobs.enqueue(delay=...)` sets `next_run_at`. `finish_brief`'s follow-up runs at once. At most one QUEUED
   `update_brief` per user (enqueue is skipped if one is queued; a running one doesn't block a new one, so a newsletter
   that lands mid-run triggers a follow-up).
 - Steps:

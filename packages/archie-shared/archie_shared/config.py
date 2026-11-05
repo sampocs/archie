@@ -7,6 +7,7 @@ audience — is read from the environment only, never hardcoded. A local `.env` 
 
 from __future__ import annotations
 
+import datetime
 from enum import StrEnum
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -22,6 +23,9 @@ OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
 SUPADATA_API_KEY_ENV = "SUPADATA_API_KEY"
 INGEST_SECRET_ENV = "INGEST_SECRET"
 INGEST_EMAIL_DOMAIN_ENV = "INGEST_EMAIL_DOMAIN"
+
+# Newsletters arrive in morning bursts; waiting this long lets one brief rewrite cover the whole burst.
+BRIEF_REWRITE_DELAY = datetime.timedelta(minutes=15)
 
 
 class ConfigError(RuntimeError):
@@ -95,6 +99,12 @@ class Settings(BaseSettings):
         if normalized not in ArchieEnv:
             raise ConfigError(f"{ARCHIE_ENV_ENV} must be one of {', '.join(ArchieEnv)}, not {self.archie_env!r}.")
         return ArchieEnv(normalized)
+
+    def brief_rewrite_delay(self) -> datetime.timedelta:
+        """How long a newsletter's arrival waits before the brief is rewritten; none outside `PROD`."""
+        if self.env() == ArchieEnv.PROD:
+            return BRIEF_REWRITE_DELAY
+        return datetime.timedelta(0)
 
 
 def get_settings() -> Settings:

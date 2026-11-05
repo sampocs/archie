@@ -10,6 +10,7 @@ from typing import Any
 
 import sqlalchemy
 import sqlalchemy.orm
+from archie_shared import config
 
 from archie_db import briefs, changes, jobs, models
 
@@ -127,7 +128,7 @@ def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
     to create a primer that is already on its way. A running primer job is the step finishing, so it doesn't block.
 
     A newsletter in the inbox that becomes READY is one the brief now covers, so the user's brief is queued for a
-    rewrite.
+    rewrite, after the settings' debounce delay so a burst of arrivals shares one.
     """
     required = required_artifacts(models.SourceKind(source.kind))
     if any(current_artifact(db, source_id=source.id, kind=kind) is None for kind in required):
@@ -137,7 +138,7 @@ def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
 
     set_processing(db, source=source, status=models.ProcessingStatus.READY)
     if source.kind == models.SourceKind.NEWSLETTER and source.state == models.SourceState.INBOX:
-        briefs.enqueue_update(db, user_id=source.user_id)
+        briefs.enqueue_update(db, user_id=source.user_id, delay=config.get_settings().brief_rewrite_delay())
 
 
 def _has_queued_primer_job(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID) -> bool:

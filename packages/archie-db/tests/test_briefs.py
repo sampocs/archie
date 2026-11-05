@@ -13,6 +13,8 @@ from archie_db import briefs, changes, models, pipeline, session
 
 pytestmark = pytest.mark.postgres
 
+DELAY = datetime.timedelta(minutes=15)
+
 
 @pytest.fixture
 def db(migrated_database_url: str) -> Iterator[sqlalchemy.orm.Session]:
@@ -51,6 +53,20 @@ def test_a_ready_inbox_newsletter_queues_one_rewrite_until_it_starts_running(
         models.JobStatus.RUNNING.value,
         models.JobStatus.QUEUED.value,
     ]
+
+
+def test_a_delayed_rewrite_is_due_later_and_covers_a_second_arrival(
+    db: sqlalchemy.orm.Session, user: models.User
+) -> None:
+    """The debounce: the first arrival schedules the rewrite ahead, the rest see it queued and add nothing."""
+    briefs.enqueue_update(db, user_id=user.id, delay=DELAY)
+    briefs.enqueue_update(db, user_id=user.id, delay=DELAY)
+
+    [job] = _brief_jobs(db, user_id=user.id)
+    db.refresh(job)
+    until_due = db.scalar(sqlalchemy.select(sqlalchemy.func.extract("epoch", job.next_run_at - sqlalchemy.func.now())))
+    assert until_due is not None
+    assert DELAY.total_seconds() - 60 < float(until_due) <= DELAY.total_seconds()
 
 
 def test_the_rewrite_job_gets_only_two_attempts(db: sqlalchemy.orm.Session, user: models.User) -> None:

@@ -221,11 +221,20 @@ describe("finishSource", () => {
 
   it("re-runs a finished newsletter's analysis, so it shows as processing", () => {
     const db = makeTestDb();
-    seedSource(db, { kind: "newsletter", state: "queued", processingError: "old" });
+    seedSource(db, { kind: "newsletter", state: "queued", processing: "ready", processingError: "old" });
 
     finishSource(db, { sourceId: "s1", reaction: null, note: null });
 
     expect(sourceById(db, "s1")).toMatchObject({ state: "consumed", processing: "processing", processingError: null });
+  });
+
+  it("leaves a newsletter that is still processing alone, since its queued analysis makes the cards", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "newsletter", state: "queued", processing: "processing", processingError: "old" });
+
+    finishSource(db, { sourceId: "s1", reaction: null, note: null });
+
+    expect(sourceById(db, "s1")).toMatchObject({ state: "consumed", processing: "processing", processingError: "old" });
   });
 });
 

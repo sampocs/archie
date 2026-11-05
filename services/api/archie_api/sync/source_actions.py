@@ -104,8 +104,10 @@ def finish_source(db: orm.Session, *, user: models.User, payload: dict[str, obje
         source.note = parsed.note
     changes.touch(source)
 
-    # Analyze goes first, so a newsletter's primer (if this queues one) is written after its cards.
-    if source.kind == models.SourceKind.NEWSLETTER:
+    # Analyze goes first, so a newsletter's primer (if this queues one) is written after its cards. While first
+    # processing is still running, the analyze already queued makes cards anyway (it checks the consumed state when
+    # it runs), so only a newsletter that was already ready needs another pass.
+    if source.kind == models.SourceKind.NEWSLETTER and source.processing == models.ProcessingStatus.READY:
         pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
         pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.ANALYZE])
     if parsed.queue_primer:

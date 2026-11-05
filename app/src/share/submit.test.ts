@@ -7,8 +7,8 @@ jest.mock("expo-crypto", () => {
   return { randomUUID: () => `uuid-${++counter}` };
 });
 
-const finished = { intent: "finished" as const, reaction: "easy" as const, note: "clear", prepMe: false };
-const queued = { ...EMPTY_CHOICE, intent: "queue" as const, prepMe: true };
+const finished = { intent: "finished" as const, reaction: "easy" as const, note: "clear", queuePrimer: false };
+const queued = { ...EMPTY_CHOICE, intent: "queue" as const, queuePrimer: true };
 
 describe("buildShareAction", () => {
   it("builds a snake_case add_source with fresh action and source ids and the capture", () => {
@@ -29,10 +29,10 @@ describe("buildShareAction", () => {
     });
   });
 
-  it("omits unset options and sends prep_me only when on", () => {
+  it("omits unset options and sends queue_primer only when on", () => {
     const { payload } = buildShareAction({ url: "https://a.com", choice: queued, capture: null });
 
-    expect(payload).toEqual({ id: expect.any(String), url: "https://a.com", intent: "queue", prep_me: true });
+    expect(payload).toEqual({ id: expect.any(String), url: "https://a.com", intent: "queue", queue_primer: true });
   });
 
   it("drops a capture over 400,000 characters but keeps one exactly at the limit", () => {
@@ -141,10 +141,10 @@ describe("shareDeepLink", () => {
     expect(Object.keys(params).sort()).toEqual(["intent", "note", "reaction", "url"]);
   });
 
-  it("sends prep_me=1 for a queued, prepped share and no reaction", () => {
+  it("sends queue_primer=1 for a queued share with its primer and no reaction", () => {
     const params = parse(shareDeepLink({ url: "https://a.com", choice: queued }));
 
-    expect(params.prep_me).toBe("1");
+    expect(params.queue_primer).toBe("1");
     expect(params).not.toHaveProperty("reaction");
   });
 });

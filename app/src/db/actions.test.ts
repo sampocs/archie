@@ -6,13 +6,18 @@ import {
   addSource,
   addTopic,
   chooseTopics,
+  finishPrimer,
   finishSource,
   goDeeper,
   mergeTopic,
+  queuePrimer,
   readLater,
   removeTopic,
+  requestPrimer,
   restoreTopic,
   retrySource,
+  returnToInbox,
+  setQueuePosition,
   setSourceTopic,
   snooze,
 } from "./actions";
@@ -29,8 +34,9 @@ function createTables(outboxCheck: string): string {
       id text PRIMARY KEY NOT NULL, url text NOT NULL, title text, kind text NOT NULL, state text NOT NULL,
       intent text NOT NULL, created_at text NOT NULL, updated_at text NOT NULL, deleted_at text, sync_error text,
       processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
-      prep_me integer DEFAULT 0 NOT NULL, merged_into_id text, sender text, domain text, topic_id text,
-      image_url text, queue_position real, read_at text, snoozed_until text, primer_opened_at text, newsletter_kind text
+      merged_into_id text, sender text, domain text, topic_id text, image_url text, queue_position real,
+      read_at text, snoozed_until text, primer_opened_at text, newsletter_kind text, primer_queue_position real,
+      primer_snoozed_until text
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
@@ -59,10 +65,10 @@ describe("addSource", () => {
     expect(outboxRows).toHaveLength(1);
     expect(outboxRows[0]).toMatchObject({ type: "add_source", status: "pending" });
     expect(JSON.parse(outboxRows[0].payload)).toEqual({ id, url: "https://example.com/a", intent: "queue" });
-    expect(sourceRows[0]).toMatchObject({ processing: "pending", reaction: null, note: null, prepMe: 0 });
+    expect(sourceRows[0]).toMatchObject({ processing: "pending", reaction: null, note: null, primerQueuePosition: null });
   });
 
-  it("sends reaction and note for a finished source, and prep_me for a queued one, in snake_case", async () => {
+  it("sends reaction and note for a finished source, and queue_primer for a queued one, in snake_case", async () => {
     const db = makeDb();
 
     const finishedId = await addSource(db, {
@@ -71,7 +77,7 @@ describe("addSource", () => {
       reaction: "lost",
       note: "the second half",
     });
-    const queuedId = await addSource(db, { url: "https://example.com/q", intent: "queue", prepMe: true });
+    const queuedId = await addSource(db, { url: "https://example.com/q", intent: "queue", queuePrimer: true });
 
     const payloads = db.select().from(schema.outbox).all().map((row) => JSON.parse(row.payload));
     expect(payloads).toContainEqual({
@@ -81,8 +87,25 @@ describe("addSource", () => {
       reaction: "lost",
       note: "the second half",
     });
-    expect(payloads).toContainEqual({ id: queuedId, url: "https://example.com/q", intent: "queue", prep_me: true });
-    expect(db.select().from(schema.sources).where(eq(schema.sources.id, queuedId)).get()?.prepMe).toBe(1);
+    expect(payloads).toContainEqual({ id: queuedId, url: "https://example.com/q", intent: "queue", queue_primer: true });
+    // The primer goes just above its item, so it's read first.
+    expect(db.select().from(schema.sources).where(eq(schema.sources.id, queuedId)).get()).toMatchObject({
+      queuePosition: 0,
+      primerQueuePosition: -1,
+    });
+  });
+
+  it("never queues a primer for a finished capture", async () => {
+    const db = makeDb();
+
+    const id = await addSource(db, { url: "https://example.com/f", intent: "finished", queuePrimer: true });
+
+    expect(db.select().from(schema.sources).get()?.primerQueuePosition).toBeNull();
+    expect(JSON.parse(db.select().from(schema.outbox).get()!.payload)).toEqual({
+      id,
+      url: "https://example.com/f",
+      intent: "finished",
+    });
   });
 
   it("leaves no source row behind when the outbox insert throws", async () => {
@@ -155,15 +178,165 @@ const sourceById = (db: AppDb, id: string) => db.select().from(schema.sources).w
 const outboxEntries = (db: AppDb) =>
   db.select().from(schema.outbox).all().map((row) => ({ type: row.type, payload: JSON.parse(row.payload) }));
 
+const seedPrimer = (db: AppDb, sourceId: string) =>
+  db
+    .insert(schema.artifacts)
+    .values({
+      id: `primer-${sourceId}`, sourceId, kind: "primer", version: 1, content: JSON.stringify({ markdown: "x" }),
+      isCurrent: 1, createdAt: "2026-11-02T00:00:00Z",
+    })
+    .run();
+
 describe("finishSource", () => {
-  it("marks a lost source consumed and prepped, and leaves an empty note out of the payload", () => {
+  it("marks a lost source consumed without queueing its primer, and leaves an empty note out of the payload", () => {
     const db = makeTestDb();
-    seedSource(db, { snoozedUntil: "2026-11-09T14:00:00.000Z" });
+    seedSource(db, { state: "queued", snoozedUntil: "2026-11-09T14:00:00.000Z" });
 
-    finishSource(db, { sourceId: "s1", reaction: "lost", note: null });
+    finishSource(db, { sourceId: "s1", reaction: "lost", note: null, queuePrimer: false });
 
-    expect(sourceById(db, "s1")).toMatchObject({ state: "consumed", reaction: "lost", prepMe: 1, snoozedUntil: null });
+    expect(sourceById(db, "s1")).toMatchObject({
+      state: "consumed",
+      reaction: "lost",
+      snoozedUntil: null,
+      primerQueuePosition: null,
+      processing: "ready",
+    });
     expect(outboxEntries(db)).toEqual([{ type: "finish_source", payload: { id: "s1", reaction: "lost" } }]);
+  });
+
+  it("queues the primer at the top of the shared queue when asked", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "queued", state: "queued", queuePosition: -2 });
+    seedSource(db, { id: "primer", state: "consumed", primerQueuePosition: -5 });
+    seedSource(db, { id: "s1", state: "queued", queuePosition: 3 });
+    seedPrimer(db, "s1");
+
+    finishSource(db, { sourceId: "s1", reaction: "lost", note: null, queuePrimer: true });
+
+    expect(sourceById(db, "s1")).toMatchObject({ state: "consumed", primerQueuePosition: -6, processing: "ready" });
+    expect(outboxEntries(db)).toEqual([
+      { type: "finish_source", payload: { id: "s1", reaction: "lost", queue_primer: true } },
+    ]);
+  });
+
+  it("re-runs a finished newsletter's analysis, so it shows as processing", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "newsletter", state: "queued", processing: "ready", processingError: "old" });
+
+    finishSource(db, { sourceId: "s1", reaction: null, note: null });
+
+    expect(sourceById(db, "s1")).toMatchObject({ state: "consumed", processing: "processing", processingError: null });
+  });
+
+  it("leaves a newsletter that is still processing alone, since its queued analysis makes the cards", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "newsletter", state: "queued", processing: "processing", processingError: "old" });
+
+    finishSource(db, { sourceId: "s1", reaction: null, note: null });
+
+    expect(sourceById(db, "s1")).toMatchObject({ state: "consumed", processing: "processing", processingError: "old" });
+  });
+});
+
+describe("queuePrimer", () => {
+  it("queues a primer above both queued sources and queued primers, clearing its snooze", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "queued", state: "queued", queuePosition: -4 });
+    seedSource(db, { id: "other-primer", state: "consumed", primerQueuePosition: -2 });
+    seedSource(db, { id: "s1", state: "queued", queuePosition: 1, primerSnoozedUntil: "2099-01-01T00:00:00Z" });
+
+    queuePrimer(db, "s1", true);
+
+    expect(sourceById(db, "s1")).toMatchObject({ primerQueuePosition: -5, primerSnoozedUntil: null, queuePosition: 1 });
+    expect(outboxEntries(db)).toEqual([{ type: "queue_primer", payload: { id: "s1", queued: true } }]);
+  });
+
+  it("takes a queued primer out of the queue", () => {
+    const db = makeTestDb();
+    seedSource(db, { primerQueuePosition: 2 });
+
+    queuePrimer(db, "s1", false);
+
+    expect(sourceById(db, "s1")?.primerQueuePosition).toBeNull();
+    expect(outboxEntries(db)).toEqual([{ type: "queue_primer", payload: { id: "s1", queued: false } }]);
+  });
+
+  it("starts writing a newsletter's primer only when it has none and nothing is running", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "bare", kind: "newsletter" });
+    seedSource(db, { id: "has-primer", kind: "newsletter" });
+    seedPrimer(db, "has-primer");
+    seedSource(db, { id: "article", kind: "article" });
+
+    queuePrimer(db, "bare", true);
+    queuePrimer(db, "has-primer", true);
+    queuePrimer(db, "article", true);
+
+    expect(sourceById(db, "bare")?.processing).toBe("processing");
+    expect(sourceById(db, "has-primer")?.processing).toBe("ready");
+    expect(sourceById(db, "article")?.processing).toBe("ready");
+  });
+});
+
+describe("finishPrimer", () => {
+  it("takes the primer off the queue and marks it opened, sending both actions", () => {
+    const db = makeTestDb();
+    seedSource(db, { primerQueuePosition: 0 });
+
+    finishPrimer(db, "s1");
+
+    const source = sourceById(db, "s1");
+    expect(source?.primerQueuePosition).toBeNull();
+    expect(source?.primerOpenedAt).not.toBeNull();
+    expect(outboxEntries(db)).toEqual(
+      expect.arrayContaining([
+        { type: "queue_primer", payload: { id: "s1", queued: false } },
+        { type: "set_primer_opened", payload: { target: "source", id: "s1", opened: true } },
+      ]),
+    );
+    expect(outboxEntries(db)).toHaveLength(2);
+  });
+});
+
+describe("requestPrimer", () => {
+  it("shows the newsletter as processing and sends request_primer", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "newsletter", state: "consumed", processing: "failed", processingError: "boom" });
+
+    requestPrimer(db, "s1");
+
+    expect(sourceById(db, "s1")).toMatchObject({ processing: "processing", processingError: null });
+    expect(outboxEntries(db)).toEqual([{ type: "request_primer", payload: { id: "s1" } }]);
+  });
+});
+
+describe("returnToInbox", () => {
+  it("puts a queued newsletter back in the inbox, out of the queue", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "newsletter", state: "queued", queuePosition: -1 });
+
+    returnToInbox(db, "s1");
+
+    expect(sourceById(db, "s1")).toMatchObject({ state: "inbox", queuePosition: null });
+    expect(outboxEntries(db)).toEqual([{ type: "return_to_inbox", payload: { id: "s1" } }]);
+  });
+});
+
+describe("setQueuePosition", () => {
+  it("moves the source or its primer depending on the target, and sends the target", () => {
+    const db = makeTestDb();
+    seedSource(db, { state: "queued", queuePosition: 1, primerQueuePosition: 2 });
+
+    setQueuePosition(db, "s1", 5, "source_primer");
+    expect(sourceById(db, "s1")).toMatchObject({ queuePosition: 1, primerQueuePosition: 5 });
+
+    setQueuePosition(db, "s1", -3);
+    expect(sourceById(db, "s1")).toMatchObject({ queuePosition: -3, primerQueuePosition: 5 });
+
+    expect(outboxEntries(db)).toEqual([
+      { type: "set_queue_position", payload: { id: "s1", position: 5, target: "source_primer" } },
+      { type: "set_queue_position", payload: { id: "s1", position: -3, target: "source" } },
+    ]);
   });
 });
 
@@ -179,6 +352,25 @@ describe("snooze", () => {
     expect(sourceById(db, "s1")).toMatchObject({ snoozedUntil: until.toISOString(), queuePosition: -4 });
     expect(outboxEntries(db)).toEqual([
       { type: "snooze", payload: { target: "source", id: "s1", until: "2026-11-05T14:00:00.000Z" } },
+    ]);
+  });
+
+  it("snoozes a queued primer apart from its source and brings it back above the top", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "top", state: "queued", queuePosition: -3 });
+    seedSource(db, { id: "s1", state: "queued", queuePosition: 4, primerQueuePosition: 2 });
+    const until = new Date("2026-11-05T14:00:00.000Z");
+
+    snooze(db, "source_primer", "s1", until);
+
+    expect(sourceById(db, "s1")).toMatchObject({
+      primerSnoozedUntil: until.toISOString(),
+      primerQueuePosition: -4,
+      snoozedUntil: null,
+      queuePosition: 4,
+    });
+    expect(outboxEntries(db)).toEqual([
+      { type: "snooze", payload: { target: "source_primer", id: "s1", until: "2026-11-05T14:00:00.000Z" } },
     ]);
   });
 

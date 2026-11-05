@@ -1,4 +1,4 @@
-"""The caller's own rows for sync actions, payload parsing, and the top of the queue."""
+"""The caller's own rows for sync actions, payload parsing, the top of the queue, and queueing a primer."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from collections.abc import Mapping
 
 import pydantic
 import sqlalchemy
-from archie_db import models
+from archie_db import changes, models, pipeline
 from sqlalchemy import orm
 
 MALFORMED = "payload is malformed"
@@ -46,12 +46,60 @@ def owned_topic_primer(db: orm.Session, *, user: models.User, primer_id: uuid.UU
 
 
 def top_queue_position(db: orm.Session, *, user_id: int) -> float:
-    """A position above every queued source of the user: one less than the lowest, or 0 for an empty queue."""
-    lowest = db.scalar(
+    """A position above every queue entry of the user: one less than the lowest, or 0 for an empty queue.
+
+    Queued sources and queued primers share one position space, so both count.
+    """
+    live_source_of_user = sqlalchemy.and_(models.Source.user_id == user_id, models.Source.deleted_at.is_(None))
+    lowest_source = db.scalar(
         sqlalchemy.select(sqlalchemy.func.min(models.Source.queue_position)).where(
-            models.Source.user_id == user_id,
-            models.Source.state == models.SourceState.QUEUED.value,
-            models.Source.deleted_at.is_(None),
+            live_source_of_user, models.Source.state == models.SourceState.QUEUED.value
         )
     )
-    return 0.0 if lowest is None else lowest - 1
+    lowest_primer = db.scalar(
+        sqlalchemy.select(sqlalchemy.func.min(models.Source.primer_queue_position)).where(live_source_of_user)
+    )
+
+    positions = [position for position in (lowest_source, lowest_primer) if position is not None]
+    return min(positions) - 1 if positions else 0.0
+
+
+def queue_primer(db: orm.Session, *, source: models.Source) -> None:
+    """Put the source's primer at the top of the queue, unsnoozed; a newsletter without one has it written.
+
+    Newsletters get a primer only on request, so one with no current primer and none being written gets a `primer`
+    job and shows as processing until it lands. The caller holds the user's write lock and has validated the source.
+    """
+    source.primer_queue_position = top_queue_position(db, user_id=source.user_id)
+    source.primer_snoozed_until = None
+    changes.touch(source)
+
+    if source.kind == models.SourceKind.NEWSLETTER and not has_or_is_writing_primer(db, source=source):
+        start_primer(db, source=source)
+
+
+def has_or_is_writing_primer(db: orm.Session, *, source: models.Source) -> bool:
+    """Whether the source has a current primer, or a `primer` job for it is queued or running."""
+    if pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.PRIMER) is not None:
+        return True
+    return has_pending_job(db, source=source, kind=models.JobKind.PRIMER)
+
+
+def has_pending_job(db: orm.Session, *, source: models.Source, kind: models.JobKind) -> bool:
+    """Whether a `kind` job for the source is queued or running."""
+    pending = db.scalar(
+        sqlalchemy.select(
+            sqlalchemy.exists().where(
+                models.Job.kind == kind.value,
+                models.Job.status.in_([models.JobStatus.QUEUED.value, models.JobStatus.RUNNING.value]),
+                models.Job.payload[pipeline.SOURCE_ID_KEY].astext == str(source.id),
+            )
+        )
+    )
+    return bool(pending)
+
+
+def start_primer(db: orm.Session, *, source: models.Source) -> None:
+    """Queue the source's `primer` job and show it as processing until the primer lands."""
+    pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
+    pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.PRIMER])

@@ -1,0 +1,565 @@
+<title>Archie Item Actions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of phone mocks, each with a numbered flow note beside it; the page chrome stays quiet so the phones carry the color. */
+:root {
+  --page: #E9E6DE; --page-ink: #1C1B18; --page-ink-2: #5E5B54; --page-line: #D6D2C8; --note-bg: #F7F5F0;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+  --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+  --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533; --k-history: #8E5468;
+  --k-trading: #4F6F8A; --k-geo: #5E6B3A; --k-sports: #3A7A7A; --k-eng: #5A5F6E; --unread: #3D6690;
+  --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --review: #3F7262;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark }
+body { background: var(--page); color: var(--page-ink); font-family: var(--sans); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 40px; }
+.intro h1 { font-size: 34px; letter-spacing: -.04em; margin: 0 0 8px; text-wrap: balance; }
+.intro p { color: var(--page-ink-2); line-height: 1.55; max-width: 70ch; margin: 0; }
+.legend-k { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink-2); }
+.scene { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 28px; align-items: start; border-top: 1px solid var(--page-line); padding-top: 32px; }
+@media (max-width: 860px) { .scene { grid-template-columns: minmax(0, 1fr); } .phone { margin: 0 auto; } }
+.note { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.note .num { font: 500 12px var(--mono); color: var(--page-ink-2); letter-spacing: .05em; }
+.note h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+.note p, .note li { color: var(--page-ink-2); line-height: 1.55; font-size: 15px; max-width: 64ch; }
+.note p { margin: 0; }
+.note ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.note b { color: var(--page-ink); font-weight: 600; }
+.ask { background: var(--note-bg); border: 1px solid var(--page-line); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--page-ink-2); line-height: 1.5; }
+.ask strong { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink); display: block; margin-bottom: 4px; }
+
+/* ---------- Phone ---------- */
+.phone { width: 360px; max-width: 100%; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 24px 60px rgba(0,0,0,.28); flex: none; box-sizing: border-box; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--sans); color-scheme: light; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, sans-serif; color: var(--ink); }
+.view { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; padding: 58px 0 110px; }
+.view::-webkit-scrollbar { display: none; }
+.hdr { padding: 6px 22px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.hdr .title { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; }
+.hdr .date { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; margin-bottom: 7px; }
+.toggle { display: flex; background: var(--press); border-radius: 9px; padding: 2px; margin-bottom: 4px; }
+.toggle div { font-size: 12.5px; font-weight: 600; padding: 6px 10px; border-radius: 7px; color: var(--ink3); }
+.toggle div.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { margin: 14px 16px 0; height: 40px; border-radius: 12px; background: var(--press); display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--ink3); font-size: 15px; }
+.fchips { display: flex; gap: 6px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+.fchips div { flex: none; font-size: 13px; font-weight: 550; padding: 7px 12px; border-radius: 999px; background: var(--surface); color: var(--ink2); box-shadow: var(--card-shadow); }
+.fchips div.on { background: var(--chrome); color: #fff; box-shadow: none; }
+.fchips .n { opacity: .55; margin-left: 3px; font-weight: 500; }
+.sec { padding: 0 16px; margin-top: 22px; }
+.sec-label { padding: 0 6px; margin-bottom: 9px; font: 500 11px/1 var(--mono); color: var(--ink3); text-transform: uppercase; letter-spacing: .02em; display: flex; justify-content: space-between; }
+.sec-label a { color: var(--ink2); text-decoration: none; text-transform: none; font-family: var(--sans); font-size: 12.5px; font-weight: 600; letter-spacing: 0; }
+.group { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--card-shadow); }
+.row { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.art { width: 46px; height: 46px; border-radius: 10px; flex: none; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); display: grid; place-items: center; font: 700 18px/1 var(--sans); color: rgba(255,255,255,.92); }
+.art.person { border-radius: 50%; }
+.unread-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--unread); box-shadow: 0 0 0 2px var(--surface); }
+.meta { flex: 1; min-width: 0; }
+.meta .k { font: 600 10px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 4px; }
+.meta b { display: -webkit-box; font-size: 14.5px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.3; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.meta span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+.status { flex: none; font-size: 11px; font-weight: 600; padding: 4px 7px; border-radius: 6px; color: var(--ink2); background: var(--press); }
+.status.unread { background: color-mix(in srgb, var(--unread) 12%, transparent); color: var(--unread); }
+.status.proc { color: var(--ink3); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.prep { flex: none; font-size: 12px; font-weight: 600; padding: 6px 9px; border-radius: 8px; background: var(--press); color: var(--ink2); }
+.prep.on { background: color-mix(in srgb, var(--got) 14%, var(--surface)); color: var(--got); }
+.dom { padding: 14px 16px; border-top: 1px solid var(--line); }
+.dom:first-child { border-top: 0; }
+.dom .top { display: flex; align-items: center; gap: 10px; }
+.dom .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--k); }
+.dom .name { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; flex: 1; }
+.dom .cnt { font: 500 12px/1 var(--mono); color: var(--ink3); }
+.dom .bar { height: 4px; border-radius: 2px; background: var(--press); margin: 10px 0 8px 20px; display: flex; overflow: hidden; gap: 2px; }
+.dom .bar i { display: block; height: 100%; background: var(--k); opacity: .85; }
+.dom .bar i:nth-child(2) { opacity: .5; } .dom .bar i:nth-child(3) { opacity: .25; }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 20px; }
+.topics div { font-size: 12.5px; font-weight: 500; padding: 5px 9px; border-radius: 7px; color: var(--ink2); background: var(--press); }
+.topics .n { color: var(--ink3); margin-left: 4px; font-family: var(--mono); font-size: 11px; }
+.topics div.mine { background: transparent; box-shadow: inset 0 0 0 1px var(--ink3); }
+.add-topic { font-size: 14px; color: var(--ink2); padding: 13px 16px; border-top: 1px solid var(--line); }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 14px 0; display: flex; justify-content: space-around; z-index: 30; background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 56px; }
+.tab i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid currentColor; box-sizing: border-box; }
+.tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+.tab .pl { width: 36px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 20px; }
+/* Item page */
+.navbar { position: absolute; top: 0; left: 0; right: 0; z-index: 10; height: 96px; padding: 54px 12px 0; display: flex; justify-content: space-between; align-items: flex-start; box-sizing: border-box; }
+.navbtn { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 550; color: var(--chrome); background: var(--surface); box-shadow: var(--card-shadow); box-sizing: border-box; justify-content: center; }
+.item { padding: 100px 0 40px; }
+.ihead { display: flex; gap: 14px; padding: 0 22px; align-items: flex-end; }
+.cover { width: 92px; height: 92px; border-radius: 14px; flex: none; display: grid; place-items: center; font: 700 34px var(--sans); color: rgba(255,255,255,.92); }
+.ihead .k { font: 600 10.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); }
+.ihead .by { font-size: 13px; color: var(--ink2); margin-top: 5px; line-height: 1.35; }
+.chiprow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 7px; background: var(--press); color: var(--ink2); }
+.pill.topic { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.pill.verdict { color: var(--partly); background: color-mix(in srgb, var(--partly) 12%, transparent); }
+.ititle { font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.12; padding: 0 22px; margin-top: 14px; text-wrap: balance; }
+.actions { display: flex; gap: 8px; padding: 16px 22px 0; }
+.btn { height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 15px; font-weight: 600; padding: 0 16px; }
+.btn.primary { background: var(--chrome); color: #fff; flex: 1; }
+.btn.secondary { background: var(--surface); color: var(--ink); box-shadow: var(--card-shadow); }
+.btn.secondary.on { color: var(--got); }
+.isec { padding: 0 22px; margin-top: 24px; }
+.isec .sec-label { padding: 0; }
+.isec p { font-size: 16px; line-height: 1.62; margin: 0; color: var(--ink); }
+.ideas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: i; }
+.ideas li { display: flex; gap: 10px; font-size: 15px; line-height: 1.5; }
+.ideas li::before { counter-increment: i; content: counter(i); font: 500 12px/1.9 var(--mono); color: var(--ink3); width: 14px; flex: none; }
+.ts { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 5px; background: var(--press); color: var(--ink2); white-space: nowrap; }
+.nums { display: flex; flex-direction: column; gap: 8px; }
+.nums div { display: flex; justify-content: space-between; gap: 10px; font: 500 13.5px/1.45 var(--mono); }
+.collapsed { background: var(--surface); border-radius: 14px; box-shadow: var(--card-shadow); padding: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; }
+.collapsed span { font: 500 12px var(--mono); color: var(--ink3); }
+.empty-cards { font-size: 14px; color: var(--ink3); line-height: 1.5; }
+/* Sheet */
+.dim { position: absolute; inset: 0; background: rgba(10,10,8,.32); z-index: 40; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; background: var(--bg); border-radius: 26px 26px 0 0; padding: 10px 20px 34px; display: flex; flex-direction: column; gap: 16px; }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 4px; }
+.sheet h3 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+.verdicts { display: flex; flex-direction: column; gap: 8px; }
+.verdicts div { height: 46px; border-radius: 14px; display: flex; align-items: center; padding: 0 14px; font-weight: 600; font-size: 15px; background: var(--surface); box-shadow: var(--card-shadow); color: var(--v); }
+.verdicts div.on { background: color-mix(in srgb, var(--v) 14%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--v); }
+.field { min-height: 70px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; color: var(--ink3); font-size: 15px; display: flex; justify-content: space-between; }
+.sheet .btn.primary { flex: none; }
+.small { font-size: 13px; color: var(--ink3); line-height: 1.45; }
+.primer-card { background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.primer-card b { font-size: 15px; }
+.primer-card span { font-size: 13px; color: var(--ink3); }
+.handle { flex: none; color: var(--ink3); font-size: 16px; letter-spacing: -2px; padding-left: 2px; }
+.swipe { position: relative; overflow: hidden; border-top: 1px solid var(--line); }
+.swipe .acts { position: absolute; inset: 0; display: flex; justify-content: flex-end; }
+.swipe .acts div { width: 78px; display: grid; place-items: center; color: #fff; font-size: 12.5px; font-weight: 600; }
+.swipe .row { background: var(--surface); transform: translateX(-156px); border-top: 0; }
+.back { flex: none; font: 500 11px var(--mono); color: var(--ink3); }
+.opts { display: flex; flex-direction: column; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); overflow: hidden; }
+.opts div { display: flex; justify-content: space-between; align-items: center; padding: 13px 14px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 550; }
+.opts div:first-child { border-top: 0; }
+.opts span { font: 500 12px var(--mono); color: var(--ink3); }
+<style>
+/* Additions for this page: the status strip, menus, toast, tab options and the accent switch. */
+:root[data-accent="forest"] { --chrome: #3F7262; }
+.switch { display: inline-flex; background: var(--note-bg); border: 1px solid var(--page-line); border-radius: 10px; padding: 3px; gap: 2px; }
+.switch button { font: 600 13px var(--sans); border: 0; background: transparent; color: var(--page-ink-2); padding: 7px 12px; border-radius: 7px; cursor: pointer; }
+.switch button.on { background: var(--page-ink); color: var(--page); }
+.phones { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+.opt { display: flex; flex-direction: column; gap: 10px; width: 360px; max-width: 100%; }
+.opt .tag { font: 500 12px var(--mono); color: var(--page-ink-2); letter-spacing: .05em; text-transform: uppercase; }
+.opt .tag b { color: var(--page-ink); }
+.opt p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--page-ink-2); }
+.phone.short { height: 600px; }
+.strip { margin: 14px 22px 0; padding: 11px 13px; border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); display: flex; flex-direction: column; gap: 3px; }
+.strip .l { font: 500 11px var(--mono); text-transform: uppercase; color: var(--ink3); letter-spacing: .02em; }
+.strip .t { font-size: 13.5px; color: var(--ink2); line-height: 1.4; }
+.inline-note { margin: 12px 22px 0; font-size: 14px; line-height: 1.5; color: var(--ink2); }
+.inline-note a { color: var(--chrome); font-weight: 650; text-decoration: none; }
+.btn.full { flex: 1; }
+.btn .sub { display: block; font-size: 11.5px; font-weight: 500; opacity: .6; margin-top: 1px; }
+.btn.two { height: 54px; line-height: 1.15; text-align: center; }
+.prepline { margin: 10px 22px 0; display: flex; align-items: center; justify-content: space-between; padding: 11px 13px; border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); }
+.prepline b { font-size: 14.5px; } .prepline span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 2px; }
+.switchy { width: 44px; height: 26px; border-radius: 13px; background: var(--line); position: relative; flex: none; }
+.switchy::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.menu .opts div { justify-content: flex-start; gap: 12px; }
+.menu .opts div em { font-style: normal; width: 20px; text-align: center; color: var(--ink2); }
+.menu .opts div small { display: block; font-size: 12px; font-weight: 400; color: var(--ink3); margin-top: 2px; }
+.menu .opts div.danger { color: var(--missed); } .menu .opts div.danger em { color: var(--missed); }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 34px; z-index: 60; background: var(--ink); color: var(--bg); font-size: 13.5px; font-weight: 600; padding: 11px 16px; border-radius: 14px; white-space: nowrap; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.toast a { color: inherit; opacity: .6; margin-left: 10px; }
+/* Tab bar strips */
+.barmock { width: 360px; max-width: 100%; border-radius: 22px; overflow: hidden; background: var(--bg); box-shadow: 0 0 0 1px var(--page-line); }
+.barmock .tabbar { position: relative; height: 78px; }
+.tab .ic { width: 24px; height: 24px; border-radius: 7px; border: 2px solid currentColor; box-sizing: border-box; display: grid; place-items: center; font-size: 15px; font-weight: 600; }
+.tab .ic.circle { border-radius: 50%; }
+.addA { width: 46px; height: 46px; border-radius: 50%; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 26px; font-weight: 400; margin-top: 2px; }
+.addB { width: 50px; height: 36px; border-radius: 12px; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 24px; margin-top: 4px; }
+.addD { width: 54px; height: 54px; border-radius: 50%; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 28px; margin-top: -22px; box-shadow: 0 0 0 5px var(--bg), 0 6px 16px rgba(0,0,0,.18); }
+.barmock.raised { overflow: visible; margin-top: 18px; }
+table.inv { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.inv th { text-align: left; font: 500 11px var(--mono); text-transform: uppercase; color: var(--page-ink-2); padding: 8px 10px; border-bottom: 1px solid var(--page-line); }
+table.inv td { padding: 10px; border-bottom: 1px solid var(--page-line); vertical-align: top; color: var(--page-ink-2); line-height: 1.45; }
+table.inv td:first-child { color: var(--page-ink); font-weight: 600; white-space: nowrap; }
+.where { font: 500 11px var(--mono); padding: 3px 6px; border-radius: 5px; background: var(--note-bg); border: 1px solid var(--page-line); color: var(--page-ink); white-space: nowrap; }
+.scene2 { border-top: 1px solid var(--page-line); padding-top: 32px; display: flex; flex-direction: column; gap: 20px; }
+.scene2 .note { max-width: 860px; }
+.tablewrap { overflow-x: auto; }
+.badgeline { display: flex; align-items: center; gap: 8px; padding: 10px 22px 0; min-height: 30px; }
+.badge { font: 500 10.5px/1 var(--mono); text-transform: uppercase; letter-spacing: .03em; padding: 5px 7px; border-radius: 6px; background: var(--press); color: var(--ink2); }
+.badgeline .when { font-size: 13px; color: var(--ink3); flex: 1; }
+.qchip { font-size: 13px; font-weight: 600; padding: 7px 11px; border-radius: 10px; background: var(--surface); color: var(--chrome); box-shadow: var(--card-shadow); white-space: nowrap; }
+.verdicts div.nest { height: auto; flex-direction: column; align-items: stretch; padding: 13px 14px; gap: 10px; }
+.nest .sub { display: flex; align-items: center; justify-content: space-between; color: var(--ink2); font-size: 13.5px; font-weight: 500; border-top: 1px solid color-mix(in srgb, var(--missed) 22%, transparent); padding-top: 10px; }
+.nest .sub a, .prow a { color: var(--chrome); font-weight: 650; text-decoration: none; margin-left: 14px; }
+.prow { display: flex; align-items: center; justify-content: space-between; padding: 0 4px; font-size: 14px; color: var(--ink2); }
+.checkrow { display: flex; align-items: center; gap: 12px; padding: 13px 14px; border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); font-size: 15px; font-weight: 550; }
+.checkrow small { display: block; font-size: 12.5px; font-weight: 400; color: var(--ink3); margin-top: 2px; }
+.check { width: 22px; height: 22px; border-radius: 7px; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 13px; flex: none; }
+.qlink { font-size: 13.5px; font-weight: 600; color: var(--chrome); text-decoration: underline; text-underline-offset: 3px; }
+</style>
+
+<div class="wrap">
+  <header class="intro" style="display:flex;flex-direction:column;gap:14px">
+    <span class="legend-k">M4 polish · options for review</span>
+    <h1>Item actions, copy and the middle tab</h1>
+    <p>What the buttons on an item page should be, what they should say, and how the + tab should look. It starts from how often you'd use each action: anything rare moves into the ••• menu. Newsletters land in the inbox; everything else lands in the queue.</p>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <span class="legend-k">Button and tab color</span>
+      <div class="switch" id="accent"><button data-a="graphite" class="on">Graphite (spec)</button><button data-a="forest">Forest</button></div>
+    </div>
+  </header>
+
+  <section class="scene2">
+    <div class="note">
+      <span class="num">01</span><h2>Which actions earn a button</h2>
+      <p>Each action, how often you'd reach for it, and where I'd put it. One rule: an item page shows at most one primary button and one secondary.</p>
+    </div>
+    <div class="tablewrap"><table class="inv">
+      <tr><th>Action today</th><th>When</th><th>How often</th><th>Proposed copy</th><th>Lives</th></tr>
+      <tr><td>I finished it</td><td>Queued</td><td>Every queued item, once</td><td>"I finished it" (keep: it opens the how'd-it-go sheet)</td><td><span class="where">Primary button</span></td></tr>
+      <tr><td>Prep me</td><td>Queued</td><td>Some items, before listening</td><td>"Prep me" → "✓ Prepping". Mock B adds a one-line explanation.</td><td><span class="where">Secondary</span></td></tr>
+      <tr><td>Read later</td><td>Inbox</td><td>Sometimes: a newsletter worth reading in full</td><td>"Add to queue"</td><td><span class="where">Secondary</span></td></tr>
+      <tr><td>Go deeper</td><td>Inbox</td><td>Rare: a newsletter you want to remember</td><td>"Make review cards", with "Marks it done and writes a primer" underneath</td><td><span class="where">••• menu</span></td></tr>
+      <tr><td>Doing nothing</td><td>Inbox</td><td>Most newsletters</td><td>Shown as status: "In your inbox · It'll be in your next brief"</td><td><span class="where">Status line</span></td></tr>
+      <tr><td>Snooze</td><td>Both</td><td>Occasional</td><td>"Remind me later…"</td><td><span class="where">••• menu + swipe</span></td></tr>
+      <tr><td>Mark read / unread</td><td>Inbox</td><td>Occasional</td><td>"Mark as unread"</td><td><span class="where">••• menu + swipe</span></td></tr>
+      <tr><td>Change topic, Wrong episode?, Delete</td><td>Any</td><td>Rare</td><td>Unchanged</td><td><span class="where">••• menu</span></td></tr>
+    </table></div>
+    <div class="ask"><strong>Note</strong>The brief arrives in M5, so until then "It'll be in your next brief" is a promise the app can't keep yet. Until M5 ships the line could read "In your inbox · Newsletters wait here for your daily brief (coming soon)".</div>
+  </section>
+
+  <section class="scene2" style="border-top:2px solid var(--page-ink)">
+    <div class="note">
+      <span class="legend-k">Round 6</span>
+      <span class="num">07b</span><h2>The "Parts lost me" sheet, calmer</h2>
+      <p>Three quieter ways to offer the primer once you pick "Parts lost me", in place of the two big buttons.</p>
+    </div>
+    <div class="phones" id="lostme"></div>
+  </section>
+
+  <section class="scene2" style="border-top:2px solid var(--page-ink)">
+    <div class="note">
+      <span class="legend-k">Round 5</span>
+      <span class="num">07</span><h2>Queueing a primer</h2>
+      <p>From "Parts lost me" when you finish an item, or from any item's ••• menu. The queued primer behaves like any other queued item, and it links back to the item it's for.</p>
+    </div>
+    <div class="phones" id="primerq"></div>
+  </section>
+
+  <section class="scene2" style="border-top:2px solid var(--page-ink)">
+    <div class="note">
+      <span class="num">00</span><h2>Graphite vs forest, side by side</h2>
+      <p>The same screen twice. Only the chrome color changes: primary buttons, the selected filter chip, the active tab and the + button. Topic colors and the "✓ Primed" green don't change.</p>
+    </div>
+    <div class="phones" id="accents"></div>
+  </section>
+
+  <section class="scene2" style="border-top:2px solid var(--page-ink)">
+    <div class="note">
+      <span class="legend-k">Round 4</span>
+      <span class="num">02d</span><h2>Inbox: B and F without the date</h2>
+      <p>The date moves into the header's byline, "Morning Brew · Wed, Nov 4", on both, so the badge line is just where it is and what to do.</p>
+    </div>
+    <div class="phones" id="inbox4"></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note">
+      <span class="num">06b</span><h2>The primer as a resource, not a task</h2>
+      <p>"Mark as done" + "◆ Primer · 6 min", which becomes "✓ Primed" once you've opened it. Today drops the primer chips, so Up next is just the items.</p>
+    </div>
+    <div class="phones" id="primer4"></div>
+  </section>
+
+  <section class="scene2" style="border-top:2px solid var(--page-ink)">
+    <div class="note">
+      <span class="legend-k">Round 3</span>
+      <span class="num">02c</span><h2>Inbox: B, E and F side by side</h2>
+    </div>
+    <div class="phones" id="inbox3"></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note">
+      <span class="num">06</span><h2>Primers, rethought: attached to the item, not queued</h2>
+      <p>Every podcast, article and video already has a primer. Instead of a "Prep me" toggle that sends it somewhere else, the primer becomes the second button: one tap opens it, at any time (before you start, or halfway through). On Today, a queued item that has an unread primer shows a ◆ chip that opens the primer directly.</p>
+    </div>
+    <div class="phones" id="primer3"></div>
+  </section>
+
+  <section class="scene2" style="border-top:2px solid var(--page-ink)">
+    <div class="note">
+      <span class="legend-k">Round 2 · your feedback</span>
+      <span class="num">02b</span><h2>Inbox, quieter: between A and B</h2>
+      <p>Where the item sits moves into one line under the title: a small badge plus the date. "Add to queue" becomes a small chip, not a full-width button.</p>
+    </div>
+    <div class="phones" id="inbox2"></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note">
+      <span class="num">04b</span><h2>Queued, quieter, with new wording</h2>
+      <p>The same one-line badge, with no card and no number. Three wordings for the two buttons.</p>
+    </div>
+    <div class="phones" id="queued2"></div>
+  </section>
+
+  <section class="scene2" style="border-top:2px solid var(--page-ink)">
+    <div class="note">
+      <span class="legend-k">Round 1</span>
+      <span class="num">02</span><h2>A newsletter in your inbox</h2>
+      <p>Three ways to make it obvious that you're in the inbox and what your options are. In all three, Go deeper moves to the ••• menu as "Make review cards".</p>
+    </div>
+    <div class="phones" id="inbox"></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note">
+      <span class="num">03</span><h2>The ••• menu, and tapping "Add to queue"</h2>
+      <p>The menu for an inbox item, with the rare actions in it. Tapping "Add to queue" shows a toast with Undo, and the status line updates in place, so it's clear why the buttons just changed.</p>
+    </div>
+    <div class="phones" id="menu"></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note">
+      <span class="num">04</span><h2>An item in your queue</h2>
+      <p>The same status line, so you always know where an item sits. Two ways to show Prep me. Both fix the style mismatch you spotted: secondary buttons become white cards with the same corners as the primary, not flat grey chips.</p>
+    </div>
+    <div class="phones" id="queued"></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note">
+      <span class="num">05</span><h2>The middle tab</h2>
+      <p>The current tab, then four replacements. Use the switch at the top to see each one in forest.</p>
+    </div>
+    <div class="phones" id="tabs"></div>
+  </section>
+</div>
+
+<script>
+const SHELL = (inner, cls = "short") => `<div class="phone ${cls}"><div class="screen"><div class="island"></div><div class="statusbar"><span>9:41</span><span>●●●</span></div>${inner}</div></div>`;
+const NAV = `<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div>`;
+const HEAD = (by) => `<div class="ihead" style="--k:#8E5468"><div class="cover" style="background:#8E5468">M</div>
+  <div><div class="k">Politics · Newsletter</div><div class="by">${by}</div><div class="chiprow"><span class="pill topic">US politics & elections</span></div></div></div>
+  <div class="ititle">☕ Blue tsunami</div>`;
+const GIST = `<div class="isec"><div class="sec-label">Gist</div><p>Democrats won control of the House and Senate in the midterms, read as a referendum on the administration. Also: Disney layoffs, the $6.34B Binance hack, and Rivian's jump.</p></div>`;
+const opt = (tag, title, desc, phone) => `<div class="opt"><span class="tag">${tag} · <b>${title}</b></span>${phone}<p>${desc}</p></div>`;
+
+document.getElementById("inbox").innerHTML = [
+  opt("A", "Status card + one button", "A card says where the item is and what happens if you do nothing. There's one quiet button, because the usual action is none. The ••• menu holds the rest.",
+    SHELL(`${NAV}<div class="view item">${HEAD("Morning Brew · Wed")}
+      <div class="strip"><span class="l">In your inbox</span><span class="t">It'll be in your next brief. Want to read it in full?</span></div>
+      <div class="actions"><div class="btn secondary full">Add to queue</div></div>${GIST}</div>`)),
+  opt("B", "One inline sentence", "The lightest option: no buttons, just a sentence with a link. It's calm, but easy to miss, and the wording has to carry the meaning.",
+    SHELL(`${NAV}<div class="view item">${HEAD("Morning Brew · Wed")}
+      <div class="inline-note"><b style="color:var(--ink)">In your inbox</b> — it'll be in your next brief. <a>Add to queue ›</a></div>${GIST}</div>`)),
+  opt("C", "Status card + two buttons", "Keeps the 'remember this' path one tap away under a plainer name. It's the closest to today's screen, but it gives a prominent button to something you'll rarely use.",
+    SHELL(`${NAV}<div class="view item">${HEAD("Morning Brew · Wed")}
+      <div class="strip"><span class="l">In your inbox</span><span class="t">It'll be in your next brief unless you pick one:</span></div>
+      <div class="actions"><div class="btn primary two">Add to queue<span class="sub">read it in full later</span></div><div class="btn secondary two">Remember this<span class="sub">primer + cards</span></div></div>${GIST}</div>`)),
+].join("");
+
+document.getElementById("menu").innerHTML = [
+  opt("Menu", "Inbox item ••• (A or B)", "Grouped roughly by how often you'd use them. 'Make review cards' says what it actually does, where 'Go deeper' didn't.",
+    SHELL(`${NAV}<div class="view item">${HEAD("Morning Brew · Wed")}</div><div class="dim"></div>
+      <div class="sheet menu"><div class="grabber"></div>
+        <div class="opts"><div><em>⏰</em><span>Remind me later…</span></div><div><em>●</em><span>Mark as unread</span></div></div>
+        <div class="opts"><div><em>◆</em><span>Make review cards<small>Marks it done and writes a primer</small></span></div><div><em>⌗</em><span>Change topic</span></div></div>
+        <div class="opts"><div class="danger"><em>✕</em><span>Delete</span></div></div>
+      </div>`)),
+  opt("After", "Tapped Add to queue", "A toast confirms the action and offers Undo. The status card now reads 'In your queue', and the actions are the queued ones.",
+    SHELL(`${NAV}<div class="view item">${HEAD("Morning Brew · Wed")}
+      <div class="strip"><span class="l">In your queue · #1 of 4</span><span class="t">Open it from Up next when you're ready.</span></div>
+      <div class="actions"><div class="btn primary">I finished it</div><div class="btn secondary">Prep me</div></div>${GIST}</div>
+      <div class="toast">Added to your queue<a>Undo</a></div>`)),
+].join("");
+
+const POD = `<div class="ihead" style="--k:#6A5A9C"><div class="cover" style="background:#6A5A9C">D</div>
+  <div><div class="k">AI · Podcast</div><div class="by">Dwarkesh Podcast · 2h 41m</div><div class="chiprow"><span class="pill topic">Data centers & hyperscalers</span></div></div></div>
+  <div class="ititle">Dylan Patel on the data center buildout</div>`;
+const STRIPQ = `<div class="strip"><span class="l">In your queue · #2 of 4</span><span class="t">Saved Monday</span></div>`;
+document.getElementById("queued").innerHTML = [
+  opt("A", "Primary + card-style secondary", "Today's layout with the style fixed: same height and corners, and the secondary is a white card. Prep me turns to '✓ Prepping' in the signal green.",
+    SHELL(`${NAV}<div class="view item">${POD}${STRIPQ}
+      <div class="actions"><div class="btn primary">I finished it</div><div class="btn secondary">Prep me</div></div>
+      <div class="isec"><div class="sec-label">Gist</div><p>The AI buildout is now limited by power and grid hookups, not chips.</p></div></div>`)),
+  opt("B", "Primary + explained toggle", "Prep me becomes a row that says what it does, so a first-time reader doesn't have to guess. It costs one more line on the page.",
+    SHELL(`${NAV}<div class="view item">${POD}${STRIPQ}
+      <div class="actions"><div class="btn primary">I finished it</div></div>
+      <div class="prepline"><div><b>Prep me</b><span>Get a short primer on Today before you listen</span></div><div class="switchy"></div></div>
+      <div class="isec"><div class="sec-label">Gist</div><p>The AI buildout is now limited by power and grid hookups, not chips.</p></div></div>`)),
+].join("");
+
+const ICONS = { Today: "☼", Library: "▥", Review: "↻", Ask: "◌" };
+const side = (t, active) => `<div class="tab ${t === active ? "on" : ""}"><div class="ic ${t === "Ask" ? "circle" : ""}">${ICONS[t]}</div><span>${t}</span></div>`;
+const bar = (middle, cls = "") => `<div class="barmock ${cls}"><div class="tabbar">${side("Today", "Today")}${side("Library")}${middle}${side("Review")}${side("Ask")}</div></div>`;
+document.getElementById("tabs").innerHTML = [
+  opt("Now", "Outlined + labelled '+'", "What's on your phone: the same symbol twice.", bar(`<div class="tab"><div class="ic circle">+</div><span>+</span></div>`)),
+  opt("A", "Filled circle, no label", "Reads as the app's one main action. It sits level with the other tabs. My pick.", bar(`<div class="tab"><div class="addA">+</div></div>`)),
+  opt("B", "Filled pill, no label", "The same idea in the rounded-rectangle shape of the earlier mocks. Slightly quieter than a circle.", bar(`<div class="tab"><div class="addB">+</div></div>`)),
+  opt("C", "Outlined, labelled 'Add'", "The smallest change: it matches the other tabs and gives up any emphasis.", bar(`<div class="tab"><div class="ic circle">+</div><span>Add</span></div>`)),
+  opt("D", "Raised circle", "Floats above the bar. It's the most prominent, and the most 'app template'.", bar(`<div class="tab"><div class="addD">+</div></div>`, "raised")),
+].join("");
+
+// Round 2: a one-line badge under the title replaces the status card.
+const HEAD2 = (by) => `<div class="ihead" style="--k:#8E5468"><div class="cover" style="background:#8E5468">M</div>
+  <div><div class="k">Politics · Newsletter</div><div class="by">${by}</div><div class="chiprow"><span class="pill topic">US politics & elections</span></div></div></div>
+  <div class="ititle">☕ Blue tsunami</div>`;
+const BADGE = (label, rest, end = "") => `<div class="badgeline"><span class="badge">${label}</span><span class="when">${rest}</span>${end}</div>`;
+const CHIP = `<span class="qchip">＋ Add to queue</span>`;
+document.getElementById("inbox2").innerHTML = [
+  opt("D", "Badge line + chip on the same line", "Everything on one line: where it is, when it came, and the one action, as a small chip on the right. My pick.",
+    SHELL(`${NAV}<div class="view item">${HEAD2("Morning Brew")}
+      ${BADGE("Inbox", "Wed · in your next brief", CHIP)}${GIST}</div>`)),
+  opt("E", "Badge line, chip on its own line", "The same parts with the chip below, left-aligned. It's easier to tap but takes more space.",
+    SHELL(`${NAV}<div class="view item">${HEAD2("Morning Brew")}
+      ${BADGE("Inbox", "Wed · in your next brief")}<div style="padding:10px 22px 0">${CHIP}</div>${GIST}</div>`)),
+  opt("F", "Badge line with a text link", "Closest to B: no chip, just an underlined text action at the end of the line. The quietest of the three.",
+    SHELL(`${NAV}<div class="view item">${HEAD2("Morning Brew")}
+      ${BADGE("Inbox", "Wed · in your next brief", `<a class="qlink">Queue it</a>`)}${GIST}</div>`)),
+].join("");
+
+const POD2 = `<div class="ihead" style="--k:#6A5A9C"><div class="cover" style="background:#6A5A9C">D</div>
+  <div><div class="k">AI · Podcast</div><div class="by">Dwarkesh Podcast · 2h 41m</div><div class="chiprow"><span class="pill topic">Data centers & hyperscalers</span></div></div></div>
+  <div class="ititle">Dylan Patel on the data center buildout</div>${BADGE("Queued", "Added Mon")}`;
+const QBODY = `<div class="isec"><div class="sec-label">Gist</div><p>The AI buildout is now limited by power and grid hookups, not chips.</p></div><div class="isec"><div class="collapsed">Background you might need<span>6 min ›</span></div></div>`;
+document.getElementById("queued2").innerHTML = [
+  opt("1", "“Done listening” + “Primer first”", "The main button names the format: Done reading, Done listening, Done watching. “Primer first” says what Prep me does: it puts this item's primer on Today so you read it before starting. My pick.",
+    SHELL(`${NAV}<div class="view item">${POD2}<div class="actions"><div class="btn primary">Done listening</div><div class="btn secondary">Primer first</div></div>${QBODY}</div>`)),
+  opt("2", "“Mark as done” + “Create primer”", "Your wording for the primer. My worry: for podcasts, articles and videos the primer already exists (it's the 'Background you might need' section below), so “Create” promises something that won't happen. It is accurate for newsletters, which only get a primer on request.",
+    SHELL(`${NAV}<div class="view item">${POD2}<div class="actions"><div class="btn primary">Mark as done</div><div class="btn secondary">Create primer</div></div>${QBODY}</div>`)),
+  opt("3", "“Done” + “Prep me”", "The shortest. “Done” is clear in context; Prep me stays as it is.",
+    SHELL(`${NAV}<div class="view item">${POD2}<div class="actions"><div class="btn primary">Done</div><div class="btn secondary">Prep me</div></div>${QBODY}</div>`)),
+].join("");
+
+// Round 3: the three inbox treatments side by side, then the primer-as-button model.
+document.getElementById("inbox3").innerHTML = [
+  opt("B", "Inline sentence", "A full sentence under the title, ending in a link.",
+    SHELL(`${NAV}<div class="view item">${HEAD2("Morning Brew · Wed")}
+      <div class="inline-note"><b style="color:var(--ink)">In your inbox</b> — it'll be in your next brief. <a>Add to queue ›</a></div>${GIST}</div>`)),
+  opt("E", "Badge line, chip below", "A badge line, then the chip on its own line.",
+    SHELL(`${NAV}<div class="view item">${HEAD2("Morning Brew")}
+      ${BADGE("Inbox", "Wed · in your next brief")}<div style="padding:10px 22px 0">${CHIP}</div>${GIST}</div>`)),
+  opt("F", "Badge line with a link", "Everything on one line, with the action as text.",
+    SHELL(`${NAV}<div class="view item">${HEAD2("Morning Brew")}
+      ${BADGE("Inbox", "Wed · in your next brief", `<a class="qlink">Queue it</a>`)}${GIST}</div>`)),
+].join("");
+
+const PRIMER_BTN = (label) => `<div class="btn secondary" style="gap:0">${label}</div>`;
+document.getElementById("primer3").innerHTML = [
+  opt("Item", "Queued podcast", "'Mark as finished' plus 'Primer · 6 min'. Tapping the primer opens it full screen and marks it read; the button then reads '✓ Primer'. The collapsed 'Background you might need' section goes away, because the button replaces it.",
+    SHELL(`${NAV}<div class="view item">${POD2}<div class="actions"><div class="btn primary">Mark as finished</div>${PRIMER_BTN("◆ Primer · 6 min")}</div>
+      <div class="isec"><div class="sec-label">Gist</div><p>The AI buildout is now limited by power and grid hookups, not chips. Patel walks through why hyperscalers are signing nuclear deals.</p></div>
+      <div class="isec"><div class="sec-label">Key ideas</div><ol class="ideas"><li>Power, not GPUs, now sets the pace of new capacity. <span class="ts">12:40</span></li><li>Interconnect queues run 4 to 7 years. <span class="ts">31:05</span></li></ol></div></div>`)),
+  opt("Today", "Up next with primer chips", "The 'Prep me' chips become '◆ Primer' chips that open the primer directly. You can get primed straight from Today without opening the item. 'Primers ready' keeps topic primers and the ones from 'Parts lost me'.",
+    SHELL(`<div class="view"><div class="hdr"><div class="title">Today</div><div class="date">Wed · Nov 4</div></div>
+      <div class="sec"><div class="sec-label"><span>Up next</span><a>See all 4 ›</a></div><div class="group">
+      ${["Dylan Patel on the data center buildout|Podcast · 2h 41m|D|#6A5A9C|AI", "Is restaking a systemic risk?|Podcast · 1h 12m|B|#A8613A|Crypto", "Why the Ravens run play action|YouTube · 18 min|▶|#3A7A7A|Sports"].map(s => { const [t, m, x, c, d] = s.split("|"); return `<div class="row"><div class="art" style="background:${c}">${x}</div><div class="meta" style="--k:${c}"><div class="k">${d}</div><b>${t}</b><span>${m}</span></div><div class="prep">◆ Primer</div></div>`; }).join("")}
+      </div></div></div>`)),
+  opt("Newsletter", "Queued newsletter", "Newsletters don't get a primer automatically, so here the second button really does create one: 'Create primer'. Once it's written, the button turns into '◆ Primer · 4 min', the same as on other items.",
+    SHELL(`${NAV}<div class="view item">${HEAD2("Morning Brew")}${BADGE("Queued", "Added Wed")}<div class="actions"><div class="btn primary">Mark as finished</div>${PRIMER_BTN("Create primer")}</div>${GIST}</div>`)),
+].join("");
+
+// Round 4: the date lives in the byline; primers stay on the item page.
+const BY = "Morning Brew · Wed, Nov 4";
+document.getElementById("inbox4").innerHTML = [
+  opt("B", "Inline sentence", "Reads as plain words; the line wraps to two.",
+    SHELL(`${NAV}<div class="view item">${HEAD2(BY)}
+      <div class="inline-note"><b style="color:var(--ink)">In your inbox</b> — it'll be in your next brief. <a>Add to queue ›</a></div>${GIST}</div>`)),
+  opt("F′", "Badge + link, no date", "One short line: the badge, what Inbox means, and the action.",
+    SHELL(`${NAV}<div class="view item">${HEAD2(BY)}
+      ${BADGE("Inbox", "In your next brief", `<a class="qlink">Add to queue</a>`)}${GIST}</div>`)),
+].join("");
+
+const POD4 = `<div class="ihead" style="--k:#6A5A9C"><div class="cover" style="background:#6A5A9C">D</div>
+  <div><div class="k">AI · Podcast</div><div class="by">Dwarkesh Podcast · 2h 41m · Added Mon</div><div class="chiprow"><span class="pill topic">Data centers & hyperscalers</span></div></div></div>
+  <div class="ititle">Dylan Patel on the data center buildout</div>${BADGE("Queued", "")}`;
+const QB4 = `<div class="isec"><div class="sec-label">Gist</div><p>The AI buildout is now limited by power and grid hookups, not chips.</p></div>`;
+document.getElementById("primer4").innerHTML = [
+  opt("Before", "Primer not opened yet", "",
+    SHELL(`${NAV}<div class="view item">${POD4}<div class="actions"><div class="btn primary">Mark as done</div>${PRIMER_BTN("◆ Primer · 6 min")}</div>${QB4}</div>`)),
+  opt("After", "Primer opened", "Still tappable, so you can reread it.",
+    SHELL(`${NAV}<div class="view item">${POD4}<div class="actions"><div class="btn primary">Mark as done</div><div class="btn secondary on">✓ Primed</div></div>${QB4}</div>`)),
+  opt("Today", "Up next, no primer chips", "",
+    SHELL(`<div class="view"><div class="hdr"><div class="title">Today</div><div class="date">Wed · Nov 4</div></div>
+      <div class="sec"><div class="sec-label"><span>Up next</span><a>See all 4 ›</a></div><div class="group">
+      ${["Dylan Patel on the data center buildout|Podcast · 2h 41m|D|#6A5A9C|AI", "Is restaking a systemic risk?|Podcast · 1h 12m|B|#A8613A|Crypto", "Why the Ravens run play action|YouTube · 18 min|▶|#3A7A7A|Sports"].map(s => { const [t, m, x, c, d] = s.split("|"); return `<div class="row"><div class="art" style="background:${c}">${x}</div><div class="meta" style="--k:${c}"><div class="k">${d}</div><b>${t}</b><span>${m}</span></div></div>`; }).join("")}
+      </div></div></div>`)),
+].join("");
+
+// Side-by-side accents: each phone sets --chrome itself so the page switch doesn't matter here.
+const accentPhone = (color) => `<div style="--chrome:${color}">${SHELL(`${NAV}<div class="view item">${POD4}
+  <div class="actions"><div class="btn primary">Mark as done</div>${PRIMER_BTN("◆ Primer · 6 min")}</div>
+  <div class="fchips" style="padding:16px 22px 0"><div>All</div><div class="on">Queued <span class="n">4</span></div><div>Done <span class="n">3</span></div><div>Inbox <span class="n">2</span></div></div>
+  ${BADGE("Inbox", "In your next brief", `<a class="qlink">Add to queue</a>`)}${QB4}</div>
+  <div class="tabbar" style="height:78px"><div class="tab on"><div class="ic">☼</div><span>Today</span></div><div class="tab"><div class="ic">▥</div><span>Library</span></div><div class="tab"><div class="addA">+</div></div><div class="tab"><div class="ic">↻</div><span>Review</span></div><div class="tab"><div class="ic circle">◌</div><span>Ask</span></div></div>`, "")}</div>`;
+document.getElementById("accents").innerHTML = [
+  opt("Graphite", "#1C1B18 (the spec)", "", accentPhone("#1C1B18")),
+  opt("Forest", "#3F7262", "", accentPhone("#3F7262")),
+].join("");
+
+// Round 5: queueing a primer, end to end.
+const AI = "#6A5A9C";
+const qrow = (art, color, kicker, title, meta, end = "") => `<div class="row"><div class="art" style="background:${color}">${art}</div><div class="meta" style="--k:${color}"><div class="k">${kicker}</div><b>${title}</b><span>${meta}</span></div>${end}<span class="handle">≡</span></div>`;
+const TABS5 = (active) => `<div class="tabbar" style="height:78px">${["Today", "Library"].map(t => `<div class="tab ${t === active ? "on" : ""}"><div class="ic">${ICONS[t]}</div><span>${t}</span></div>`).join("")}<div class="tab"><div class="addA">+</div></div><div class="tab"><div class="ic">↻</div><span>Review</span></div><div class="tab"><div class="ic circle">◌</div><span>Ask</span></div></div>`;
+document.getElementById("primerq").innerHTML = [
+  opt("1", "Finish → Parts lost me", "Picking 'Parts lost me' shows the two primer buttons. Save still just saves; you don't have to pick either. For a newsletter, Queue the primer also writes it.",
+    SHELL(`${NAV}<div class="view item">${POD4}</div><div class="dim"></div>
+      <div class="sheet"><div class="grabber"></div><h3>How'd it go?</h3>
+        <div class="verdicts"><div style="--v:var(--got)">Easy</div><div style="--v:var(--partly)">Mostly followed</div><div style="--v:var(--missed)" class="on">Parts lost me</div></div>
+        <div class="actions" style="padding:0"><div class="btn secondary full">◆ Read primer now</div><div class="btn secondary full">＋ Queue the primer</div></div>
+        <div class="field" style="min-height:52px"><span>Anything confusing? (optional)</span><span>🎙</span></div>
+        <div class="btn primary">Save</div>
+      </div>`)),
+  opt("2", "Library → Queued", "The queued primer is a row of its own: a ◆ tile in the item's topic colour and 'Primer:' before the title. You can drag, swipe and snooze it like the other rows, and it shows in Up next on Today too.",
+    SHELL(`<div class="view"><div class="hdr"><div class="title">Library</div></div>
+      <div class="fchips"><div>All</div><div class="on">Queued <span class="n">4</span></div><div>Done <span class="n">3</span></div><div>Inbox <span class="n">1</span></div></div>
+      <div class="sec"><div class="sec-label"><span>Your queue · drag to reorder</span></div><div class="group">
+        ${qrow("◆", AI, "AI · Primer", "Primer: Dylan Patel on the data center buildout", "6 min read")}
+        ${qrow("B", "#A8613A", "Crypto", "Is restaking a systemic risk?", "Podcast · 1h 12m")}
+        ${qrow("▶", "#3A7A7A", "Sports", "Why the Ravens run play action", "YouTube · 18 min")}
+        ${qrow("◆", "#8E5468", "Politics · Primer", "Primer: Blue tsunami", "Writing primer…")}
+      </div></div></div>${TABS5("Library")}`, "")),
+  opt("3", "Opening the queued primer", "It opens the primer itself, with a link back to the item it's for. Mark as done takes it off the queue, and the item's button then shows '✓ Primed'.",
+    SHELL(`${NAV}<div class="view item">
+      <div class="ihead" style="--k:${AI}"><div class="cover" style="background:${AI}">◆</div><div><div class="k">AI · Primer</div><div class="by">6 min read</div></div></div>
+      <div class="ititle">Primer: Dylan Patel on the data center buildout</div>
+      <div class="badgeline"><a class="qlink" style="font-weight:550">For: Dylan Patel on the data center buildout ›</a></div>
+      <div class="actions"><div class="btn primary">Mark as done</div></div>
+      <div class="isec"><div class="sec-label">What you need first</div><p><b>Interconnect queue.</b> Before a new power plant or data center can plug into the grid, the utility studies whether the grid can take it. Those studies are backed up for years…</p></div></div>`)),
+  opt("4", "Any item's ••• menu", "The same action, available before you start: for when you already know an item will be dense. Once the primer is queued, this reads 'Primer is queued'.",
+    SHELL(`${NAV}<div class="view item">${POD4}</div><div class="dim"></div>
+      <div class="sheet menu"><div class="grabber"></div>
+        <div class="opts"><div><em>◆</em><span>Queue the primer<small>Adds it to your queue as its own item</small></span></div><div><em>⏰</em><span>Remind me later…</span></div></div>
+        <div class="opts"><div><em>⌗</em><span>Change topic</span></div><div><em>↺</em><span>Wrong episode?</span></div></div>
+        <div class="opts"><div class="danger"><em>✕</em><span>Delete</span></div></div>
+      </div>`)),
+].join("");
+
+// Round 6: three calmer treatments of the primer offer in the finish sheet.
+const sheet6 = (middle, verdicts) => SHELL(`${NAV}<div class="view item">${POD4}</div><div class="dim"></div>
+  <div class="sheet"><div class="grabber"></div><h3>How'd it go?</h3>
+    <div class="verdicts"><div style="--v:var(--got)">Easy</div><div style="--v:var(--partly)">Mostly followed</div>${verdicts}</div>
+    ${middle}
+    <div class="field" style="min-height:52px"><span>Anything confusing? (optional)</span><span>🎙</span></div>
+    <div class="btn primary">Save</div></div>`);
+const LOST = `<div style="--v:var(--missed)" class="on">Parts lost me</div>`;
+document.getElementById("lostme").innerHTML = [
+  opt("G", "One checkbox, on by default", "Picking 'Parts lost me' adds one row, already ticked: 'Queue the primer'. Save does it, and you can untick it. 'Read now' isn't offered here because the primer is one tap away on the item. My pick.",
+    sheet6(`<div class="checkrow"><div class="check">✓</div><div>Queue the primer<small>◆ 6 min · so you can come back to it</small></div></div>`, LOST)),
+  opt("H", "Nested in the choice", "The offer opens inside the 'Parts lost me' card as a line of text links. It's compact and clearly belongs to that choice.",
+    sheet6("", `<div style="--v:var(--missed)" class="on nest"><span>Parts lost me</span><span class="sub"><span>◆ Primer · 6 min</span><span><a>Read now</a><a>Queue it</a></span></span></div>`)),
+  opt("I", "One quiet line", "A plain line under the choices, with two text links and no card.",
+    sheet6(`<div class="prow"><span>◆ There's a primer · 6 min</span><span><a>Read now</a><a>Queue it</a></span></div>`, LOST)),
+].join("");
+
+document.querySelectorAll("#accent button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#accent button").forEach(x => x.classList.toggle("on", x === b));
+  document.documentElement.dataset.accent = b.dataset.a;
+});
+</script>

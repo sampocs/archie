@@ -1,66 +1,12 @@
-import type { LibraryData, LibrarySource, TopicPrimerRow, TopicRow } from "./join";
-import { isSnoozed, primersReady, statusTag, upNext, waitingNewsletters } from "./visibility";
+import type { LibrarySource } from "./join";
+import { sourceRow } from "./testRows";
+import { isSnoozed, queueOrder, statusTag, upNext, waitingNewsletters } from "./visibility";
 
 const NOW = new Date("2026-11-04T15:00:00Z");
 const PAST = "2026-11-04T14:00:00Z";
 const FUTURE = "2026-11-05T14:00:00Z";
 
-const source = (overrides: Partial<LibrarySource>): LibrarySource => ({
-  id: "s1",
-  url: "https://example.com/a",
-  title: "A",
-  kind: "article",
-  state: "inbox",
-  intent: "queue",
-  createdAt: "2026-11-01T00:00:00Z",
-  updatedAt: "2026-11-01T00:00:00Z",
-  deletedAt: null,
-  syncError: null,
-  processing: "ready",
-  processingError: null,
-  reaction: null,
-  note: null,
-  prepMe: 0,
-  mergedIntoId: null,
-  sender: null,
-  domain: null,
-  topicId: null,
-  imageUrl: null,
-  queuePosition: null,
-  readAt: null,
-  snoozedUntil: null,
-  primerOpenedAt: null,
-  newsletterKind: null,
-  topic: null,
-  summary: null,
-  primerCreatedAt: null,
-  ...overrides,
-});
-
-const topic = (overrides: Partial<TopicRow>): TopicRow => ({
-  id: "t1",
-  domain: "AI",
-  name: "Agents",
-  origin: "user",
-  removedAt: null,
-  mergedIntoId: null,
-  createdAt: "2026-11-01T00:00:00Z",
-  updatedAt: "2026-11-01T00:00:00Z",
-  primerRequestedAt: null,
-  ...overrides,
-});
-
-const topicPrimer = (overrides: Partial<TopicPrimerRow>): TopicPrimerRow => ({
-  id: "p1",
-  topicId: "t1",
-  version: 1,
-  isCurrent: 1,
-  content: JSON.stringify({ markdown: "# Agents" }),
-  openedAt: null,
-  snoozedUntil: null,
-  createdAt: "2026-11-03T00:00:00Z",
-  ...overrides,
-});
+const source = sourceRow;
 
 describe("statusTag", () => {
   it.each([
@@ -85,67 +31,54 @@ describe("isSnoozed", () => {
   });
 });
 
-describe("upNext", () => {
-  it("lists visible queued sources by position, then unpositioned ones newest first", () => {
+describe("queueOrder", () => {
+  it("orders queued sources and queued primers together by position, unpositioned sources last, newest first", () => {
     const sources = [
       source({ id: "unpositioned-old", state: "queued", createdAt: "2026-11-01T00:00:00Z" }),
       source({ id: "second", state: "queued", queuePosition: 2 }),
-      source({ id: "snoozed", state: "queued", queuePosition: -5, snoozedUntil: FUTURE }),
       source({ id: "unpositioned-new", state: "queued", createdAt: "2026-11-02T00:00:00Z" }),
       source({ id: "first", state: "queued", queuePosition: -1 }),
+      // A finished item whose primer was queued from the finish sheet: only its primer is in the queue.
+      source({ id: "lost", state: "consumed", queuePosition: -7, primerQueuePosition: 0.5 }),
+      // A queued item with its primer queued above it: two entries.
+      source({ id: "both", state: "queued", queuePosition: 3, primerQueuePosition: -3 }),
       source({ id: "inbox", state: "inbox", queuePosition: -9 }),
     ];
 
-    expect(upNext(sources, NOW).map((item) => item.id)).toEqual([
-      "first",
-      "second",
-      "unpositioned-new",
-      "unpositioned-old",
+    expect(queueOrder(sources).map((entry) => entry.key)).toEqual([
+      "primer-both",
+      "source-first",
+      "primer-lost",
+      "source-second",
+      "source-both",
+      "source-unpositioned-new",
+      "source-unpositioned-old",
     ]);
   });
 });
 
-describe("primersReady", () => {
-  const data = (sources: LibrarySource[], topics: TopicRow[], topicPrimers: TopicPrimerRow[]): LibraryData => ({
-    sources,
-    topics,
-    topicPrimers,
-  });
+describe("upNext", () => {
+  it("leaves out snoozed sources and snoozed primers, each by its own snooze time", () => {
+    const sources = [
+      source({ id: "snoozed", state: "queued", queuePosition: -5, snoozedUntil: FUTURE }),
+      // The source is snoozed, its queued primer isn't.
+      source({ id: "primer-awake", state: "consumed", primerQueuePosition: -4, snoozedUntil: FUTURE }),
+      // The primer is snoozed, its queued source isn't.
+      source({
+        id: "primer-asleep",
+        state: "queued",
+        queuePosition: 1,
+        primerQueuePosition: -2,
+        primerSnoozedUntil: FUTURE,
+      }),
+      source({ id: "woke", state: "queued", queuePosition: 0, snoozedUntil: PAST }),
+    ];
 
-  it("lists prepped source primers and live topic primers nobody opened, newest first", () => {
-    const items = primersReady(
-      data(
-        [source({ id: "prepped", prepMe: 1, primerCreatedAt: "2026-11-02T00:00:00Z" })],
-        [topic({})],
-        [topicPrimer({})],
-      ),
-      NOW,
-    );
-
-    expect(items.map((item) => item.key)).toEqual(["topic-p1", "source-prepped"]);
-  });
-
-  it("leaves out opened, snoozed, un-prepped, primerless, removed-topic and merged-topic primers", () => {
-    const items = primersReady(
-      data(
-        [
-          source({ id: "opened", prepMe: 1, primerCreatedAt: PAST, primerOpenedAt: PAST }),
-          source({ id: "snoozed", prepMe: 1, primerCreatedAt: PAST, snoozedUntil: FUTURE }),
-          source({ id: "unprepped", prepMe: 0, primerCreatedAt: PAST }),
-          source({ id: "no-primer", prepMe: 1 }),
-        ],
-        [topic({ id: "removed", removedAt: PAST }), topic({ id: "merged", mergedIntoId: "t9" }), topic({ id: "live" })],
-        [
-          topicPrimer({ id: "p-removed", topicId: "removed" }),
-          topicPrimer({ id: "p-merged", topicId: "merged" }),
-          topicPrimer({ id: "p-opened", topicId: "live", openedAt: PAST }),
-          topicPrimer({ id: "p-snoozed", topicId: "live", snoozedUntil: FUTURE }),
-        ],
-      ),
-      NOW,
-    );
-
-    expect(items).toEqual([]);
+    expect(upNext(sources, NOW).map((entry) => entry.key)).toEqual([
+      "primer-primer-awake",
+      "source-woke",
+      "source-primer-asleep",
+    ]);
   });
 });
 

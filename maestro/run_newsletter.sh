@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The newsletter flow: log in, deliver a newsletter through the ingest endpoint, then Go deeper on it.
+# The newsletter flow: log in, deliver a newsletter through the ingest endpoint, then queue it, undo, and make review cards from it.
 # Run from the repo root with the backend already up (`make start-local`); needs the owner's keys and INGEST_SECRET in .env.
 set -euo pipefail
 

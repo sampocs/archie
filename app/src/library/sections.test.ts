@@ -14,9 +14,10 @@ const data: LibraryData = {
     sourceRow({ id: "done", state: "consumed" }),
     sourceRow({ id: "inbox", state: "inbox", kind: "newsletter" }),
     sourceRow({ id: "briefed", state: "briefed", kind: "newsletter" }),
-    sourceRow({ id: "prepped", state: "queued", prepMe: 1, primerCreatedAt: PAST }),
-    sourceRow({ id: "prepped-no-primer", state: "queued", prepMe: 1 }),
-    sourceRow({ id: "primer-not-pushed", state: "queued", primerCreatedAt: PAST }),
+    sourceRow({ id: "queued-with-primer", state: "queued", primerCreatedAt: PAST }),
+    sourceRow({ id: "done-with-primer", state: "consumed", primerCreatedAt: PAST, primerQueuePosition: -1 }),
+    sourceRow({ id: "primer-writing", state: "consumed", primerQueuePosition: -2 }),
+    sourceRow({ id: "primer-snoozed", state: "consumed", primerQueuePosition: -3, primerSnoozedUntil: FUTURE }),
   ],
   topics: [
     topicRow({ id: "live" }),
@@ -34,7 +35,7 @@ const data: LibraryData = {
 
 const keys = (filter: LibraryFilter): string[] => filterEntries(data, filter).map(entryKey).sort();
 const ids = (entries: LibraryEntry[]): string[] =>
-  entries.map((entry) => (entry.kind === "source" ? entry.source.id : entry.primer.id));
+  entries.map((entry) => (entry.kind === "topicPrimer" ? entry.primer.id : entry.source.id));
 
 describe("filterEntries", () => {
   it("All: every source plus live current topic primers", () => {
@@ -47,30 +48,39 @@ describe("filterEntries", () => {
     );
   });
 
-  it("Queued: queued sources", () => {
+  it("Queued: queued sources and queued primers", () => {
     expect(keys("queued")).toEqual(
-      ["queued", "queued-snoozed", "queued-woke", "prepped", "prepped-no-primer", "primer-not-pushed"]
-        .map((id) => `source-${id}`)
-        .sort(),
+      [
+        ...["queued", "queued-snoozed", "queued-woke", "queued-with-primer"].map((id) => `source-${id}`),
+        ...["done-with-primer", "primer-writing", "primer-snoozed"].map((id) => `queued-primer-${id}`),
+      ].sort(),
     );
   });
 
   it("Done: consumed sources", () => {
-    expect(keys("done")).toEqual(["source-done"]);
+    expect(keys("done")).toEqual(
+      ["source-done", "source-done-with-primer", "source-primer-snoozed", "source-primer-writing"],
+    );
   });
 
   it("Inbox: inbox and briefed", () => {
     expect(keys("inbox")).toEqual(["source-briefed", "source-inbox"]);
   });
 
-  it("Primers: prepped sources with a primer, plus live topic primers", () => {
-    expect(keys("primers")).toEqual(["source-prepped", "topic-primer-tp-live", "topic-primer-tp-snoozed"]);
+  it("Primers: every source with a primer, queued or not, plus live topic primers", () => {
+    expect(keys("primers")).toEqual([
+      "source-done-with-primer",
+      "source-queued-with-primer",
+      "topic-primer-tp-live",
+      "topic-primer-tp-snoozed",
+    ]);
   });
 });
 
 describe("filterCounts", () => {
   it("leaves snoozed entries out", () => {
-    expect(filterCounts(data, NOW)).toEqual({ all: 9, queued: 5, done: 1, inbox: 2, primers: 2 });
+    // Queued: 3 awake sources + 2 awake primers (the snoozed source and the snoozed primer are left out).
+    expect(filterCounts(data, NOW)).toEqual({ all: 10, queued: 5, done: 4, inbox: 2, primers: 3 });
   });
 });
 
@@ -83,12 +93,17 @@ describe("byWeek", () => {
     { kind: "source", source: sourceRow({ id: "new", createdAt: "2026-11-04T10:00:00Z" }) },
     { kind: "source", source: sourceRow({ id: "sleeping", createdAt: "2026-11-04T11:00:00Z", snoozedUntil: FUTURE }) },
     { kind: "topicPrimer", primer: topicPrimerRow({ id: "tp", createdAt: "2026-11-03T00:00:00Z" }), topic: topicRow({}) },
+    // A queued primer sleeps by its own snooze time, not its source's.
+    {
+      kind: "queuedPrimer",
+      source: sourceRow({ id: "primer-sleeping", createdAt: "2026-11-04T12:00:00Z", primerSnoozedUntil: FUTURE }),
+    },
   ];
 
   it("splits at exactly 7 days, newest first, with snoozed apart", () => {
     const sections = byWeek(entries, NOW);
     expect(ids(sections.thisWeek)).toEqual(["new", "tp", "edge"]);
     expect(ids(sections.earlier)).toEqual(["old"]);
-    expect(ids(sections.snoozed)).toEqual(["sleeping"]);
+    expect(ids(sections.snoozed)).toEqual(["primer-sleeping", "sleeping"]);
   });
 });

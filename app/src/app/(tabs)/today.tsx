@@ -8,11 +8,8 @@ import { newsletterAddressFrom } from "@/account/newsletterAddress";
 import { apiFetch } from "@/api/client";
 import { useSession } from "@/auth/session";
 import { useSignOut } from "@/context/SignOutContext";
-import { setPrepMe } from "@/db/actions";
-import { db } from "@/db/client";
-import { primersReady, upNext, waitingNewsletters } from "@/library/visibility";
+import { upNext, waitingNewsletters } from "@/library/visibility";
 import { useLibraryData } from "@/library/useLibraryData";
-import { requestSync } from "@/sync/useSync";
 import { Button } from "@/theme/components/Button";
 import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
@@ -20,9 +17,8 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { sinceLabel, newslettersLine, todayDate } from "@/today/todayLabels";
 import { GroupedList } from "@/ui/GroupedList";
-import { haptic } from "@/ui/haptics";
 import { ItemRow } from "@/ui/ItemRow";
-import { PRIMER_MONOGRAM } from "@/ui/monogram";
+import { QueuedPrimerRow } from "@/ui/QueuedPrimerRow";
 import { SourceRow } from "@/ui/SourceRow";
 import { useNow } from "@/ui/useNow";
 
@@ -57,18 +53,11 @@ export default function TodayScreen() {
     };
   }, [sheetOpen, session.status, session.sessionKey]);
 
-  const primers = primersReady(data, now);
+  // Up next is the combined queue: queued sources and queued primers.
   const queued = upNext(data.sources, now);
   const upNextItems = queued.slice(0, UP_NEXT_COUNT);
   const newsletters = waitingNewsletters(data.sources, now);
-  const isEmpty =
-    primers.length === 0 && upNextItems.length === 0 && newsletters.count === 0;
-
-  function togglePrepMe(sourceId: string, on: boolean): void {
-    haptic("selection");
-    setPrepMe(db, sourceId, !on);
-    requestSync();
-  }
+  const isEmpty = upNextItems.length === 0 && newsletters.count === 0;
 
   const accountButton = (
     <View
@@ -132,58 +121,6 @@ export default function TodayScreen() {
         </Card>
       ) : null}
 
-      {primers.length > 0 ? (
-        <GroupedList title="Primers ready" testID="today-primers">
-          {primers.map((item, index) =>
-            item.kind === "source" ? (
-              <ItemRow
-                key={item.key}
-                testID={`primer-ready-${index}`}
-                artwork={{
-                  imageUrl: null,
-                  domain: item.source.domain,
-                  monogram: PRIMER_MONOGRAM,
-                  unread: true,
-                }}
-                kicker={{ domain: item.source.domain, suffix: "Background" }}
-                title={item.source.title ?? item.source.url}
-                meta={
-                  item.source.reaction === "lost"
-                    ? "You said parts lost you"
-                    : "You asked to prep this"
-                }
-                onPress={() =>
-                  router.push({
-                    pathname: "/source/[id]",
-                    params: { id: item.source.id, primer: "1" },
-                  })
-                }
-              />
-            ) : (
-              <ItemRow
-                key={item.key}
-                testID={`primer-ready-${index}`}
-                artwork={{
-                  imageUrl: null,
-                  domain: item.topic.domain,
-                  monogram: PRIMER_MONOGRAM,
-                  unread: true,
-                }}
-                kicker={{ domain: item.topic.domain, suffix: "Topic primer" }}
-                title={item.topic.name}
-                meta="You added this topic"
-                onPress={() =>
-                  router.push({
-                    pathname: "/topic/[id]",
-                    params: { id: item.topic.id, primer: "1" },
-                  })
-                }
-              />
-            ),
-          )}
-        </GroupedList>
-      ) : null}
-
       {upNextItems.length > 0 ? (
         <GroupedList
           title="Up next"
@@ -202,20 +139,13 @@ export default function TodayScreen() {
             </Pressable>
           }
         >
-          {upNextItems.map((source, index) => (
-            <SourceRow
-              key={source.id}
-              source={source}
-              testID={`up-next-${index}`}
-              end={
-                <PrepChip
-                  testID={`prep-${index}`}
-                  on={source.prepMe === 1}
-                  onPress={() => togglePrepMe(source.id, source.prepMe === 1)}
-                />
-              }
-            />
-          ))}
+          {upNextItems.map((entry, index) =>
+            entry.kind === "source" ? (
+              <SourceRow key={entry.key} source={entry.source} testID={`up-next-${index}`} />
+            ) : (
+              <QueuedPrimerRow key={entry.key} source={entry.source} testID={`up-next-${index}`} />
+            ),
+          )}
         </GroupedList>
       ) : null}
 
@@ -242,36 +172,5 @@ export default function TodayScreen() {
         </Text>
       ) : null}
     </Screen>
-  );
-}
-
-/** The "Prep me" toggle on an Up next row: filled when on. */
-function PrepChip({
-  testID,
-  on,
-  onPress,
-}: {
-  testID: string;
-  on: boolean;
-  onPress: () => void;
-}) {
-  const theme = useTheme();
-
-  return (
-    <Pressable
-      testID={testID}
-      onPress={onPress}
-      hitSlop={8}
-      style={{
-        backgroundColor: on ? theme.colors.chrome : theme.colors.press,
-        borderRadius: theme.radii.button,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.xs,
-      }}
-    >
-      <Text variant="secondary" tone={on ? "onChrome" : "ink"}>
-        {on ? "Prepping" : "Prep me"}
-      </Text>
-    </Pressable>
   );
 }

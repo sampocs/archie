@@ -16,7 +16,6 @@ export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => (
   processingError: null,
   reaction: null,
   note: null,
-  prepMe: 0,
   mergedIntoId: null,
   sender: null,
   domain: null,
@@ -26,10 +25,13 @@ export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => (
   readAt: null,
   snoozedUntil: null,
   primerOpenedAt: null,
+  primerQueuePosition: null,
+  primerSnoozedUntil: null,
   newsletterKind: null,
   topic: null,
   summary: null,
   primerCreatedAt: null,
+  primerWords: null,
   ...overrides,
 });
 

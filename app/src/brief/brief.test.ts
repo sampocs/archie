@@ -111,12 +111,12 @@ describe("todayBrief", () => {
 
   it("previews the open brief once it has content, whatever is waiting", () => {
     const briefs = [brief({ id: "old", status: "done", content: ready }), brief({ content: ready })];
-    const result = todayBrief(briefs, [], now);
+    const result = todayBrief(briefs, []);
 
     expect(result).toMatchObject({ kind: "ready", brief: { id: "b1" } });
   });
 
-  it("says the brief is being written while recent inbox newsletters wait for its first content", () => {
+  it("says the brief is being written while inbox newsletters, however old, wait for its first content", () => {
     const sources = [
       newsletter(),
       newsletter({ processing: "processing" }),
@@ -127,11 +127,11 @@ describe("todayBrief", () => {
       newsletter({ kind: "article" }),
     ];
 
-    expect(todayBrief([brief()], sources, now)).toEqual({ kind: "writing", newsletters: 2 });
-    expect(todayBrief([], sources, now)).toEqual({ kind: "writing", newsletters: 2 });
+    expect(todayBrief([brief()], sources)).toEqual({ kind: "writing", newsletters: 3 });
+    expect(todayBrief([], sources)).toEqual({ kind: "writing", newsletters: 3 });
   });
 
   it("shows nothing when nothing is unbriefed, even with a done brief", () => {
-    expect(todayBrief([brief({ status: "done", content: ready })], [newsletter({ state: "briefed" })], now)).toBeNull();
+    expect(todayBrief([brief({ status: "done", content: ready })], [newsletter({ state: "briefed" })])).toBeNull();
   });
 });

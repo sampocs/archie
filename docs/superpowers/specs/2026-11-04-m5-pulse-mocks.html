@@ -1,0 +1,313 @@
+<title>Archie Pulse Brief</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of phone mocks, each with a numbered flow note beside it; the page chrome stays quiet so the phones carry the color. */
+:root {
+  --page: #E9E6DE; --page-ink: #1C1B18; --page-ink-2: #5E5B54; --page-line: #D6D2C8; --note-bg: #F7F5F0;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+  --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+  --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533; --k-history: #8E5468;
+  --k-trading: #4F6F8A; --k-geo: #5E6B3A; --k-sports: #3A7A7A; --k-eng: #5A5F6E; --unread: #3D6690;
+  --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --review: #3F7262;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark }
+body { background: var(--page); color: var(--page-ink); font-family: var(--sans); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 40px; }
+.intro h1 { font-size: 34px; letter-spacing: -.04em; margin: 0 0 8px; text-wrap: balance; }
+.intro p { color: var(--page-ink-2); line-height: 1.55; max-width: 70ch; margin: 0; }
+.legend-k { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink-2); }
+.scene { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 28px; align-items: start; border-top: 1px solid var(--page-line); padding-top: 32px; }
+@media (max-width: 860px) { .scene { grid-template-columns: minmax(0, 1fr); } .phone { margin: 0 auto; } }
+.note { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.note .num { font: 500 12px var(--mono); color: var(--page-ink-2); letter-spacing: .05em; }
+.note h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+.note p, .note li { color: var(--page-ink-2); line-height: 1.55; font-size: 15px; max-width: 64ch; }
+.note p { margin: 0; }
+.note ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.note b { color: var(--page-ink); font-weight: 600; }
+.ask { background: var(--note-bg); border: 1px solid var(--page-line); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--page-ink-2); line-height: 1.5; }
+.ask strong { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink); display: block; margin-bottom: 4px; }
+
+/* ---------- Phone ---------- */
+.phone { width: 360px; max-width: 100%; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 24px 60px rgba(0,0,0,.28); flex: none; box-sizing: border-box; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--sans); color-scheme: light; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, sans-serif; color: var(--ink); }
+.view { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; padding: 58px 0 110px; }
+.view::-webkit-scrollbar { display: none; }
+.hdr { padding: 6px 22px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.hdr .title { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; }
+.hdr .date { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; margin-bottom: 7px; }
+.toggle { display: flex; background: var(--press); border-radius: 9px; padding: 2px; margin-bottom: 4px; }
+.toggle div { font-size: 12.5px; font-weight: 600; padding: 6px 10px; border-radius: 7px; color: var(--ink3); }
+.toggle div.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { margin: 14px 16px 0; height: 40px; border-radius: 12px; background: var(--press); display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--ink3); font-size: 15px; }
+.fchips { display: flex; gap: 6px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+.fchips div { flex: none; font-size: 13px; font-weight: 550; padding: 7px 12px; border-radius: 999px; background: var(--surface); color: var(--ink2); box-shadow: var(--card-shadow); }
+.fchips div.on { background: var(--chrome); color: #fff; box-shadow: none; }
+.fchips .n { opacity: .55; margin-left: 3px; font-weight: 500; }
+.sec { padding: 0 16px; margin-top: 22px; }
+.sec-label { padding: 0 6px; margin-bottom: 9px; font: 500 11px/1 var(--mono); color: var(--ink3); text-transform: uppercase; letter-spacing: .02em; display: flex; justify-content: space-between; }
+.sec-label a { color: var(--ink2); text-decoration: none; text-transform: none; font-family: var(--sans); font-size: 12.5px; font-weight: 600; letter-spacing: 0; }
+.group { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--card-shadow); }
+.row { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.art { width: 46px; height: 46px; border-radius: 10px; flex: none; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); display: grid; place-items: center; font: 700 18px/1 var(--sans); color: rgba(255,255,255,.92); }
+.art.person { border-radius: 50%; }
+.unread-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--unread); box-shadow: 0 0 0 2px var(--surface); }
+.meta { flex: 1; min-width: 0; }
+.meta .k { font: 600 10px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 4px; }
+.meta b { display: -webkit-box; font-size: 14.5px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.3; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.meta span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+.status { flex: none; font-size: 11px; font-weight: 600; padding: 4px 7px; border-radius: 6px; color: var(--ink2); background: var(--press); }
+.status.unread { background: color-mix(in srgb, var(--unread) 12%, transparent); color: var(--unread); }
+.status.proc { color: var(--ink3); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.prep { flex: none; font-size: 12px; font-weight: 600; padding: 6px 9px; border-radius: 8px; background: var(--press); color: var(--ink2); }
+.prep.on { background: color-mix(in srgb, var(--got) 14%, var(--surface)); color: var(--got); }
+.dom { padding: 14px 16px; border-top: 1px solid var(--line); }
+.dom:first-child { border-top: 0; }
+.dom .top { display: flex; align-items: center; gap: 10px; }
+.dom .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--k); }
+.dom .name { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; flex: 1; }
+.dom .cnt { font: 500 12px/1 var(--mono); color: var(--ink3); }
+.dom .bar { height: 4px; border-radius: 2px; background: var(--press); margin: 10px 0 8px 20px; display: flex; overflow: hidden; gap: 2px; }
+.dom .bar i { display: block; height: 100%; background: var(--k); opacity: .85; }
+.dom .bar i:nth-child(2) { opacity: .5; } .dom .bar i:nth-child(3) { opacity: .25; }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 20px; }
+.topics div { font-size: 12.5px; font-weight: 500; padding: 5px 9px; border-radius: 7px; color: var(--ink2); background: var(--press); }
+.topics .n { color: var(--ink3); margin-left: 4px; font-family: var(--mono); font-size: 11px; }
+.topics div.mine { background: transparent; box-shadow: inset 0 0 0 1px var(--ink3); }
+.add-topic { font-size: 14px; color: var(--ink2); padding: 13px 16px; border-top: 1px solid var(--line); }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 14px 0; display: flex; justify-content: space-around; z-index: 30; background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 56px; }
+.tab i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid currentColor; box-sizing: border-box; }
+.tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+.tab .pl { width: 36px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 20px; }
+/* Item page */
+.navbar { position: absolute; top: 0; left: 0; right: 0; z-index: 10; height: 96px; padding: 54px 12px 0; display: flex; justify-content: space-between; align-items: flex-start; box-sizing: border-box; }
+.navbtn { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 550; color: var(--chrome); background: var(--surface); box-shadow: var(--card-shadow); box-sizing: border-box; justify-content: center; }
+.item { padding: 100px 0 40px; }
+.ihead { display: flex; gap: 14px; padding: 0 22px; align-items: flex-end; }
+.cover { width: 92px; height: 92px; border-radius: 14px; flex: none; display: grid; place-items: center; font: 700 34px var(--sans); color: rgba(255,255,255,.92); }
+.ihead .k { font: 600 10.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); }
+.ihead .by { font-size: 13px; color: var(--ink2); margin-top: 5px; line-height: 1.35; }
+.chiprow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 7px; background: var(--press); color: var(--ink2); }
+.pill.topic { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.pill.verdict { color: var(--partly); background: color-mix(in srgb, var(--partly) 12%, transparent); }
+.ititle { font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.12; padding: 0 22px; margin-top: 14px; text-wrap: balance; }
+.actions { display: flex; gap: 8px; padding: 16px 22px 0; }
+.btn { height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 15px; font-weight: 600; padding: 0 16px; }
+.btn.primary { background: var(--chrome); color: #fff; flex: 1; }
+.btn.secondary { background: var(--surface); color: var(--ink); box-shadow: var(--card-shadow); }
+.btn.secondary.on { color: var(--got); }
+.isec { padding: 0 22px; margin-top: 24px; }
+.isec .sec-label { padding: 0; }
+.isec p { font-size: 16px; line-height: 1.62; margin: 0; color: var(--ink); }
+.ideas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: i; }
+.ideas li { display: flex; gap: 10px; font-size: 15px; line-height: 1.5; }
+.ideas li::before { counter-increment: i; content: counter(i); font: 500 12px/1.9 var(--mono); color: var(--ink3); width: 14px; flex: none; }
+.ts { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 5px; background: var(--press); color: var(--ink2); white-space: nowrap; }
+.nums { display: flex; flex-direction: column; gap: 8px; }
+.nums div { display: flex; justify-content: space-between; gap: 10px; font: 500 13.5px/1.45 var(--mono); }
+.collapsed { background: var(--surface); border-radius: 14px; box-shadow: var(--card-shadow); padding: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; }
+.collapsed span { font: 500 12px var(--mono); color: var(--ink3); }
+.empty-cards { font-size: 14px; color: var(--ink3); line-height: 1.5; }
+/* Sheet */
+.dim { position: absolute; inset: 0; background: rgba(10,10,8,.32); z-index: 40; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; background: var(--bg); border-radius: 26px 26px 0 0; padding: 10px 20px 34px; display: flex; flex-direction: column; gap: 16px; }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 4px; }
+.sheet h3 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+.verdicts { display: flex; flex-direction: column; gap: 8px; }
+.verdicts div { height: 46px; border-radius: 14px; display: flex; align-items: center; padding: 0 14px; font-weight: 600; font-size: 15px; background: var(--surface); box-shadow: var(--card-shadow); color: var(--v); }
+.verdicts div.on { background: color-mix(in srgb, var(--v) 14%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--v); }
+.field { min-height: 70px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; color: var(--ink3); font-size: 15px; display: flex; justify-content: space-between; }
+.sheet .btn.primary { flex: none; }
+.small { font-size: 13px; color: var(--ink3); line-height: 1.45; }
+.primer-card { background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.primer-card b { font-size: 15px; }
+.primer-card span { font-size: 13px; color: var(--ink3); }
+.handle { flex: none; color: var(--ink3); font-size: 16px; letter-spacing: -2px; padding-left: 2px; }
+.swipe { position: relative; overflow: hidden; border-top: 1px solid var(--line); }
+.swipe .acts { position: absolute; inset: 0; display: flex; justify-content: flex-end; }
+.swipe .acts div { width: 78px; display: grid; place-items: center; color: #fff; font-size: 12.5px; font-weight: 600; }
+.swipe .row { background: var(--surface); transform: translateX(-156px); border-top: 0; }
+.back { flex: none; font: 500 11px var(--mono); color: var(--ink3); }
+.opts { display: flex; flex-direction: column; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); overflow: hidden; }
+.opts div { display: flex; justify-content: space-between; align-items: center; padding: 13px 14px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 550; }
+.opts div:first-child { border-top: 0; }
+.opts span { font: 500 12px var(--mono); color: var(--ink3); }
+<style>
+.phones { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+.opt { display: flex; flex-direction: column; gap: 10px; width: 360px; max-width: 100%; }
+.opt .tag { font: 500 12px var(--mono); color: var(--page-ink-2); letter-spacing: .05em; text-transform: uppercase; }
+.opt .tag b { color: var(--page-ink); }
+.opt p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--page-ink-2); }
+.scene2 { border-top: 1px solid var(--page-line); padding-top: 32px; display: flex; flex-direction: column; gap: 20px; }
+.scene2 .note { max-width: 860px; }
+.tall { height: 860px; }
+/* Brief pieces */
+.brief-head { padding: 0 22px; margin-top: 18px; display: flex; justify-content: space-between; align-items: baseline; }
+.brief-head b { font-size: 20px; letter-spacing: -.03em; }
+.brief-head span { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; }
+.bcard { margin: 10px 16px 0; background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 4px 16px; }
+.story { padding: 13px 0; border-top: 1px solid var(--line); }
+.story:first-child { border-top: 0; }
+.story .k { font: 600 10px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 5px; display: flex; justify-content: space-between; }
+.story .k i { font-style: normal; font: 500 10.5px var(--mono); color: var(--ink3); letter-spacing: 0; text-transform: none; }
+.story h4 { margin: 0 0 4px; font-size: 15.5px; letter-spacing: -.015em; line-height: 1.3; }
+.story p { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--ink); }
+.story p .why { color: var(--ink2); }
+.more { font-size: 13px; font-weight: 600; color: var(--ink2); margin-top: 6px; display: inline-block; }
+.also { padding: 12px 0; border-top: 1px solid var(--line); }
+.also .l { font: 500 11px var(--mono); text-transform: uppercase; color: var(--ink3); margin-bottom: 6px; }
+.also li { font-size: 13.5px; line-height: 1.5; color: var(--ink2); margin-bottom: 3px; }
+.also ul { margin: 0; padding-left: 16px; }
+.worth .row { padding: 11px 0; }
+.addq { font-size: 13px; font-weight: 650; color: var(--chrome); white-space: nowrap; }
+.done { margin: 14px 16px 0; height: 48px; border-radius: 16px; background: var(--chrome); color: #fff; display: grid; place-items: center; font-weight: 600; font-size: 15px; }
+.finehint { text-align: center; font-size: 12.5px; color: var(--ink3); margin-top: 8px; padding: 0 30px; line-height: 1.4; }
+.prose { padding: 0 22px; }
+.prose h5 { font: 500 11px var(--mono); text-transform: uppercase; color: var(--k); margin: 18px 0 6px; letter-spacing: .03em; }
+.prose p { font-size: 15.5px; line-height: 1.62; margin: 0 0 10px; }
+.prose sup { font: 600 10px var(--mono); color: var(--ink3); background: var(--press); border-radius: 4px; padding: 1px 4px; margin-left: 2px; }
+.preview { margin: 14px 16px 0; background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 15px 16px; display: flex; flex-direction: column; gap: 9px; }
+.preview .top { display: flex; justify-content: space-between; align-items: baseline; }
+.preview .top b { font-size: 17px; letter-spacing: -.02em; }
+.preview .top span { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; }
+.preview li { font-size: 14px; line-height: 1.45; margin-bottom: 4px; }
+.preview ul { margin: 0; padding-left: 16px; }
+.preview .go { font-size: 14px; font-weight: 650; color: var(--chrome); }
+.progress { height: 3px; background: var(--line); margin: 6px 22px 0; border-radius: 2px; overflow: hidden; }
+.progress i { display: block; height: 100%; width: 35%; background: var(--chrome); }
+.domhead { display: flex; align-items: center; gap: 8px; padding: 0 22px; margin: 22px 0 0; }
+.prose .domhead { padding: 0; }
+.domhead .sq { width: 10px; height: 10px; border-radius: 3px; background: var(--k); }
+.domhead b { font-size: 17px; letter-spacing: -.025em; color: var(--ink); flex: 1; }
+.domhead i { font-style: normal; font: 500 11px var(--mono); color: var(--ink3); }
+.pstory { margin-top: 10px; }
+.pstory h4 { margin: 0 0 3px; font-size: 15.5px; letter-spacing: -.015em; }
+.pstory p { font-size: 15px; line-height: 1.6; margin: 0; }
+.pstory sup { font: 600 10px var(--mono); color: var(--ink3); background: var(--press); border-radius: 4px; padding: 1px 5px; }
+.srcrow { display: flex; gap: 10px; align-items: center; padding: 11px 0; border-top: 1px solid var(--line); }
+.srcrow:first-child { border-top: 0; }
+.srcrow .art { width: 34px; height: 34px; font-size: 14px; border-radius: 8px; }
+.srcrow b { font-size: 14px; display: block; } .srcrow span { font-size: 12.5px; color: var(--ink3); }
+</style>
+
+<div class="wrap">
+  <header class="intro" style="display:flex;flex-direction:column;gap:12px">
+    <span class="legend-k">M5 Pulse · options for review</span>
+    <h1>The brief as something you read straight through</h1>
+    <p>The brief is a short summary you read top to bottom, not a feed of headlines that each open a full article. Every story is a few complete sentences, so you can read it end to end in about 2 minutes. Going deeper is a small, optional link. Below the stories come "Also happening", "Worth reading" (essays) and "Done". The content comes from the Morning Brew you already have.</p>
+  </header>
+
+  <section class="scene2" style="border-top:2px solid var(--page-ink)">
+    <div class="note"><span class="legend-k">Round 2</span><span class="num">01b</span><h2>Grouped by domain, between B and C</h2>
+      <p>Stories are grouped under their domain. Domains are ordered by their biggest story, so a big politics story puts Politics first and a quiet crypto day falls to the bottom. Within a domain, the most important story comes first. Both versions are full screen like B, and each domain gets a prominent heading.</p></div>
+    <div class="phones" id="grouped"></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note"><span class="legend-k">Round 1</span><span class="num">01</span><h2>Where the brief lives, and how it reads</h2>
+      <p>Three shapes. In all three, every story is complete without tapping, and "Sources ›" is the only way into a story.</p></div>
+    <div class="phones" id="shapes"></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note"><span class="num">02</span><h2>The end of the brief, and going deeper</h2>
+      <p>The end of the brief: "Also happening" one-liners, "Worth reading" essays as a list, then Done. Then the story page you reach from "Sources ›": a little more depth, and the newsletters it came from.</p></div>
+    <div class="phones" id="ends"></div>
+  </section>
+</div>
+
+<script>
+const SHELL = (inner, cls = "tall") => `<div class="phone ${cls}"><div class="screen"><div class="island"></div><div class="statusbar"><span>9:41</span><span>●●●</span></div>${inner}</div></div>`;
+const NAV = `<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div>`;
+const opt = (tag, title, desc, phone) => `<div class="opt"><span class="tag">${tag} · <b>${title}</b></span>${phone}<p>${desc}</p></div>`;
+const POL = "#8E5468", CRY = "#A8613A", AI = "#6A5A9C", TECH = "#5A5F6E", BIZ = "#3D6690";
+const STORIES = [
+  { k: "Politics", c: POL, src: "3 sources", h: "Democrats take both chambers of Congress", p: "As of 5am ET Democrats were on track for 228 House seats and 54 in the Senate.", w: "Divided government means two years of gridlock on Trump's agenda, and investigations from the House." },
+  { k: "Crypto", c: CRY, src: "2 sources", h: "Binance loses a record $6.34B to North Korean hackers", p: "Attackers posed as recruiters and got an engineer to run malware hidden in a coding test.", w: "It's the largest exchange hack ever; Binance says it has already covered 98% of it." },
+  { k: "AI", c: AI, src: "1 source", h: "Google won't let schools turn off AI search", p: "Schools can't use Google search without AI Overviews, but student accounts get AI tools off by default and a new tutor-style 'Guided Learning' mode.", w: "" },
+  { k: "Business", c: BIZ, src: "2 sources", h: "Rivian jumps 16% on its cheaper R2", p: "Strong R2 sales lifted the stock even though each EV still loses money.", w: "The profit is in software and licensing its tech to Volkswagen." },
+];
+const story = (s, more = true) => `<div class="story" style="--k:${s.c}"><div class="k">${s.k}<i>${s.src}</i></div><h4>${s.h}</h4><p>${s.p}${s.w ? ` <span class="why">${s.w}</span>` : ""}</p>${more ? `<span class="more">Sources ›</span>` : ""}</div>`;
+const TODAYHDR = `<div class="hdr"><div class="title">Today</div><div class="date">Wed · Nov 4</div></div>`;
+
+document.getElementById("shapes").innerHTML = [
+  opt("A", "Inline on Today", "The brief is the top of Today: one card you scroll through, with Up next below it. It's always the first thing you see, with no extra screen, but Today gets long until you tap Done.",
+    SHELL(`<div class="view">${TODAYHDR}
+      <div class="brief-head"><b>Your brief</b><span>6 stories · 2 min</span></div>
+      <div class="bcard">${STORIES.map(s => story(s)).join("")}</div>
+      <div class="sec"><div class="sec-label"><span>Up next</span></div></div></div>`)),
+  opt("B", "A preview on Today, read full screen", "Today shows a small card with the headlines and the reading time. Tapping it opens the brief full screen, with a progress bar. It feels like an e-mail you open and finish, and Today stays short. The catch is that it's one more tap.",
+    SHELL(`<div class="view">${TODAYHDR}
+      <div class="preview"><div class="top"><b>Your brief</b><span>6 stories · 2 min</span></div>
+        <ul>${STORIES.slice(0, 3).map(s => `<li>${s.h}</li>`).join("")}<li style="color:var(--ink3)">+ 3 more, and 2 essays</li></ul>
+        <span class="go">Read the brief ›</span></div>
+      <div class="sec"><div class="sec-label"><span>Up next</span><a>See all 4 ›</a></div><div class="group">
+        <div class="row"><div class="art" style="background:${AI}">D</div><div class="meta" style="--k:${AI}"><div class="k">AI</div><b>Dylan Patel on the data center buildout</b><span>Podcast · 2h 41m</span></div></div>
+      </div></div></div>`) +
+    `<div style="height:10px"></div>` +
+    SHELL(`${NAV}<div class="view item" style="padding-top:96px">
+      <div class="progress"><i></i></div>
+      <div class="brief-head" style="margin-top:12px"><b>Wednesday's brief</b><span>since Mon · 2 min</span></div>
+      <div class="bcard">${STORIES.map(s => story(s)).join("")}</div></div>`)),
+  opt("C", "Prose, grouped by domain", "Full screen like B, but written as short paragraphs under domain headings, like a well-edited newsletter. Small numbered chips link to the sources. It's the most readable straight through, but individual stories are less visible.",
+    SHELL(`${NAV}<div class="view item" style="padding-top:96px">
+      <div class="brief-head" style="margin-top:4px"><b>Wednesday's brief</b><span>since Mon · 2 min</span></div>
+      <div class="prose">
+        <h5 style="--k:${POL}">Politics</h5><p><b>Democrats took both chambers.</b> As of 5am ET they were on track for 228 House seats and 54 in the Senate, which sets up two years of gridlock and House investigations.<sup>3</sup></p>
+        <h5 style="--k:${CRY}">Crypto</h5><p><b>Binance lost a record $6.34B</b> to North Korean hackers who posed as recruiters and slipped malware into a coding test. Binance says it has covered 98%.<sup>2</sup></p>
+        <h5 style="--k:${BIZ}">Business & tech</h5><p><b>Rivian jumped 16%</b> on strong sales of its cheaper R2, though the cars still lose money; software and VW licensing pay the bills.<sup>2</sup> <b>Google</b> won't let schools turn off AI Overviews, but student accounts get AI tools off by default.<sup>1</sup></p>
+      </div></div>`)),
+].join("");
+
+// Round 2: grouped by domain, two densities.
+const GROUPS = [
+  { k: "Politics", c: POL, stories: [STORIES[0], { k: "Politics", c: POL, src: "1 source", h: "US renews $3.8B-a-year military aid to Israel", p: "The existing deal runs through 2028; the announcement extends the same terms.", w: "" }] },
+  { k: "Crypto", c: CRY, stories: [STORIES[1]] },
+  { k: "Business & tech", c: BIZ, stories: [STORIES[3], STORIES[2]] },
+];
+const domHead = (g, n) => `<div class="domhead" style="--k:${g.c}"><span class="sq"></span><b>${g.k}</b><i>${n}</i></div>`;
+const cardStory = (s) => `<div class="story" style="--k:${s.c}"><h4>${s.h}</h4><p>${s.p}${s.w ? ` <span class="why">${s.w}</span>` : ""}</p><span class="more">Sources · ${s.src.split(" ")[0]} ›</span></div>`;
+const proseStory = (s) => `<div class="pstory"><h4>${s.h}</h4><p>${s.p}${s.w ? " " + s.w : ""} <sup>${s.src.split(" ")[0]}</sup></p></div>`;
+const BRIEFTOP = `${NAV}<div class="view item" style="padding-top:96px"><div class="progress"><i></i></div><div class="brief-head" style="margin-top:12px"><b>Wednesday's brief</b><span>since Mon · 2 min</span></div>`;
+document.getElementById("grouped").innerHTML = [
+  opt("D", "Domain headings, a card per domain", "Each domain is a heading in its colour, then one card holding its stories in B's style: headline, paragraph and a 'Sources' link. It's the easiest to scan, with clear breaks between domains. My pick.",
+    SHELL(`${BRIEFTOP}${GROUPS.map(g => `${domHead(g, g.stories.length === 1 ? "1 story" : g.stories.length + " stories")}<div class="bcard">${g.stories.map(cardStory).join("")}</div>`).join("")}</div>`)),
+  opt("E", "Domain headings, prose underneath", "The same headings, then C's flowing text with no cards. Each story is a bold headline line and a paragraph, with a small source-count chip at the end that opens the story. It reads more like one continuous newsletter.",
+    SHELL(`${BRIEFTOP}<div class="prose">${GROUPS.map(g => `${domHead(g, "")}${g.stories.map(proseStory).join("")}`).join("")}</div></div>`)),
+].join("");
+
+const ESSAYS = [
+  { s: "ByteByteGo", t: "How Discord stores trillions of messages", p: "Why they moved from Cassandra to ScyllaDB, and the request-coalescing trick that made it work." },
+  { s: "Not Boring", t: "The tech that could make power too cheap to meter", p: "A long, optimistic tour of fusion, geothermal and grid batteries." },
+];
+document.getElementById("ends").innerHTML = [
+  opt("End", "Also happening, Worth reading, Done", "'Also happening' gives one line each for the stories that didn't make the top 5–8. 'Worth reading' lists essays with an 'Add to queue' link, so you can compare them before choosing. Done marks everything here as briefed.",
+    SHELL(`<div class="view" style="padding-top:70px"><div class="bcard">
+      ${story(STORIES[3])}
+      <div class="also"><div class="l">Also happening</div><ul><li>Disney cuts another 1,000 jobs in its TV business.</li><li>Hackers heated supermarket fridges across seven EU countries.</li><li>The US renews its $3.8B-a-year military aid deal with Israel.</li></ul></div>
+      </div>
+      <div class="brief-head"><b style="font-size:16px">Worth reading</b><span>2 essays</span></div>
+      <div class="bcard worth">${ESSAYS.map(e => `<div class="row" style="padding:12px 0;gap:10px"><div class="meta"><div class="k" style="--k:var(--ink3)">${e.s}</div><b>${e.t}</b><span style="color:var(--ink2)">${e.p}</span></div><span class="addq">＋ Queue</span></div>`).join("")}</div>
+      <div class="done">Done ✓</div>
+      <div class="finehint">Marks these stories and the essays you didn't queue as briefed. The next newsletter starts a new brief.</div>
+    </div>`)),
+  opt("Story", "Sources ›", "A story page goes one step deeper: a fuller paragraph built from all the coverage, then the newsletters it came from. Each one opens that newsletter's own page, where you can open the email, queue it, or make review cards.",
+    SHELL(`${NAV}<div class="view item">
+      <div style="padding:0 22px;--k:${POL}"><div class="k" style="font:600 10.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--k)">Politics · Story</div></div>
+      <div class="ititle">Democrats take both chambers of Congress</div>
+      <div class="isec"><p>As of 5am ET Democrats were on track for 228 House seats and 54 in the Senate, the first time since 2022 that one party has flipped both chambers in a midterm. Commentators framed it as a referendum on the administration. In practice it means Trump's agenda stalls in Congress, and the House gets subpoena power. Turnout was the highest for a midterm since 1914.</p></div>
+      <div class="isec"><div class="sec-label">Covered by</div><div class="bcard" style="margin:0">
+        <div class="srcrow"><div class="art" style="background:${POL}">M</div><div><b>Morning Brew</b><span>☕ Blue tsunami · Wed</span></div></div>
+        <div class="srcrow"><div class="art" style="background:${POL}">A</div><div><b>Axios AM</b><span>Midterms: the morning after · Wed</span></div></div>
+        <div class="srcrow"><div class="art" style="background:${POL}">T</div><div><b>The Daily Upside</b><span>What a split Congress means · Wed</span></div></div>
+      </div></div></div>`)),
+].join("");
+</script>

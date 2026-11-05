@@ -1,7 +1,8 @@
-"""The parts `analyze` and `primer` share: read the source's text, call the model, and re-check the source after.
+"""The parts the model steps share: read the source's text, call the model, and re-check the source after.
 
-Both steps follow the loop's handler contract: read into locals, commit, make the (slow, billed) model call
-holding no transaction, then take the user's write lock and write.
+`analyze` and `primer` use all of it, `clean_text` the call and the re-check. Each follows the loop's handler
+contract: read into locals, commit, make the (slow, billed) model call holding no transaction, then take the user's
+write lock and write.
 """
 
 from __future__ import annotations

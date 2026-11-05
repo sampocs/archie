@@ -27,7 +27,6 @@ SOURCE_KEYS_BEFORE_M4 = {
     "processing_error",
     "reaction",
     "note",
-    "prep_me",
     "merged_into_id",
     "sender",
     "created_at",
@@ -45,6 +44,7 @@ SOURCE_KEYS_ADDED_BY_M4 = {
     "primer_opened_at",
     "newsletter_kind",
 }
+SOURCE_KEYS_ADDED_BY_M4_POLISH = {"primer_queue_position", "primer_snoozed_until"}
 
 
 def _add_source(url: str, *, intent: str = "queue") -> dict[str, Any]:
@@ -108,13 +108,16 @@ def test_a_later_queued_source_sits_above_an_earlier_one(live_stack: LiveStack) 
 
 
 def test_a_pulled_source_carries_the_library_columns_and_hides_the_episode_guid(live_stack: LiveStack) -> None:
-    """The pulled source keeps its old keys, gains the eight library ones, and never shows `episode_guid`."""
+    """The pulled source keeps its old keys (less `prep_me`), gains the library and queued-primer ones.
+
+    It never shows `episode_guid`.
+    """
     authed = live_stack.authed(live_stack.sign_in())
     authed.post("/sync/push", json={"actions": [_add_source("https://example.com/a")]}).raise_for_status()
 
     row = _pull_rows(authed)["sources"][0]
 
-    assert set(row) == SOURCE_KEYS_BEFORE_M4 | SOURCE_KEYS_ADDED_BY_M4
+    assert set(row) == SOURCE_KEYS_BEFORE_M4 | SOURCE_KEYS_ADDED_BY_M4 | SOURCE_KEYS_ADDED_BY_M4_POLISH
 
 
 def test_topics_topic_primers_and_sources_page_in_position_order(live_stack: LiveStack) -> None:

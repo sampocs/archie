@@ -1,7 +1,7 @@
 """Turn a raw RFC 822 email into the few fields a newsletter source needs.
 
-The message is outside input: it is parsed as data, its HTML is reduced to text by trafilatura, and nothing in it is
-ever executed or followed.
+The message is outside input: it is parsed as data, its HTML is reduced to markdown by trafilatura (headings and
+paragraphs kept), and nothing in it is ever executed or followed.
 """
 
 from __future__ import annotations
@@ -11,6 +11,7 @@ import email.message
 import email.policy
 import email.utils
 import hashlib
+import html.parser
 import re
 from dataclasses import dataclass
 
@@ -21,6 +22,13 @@ MIN_HTML_WORDS = 50
 
 _WEB_URL_IN_LIST_POST = re.compile(r"<(https://[^>\s]+)>")
 _WEB_URL_IN_BODY = re.compile(r"View this post on the web at (https://\S+)")
+# The text of a newsletter's "open the web version" link, compared lower-cased with whitespace collapsed.
+_WEB_VERSION_LINK_TEXTS = frozenset(
+    {"view online", "view in browser", "view in your browser", "read online", "view this email in your browser"}
+)
+_HTTPS_PREFIX = "https://"
+_ANCHOR_TAG = "a"
+_HREF_ATTRIBUTE = "href"
 _MESSAGE_ID_FALLBACK_PREFIX = "sha256:"
 MAX_MESSAGE_ID_LENGTH = 998  # the width of the `Source.newsletter_message_id` column
 
@@ -46,7 +54,7 @@ def parse(raw: bytes) -> ParsedEmail:
         subject=_header_text(message, "Subject"),
         sender=_sender(message),
         message_id=_message_id(message, raw=raw),
-        web_url=_web_url(message, plain=plain),
+        web_url=_web_url(message, plain=plain, html=html),
         text=_without_nul(_readable_text(html=html, plain=plain)[:MAX_TEXT_LENGTH]),
     )
 
@@ -88,14 +96,58 @@ def _message_id(message: email.message.Message, *, raw: bytes) -> str:
     return _MESSAGE_ID_FALLBACK_PREFIX + hashlib.sha256(raw).hexdigest()
 
 
-def _web_url(message: email.message.Message, *, plain: str) -> str | None:
-    """The post's page on the web: the List-Post URL, else the "View this post on the web" line."""
+def _web_url(message: email.message.Message, *, plain: str, html: str) -> str | None:
+    """The post's page on the web, from the first of these that has one.
+
+    The List-Post URL, then Substack's "View this post on the web" line, then an HTML link reading "View Online" or
+    the like (https only).
+    """
     list_post = _WEB_URL_IN_LIST_POST.search(_header_text(message, "List-Post") or "")
     if list_post:
         return list_post.group(1)
 
     in_body = _WEB_URL_IN_BODY.search(plain)
-    return in_body.group(1) if in_body else None
+    if in_body:
+        return in_body.group(1)
+    return _web_version_link(html) if html else None
+
+
+def _web_version_link(html_text: str) -> str | None:
+    """The https target of the first link whose text names the web version."""
+    finder = _WebVersionLinkFinder()
+    finder.feed(html_text)
+    finder.close()
+    return finder.url
+
+
+class _WebVersionLinkFinder(html.parser.HTMLParser):
+    """Collects each link's text and keeps the first https one whose text names the web version."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.url: str | None = None
+        self._href: str | None = None
+        self._text: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag != _ANCHOR_TAG:
+            return
+        self._href = dict(attrs).get(_HREF_ATTRIBUTE)
+        self._text = []
+
+    def handle_data(self, data: str) -> None:
+        if self._href is not None:
+            self._text.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag != _ANCHOR_TAG or self._href is None:
+            return
+
+        link_text = " ".join("".join(self._text).split()).lower()
+        href = self._href.strip()
+        if self.url is None and link_text in _WEB_VERSION_LINK_TEXTS and href.startswith(_HTTPS_PREFIX):
+            self.url = href
+        self._href = None
 
 
 def _body_text(message: email.message.Message, *, subtype: str) -> str:
@@ -112,8 +164,8 @@ def _body_text(message: email.message.Message, *, subtype: str) -> str:
 
 
 def _readable_text(*, html: str, plain: str) -> str:
-    """The HTML reduced to text when that yields a real article, else the plain part."""
-    extracted = trafilatura.extract(html, output_format="txt", include_comments=False) if html else None
+    """The HTML reduced to markdown when that yields a real article, else the plain part."""
+    extracted = trafilatura.extract(html, output_format="markdown", include_comments=False) if html else None
     if extracted and len(extracted.split()) >= MIN_HTML_WORDS:
         return extracted.strip()
     return plain.strip()

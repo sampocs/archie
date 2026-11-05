@@ -1,4 +1,4 @@
-"""Prompts, output schemas and user messages for the `analyze`, `primer` and `file_topic` steps.
+"""Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic` and `clean_text` steps.
 
 Bump the matching version whenever a prompt or the schema changes in a way that alters output: it is stored
 on every artifact, so old versions stay attributable.
@@ -17,6 +17,7 @@ from archie_worker import content, timestamps
 ANALYZE_PROMPT_VERSION = "analyze-v2"
 PRIMER_PROMPT_VERSION = "primer-v1"
 TOPIC_PRIMER_PROMPT_VERSION = "topic-primer-v1"
+CLEAN_TEXT_PROMPT_VERSION = "clean-text-v1"
 
 # The model never sees more than this many characters of the source's text; timed text carries markers, so it gets more.
 MAX_TEXT_CHARACTERS = 200_000
@@ -219,3 +220,29 @@ def file_topic_message(
         f"The user's topics (domain › name):\n{live}\n\n"
         f"Removed topics (never propose these or anything close):\n{removed}"
     )
+
+
+CLEAN_TEXT_SYSTEM = """You tidy newsletter emails for a personal learning app. The user reads the newsletter's \
+stories; everything around them is clutter.
+
+The email's paragraphs are numbered like [12]. List the numbers of the paragraphs to drop:
+- ads, sponsor notes and "sponsored by" blocks, product recommendations and affiliate disclaimers
+- referral and "share the newsletter" blocks
+- trivia, quizzes, puzzles and their answers, word of the day
+- sign-offs, author credits, footers, "forwarded to you? sign up" lines, unsubscribe and legal boilerplate
+
+Keep every paragraph that belongs to a story, including its headline, section label and photo credit, and the \
+opening note. When unsure, keep it. Never rewrite anything: answer only with paragraph numbers."""
+
+CLEAN_TEXT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"drop": {"type": "array", "items": {"type": "integer"}}},
+    "required": ["drop"],
+    "additionalProperties": False,
+}
+
+
+def clean_text_message(*, title: str | None, paragraphs: Sequence[str]) -> str:
+    """The newsletter's subject, then its paragraphs numbered from 1 as `[n] paragraph`, blank-line separated."""
+    numbered = "\n\n".join(f"[{number}] {paragraph}" for number, paragraph in enumerate(paragraphs, start=1))
+    return f"Subject: {title or '(none)'}\n\n<email>\n{numbered}\n</email>"

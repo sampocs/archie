@@ -64,7 +64,7 @@ def _queued_kinds(db: sqlalchemy.orm.Session, source: models.Source) -> list[str
     ("kind", "expected_steps"),
     [
         (models.SourceKind.ARTICLE, [models.JobKind.ANALYZE, models.JobKind.PRIMER]),
-        (models.SourceKind.NEWSLETTER, [models.JobKind.ANALYZE]),
+        (models.SourceKind.NEWSLETTER, [models.JobKind.CLEAN_TEXT, models.JobKind.ANALYZE]),
     ],
 )
 def test_store_text_writes_the_artifact_titles_and_queues_the_kinds_steps(

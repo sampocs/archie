@@ -82,17 +82,21 @@ def has_or_is_writing_primer(db: orm.Session, *, source: models.Source) -> bool:
     """Whether the source has a current primer, or a `primer` job for it is queued or running."""
     if pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.PRIMER) is not None:
         return True
+    return has_pending_job(db, source=source, kind=models.JobKind.PRIMER)
 
-    writing = db.scalar(
+
+def has_pending_job(db: orm.Session, *, source: models.Source, kind: models.JobKind) -> bool:
+    """Whether a `kind` job for the source is queued or running."""
+    pending = db.scalar(
         sqlalchemy.select(
             sqlalchemy.exists().where(
-                models.Job.kind == models.JobKind.PRIMER.value,
+                models.Job.kind == kind.value,
                 models.Job.status.in_([models.JobStatus.QUEUED.value, models.JobStatus.RUNNING.value]),
                 models.Job.payload[pipeline.SOURCE_ID_KEY].astext == str(source.id),
             )
         )
     )
-    return bool(writing)
+    return bool(pending)
 
 
 def start_primer(db: orm.Session, *, source: models.Source) -> None:

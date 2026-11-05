@@ -104,15 +104,20 @@ def finish_source(db: orm.Session, *, user: models.User, payload: dict[str, obje
         source.note = parsed.note
     changes.touch(source)
 
-    # Analyze goes first, so a newsletter's primer (if this queues one) is written after its cards. While first
-    # processing is still running, the analyze already queued makes cards anyway (it checks the consumed state when
-    # it runs), so only a newsletter that was already ready needs another pass.
-    if source.kind == models.SourceKind.NEWSLETTER and source.processing == models.ProcessingStatus.READY:
+    # Analyze goes first, so a newsletter's primer (if this queues one) is written after its cards. An analyze
+    # already queued or running makes cards anyway (it checks the consumed state when it runs), and one without text
+    # has nothing to analyze; every other newsletter needs another pass, including one only writing its primer.
+    if source.kind == models.SourceKind.NEWSLETTER and _needs_reanalysis(db, source=source):
         pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
         pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.ANALYZE])
     if parsed.queue_primer:
         rows.queue_primer(db, source=source)
     return None
+
+
+def _needs_reanalysis(db: orm.Session, *, source: models.Source) -> bool:
+    has_text = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT) is not None
+    return has_text and not rows.has_pending_job(db, source=source, kind=models.JobKind.ANALYZE)
 
 
 def queue_primer(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:

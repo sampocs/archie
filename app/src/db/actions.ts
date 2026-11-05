@@ -177,8 +177,8 @@ export function finishSource(
 ): void {
   db.transaction((tx) => {
     const source = tx.select().from(schema.sources).where(eq(schema.sources.id, input.sourceId)).get();
-    // A finished, already-processed newsletter is analyzed again so it gets cards, as the server does; one still
-    // processing makes its cards from the analysis already queued.
+    // A finished newsletter is analyzed again so it gets cards. The phone can't see the server's jobs, so it only
+    // shows that for a ready one; for one still processing the server decides and the next pull shows it.
     const reanalyze = source?.kind === "newsletter" && source.processing === "ready" ? { processing: "processing", processingError: null } : {};
     updateSource(tx, input.sourceId, {
       state: "consumed",

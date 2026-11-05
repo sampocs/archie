@@ -121,10 +121,14 @@ The same Finished / Queue flow as the share sheet, for pasting links or searchin
 The goal is to know the water-cooler topics in about 2 minutes, without reading every newsletter.
 
 - Newsletters are ingested automatically into the **Inbox**.
-- Carl **groups coverage by story, not by newsletter**, then ranks by importance (how widely covered, how big) and relevance (my domains), and drops the noise.
-- **The brief** sits at the top of Today: the top 5–8 stories, each with 2–3 lines on what happened and why it matters. "Go deeper" either queues the full piece or opens it as a consumed library item. Everything else is collapsed under "Also happening."
-- **The brief covers "since you last checked,"** so it never stacks up. Skipping three days produces one ~2-minute brief.
-- **Weekly news quiz**: a few short cards on the week's stories. They **expire** instead of entering long-term review.
+- **The brief** sits at the top of Today as a preview card. It is rolling: it is rewritten in the background whenever a newsletter finishes processing, so it is ready (and works offline) when I open Today. One brief is open at a time.
+- It covers **every unbriefed newsletter since the last Done**, however old, with no time window. Skipping three days (or three weeks) still produces one ~2-minute brief, kept short by ranking.
+- **News newsletters are split into stories** and grouped by domain. Domains are ordered by their top story, and stories within a domain by importance. Up to 10 stories are shown in full (a headline plus 2-3 lines on what happened and why it matters); the rest are one-liners under "Also happening."
+- **Essays are never split.** They are listed at the end under "Worth reading" (sender, subject, a one-line pitch, and a "＋ Queue" link) so several can be compared before choosing.
+- **A story's page** has a longer detail paragraph and "Covered by": the newsletters that reported it, each opening its item page. Stories are awareness only: they never become library items or cards. Going deeper on a newsletter is the way to keep something.
+- **Done ✓ marks exactly the newsletters shown as briefed** and closes the brief. Anything that arrived while I was reading starts the next one.
+- One LLM call groups, ranks and writes each update; there are no embeddings yet (Search + chat, M7).
+- **Weekly news quiz** (deferred to M6 with cards): a few short cards on the week's stories. They **expire** instead of entering long-term review.
 
 ## Notifications
 

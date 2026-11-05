@@ -65,7 +65,7 @@ briefs
 ```json
 {
   "domains": [
-    {"domain": "politics", "stories": [
+    {"domain": "Politics", "stories": [
       {"headline": "...", "body": "...", "why": "..." , "detail": "...", "importance": 9, "source_ids": ["..."]}
     ]}
   ],
@@ -74,7 +74,7 @@ briefs
 }
 ```
 
-`domain` is one of the fixed domain keys (`archie_shared.domains`); `importance` 1–10; `why` may be empty. Domains and
+`domain` is one of the fixed domains' display names (`archie_shared.domains`), e.g. "Politics"; `importance` 1–10; `why` may be empty. Domains and
 stories are stored already ordered. Every `source_ids` entry must be one of the brief's covered newsletters (ids the
 model returns that aren't are dropped; a story left with none is dropped).
 

@@ -55,6 +55,11 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - capture intent: Finished / Queue it (optionally with the primer queued too)
   - the raw capture: shared text, Safari page text, raw newsletter email
   - whether the source gets cards: educational content does; pure entertainment gets a summary only
+- **briefs:** the Pulse brief (M5).
+  - status: open or done; at most one open brief per user
+  - content (jsonb): domains with their stories (headline, body, why, detail, importance, source ids), the "Also happening" lines, and the essays with their one-line pitch
+  - source_ids: every newsletter the current content covers; since: the oldest one's created_at
+  - version, bumped on every rewrite; done_at; synced to the phone like other tables
 - **source_artifacts:** generated content for a source.
   - One row per (source, kind, version). Kind is transcript, summary, primer, etc.
   - Each row records how it was made: the model, prompt version, the user's instruction for a chat edit, and the version it was derived from.
@@ -144,6 +149,14 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
 
 - **The Cloudflare Worker** forwards each email to `POST /ingest/email`, authenticated with a shared secret. It also writes the raw email to KV as a backup.
 - **Mapping emails to users:** the address the email was sent to decides which user it belongs to. `news@` belongs to the owner, and other users get their own addresses through the catch-all rule.
+
+## Pulse (the brief)
+
+- **`update_brief`** is a worker job (payload: the user). It is enqueued when a newsletter source becomes ready and when Done leaves unbriefed newsletters behind; at most one is queued per user, and a running one doesn't block a new one.
+- It covers every ready newsletter still in the inbox, with no window. Essays go in unchanged, with their summary's gist as the pitch. News newsletters go into **one Sonnet call** (Opus as fallback) that splits them into stories, groups them by domain, ranks them and writes them. A pydantic model validates the output.
+- Post-processing drops source ids the model invented, orders domains by their top story and stories by importance, and keeps at most 10 stories (the rest become "Also happening" lines). A failed update leaves the previous content in place.
+- **`finish_brief`** (an outbox action) marks the newsletters the phone showed as briefed, closes the brief, and enqueues a new `update_brief` if others remain.
+- The weekly news quiz is deferred to M6 with cards.
 
 ## Running it
 

@@ -38,6 +38,8 @@ class ActionType(StrEnum):
     SET_SOURCE_TOPIC = "set_source_topic"
     CHOOSE_TOPICS = "choose_topics"
     CHOOSE_EPISODE = "choose_episode"
+    # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
+    SET_PREP_ME = "set_prep_me"
 
 
 class ActionIn(pydantic.BaseModel):

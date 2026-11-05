@@ -403,6 +403,46 @@ def test_request_primer_writes_a_ready_newsletters_missing_primer_only(
     assert _jobs(live_stack, busy) == _jobs(live_stack, primed) == []
 
 
+def test_request_primer_is_refused_while_a_primer_is_already_queued(
+    live_stack: LiveStack, authed: httpx.Client
+) -> None:
+    """A ready newsletter whose primer job is already queued gets no second job."""
+    source_id = _insert_source(
+        live_stack,
+        user_id=_user_id(authed),
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.INBOX,
+        processing=models.ProcessingStatus.READY,
+    )
+    _push(authed, _action("queue_primer", {"id": source_id, "queued": True}))
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        source = db.get_one(models.Source, uuid.UUID(source_id))
+        source.processing = models.ProcessingStatus.READY.value
+        db.commit()
+
+    [result] = _push(authed, _action("request_primer", {"id": source_id}))
+
+    assert result["reason"] == "primer is being written"
+    assert _jobs(live_stack, source_id) == ["primer"]
+
+
+def test_a_removed_prep_me_action_is_rejected_without_blocking_the_rest(
+    live_stack: LiveStack, authed: httpx.Client
+) -> None:
+    """An old phone's pending set_prep_me is rejected, and the actions pushed with it still apply."""
+    source_id = _add(authed)
+
+    results = _push(
+        authed,
+        _action("set_prep_me", {"id": source_id, "prep_me": True}),
+        _action("queue_primer", {"id": source_id, "queued": True}),
+    )
+
+    assert [result["result"] for result in results] == ["rejected", "applied"]
+    assert results[0]["reason"] == "prep me was removed"
+
+
 def test_return_to_inbox_undoes_adding_a_newsletter_to_the_queue(live_stack: LiveStack, authed: httpx.Client) -> None:
     """A newsletter read later goes back to the inbox with no position; an article or an inbox item is refused."""
     inbox = _insert_source(

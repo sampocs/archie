@@ -170,6 +170,26 @@ def test_a_requested_newsletter_primer_returns_the_newsletter_to_ready(
     assert _source(engine, source_id).processing == models.ProcessingStatus.READY.value
 
 
+def test_a_newsletter_stays_processing_while_its_primer_is_queued_behind_analyze(
+    engine: sqlalchemy.Engine, replay: Replay
+) -> None:
+    """Analyze alone must not return a newsletter to ready while its primer job waits; the primer does."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT, kind=models.SourceKind.NEWSLETTER)
+    with sqlalchemy.orm.Session(engine) as db:
+        source = db.get_one(models.Source, source_id)
+        pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
+        db.commit()
+    _enqueue(engine, source_id, models.JobKind.ANALYZE, models.JobKind.PRIMER)
+
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    assert _source(engine, source_id).processing == models.ProcessingStatus.PROCESSING.value
+
+    with replay("primer_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    assert _source(engine, source_id).processing == models.ProcessingStatus.READY.value
+
+
 def test_analyze_queues_filing_for_a_user_who_has_chosen_topics(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """A never-filed source of a user with topics gets a `file_topic` job after its analyze."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)

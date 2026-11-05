@@ -22,6 +22,8 @@ _NOT_READY = "source is not ready"
 _NO_PRIMER = "topic primer not found"
 _PRIMER_NOT_QUEUED = "primer is not queued"
 _HAS_PRIMER = "source already has a primer"
+_PREP_ME_REMOVED = "prep me was removed"
+_WRITING_PRIMER = "primer is being written"
 _INBOX_STATES = frozenset({models.SourceState.INBOX, models.SourceState.BRIEFED})
 
 
@@ -129,7 +131,10 @@ def queue_primer(db: orm.Session, *, user: models.User, payload: dict[str, objec
 
 
 def request_primer(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
-    """Write a ready newsletter's primer, which newsletters only get on request."""
+    """Write a ready newsletter's primer, which newsletters only get on request.
+
+    Rejected while a primer is already being written, so a second tap can't queue a second job.
+    """
     parsed = rows.parse(_SourcePayload, payload)
     if parsed is None:
         return rows.MALFORMED
@@ -142,9 +147,16 @@ def request_primer(db: orm.Session, *, user: models.User, payload: dict[str, obj
         return _NOT_READY
     if pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.PRIMER) is not None:
         return _HAS_PRIMER
+    if rows.has_or_is_writing_primer(db, source=source):
+        return _WRITING_PRIMER
 
     rows.start_primer(db, source=source)
     return None
+
+
+def set_prep_me(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
+    """Reject "Prep me", which was removed; kept so an old phone's pending action doesn't fail the whole push."""
+    return _PREP_ME_REMOVED
 
 
 def return_to_inbox(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:

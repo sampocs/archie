@@ -117,13 +117,30 @@ def steps_after_text(kind: models.SourceKind) -> list[models.JobKind]:
 def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
     """Mark the source READY once all the outputs its kind needs exist; otherwise leave it as is.
 
-    A newsletter needs only its summary, so a requested primer finishing also returns it to READY.
+    A newsletter needs only its summary, so a requested primer finishing also returns it to READY. While a primer
+    job for the source is still queued (a newsletter's analyze ran first) it stays as is, so the phone doesn't offer
+    to create a primer that is already on its way. A running primer job is the step finishing, so it doesn't block.
     """
     required = required_artifacts(models.SourceKind(source.kind))
     if any(current_artifact(db, source_id=source.id, kind=kind) is None for kind in required):
         return
+    if _has_queued_primer_job(db, source_id=source.id):
+        return
 
     set_processing(db, source=source, status=models.ProcessingStatus.READY)
+
+
+def _has_queued_primer_job(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID) -> bool:
+    queued = db.scalar(
+        sqlalchemy.select(
+            sqlalchemy.exists().where(
+                models.Job.kind == models.JobKind.PRIMER.value,
+                models.Job.status == models.JobStatus.QUEUED.value,
+                models.Job.payload[SOURCE_ID_KEY].astext == str(source_id),
+            )
+        )
+    )
+    return bool(queued)
 
 
 def steps_to_retry(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID) -> list[models.JobKind]:

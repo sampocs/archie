@@ -52,7 +52,7 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - URL and title
   - state: Queued / Inbox / Briefed / Consumed
   - processing status, separate from state: pending / processing / ready / failed / unsupported (M2)
-  - capture intent: Finished / Queue it / Prep me
+  - capture intent: Finished / Queue it (optionally with the primer queued too)
   - the raw capture: shared text, Safari page text, raw newsletter email
   - whether the source gets cards: educational content does; pure entertainment gets a summary only
 - **source_artifacts:** generated content for a source.

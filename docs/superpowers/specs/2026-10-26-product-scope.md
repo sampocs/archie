@@ -28,7 +28,7 @@ The core problem is **integration, not consumption**. Carl turns what I already 
 
 1. **Share sheet** from any app (Podcasts, Spotify, YouTube, Safari, Substack, X):
    - **Finished**: optional "how'd it go?" (Easy / Mostly followed / Parts lost me) plus an optional typed or voice note on what was confusing.
-   - **Queue it**: optional "Prep me before I start" (e.g. a spoiler-free primer for a book).
+   - **Queue it**: optional "Queue the primer too" (e.g. a spoiler-free primer for a book).
 2. **Notes import**: years of existing notes become library items and go through the same processing.
 3. **Newsletter ingest** (for Pulse): newsletters arrive automatically, e.g. through a forwarding address.
 
@@ -48,7 +48,7 @@ Every source the user consumes goes through:
 
 | State | Meaning | Processing |
 |---|---|---|
-| **Queued** | I want to consume it | Primer available through "Prep me" |
+| **Queued** | I want to consume it | Primer reached from the item, or queued as its own entry |
 | **Inbox** | Ingested automatically (newsletters), not seen yet | Indexed and searchable in chat, labeled unread. No cards |
 | **Briefed** | Headline seen in Pulse | Counts as awareness only. No long-term cards |
 | **Consumed** | Finished it, or tapped "Go deeper" | Full processing |
@@ -65,8 +65,8 @@ Tab bar: **Today · Library · ＋ · Review · Carl**
 ### Today
 - **Pulse brief** (see below)
 - **Review**: number of cards due and estimated time
-- **Primers ready**: only the ones pushed to me (see Primers)
-- **Up next**: the top of my queue, with "Prep me" on each item
+- **Up next**: the top of my queue
+- **Newsletters**: how many are waiting in the inbox
 
 ### Library
 - One list of everything: queued, in progress, consumed, inbox, and primers. Search bar on top. Filters for status, type, and domain/topic.
@@ -100,7 +100,7 @@ The same Finished / Queue flow as the share sheet, for pasting links or searchin
 ## Primers
 
 - **Always built** for every consumed or queued source, and always available on the item page.
-- **Pushed to Today only** when I said "Parts lost me" or tapped "Prep me." Otherwise they're opened on demand.
+- **A resource, not a task.** Reached from the item, or queued as its own queue entry (when I said "Parts lost me" or "Queue the primer"). Newsletters get one on request. Topic primers live on their topic page, with an unread dot in Domains.
 - Written for a smart beginner: friendly, short (~5–8 min), no assumed jargon, spoiler-free for books and shows.
 - v1 detects gaps from **my stated reaction plus what is or isn't already in my library**. There's no knowledge scoring yet.
 

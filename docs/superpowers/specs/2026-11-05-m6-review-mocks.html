@@ -1,0 +1,341 @@
+<title>Archie Review Mocks</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of phone mocks, each with a numbered flow note beside it; the page chrome stays quiet so the phones carry the color. */
+:root {
+  --page: #E9E6DE; --page-ink: #1C1B18; --page-ink-2: #5E5B54; --page-line: #D6D2C8; --note-bg: #F7F5F0;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+  --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+  --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533; --k-history: #8E5468;
+  --k-trading: #4F6F8A; --k-geo: #5E6B3A; --k-sports: #3A7A7A; --k-eng: #5A5F6E; --unread: #3D6690;
+  --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --review: #3F7262;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark }
+body { background: var(--page); color: var(--page-ink); font-family: var(--sans); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 40px; }
+.intro h1 { font-size: 34px; letter-spacing: -.04em; margin: 0 0 8px; text-wrap: balance; }
+.intro p { color: var(--page-ink-2); line-height: 1.55; max-width: 70ch; margin: 0; }
+.legend-k { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink-2); }
+.scene { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 28px; align-items: start; border-top: 1px solid var(--page-line); padding-top: 32px; }
+@media (max-width: 860px) { .scene { grid-template-columns: minmax(0, 1fr); } .phone { margin: 0 auto; } }
+.note { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.note .num { font: 500 12px var(--mono); color: var(--page-ink-2); letter-spacing: .05em; }
+.note h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+.note p, .note li { color: var(--page-ink-2); line-height: 1.55; font-size: 15px; max-width: 64ch; }
+.note p { margin: 0; }
+.note ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.note b { color: var(--page-ink); font-weight: 600; }
+.ask { background: var(--note-bg); border: 1px solid var(--page-line); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--page-ink-2); line-height: 1.5; }
+.ask strong { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink); display: block; margin-bottom: 4px; }
+
+/* ---------- Phone ---------- */
+.phone { width: 360px; max-width: 100%; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 24px 60px rgba(0,0,0,.28); flex: none; box-sizing: border-box; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--sans); color-scheme: light; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, sans-serif; color: var(--ink); }
+.view { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; padding: 58px 0 110px; }
+.view::-webkit-scrollbar { display: none; }
+.hdr { padding: 6px 22px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.hdr .title { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; }
+.hdr .date { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; margin-bottom: 7px; }
+.toggle { display: flex; background: var(--press); border-radius: 9px; padding: 2px; margin-bottom: 4px; }
+.toggle div { font-size: 12.5px; font-weight: 600; padding: 6px 10px; border-radius: 7px; color: var(--ink3); }
+.toggle div.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { margin: 14px 16px 0; height: 40px; border-radius: 12px; background: var(--press); display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--ink3); font-size: 15px; }
+.fchips { display: flex; gap: 6px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+.fchips div { flex: none; font-size: 13px; font-weight: 550; padding: 7px 12px; border-radius: 999px; background: var(--surface); color: var(--ink2); box-shadow: var(--card-shadow); }
+.fchips div.on { background: var(--chrome); color: #fff; box-shadow: none; }
+.fchips .n { opacity: .55; margin-left: 3px; font-weight: 500; }
+.sec { padding: 0 16px; margin-top: 22px; }
+.sec-label { padding: 0 6px; margin-bottom: 9px; font: 500 11px/1 var(--mono); color: var(--ink3); text-transform: uppercase; letter-spacing: .02em; display: flex; justify-content: space-between; }
+.sec-label a { color: var(--ink2); text-decoration: none; text-transform: none; font-family: var(--sans); font-size: 12.5px; font-weight: 600; letter-spacing: 0; }
+.group { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--card-shadow); }
+.row { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.art { width: 46px; height: 46px; border-radius: 10px; flex: none; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); display: grid; place-items: center; font: 700 18px/1 var(--sans); color: rgba(255,255,255,.92); }
+.art.person { border-radius: 50%; }
+.unread-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--unread); box-shadow: 0 0 0 2px var(--surface); }
+.meta { flex: 1; min-width: 0; }
+.meta .k { font: 600 10px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 4px; }
+.meta b { display: -webkit-box; font-size: 14.5px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.3; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.meta span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+.status { flex: none; font-size: 11px; font-weight: 600; padding: 4px 7px; border-radius: 6px; color: var(--ink2); background: var(--press); }
+.status.unread { background: color-mix(in srgb, var(--unread) 12%, transparent); color: var(--unread); }
+.status.proc { color: var(--ink3); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.prep { flex: none; font-size: 12px; font-weight: 600; padding: 6px 9px; border-radius: 8px; background: var(--press); color: var(--ink2); }
+.prep.on { background: color-mix(in srgb, var(--got) 14%, var(--surface)); color: var(--got); }
+.dom { padding: 14px 16px; border-top: 1px solid var(--line); }
+.dom:first-child { border-top: 0; }
+.dom .top { display: flex; align-items: center; gap: 10px; }
+.dom .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--k); }
+.dom .name { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; flex: 1; }
+.dom .cnt { font: 500 12px/1 var(--mono); color: var(--ink3); }
+.dom .bar { height: 4px; border-radius: 2px; background: var(--press); margin: 10px 0 8px 20px; display: flex; overflow: hidden; gap: 2px; }
+.dom .bar i { display: block; height: 100%; background: var(--k); opacity: .85; }
+.dom .bar i:nth-child(2) { opacity: .5; } .dom .bar i:nth-child(3) { opacity: .25; }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 20px; }
+.topics div { font-size: 12.5px; font-weight: 500; padding: 5px 9px; border-radius: 7px; color: var(--ink2); background: var(--press); }
+.topics .n { color: var(--ink3); margin-left: 4px; font-family: var(--mono); font-size: 11px; }
+.topics div.mine { background: transparent; box-shadow: inset 0 0 0 1px var(--ink3); }
+.add-topic { font-size: 14px; color: var(--ink2); padding: 13px 16px; border-top: 1px solid var(--line); }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 14px 0; display: flex; justify-content: space-around; z-index: 30; background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 56px; }
+.tab i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid currentColor; box-sizing: border-box; }
+.tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+.tab .pl { width: 36px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 20px; }
+/* Item page */
+.navbar { position: absolute; top: 0; left: 0; right: 0; z-index: 10; height: 96px; padding: 54px 12px 0; display: flex; justify-content: space-between; align-items: flex-start; box-sizing: border-box; }
+.navbtn { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 550; color: var(--chrome); background: var(--surface); box-shadow: var(--card-shadow); box-sizing: border-box; justify-content: center; }
+.item { padding: 100px 0 40px; }
+.ihead { display: flex; gap: 14px; padding: 0 22px; align-items: flex-end; }
+.cover { width: 92px; height: 92px; border-radius: 14px; flex: none; display: grid; place-items: center; font: 700 34px var(--sans); color: rgba(255,255,255,.92); }
+.ihead .k { font: 600 10.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); }
+.ihead .by { font-size: 13px; color: var(--ink2); margin-top: 5px; line-height: 1.35; }
+.chiprow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 7px; background: var(--press); color: var(--ink2); }
+.pill.topic { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.pill.verdict { color: var(--partly); background: color-mix(in srgb, var(--partly) 12%, transparent); }
+.ititle { font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.12; padding: 0 22px; margin-top: 14px; text-wrap: balance; }
+.actions { display: flex; gap: 8px; padding: 16px 22px 0; }
+.btn { height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 15px; font-weight: 600; padding: 0 16px; }
+.btn.primary { background: var(--chrome); color: #fff; flex: 1; }
+.btn.secondary { background: var(--surface); color: var(--ink); box-shadow: var(--card-shadow); }
+.btn.secondary.on { color: var(--got); }
+.isec { padding: 0 22px; margin-top: 24px; }
+.isec .sec-label { padding: 0; }
+.isec p { font-size: 16px; line-height: 1.62; margin: 0; color: var(--ink); }
+.ideas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: i; }
+.ideas li { display: flex; gap: 10px; font-size: 15px; line-height: 1.5; }
+.ideas li::before { counter-increment: i; content: counter(i); font: 500 12px/1.9 var(--mono); color: var(--ink3); width: 14px; flex: none; }
+.ts { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 5px; background: var(--press); color: var(--ink2); white-space: nowrap; }
+.nums { display: flex; flex-direction: column; gap: 8px; }
+.nums div { display: flex; justify-content: space-between; gap: 10px; font: 500 13.5px/1.45 var(--mono); }
+.collapsed { background: var(--surface); border-radius: 14px; box-shadow: var(--card-shadow); padding: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; }
+.collapsed span { font: 500 12px var(--mono); color: var(--ink3); }
+.empty-cards { font-size: 14px; color: var(--ink3); line-height: 1.5; }
+/* Sheet */
+.dim { position: absolute; inset: 0; background: rgba(10,10,8,.32); z-index: 40; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; background: var(--bg); border-radius: 26px 26px 0 0; padding: 10px 20px 34px; display: flex; flex-direction: column; gap: 16px; }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 4px; }
+.sheet h3 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+.verdicts { display: flex; flex-direction: column; gap: 8px; }
+.verdicts div { height: 46px; border-radius: 14px; display: flex; align-items: center; padding: 0 14px; font-weight: 600; font-size: 15px; background: var(--surface); box-shadow: var(--card-shadow); color: var(--v); }
+.verdicts div.on { background: color-mix(in srgb, var(--v) 14%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--v); }
+.field { min-height: 70px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; color: var(--ink3); font-size: 15px; display: flex; justify-content: space-between; }
+.sheet .btn.primary { flex: none; }
+.small { font-size: 13px; color: var(--ink3); line-height: 1.45; }
+.primer-card { background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.primer-card b { font-size: 15px; }
+.primer-card span { font-size: 13px; color: var(--ink3); }
+.handle { flex: none; color: var(--ink3); font-size: 16px; letter-spacing: -2px; padding-left: 2px; }
+.swipe { position: relative; overflow: hidden; border-top: 1px solid var(--line); }
+.swipe .acts { position: absolute; inset: 0; display: flex; justify-content: flex-end; }
+.swipe .acts div { width: 78px; display: grid; place-items: center; color: #fff; font-size: 12.5px; font-weight: 600; }
+.swipe .row { background: var(--surface); transform: translateX(-156px); border-top: 0; }
+.back { flex: none; font: 500 11px var(--mono); color: var(--ink3); }
+.opts { display: flex; flex-direction: column; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); overflow: hidden; }
+.opts div { display: flex; justify-content: space-between; align-items: center; padding: 13px 14px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 550; }
+.opts div:first-child { border-top: 0; }
+.opts span { font: 500 12px var(--mono); color: var(--ink3); }
+<style>
+:root { --review: #3F7262; --on-review: #FFFFFF; }
+.phones { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+.opt { display: flex; flex-direction: column; gap: 10px; width: 360px; max-width: 100%; }
+.opt .tag { font: 500 12px var(--mono); color: var(--page-ink-2); letter-spacing: .05em; text-transform: uppercase; }
+.opt .tag b { color: var(--page-ink); }
+.opt p { margin: 0; font-size: 14px; line-height: 1.5; color: var(--page-ink-2); }
+.scene2 { border-top: 1px solid var(--page-line); padding-top: 32px; display: flex; flex-direction: column; gap: 20px; }
+.scene2 .note { max-width: 860px; }
+.decide { background: var(--note-bg); border: 1px solid var(--page-line); border-radius: 14px; padding: 14px 16px; max-width: 860px; }
+.decide strong { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink); display: block; margin-bottom: 6px; }
+.decide ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: var(--page-ink-2); font-size: 14.5px; line-height: 1.5; }
+.decide b { color: var(--page-ink); }
+/* Review pieces */
+.revcard { margin: 14px 16px 0; background: var(--review); color: var(--on-review); border-radius: 18px; padding: 17px; display: flex; justify-content: space-between; align-items: center; }
+.revcard .big { font-size: 23px; font-weight: 700; letter-spacing: -0.035em; }
+.revcard .small { font-size: 12.5px; opacity: .85; margin-top: 3px; }
+.revcard .go { width: 40px; height: 40px; border-radius: 12px; background: var(--on-review); color: var(--review); display: grid; place-items: center; font-weight: 700; }
+.rtop { padding: 58px 22px 0; display: flex; justify-content: space-between; align-items: center; }
+.rtop .x { font-size: 20px; color: var(--ink2); }
+.rtop .count { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; }
+.rbar { height: 3px; background: var(--line); margin: 10px 22px 0; border-radius: 2px; overflow: hidden; }
+.rbar i { display: block; height: 100%; background: var(--chrome); }
+.q { padding: 22px 22px 0; }
+.q .k { font: 600 10.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 8px; }
+.q .k span { color: var(--ink3); }
+.q h3 { margin: 0; font-size: 27px; font-weight: 650; letter-spacing: -0.03em; line-height: 1.18; }
+.q.small h3 { font-size: 21px; }
+.box { margin: 18px 16px 0; background: var(--surface); border-radius: 22px; box-shadow: var(--card-shadow); padding: 16px; min-height: 210px; display: flex; flex-direction: column; justify-content: space-between; }
+.box .ph { color: var(--ink3); font-size: 16px; line-height: 1.5; }
+.box .typed { color: var(--ink); font-size: 16px; line-height: 1.5; }
+.toolbar { display: flex; justify-content: space-between; align-items: center; }
+.drop { font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 10px; background: var(--press); color: var(--ink2); }
+.tools { display: flex; gap: 10px; align-items: center; }
+.mic { width: 36px; height: 36px; border-radius: 50%; background: var(--press); display: grid; place-items: center; font-size: 16px; }
+.send { width: 36px; height: 36px; border-radius: 50%; background: var(--chrome); color: #fff; display: grid; place-items: center; font-weight: 700; }
+.graded { margin: 16px 16px 0; background: var(--surface); border-radius: 22px; box-shadow: var(--card-shadow); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.lbl { font: 500 11px var(--mono); text-transform: uppercase; color: var(--ink3); }
+.said { font-size: 15px; line-height: 1.5; color: var(--ink2); }
+.verdict { align-self: flex-start; font-size: 13px; font-weight: 700; padding: 6px 11px; border-radius: 9px; color: #fff; background: var(--v); }
+.missing { font-size: 14.5px; line-height: 1.5; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--v) 10%, var(--surface)); color: var(--ink); }
+.ans { font-size: 15.5px; line-height: 1.55; }
+.after { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px 16px 0; }
+.after div { font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 10px; background: var(--surface); box-shadow: var(--card-shadow); color: var(--ink2); }
+.nextbtn { margin: 14px 16px 0; height: 50px; border-radius: 16px; background: var(--chrome); color: #fff; display: grid; place-items: center; font-weight: 600; }
+.self { display: flex; gap: 8px; }
+.self div { flex: 1; height: 46px; border-radius: 14px; display: grid; place-items: center; font-weight: 650; font-size: 14.5px; background: color-mix(in srgb, var(--v) 12%, var(--surface)); color: var(--v); box-shadow: inset 0 0 0 1.5px var(--v); }
+.offline { margin: 12px 16px 0; font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; text-align: center; }
+.tally { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 16px; margin-top: 18px; }
+.tally div { background: var(--surface); border-radius: 14px; box-shadow: var(--card-shadow); padding: 12px 14px; }
+.tally b { font-size: 22px; letter-spacing: -.03em; display: block; color: var(--v); }
+.tally span { font-size: 12.5px; color: var(--ink3); }
+.choice { margin: 10px 16px 0; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); overflow: hidden; }
+.choice div { padding: 13px 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; font-size: 15px; font-weight: 550; }
+.choice div:first-child { border-top: 0; }
+.choice span { font: 500 12px var(--mono); color: var(--ink3); }
+.quiz { margin: 10px 16px 0; background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+.quiz b { font-size: 15.5px; } .quiz span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+.cardrow { padding: 12px 0; border-top: 1px solid var(--line); }
+.cardrow:first-child { border-top: 0; }
+.cardrow b { font-size: 14.5px; display: block; line-height: 1.35; }
+.cardrow span { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; }
+.cardrow .meta2 { display: flex; justify-content: space-between; margin-top: 5px; }
+.setrow { display: flex; justify-content: space-between; align-items: center; padding: 13px 14px; border-top: 1px solid var(--line); font-size: 15px; }
+.setrow:first-child { border-top: 0; }
+.setrow span { color: var(--ink3); font-size: 14px; }
+</style>
+
+<div class="wrap">
+  <header class="intro" style="display:flex;flex-direction:column;gap:12px">
+    <span class="legend-k">M6 Cards + review · draft for review</span>
+    <h1>Daily review, and the questions it raises</h1>
+    <p>The core review screen is already designed in the UX spec. You answer under the question, and the text box turns into the graded card. Drop sits at the bottom-left. Shake to undo. These mocks redraw it in the app's current style, and then focus on the parts the spec left open: grading when the model isn't sure or you're offline, what "keep going" looks like, cards on item pages, the weekly news quiz, and the daily reminder. Every open choice is listed in the numbered boxes with my recommendation in bold.</p>
+  </header>
+
+  <section class="scene2">
+    <div class="note"><span class="num">01</span><h2>Today, answering, graded</h2>
+      <p>The review card sits on Today in the forest review colour. It counts due cards, gives a time estimate and says how many foundation cards come first. You answer by typing or with the mic. On submit the box turns into the graded card: what you said, the verdict, what was missing, and the full answer. Below it are "I actually knew it" and "What I care about…".</p></div>
+    <div class="phones" id="core"></div>
+    <div class="decide"><strong>Decisions</strong><ol>
+      <li><b>Next is a button, not automatic.</b> You read the grade, then tap Next. An automatic advance after "Got it" feels faster, but you lose the chance to read the full answer.</li>
+      <li><b>Voice uses on-device dictation.</b> It works offline and costs nothing. Whisper through Groq would be more accurate on names, but it needs a connection.</li>
+      <li><b>Session order follows the product spec:</b> foundations first, then mechanisms, then rough numbers, and inside each group, the most overdue first.</li>
+    </ol></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note"><span class="num">02</span><h2>When the model isn't sure, and when you're offline</h2>
+      <p>Grading needs a connection, but review must work on a plane. In both cases you see the answer and grade yourself with the same three buttons.</p></div>
+    <div class="phones" id="self"></div>
+    <div class="decide"><strong>Decisions</strong><ol>
+      <li><b>Offline, you grade yourself and the card is scheduled right away.</b> The alternative is to save your typed answer and grade it later, when you're back online. That keeps grading consistent, but it delays scheduling, and the "what was missing" note would arrive long after the card.</li>
+      <li><b>The grader is Haiku with one worked example</b>, from the spike (<code>spikes/card_grading/README.md</code>). It scored 97.6% on 124 labelled answers, every miss was one step off, a grade takes about 1.0s typically and 1.4s at worst, and it costs about $0.0001. Sonnet was only slightly more accurate (98.4%) but took up to 3.9s.</li>
+      <li><b>"Not sure" is triggered by time, not by the model.</b> No model ever admitted being unsure in the spike, so the self-grade screen appears when grading takes longer than about 3 seconds or fails. A self-grade button also stays one tap away under every grade ("I actually knew it").</li>
+    </ol></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note"><span class="num">03</span><h2>Done, and keeping going</h2>
+      <p>The done screen shows the tally, then offers more: review ahead (cards due in the next few days) or practise one topic or source. The Review tab opens to the same choices when nothing is due.</p></div>
+    <div class="phones" id="done"></div>
+    <div class="decide"><strong>Decisions</strong><ol>
+      <li><b>Review ahead and topic practice both count toward scheduling</b>, with a lighter effect for cards that weren't due yet. The other option is that practice never changes schedules. That's simpler, but it wastes the effort.</li>
+      <li><b>No daily limit on new cards for now.</b> Your library is small. We add a limit once a day ever exceeds about 40 cards.</li>
+    </ol></div>
+  </section>
+
+  <section class="scene2">
+    <div class="note"><span class="num">04</span><h2>Cards on an item, the news quiz, the reminder</h2>
+      <p>A finished item lists its cards with when each is next due. The weekly news quiz is a few cards made from the week's brief stories, offered on Today; quiz cards expire instead of joining long-term review. Settings get one reminder time.</p></div>
+    <div class="phones" id="misc"></div>
+    <div class="decide"><strong>Decisions</strong><ol>
+      <li><b>Quiz on Sunday, 5 cards from the week's top stories, expiring after 7 days.</b> It's built from the stories you marked Done in briefs that week.</li>
+      <li><b>One reminder a day at 8:30pm, only if cards are due</b>, with the time changeable in Settings. The notification reads "12 cards · about 4 min".</li>
+      <li><b>Editing a card stays out of M6.</b> "What I care about…" already rewrites the answer, and Drop removes a card.</li>
+      <li><b>"What I care about…" rewrites only this card's answer</b> and saves the note as a preference for future cards. It doesn't rewrite your other cards.</li>
+    </ol></div>
+  </section>
+</div>
+
+<script>
+const SHELL = (inner, cls = "") => `<div class="phone ${cls}"><div class="screen"><div class="island"></div><div class="statusbar"><span>9:41</span><span>●●●</span></div>${inner}</div></div>`;
+const opt = (tag, title, desc, phone) => `<div class="opt"><span class="tag">${tag} · <b>${title}</b></span>${phone}<p>${desc}</p></div>`;
+const GEO = "#5E6B3A", MAC = "#3F7262", CRY = "#A8613A";
+const TOP = (n, of) => `<div class="rtop"><span class="x">✕</span><span class="count">${n} of ${of}</span><span class="x" style="opacity:0">✕</span></div><div class="rbar"><i style="width:${Math.round(n / of * 100)}%"></i></div>`;
+const Q = (k, c, kind, text, small = false) => `<div class="q ${small ? "small" : ""}" style="--k:${c}"><div class="k">${k} <span>· ${kind}</span></div><h3>${text}</h3></div>`;
+const QTEXT = "Why can't central banks just print money to cover government deficits forever?";
+const ANSWER = "Printing money to fund deficits expands the money supply faster than output, which drives inflation; once people expect it to continue, inflation accelerates and the currency loses trust.";
+
+document.getElementById("core").innerHTML = [
+  opt("Today", "The review card", "It sits under the brief preview. Its colour is the only forest block on Today, so it stands out.",
+    SHELL(`<div class="view"><div class="hdr"><div class="title">Today</div><div class="date">Wed · Nov 4</div></div>
+      <div class="revcard"><div><div class="big">12 cards</div><div class="small">about 4 minutes · 3 foundations first</div></div><div class="go">→</div></div>
+      <div class="preview" style="margin:12px 16px 0;background:var(--surface);border-radius:18px;box-shadow:var(--card-shadow);padding:15px 16px"><b style="font-size:17px">Your brief</b><div style="font-size:13.5px;color:var(--ink3);margin-top:6px">5 stories · 2 min · Read the brief ›</div></div>
+    </div>`)),
+  opt("Answer", "Typing", "The question uses the large review type. The writing area is a big white card with Drop, mic and ↑. When the keyboard rises, the question shrinks to 21pt.",
+    SHELL(`${TOP(3, 12)}${Q("Macro", MAC, "Foundation", QTEXT)}
+      <div class="box"><div class="typed">it causes inflation bc more money chasing the same goods, and people start expecting it</div>
+      <div class="toolbar"><span class="drop">Drop</span><div class="tools"><span class="mic">🎙</span><span class="send">↑</span></div></div></div>`)),
+  opt("Graded", "Partly", "The box becomes the card. A missing idea is called out in the verdict's colour. Next is a button, so you can read the answer first.",
+    SHELL(`${TOP(3, 12)}${Q("Macro", MAC, "Foundation", QTEXT, true)}
+      <div class="graded" style="--v:var(--partly)"><div><div class="lbl">You said</div><div class="said">it causes inflation bc more money chasing the same goods, and people start expecting it</div></div>
+        <span class="verdict">Partly</span>
+        <div class="missing">You had inflation and expectations. Missing: the currency loses trust, which is what turns it into a spiral.</div>
+        <div><div class="lbl">Answer</div><div class="ans">${ANSWER}</div></div></div>
+      <div class="after"><div>I actually knew it</div><div>What I care about…</div></div>
+      <div class="nextbtn">Next →</div>`)),
+].join("");
+
+document.getElementById("self").innerHTML = [
+  opt("Slow", "Grading timed out", "Grading took longer than about 3s, or failed. It shows the answer, and you grade yourself with the same three buttons.",
+    SHELL(`${TOP(7, 12)}${Q("Crypto", CRY, "Rough number", "Roughly how big is the stablecoin market today?", true)}
+      <div class="graded"><div><div class="lbl">You said</div><div class="said">like 200 something billion?</div></div>
+        <div><div class="lbl">Answer</div><div class="ans">About $300 billion, mostly USDT and USDC.</div></div>
+        <div class="lbl" style="margin-top:2px">Couldn't grade this one. How did you do?</div>
+        <div class="self"><div style="--v:var(--got)">Got it</div><div style="--v:var(--partly)">Partly</div><div style="--v:var(--missed)">Missed</div></div></div>`)),
+  opt("Offline", "No connection", "There's no grader offline. The ↑ button becomes 'Show answer'. You compare and pick a grade, and the card is scheduled at once. Everything syncs later.",
+    SHELL(`${TOP(4, 12)}${Q("Geopolitics", GEO, "Mechanism", "Why does the Strait of Hormuz matter so much for oil prices?", true)}
+      <div class="graded"><div><div class="lbl">You said</div><div class="said">a lot of oil goes through it and iran could block it</div></div>
+        <div><div class="lbl">Answer</div><div class="ans">About a fifth of the world's oil passes through it, with few alternative routes, so even a threat to close it adds a risk premium to prices.</div></div>
+        <div class="self"><div style="--v:var(--got)">Got it</div><div style="--v:var(--partly)">Partly</div><div style="--v:var(--missed)">Missed</div></div></div>
+      <div class="offline">Offline · grading yourself · syncs later</div>`)),
+].join("");
+
+document.getElementById("done").innerHTML = [
+  opt("Done", "Tally and keep going", "'Done.' and a summary line, then the tally. Below that, optional extra review: cards due in the next 3 days, or a single topic.",
+    SHELL(`<div class="view" style="padding-top:80px"><div style="padding:0 22px"><div class="title" style="font-size:32px;font-weight:700;letter-spacing:-.04em">Done.</div><div style="font-size:15px;color:var(--ink2);margin-top:6px">12 cards in 4 minutes. Next review tomorrow: 9 cards.</div></div>
+      <div class="tally"><div style="--v:var(--got)"><b>8</b><span>Got it</span></div><div style="--v:var(--partly)"><b>2</b><span>Partly</span></div><div style="--v:var(--missed)"><b>1</b><span>Missed</span></div><div style="--v:var(--ink3)"><b>1</b><span>Dropped</span></div></div>
+      <div class="sec"><div class="sec-label"><span>Keep going</span></div></div>
+      <div class="choice"><div>Review ahead<span>14 due by Sat</span></div><div>Practise a topic<span>›</span></div></div>
+      <div class="nextbtn" style="background:var(--surface);color:var(--ink);box-shadow:var(--card-shadow)">Back to Today</div></div>`)),
+  opt("Review tab", "Nothing due", "The tab with nothing due: when the next cards are due, then the same keep-going options. Practise a topic lists your topics with their card counts.",
+    SHELL(`<div class="view"><div class="hdr"><div class="title">Review</div></div>
+      <div style="padding:14px 22px 0;font-size:15px;color:var(--ink2)">All caught up. 9 cards are due tomorrow.</div>
+      <div class="choice" style="margin-top:16px"><div>Review ahead<span>14 due by Sat</span></div></div>
+      <div class="sec"><div class="sec-label"><span>Practise a topic</span></div></div>
+      <div class="choice"><div>Fed &amp; monetary policy<span>11 cards</span></div><div>Staking &amp; restaking<span>7</span></div><div>Data centers &amp; hyperscalers<span>6</span></div><div>Founder lessons<span>4</span></div></div></div>`)),
+].join("");
+
+document.getElementById("misc").innerHTML = [
+  opt("Item", "Cards from this", "A finished item lists its cards with their kind and when each is due next. Tapping one shows it on its own.",
+    SHELL(`<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div><div class="view item">
+      <div class="ititle" style="font-size:22px">How to Work Hard</div>
+      <div class="isec"><div class="sec-label">Cards from this · 4</div><div style="background:var(--surface);border-radius:18px;box-shadow:var(--card-shadow);padding:2px 14px">
+        <div class="cardrow"><b>Why does Graham say you should work on things you're curious about?</b><div class="meta2"><span>Mechanism</span><span>Due tomorrow</span></div></div>
+        <div class="cardrow"><b>What does "the shape of real work" mean in the essay?</b><div class="meta2"><span>Foundation</span><span>Due Sat</span></div></div>
+        <div class="cardrow"><b>Roughly how many hours a day does Graham think real work allows?</b><div class="meta2"><span>Rough number</span><span>Due in 9 days</span></div></div>
+      </div></div></div>`)),
+  opt("Quiz", "The weekly news quiz", "On Sundays Today offers the quiz under the review card: 5 quick cards from the week's top stories. It disappears after 7 days whether or not you take it.",
+    SHELL(`<div class="view"><div class="hdr"><div class="title">Today</div><div class="date">Sun · Nov 8</div></div>
+      <div class="revcard"><div><div class="big">6 cards</div><div class="small">about 2 minutes</div></div><div class="go">→</div></div>
+      <div class="quiz"><div><b>This week's news quiz</b><span>5 questions · from your briefs · until next Sun</span></div><span style="font-weight:700">›</span></div></div>`)),
+  opt("Settings", "The daily reminder", "One notification a day, only when cards are due, at a time you set. There are no other notifications.",
+    SHELL(`<div class="navbar"><div class="navbtn">‹</div></div><div class="view item"><div class="ititle" style="font-size:24px">Settings</div>
+      <div class="sec"><div class="sec-label"><span>Review</span></div><div class="choice" style="margin:0">
+        <div class="setrow">Daily reminder<span>On</span></div><div class="setrow">Time<span>8:30 PM</span></div></div>
+        <div class="small" style="padding:8px 6px">Only sent when cards are due: "12 cards · about 4 min".</div></div></div>`)),
+].join("");
+</script>

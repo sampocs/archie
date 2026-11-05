@@ -17,7 +17,7 @@ from typing import Any
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import briefs, changes, models, pipeline, user_topics
-from archie_shared import domains
+from archie_shared import config, domains
 from archie_shared.domains import Domain
 
 from archie_worker import llm, prompts
@@ -111,7 +111,7 @@ def apply_filing(db: sqlalchemy.orm.Session, *, source: models.Source, decision:
 
     # A brief rewrite that ran before this filing treated the essay as news, and nothing else re-queues it.
     if _is_briefed_essay(source, decision=decision):
-        briefs.enqueue_update(db, user_id=source.user_id)
+        briefs.enqueue_update(db, user_id=source.user_id, delay=config.get_settings().brief_rewrite_delay())
 
 
 def _is_briefed_essay(source: models.Source, *, decision: FilingDecision) -> bool:

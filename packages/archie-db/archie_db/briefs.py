@@ -5,6 +5,8 @@ Every function that writes expects the caller to hold `changes.lock_user_writes`
 
 from __future__ import annotations
 
+import datetime
+
 import sqlalchemy
 import sqlalchemy.orm
 
@@ -42,8 +44,8 @@ def open_brief(db: sqlalchemy.orm.Session, *, user_id: int) -> models.Brief | No
     ).one_or_none()
 
 
-def enqueue_update(db: sqlalchemy.orm.Session, *, user_id: int) -> None:
-    """Queue an `update_brief` for the user unless one is already queued.
+def enqueue_update(db: sqlalchemy.orm.Session, *, user_id: int, delay: datetime.timedelta | None = None) -> None:
+    """Queue an `update_brief` for the user, due after `delay` (now when `None`), unless one is already queued.
 
     A queued one will see every newsletter that is ready by the time it runs; a running one may have read its
     newsletters already, so it doesn't count and a follow-up is queued.
@@ -66,4 +68,5 @@ def enqueue_update(db: sqlalchemy.orm.Session, *, user_id: int) -> None:
         user_id=user_id,
         payload={USER_ID_KEY: user_id},
         max_attempts=UPDATE_MAX_ATTEMPTS,
+        delay=delay,
     )

@@ -264,6 +264,8 @@ MAX_BRIEF_SUMMARY_CHARACTERS = 60_000
 # The model writes at most this many stories in full; its output must fit the token limit with every newsletter
 # covered. The server keeps `brief_content.MAX_STORIES` of them.
 MAX_MODEL_STORIES = 12
+# A headline is a newspaper headline, not a sentence; the model is told, and nothing truncates what it writes.
+MAX_HEADLINE_WORDS = 10
 
 BRIEF_SYSTEM = f"""You write the newsletter brief for a personal learning app: a two-minute read that tells the user \
 the stories people are talking about, so they don't have to read every newsletter. The brief is read, not browsed: \
@@ -273,7 +275,9 @@ The user message lists the domains, the user's own topics, and the newsletters, 
 may be given as its summary instead of its full text. From the newsletters, produce:
 - domains: the stories, grouped under the listed domain each belongs to. One story is one piece of news; when \
 several newsletters cover the same news, write it once and list all of their ids.
-  - headline: one complete sentence that states the news itself, never a teaser.
+  - headline: a newspaper headline of at most {MAX_HEADLINE_WORDS} words (aim for about 8) with no trailing period: \
+the news itself, never a teaser and never a summary sentence. The body carries the detail. Good: "Democrats take \
+both chambers of Congress", "Binance loses a record $6.34B to hackers".
   - body: one or two sentences on what happened.
   - why: one sentence on why it matters; empty when that is obvious from the body.
   - detail: a longer paragraph (4-6 sentences) with the background, players and numbers, for a reader who wants more.

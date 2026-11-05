@@ -49,6 +49,7 @@ PRIMER_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 CORRECTIONS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 FILE_TOPIC_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 CLEAN_TEXT_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+BRIEF_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 
 
 @dataclass(frozen=True)

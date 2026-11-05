@@ -38,6 +38,7 @@ class ActionType(StrEnum):
     SET_SOURCE_TOPIC = "set_source_topic"
     CHOOSE_TOPICS = "choose_topics"
     CHOOSE_EPISODE = "choose_episode"
+    FINISH_BRIEF = "finish_brief"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 
@@ -165,6 +166,23 @@ class TopicPrimerOut(pydantic.BaseModel):
     change_seq: int
 
 
+class BriefOut(pydantic.BaseModel):
+    """A newsletter brief as the phone stores it; `content` is null until its first version is written."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    status: str
+    content: dict[str, Any] | None
+    source_ids: list[uuid.UUID]
+    since: datetime.datetime | None
+    version: int
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    done_at: datetime.datetime | None
+    change_seq: int
+
+
 class PulledRows(pydantic.BaseModel):
     """Changed rows by table."""
 
@@ -173,6 +191,7 @@ class PulledRows(pydantic.BaseModel):
     cards: list[CardOut]
     topics: list[TopicOut]
     topic_primers: list[TopicPrimerOut]
+    briefs: list[BriefOut]
 
 
 class PullResponse(pydantic.BaseModel):

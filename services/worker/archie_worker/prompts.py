@@ -1,12 +1,16 @@
-"""Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic` and `clean_text` steps.
+"""Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic`, `clean_text` and
+`update_brief` steps.
 
 Bump the matching version whenever a prompt or the schema changes in a way that alters output: it is stored
-on every artifact, so old versions stay attributable.
+on every artifact, so old versions stay attributable. A brief is rewritten on every newsletter and keeps no
+prompt version.
 """
 
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from archie_db import models
@@ -246,3 +250,132 @@ def clean_text_message(*, title: str | None, paragraphs: Sequence[str]) -> str:
     """The newsletter's subject, then its paragraphs numbered from 1 as `[n] paragraph`, blank-line separated."""
     numbered = "\n\n".join(f"[{number}] {paragraph}" for number, paragraph in enumerate(paragraphs, start=1))
     return f"Subject: {title or '(none)'}\n\n<email>\n{numbered}\n</email>"
+
+
+# Each news newsletter's text is cut to this many characters in the brief's one call.
+MAX_BRIEF_TEXT_CHARACTERS = 30_000
+# The call's whole newsletter text stays under this: the newest issues get their text until it is spent, older ones
+# are given as their summary.
+MAX_BRIEF_TOTAL_CHARACTERS = 150_000
+
+BRIEF_SYSTEM = f"""You write the newsletter brief for a personal learning app: a two-minute read that tells the user \
+the stories people are talking about, so they don't have to read every newsletter. The brief is read, not browsed: \
+every story must stand on its own.
+
+The user message lists the domains, the user's own topics, and the newsletters, each with its id. An older newsletter \
+may be given as its summary instead of its full text. From the newsletters, produce:
+- domains: the stories, grouped under the listed domain each belongs to. One story is one piece of news; when \
+several newsletters cover the same news, write it once and list all of their ids.
+  - headline: one complete sentence that states the news itself, never a teaser.
+  - body: one or two sentences on what happened.
+  - why: one sentence on why it matters; empty when that is obvious from the body.
+  - detail: a longer paragraph (4-6 sentences) with the background, players and numbers, for a reader who wants more.
+  - importance: 1-10, how much a well-informed person would be expected to know this story today. News that will be \
+talked about everywhere scores high; minor deals, small updates and curiosities score low. A story on one of the \
+user's topics may score a little higher.
+  - source_ids: the ids of the newsletters that cover the story, copied exactly.
+- also: one-line items for small news that is worth a mention but not a story, each with its newsletter ids.
+
+Skip ads, sponsor content, promotions, trivia, quizzes, polls and the newsletters' own housekeeping. Never add facts \
+that are not in the newsletters.
+
+{READING_VOICE}"""
+
+_SOURCE_IDS = {"type": "array", "items": {"type": "string"}}
+
+BRIEF_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "domains": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "domain": {"type": "string", "enum": [domain.value for domain in Domain]},
+                    "stories": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "headline": {"type": "string"},
+                                "body": {"type": "string"},
+                                "why": {"type": "string"},
+                                "detail": {"type": "string"},
+                                "importance": {"type": "integer"},
+                                "source_ids": _SOURCE_IDS,
+                            },
+                            "required": ["headline", "body", "why", "detail", "importance", "source_ids"],
+                            "additionalProperties": False,
+                        },
+                    },
+                },
+                "required": ["domain", "stories"],
+                "additionalProperties": False,
+            },
+        },
+        "also": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"text": {"type": "string"}, "source_ids": _SOURCE_IDS},
+                "required": ["text", "source_ids"],
+                "additionalProperties": False,
+            },
+        },
+    },
+    "required": ["domains", "also"],
+    "additionalProperties": False,
+}
+
+
+@dataclass(frozen=True)
+class BriefNewsletter:
+    """One news newsletter as the brief's call reads it: its text, or its summary when `is_summary`."""
+
+    source_id: str
+    sender: str | None
+    subject: str | None
+    received_at: datetime.datetime
+    text: str
+    is_summary: bool
+
+
+def full_text_flags(text_lengths: Sequence[int]) -> list[bool]:
+    """Which newsletters (lengths oldest first, already capped) get their full text within the 150,000 budget.
+
+    The newest come first: each keeps its text while the running total fits, and once one doesn't, it and every
+    older one are given as their summary.
+    """
+    flags: list[bool] = []
+    total = 0
+    for length in reversed(text_lengths):
+        total += length
+        flags.append(total <= MAX_BRIEF_TOTAL_CHARACTERS and all(flags))
+    return list(reversed(flags))
+
+
+def summary_text(analysis: Mapping[str, Any]) -> str:
+    """A summary artifact as the brief reads it in place of the text: the gist, then the key ideas and numbers."""
+    summary = analysis["summary"]
+    key_ideas = "\n".join(f"- {item['idea']}" for item in summary["key_ideas"]) or "- (none)"
+    numbers = "\n".join(f"- {item['fact']}" for item in summary["numbers"]) or "- (none)"
+    return f"{summary['gist']}\n\nKey ideas:\n{key_ideas}\n\nNumbers:\n{numbers}"
+
+
+def brief_message(*, newsletters: Sequence[BriefNewsletter], live_topics: Sequence[str]) -> str:
+    """The domains, the user's topics as `domain › name` lines, then each newsletter in `<newsletter>` tags.
+
+    Each carries its id, sender, subject and date, and says when it is given as its summary.
+    """
+    domain_names = ", ".join(domain.value for domain in Domain)
+    topics = "\n".join(f"- {line}" for line in live_topics) or "- (none yet)"
+    issues = "\n\n".join(
+        f'<newsletter id="{newsletter.source_id}">\n'
+        f"Sender: {newsletter.sender or '(unknown)'}\n"
+        f"Subject: {newsletter.subject or '(none)'}\n"
+        f"Date: {newsletter.received_at:%A %Y-%m-%d}\n"
+        f"{'Given as: its summary' if newsletter.is_summary else 'Given as: its full text'}\n\n"
+        f"{newsletter.text}\n</newsletter>"
+        for newsletter in newsletters
+    )
+    return f"Domains: {domain_names}\n\nThe user's topics (domain › name):\n{topics}\n\n{issues}"

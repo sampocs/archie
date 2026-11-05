@@ -11,7 +11,7 @@ from typing import Any
 import sqlalchemy
 import sqlalchemy.orm
 
-from archie_db import changes, jobs, models
+from archie_db import briefs, changes, jobs, models
 
 # The job payload key naming the source a pipeline step works on.
 SOURCE_ID_KEY = "source_id"
@@ -125,6 +125,9 @@ def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
     A newsletter needs only its summary, so a requested primer finishing also returns it to READY. While a primer
     job for the source is still queued (a newsletter's analyze ran first) it stays as is, so the phone doesn't offer
     to create a primer that is already on its way. A running primer job is the step finishing, so it doesn't block.
+
+    A newsletter in the inbox that becomes READY is one the brief now covers, so the user's brief is queued for a
+    rewrite.
     """
     required = required_artifacts(models.SourceKind(source.kind))
     if any(current_artifact(db, source_id=source.id, kind=kind) is None for kind in required):
@@ -133,6 +136,8 @@ def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
         return
 
     set_processing(db, source=source, status=models.ProcessingStatus.READY)
+    if source.kind == models.SourceKind.NEWSLETTER and source.state == models.SourceState.INBOX:
+        briefs.enqueue_update(db, user_id=source.user_id)
 
 
 def _has_queued_primer_job(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID) -> bool:

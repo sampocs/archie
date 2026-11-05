@@ -336,7 +336,7 @@ class Brief(Base):
     )
     # The oldest covered newsletter's `created_at`.
     since: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
-    # Bumped on every rewrite, so Done can be refused for a version the user hasn't seen.
+    # Bumped on every rewrite, so each version is distinguishable.
     version: Mapped[int] = mapped_column(sqlalchemy.Integer, server_default="0")
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())

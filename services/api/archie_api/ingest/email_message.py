@@ -24,6 +24,7 @@ MIN_HTML_WORDS = 50
 # A table row this short (all cells together) is a line of figures, like a market ticker, not page layout.
 MAX_JOINED_ROW_WORDS = 12
 _CELL_SEPARATOR = " · "
+_ROW_JOIN_BLOCKERS = frozenset({"h1", "h2", "h3", "h4", "h5", "h6", "style", "script"})
 
 _WEB_URL_IN_LIST_POST = re.compile(r"<(https://[^>\s]+)>")
 _WEB_URL_IN_BODY = re.compile(r"View this post on the web at (https://\S+)")
@@ -188,16 +189,20 @@ def _with_short_rows_joined(html: str) -> str:
     """
     try:
         root = lxml.html.document_fromstring(html)
-    except lxml.etree.ParserError:
-        # Markup with no elements at all (only a comment, say): nothing to join, and trafilatura copes on its own.
+    except (lxml.etree.ParserError, ValueError):
+        # No elements at all, or an XML encoding declaration lxml refuses in a str: trafilatura copes on its own.
         return html
     for row in reversed(list(root.iter("tr"))):
         _join_short_row(row)
-    return str(lxml.html.tostring(root, encoding="unicode"))
+    return lxml.html.tostring(root, encoding="unicode")
 
 
 def _join_short_row(row: lxml.html.HtmlElement) -> None:
     """Replace `row`'s cells with one paragraph of their texts when there are at least two and they are short."""
+    # Headings would lose their markdown, and style or script text isn't text at all.
+    if any(element.tag in _ROW_JOIN_BLOCKERS for element in row.iter()):
+        return
+
     texts = [" ".join(cell.text_content().split()) for cell in row if cell.tag in ("td", "th")]
     filled = [text for text in texts if text]
     joined = _CELL_SEPARATOR.join(filled)

@@ -103,3 +103,14 @@ def test_nul_is_stripped_from_subject_sender_and_text() -> None:
 def test_the_local_part_is_lower_cased_and_loses_its_plus_tag() -> None:
     """Recipient matching ignores case and +tag suffixes."""
     assert email_message.local_part("AbC123+x@example.com") == "abc123"
+
+
+def test_html_with_an_xml_encoding_declaration_still_yields_its_text() -> None:
+    """lxml refuses a str carrying an encoding declaration; the HTML then goes to trafilatura as it is."""
+    words = " ".join(["word"] * 60)
+    html = f'<?xml version="1.0" encoding="utf-8"?><html><body><p>{words}</p></body></html>'
+    message = email.message.EmailMessage()
+    message["Message-ID"] = "<xml-decl@example.com>"
+    message.set_content(html, subtype="html")
+
+    assert email_message.parse(message.as_bytes()).text.startswith("word word")

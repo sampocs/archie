@@ -183,6 +183,7 @@ dependencies = [
     { name = "archie-shared" },
     { name = "defusedxml" },
     { name = "httpx" },
+    { name = "pydantic" },
     { name = "trafilatura" },
     { name = "youtube-transcript-api" },
 ]
@@ -194,6 +195,7 @@ requires-dist = [
     { name = "archie-shared", editable = "packages/archie-shared" },
     { name = "defusedxml", specifier = ">=0.7.1" },
     { name = "httpx", specifier = ">=0.28.1" },
+    { name = "pydantic", specifier = ">=2.10" },
     { name = "trafilatura", specifier = ">=2.3.1" },
     { name = "youtube-transcript-api", specifier = ">=1.2" },
 ]

@@ -90,6 +90,7 @@ def test_database_url(request: pytest.FixtureRequest) -> str:
 
 # Emptied after every Postgres test so tests never see each other's rows.
 _TRUNCATE_TABLES = (
+    "briefs",
     "topic_primers",
     "topics",
     "transcript_chunks",

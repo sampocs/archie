@@ -89,7 +89,7 @@ MAESTRO_PATH := /opt/homebrew/opt/openjdk@17/bin:$(HOME)/.maestro/bin:$(PATH)
 
 # Empty the local development database's synced data so a flow never sees leftovers from an earlier run.
 reset-local-data: db-up
-	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, topic_primers, topics, sources, sessions, users RESTART IDENTITY CASCADE"
+	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, briefs, topic_primers, topics, sources, sessions, users RESTART IDENTITY CASCADE"
 
 # The flows that only need a running backend (`make start-local` in another terminal).
 # source_page and today_primer call Anthropic for real, so a run spends a few cents.

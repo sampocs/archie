@@ -206,10 +206,19 @@ def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_
         processing=models.ProcessingStatus.READY,
     )
 
+    still_processing = _insert_source(
+        live_stack,
+        user_id=user_id,
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.QUEUED,
+        processing=models.ProcessingStatus.PROCESSING,
+    )
+
     _push(
         authed,
         _action("finish_source", {"id": plain}),
         _action("finish_source", {"id": with_primer, "queue_primer": True}),
+        _action("finish_source", {"id": still_processing}),
     )
 
     plain_row, primed_row = _source(authed, plain), _source(authed, with_primer)
@@ -221,6 +230,9 @@ def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_
     assert _jobs(live_stack, plain) == ["analyze"]
     assert (primed_row["processing"], primed_row["primer_queue_position"]) == ("processing", 0)
     assert _jobs(live_stack, with_primer) == ["analyze", "primer"]
+    # Its first analysis is still queued or running and makes the cards, so finishing adds no job.
+    assert _jobs(live_stack, still_processing) == []
+    assert _source(authed, still_processing)["state"] == "consumed"
 
 
 def test_a_repeated_action_is_a_duplicate_and_changes_nothing(authed: httpx.Client) -> None:

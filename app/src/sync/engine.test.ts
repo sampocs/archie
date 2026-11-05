@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 
 import migrations from "../../drizzle/migrations";
-import { goDeeper, queuePrimer, requestPrimer, returnToInbox } from "@/db/actions";
+import { goDeeper, queuePrimer, requestPrimer, returnToInbox, snooze } from "@/db/actions";
 
 import { ClientError, NetworkError, UnauthorizedError } from "@/api/client";
 import type { AppDb } from "@/db/client";
@@ -960,6 +960,22 @@ describe("database SyncStore: M4 migration and rejections", () => {
       expect(sourceRow(db)?.syncError).toBe("nope");
     },
   );
+
+  it("a rejected source_primer snooze rewinds the position and surfaces syncError on the source", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: { sources: [pulledSource({ state: "consumed" })], artifacts: [], cards: [] },
+      position: 5,
+      more: false,
+    });
+    snooze(db, "source_primer", "s1", new Date("2099-01-01T00:00:00Z"));
+    const entry = db.select().from(schema.outbox).get()!;
+
+    await store.rejectAction(entry.id, "nope");
+
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)?.syncError).toBe("nope");
+  });
 });
 
 const sourceRow = (db: AppDb) => db.select().from(schema.sources).where(eq(schema.sources.id, "s1")).get();

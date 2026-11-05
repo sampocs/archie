@@ -121,6 +121,7 @@ export function createDbSyncStore(
         const rewind =
           TOPIC_ACTIONS.has(entry.type) ||
           payload.target === "topic_primer" ||
+          payload.target === "source_primer" ||
           REWOUND_SOURCE_ACTIONS.has(entry.type);
         if (rewind) {
           tx.update(schema.syncState)

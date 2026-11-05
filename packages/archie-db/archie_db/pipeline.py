@@ -17,7 +17,12 @@ from archie_db import changes, jobs, models
 SOURCE_ID_KEY = "source_id"
 
 # Steps that get more attempts than the default: a rate-limited transcription re-queues itself and each try counts.
-MAX_ATTEMPTS: dict[models.JobKind, int] = {models.JobKind.TRANSCRIBE: 6}
+MAX_ATTEMPTS: dict[models.JobKind, int] = {
+    models.JobKind.TRANSCRIBE: 6,
+    # One sequential worker would let analyze run on the raw text while a retried clean_text waits its turn; a single
+    # attempt means cleaning either happens before analyze or is skipped.
+    models.JobKind.CLEAN_TEXT: 1,
+}
 
 # True in the content of a `text` artifact `clean_text` wrote (the text before cleaning stays an older version).
 CLEANED_KEY = "cleaned"

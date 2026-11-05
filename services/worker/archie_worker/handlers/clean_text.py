@@ -21,7 +21,7 @@ from archie_db import models, pipeline
 from archie_worker import content, llm, prompts
 from archie_worker.handlers import _llm_step
 
-MAX_OUTPUT_TOKENS = 1000
+MAX_OUTPUT_TOKENS = 2000
 
 # A model that wants to drop more than this share of the paragraphs has misread the email, so the text is kept as is.
 MAX_DROPPED_SHARE = 0.6

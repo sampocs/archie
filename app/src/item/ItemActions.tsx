@@ -4,7 +4,7 @@ import type * as schema from "@/db/schema";
 import { Button } from "@/theme/components/Button";
 import { useTheme } from "@/theme/useTheme";
 
-import { PrimerButton } from "./PrimerButton";
+import { PrimerButton, primerButtonKind } from "./PrimerButton";
 
 type SourceRow = typeof schema.sources.$inferSelect;
 type ItemActionsProps = { source: SourceRow; primerWords: number | null; onFinish: () => void };
@@ -16,15 +16,19 @@ type ItemActionsProps = { source: SourceRow; primerWords: number | null; onFinis
 export function ItemActions({ source, primerWords, onFinish }: ItemActionsProps) {
   const theme = useTheme();
 
+  const hasPrimerButton = primerButtonKind(source, primerWords) !== null;
+
   if (source.state === "queued") {
     return (
       <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
         <View style={{ flex: 1 }}>
           <Button testID="item-finish" label="Mark as done" onPress={onFinish} />
         </View>
-        <View style={{ flex: 1 }}>
-          <PrimerButton source={source} primerWords={primerWords} />
-        </View>
+        {hasPrimerButton ? (
+          <View style={{ flex: 1 }}>
+            <PrimerButton source={source} primerWords={primerWords} />
+          </View>
+        ) : null}
       </View>
     );
   }

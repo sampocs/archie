@@ -26,6 +26,11 @@ appId: com.sampocs.archie
     id: "add-save"
 # Saving lands on Library; open the queued source.
 - tapOn: ".*example\\.net.*"
+# example.net can't be read, so the item fails within seconds and its error line pushes the buttons down; wait for
+# that to settle so the tap doesn't land where the button used to be.
+- extendedWaitUntil:
+    visible: "Retry"
+    timeout: 30000
 - tapOn:
     id: "item-finish"
 - tapOn:

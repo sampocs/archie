@@ -7,7 +7,7 @@ import httpx
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, models, session, user_topics
+from archie_db import changes, models, pipeline, session, user_topics
 from archie_shared import domains
 from archie_testing.harness import LiveStack
 
@@ -54,8 +54,11 @@ def _insert_source(
     processing: models.ProcessingStatus,
     with_card: bool = False,
     with_primer: bool = False,
+    with_text: bool = False,
+    pending_jobs: tuple[models.JobKind, ...] = (),
 ) -> str:
-    """A source the API can't create itself (a ready inbox newsletter), optionally with a live card or a primer."""
+    """A source the API can't create itself (a ready inbox newsletter), optionally with a live card, a primer, its
+    text, or jobs queued for it."""
     engine = session.engine_for(live_stack.database_url)
     with sqlalchemy.orm.Session(engine) as db:
         changes.lock_user_writes(db, user_id)
@@ -72,6 +75,20 @@ def _insert_source(
         )
         db.add(source)
         db.flush()
+        if with_text:
+            db.add(
+                models.SourceArtifact(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    source_id=source.id,
+                    kind=models.ArtifactKind.TEXT.value,
+                    version=1,
+                    content={"text": "Some text."},
+                    is_current=True,
+                    change_seq=changes.next_change_seq(),
+                )
+            )
+        pipeline.enqueue_steps(db, source=source, steps=list(pending_jobs))
         if with_primer:
             db.add(
                 models.SourceArtifact(
@@ -189,36 +206,38 @@ def test_finish_with_queue_primer_puts_the_primer_at_the_top_of_the_queue(
 def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_primer(
     live_stack: LiveStack, authed: httpx.Client
 ) -> None:
-    """A finished newsletter is re-analyzed (so it gets cards); queueing its missing primer also writes one."""
+    """A finished newsletter is re-analyzed (so it gets cards) unless an analysis is already pending or it has no
+    text; queueing its missing primer also writes one."""
     user_id = _user_id(authed)
-    plain = _insert_source(
-        live_stack,
-        user_id=user_id,
-        kind=models.SourceKind.NEWSLETTER,
-        state=models.SourceState.QUEUED,
-        processing=models.ProcessingStatus.READY,
-    )
-    with_primer = _insert_source(
-        live_stack,
-        user_id=user_id,
-        kind=models.SourceKind.NEWSLETTER,
-        state=models.SourceState.QUEUED,
-        processing=models.ProcessingStatus.READY,
-    )
 
-    still_processing = _insert_source(
-        live_stack,
-        user_id=user_id,
-        kind=models.SourceKind.NEWSLETTER,
-        state=models.SourceState.QUEUED,
-        processing=models.ProcessingStatus.PROCESSING,
+    def newsletter(processing: models.ProcessingStatus, **extra: Any) -> str:
+        return _insert_source(
+            live_stack,
+            user_id=user_id,
+            kind=models.SourceKind.NEWSLETTER,
+            state=models.SourceState.QUEUED,
+            processing=processing,
+            **extra,
+        )
+
+    plain = newsletter(models.ProcessingStatus.READY, with_text=True)
+    with_primer = newsletter(models.ProcessingStatus.READY, with_text=True)
+    # Only its requested primer is being written: no analysis is pending, so it still needs one for its cards.
+    writing_primer = newsletter(
+        models.ProcessingStatus.PROCESSING, with_text=True, pending_jobs=(models.JobKind.PRIMER,)
     )
+    still_analyzing = newsletter(
+        models.ProcessingStatus.PROCESSING, with_text=True, pending_jobs=(models.JobKind.ANALYZE,)
+    )
+    without_text = newsletter(models.ProcessingStatus.FAILED)
 
     _push(
         authed,
         _action("finish_source", {"id": plain}),
         _action("finish_source", {"id": with_primer, "queue_primer": True}),
-        _action("finish_source", {"id": still_processing}),
+        _action("finish_source", {"id": writing_primer}),
+        _action("finish_source", {"id": still_analyzing}),
+        _action("finish_source", {"id": without_text}),
     )
 
     plain_row, primed_row = _source(authed, plain), _source(authed, with_primer)
@@ -230,9 +249,11 @@ def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_
     assert _jobs(live_stack, plain) == ["analyze"]
     assert (primed_row["processing"], primed_row["primer_queue_position"]) == ("processing", 0)
     assert _jobs(live_stack, with_primer) == ["analyze", "primer"]
-    # Its first analysis is still queued or running and makes the cards, so finishing adds no job.
-    assert _jobs(live_stack, still_processing) == []
-    assert _source(authed, still_processing)["state"] == "consumed"
+    assert _jobs(live_stack, writing_primer) == ["primer", "analyze"]
+    # Its pending analysis makes the cards (it checks the consumed state when it runs), so finishing adds no job.
+    assert _jobs(live_stack, still_analyzing) == ["analyze"]
+    assert _jobs(live_stack, without_text) == []
+    assert {_source(authed, item)["state"] for item in (still_analyzing, without_text)} == {"consumed"}
 
 
 def test_a_repeated_action_is_a_duplicate_and_changes_nothing(authed: httpx.Client) -> None:

@@ -14,6 +14,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `topic_picker.yaml` | Signs in as `picker-user` (no topics chosen yet), the topic picker appears, pick topics and continue |
 | `today_primer.yaml` | finish an article with "Parts lost me", its queued primer appears in Up next, open it, Mark as done (real keys, a few cents) |
 | `newsletter_*.yaml` + `run_newsletter.sh` | Log in, deliver a newsletter through `/ingest/email`, Add to queue then Undo (toast), Make review cards from the ••• menu |
+| `brief.yaml` + `run_brief.sh` | Log in, deliver a news newsletter and an essay through `/ingest/email`, wait for the Today brief preview, open the brief, open a story's sources ("Covered by"), back, queue the essay, Done, the preview disappears (real keys, a few cents) |
 | `sign_out.yaml` | Dev login, Today tab, account button, Sign out, back on the Apple sign-in screen |
 | `offline_*.yaml` + `run_offline.sh` | Add a link with the backend down ("1 change waiting"), restart it, the change syncs and the title arrives |
 | `share_sheet.yaml` | Safari → Share → Archie opens the share sheet, and a screenshot of it matches `screenshots/share_sheet.png` (text drawn, Cancel on screen) |
@@ -32,7 +33,8 @@ UI flows that drive the debug app on the iOS simulator against the local backend
    `source_page` and `today_primer` call Anthropic for real, so a run spends a few cents.
    `make maestro-podcast` runs `add_podcast` separately because it spends real API credits.
 3. `make maestro-newsletter` with the backend up (`make start-local`): runs `run_newsletter.sh`, which needs `INGEST_SECRET` and the owner's keys in `.env` and spends a few cents.
-4. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
+4. `make maestro-brief` with the backend up (`make start-local`): runs `run_brief.sh`, which delivers two newsletters and waits up to 5 minutes for the brief (the worker cleans, analyzes and files them, then writes the brief with Sonnet). Same `.env` needs as above; spends a few cents (Haiku + Sonnet).
+5. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
 
 These targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
 

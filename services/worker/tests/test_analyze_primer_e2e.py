@@ -104,7 +104,8 @@ def test_newsletter_analyze_writes_a_summary_but_no_cards(engine: sqlalchemy.Eng
     assert _cards(engine, source_id) == []
     assert _artifacts(engine, source_id, models.ArtifactKind.PRIMER) == []
     assert _source(engine, source_id).processing == models.ProcessingStatus.READY.value
-    assert [job.kind for job in _jobs(engine)] == [models.JobKind.ANALYZE.value]
+    # A ready inbox newsletter is one the brief now covers.
+    assert [job.kind for job in _jobs(engine)] == [models.JobKind.ANALYZE.value, models.JobKind.UPDATE_BRIEF.value]
 
 
 def test_a_newsletter_analyzed_after_going_deeper_gets_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
@@ -203,6 +204,22 @@ def test_analyze_queues_filing_for_a_user_who_has_chosen_topics(engine: sqlalche
     assert (analyze.kind, analyze.status) == (models.JobKind.ANALYZE.value, models.JobStatus.DONE.value)
     assert (filing.kind, filing.status) == (models.JobKind.FILE_TOPIC.value, models.JobStatus.QUEUED.value)
     assert filing.payload == {pipeline.SOURCE_ID_KEY: str(source_id)}
+
+
+def test_a_new_newsletter_is_filed_before_its_brief_is_rewritten(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """`file_topic` is queued ahead of `update_brief`, so the brief knows whether the newsletter is news or an essay."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT, kind=models.SourceKind.NEWSLETTER)
+    _choose_topics(engine, source_id)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE)
+
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert [job.kind for job in _jobs(engine)] == [
+        models.JobKind.ANALYZE.value,
+        models.JobKind.FILE_TOPIC.value,
+        models.JobKind.UPDATE_BRIEF.value,
+    ]
 
 
 def test_reanalyzing_a_filed_source_does_not_refile_it(engine: sqlalchemy.Engine, replay: Replay) -> None:

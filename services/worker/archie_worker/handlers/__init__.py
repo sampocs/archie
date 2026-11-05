@@ -15,6 +15,7 @@ from archie_worker.handlers import (
     primer,
     topic_primer,
     transcribe,
+    update_brief,
 )
 from archie_worker.loop import HandlerSpec
 
@@ -49,4 +50,6 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.FILE_TOPIC: HandlerSpec(run=file_topic.handle),
     # No failure hook: when cleaning fails, the newsletter is analyzed from its text as it was.
     models.JobKind.CLEAN_TEXT: HandlerSpec(run=clean_text.handle),
+    # No failure hook: a failed rewrite leaves the brief's previous content in place.
+    models.JobKind.UPDATE_BRIEF: HandlerSpec(run=update_brief.handle),
 }

@@ -67,6 +67,17 @@ export type PulledTopicPrimer = {
   snoozed_until: string | null;
   created_at: string;
 };
+export type PulledBrief = {
+  id: string;
+  status: string;
+  content: unknown;
+  source_ids: string[];
+  since: string | null;
+  version: number;
+  created_at: string;
+  updated_at: string;
+  done_at: string | null;
+};
 export type PullPage = {
   rows: {
     sources: PulledSource[];
@@ -75,6 +86,8 @@ export type PullPage = {
     // Absent when pulling from a server older than M4.
     topics?: PulledTopic[];
     topic_primers?: PulledTopicPrimer[];
+    // Absent when pulling from a server older than M5.
+    briefs?: PulledBrief[];
   };
   position: number;
   more: boolean;
@@ -84,7 +97,7 @@ export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;
   removeActions(ids: string[]): Promise<void>;
   // Also sets sources.syncError for that action's source. A rejected add_topic / choose_topics deletes its optimistic
-  // topics; any other rejected topic or topic-primer action, and the source actions in transport's
+  // topics; any other rejected topic or topic-primer action, finish_brief, and the source actions in transport's
   // REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the server copy.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;

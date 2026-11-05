@@ -3,7 +3,7 @@ import { randomUUID } from "expo-crypto";
 import type { Intent, Reaction } from "@/capture/types";
 import type { DomainName } from "@/topics/domains";
 
-import { and, eq, isNotNull, isNull, min, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, min, sql } from "drizzle-orm";
 import type { SQLiteUpdateSetSource } from "drizzle-orm/sqlite-core";
 
 import type { AppDb } from "./client";
@@ -34,7 +34,8 @@ export type ActionType =
   | "set_source_topic"
   | "request_topic_primer"
   | "choose_topics"
-  | "choose_episode";
+  | "choose_episode"
+  | "finish_brief";
 export type PrimerTarget = "source" | "topic_primer";
 // What a snooze applies to: a source, a topic primer, or a source's queued primer.
 export type SnoozeTarget = PrimerTarget | "source_primer";
@@ -413,5 +414,30 @@ export function chooseEpisode(db: AppDb, sourceId: string, guid: string): void {
   db.transaction((tx) => {
     updateSource(tx, sourceId, { processing: "processing", processingError: null });
     enqueue(tx, "choose_episode", { id: sourceId, guid });
+  });
+}
+
+/**
+ * "Done ✓" on the brief: it closes, and the newsletters it covers that are still in the inbox become briefed (queued
+ * or finished ones are left alone, as the server does). It sends the newsletters this brief showed, so one that landed
+ * while the owner was reading stays unbriefed and goes into the next brief.
+ */
+export function finishBrief(db: AppDb, briefId: string): void {
+  db.transaction((tx) => {
+    const brief = tx.select().from(schema.briefs).where(eq(schema.briefs.id, briefId)).get();
+    if (!brief) return;
+    const now = new Date().toISOString();
+
+    tx.update(schema.briefs)
+      .set({ status: "done", doneAt: now, updatedAt: now })
+      .where(eq(schema.briefs.id, briefId))
+      .run();
+
+    const sourceIds = JSON.parse(brief.sourceIds) as string[];
+    tx.update(schema.sources)
+      .set({ state: "briefed", updatedAt: now })
+      .where(and(inArray(schema.sources.id, sourceIds), eq(schema.sources.state, "inbox")))
+      .run();
+    enqueue(tx, "finish_brief", { id: briefId, source_ids: sourceIds });
   });
 }

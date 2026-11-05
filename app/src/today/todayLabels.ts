@@ -27,12 +27,3 @@ export function recentDayLabel(at: string, now: Date): string {
   if (now.getTime() - date.getTime() <= WEEKDAY_WINDOW_DAYS * DAY_MS) return WEEKDAYS[date.getDay()];
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
-
-/** "since Mon" within the last 6 days, else "since Nov 1". */
-export function sinceLabel(since: string, now: Date): string {
-  return `since ${recentDayLabel(since, now)}`;
-}
-
-export function newslettersLine(count: number): string {
-  return `${count} ${count === 1 ? "newsletter" : "newsletters"} waiting for your brief`;
-}

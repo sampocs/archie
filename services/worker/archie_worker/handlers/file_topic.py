@@ -16,8 +16,8 @@ from typing import Any
 
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, models, pipeline, user_topics
-from archie_shared import domains
+from archie_db import briefs, changes, models, pipeline, user_topics
+from archie_shared import config, domains
 from archie_shared.domains import Domain
 
 from archie_worker import llm, prompts
@@ -108,6 +108,18 @@ def apply_filing(db: sqlalchemy.orm.Session, *, source: models.Source, decision:
     if decision.newsletter_kind is not None:
         source.newsletter_kind = decision.newsletter_kind.value
     changes.touch(source)
+
+    # A brief rewrite that ran before this filing treated the essay as news, and nothing else re-queues it.
+    if _is_briefed_essay(source, decision=decision):
+        briefs.enqueue_update(db, user_id=source.user_id, delay=config.get_settings().brief_rewrite_delay())
+
+
+def _is_briefed_essay(source: models.Source, *, decision: FilingDecision) -> bool:
+    return (
+        decision.newsletter_kind == models.NewsletterKind.ESSAY
+        and source.state == models.SourceState.INBOX.value
+        and source.processing == models.ProcessingStatus.READY.value
+    )
 
 
 def _matching_topic(db: sqlalchemy.orm.Session, *, user_id: int, name: str) -> models.Topic | None:

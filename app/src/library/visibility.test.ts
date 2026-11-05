@@ -1,6 +1,6 @@
 import type { LibrarySource } from "./join";
 import { sourceRow } from "./testRows";
-import { isSnoozed, queueOrder, statusTag, upNext, waitingNewsletters } from "./visibility";
+import { isSnoozed, queueOrder, statusTag, upNext } from "./visibility";
 
 const NOW = new Date("2026-11-04T15:00:00Z");
 const PAST = "2026-11-04T14:00:00Z";
@@ -79,26 +79,5 @@ describe("upNext", () => {
       "source-woke",
       "source-primer-asleep",
     ]);
-  });
-});
-
-describe("waitingNewsletters", () => {
-  it("counts inbox newsletters that aren't snoozed, names the two newest senders, and gives the oldest time", () => {
-    const newsletter = (overrides: Partial<LibrarySource>) =>
-      source({ kind: "newsletter", state: "inbox", ...overrides });
-    const result = waitingNewsletters(
-      [
-        newsletter({ id: "n1", sender: "Stratechery", createdAt: "2026-11-01T00:00:00Z" }),
-        newsletter({ id: "n2", sender: "Matt Levine", createdAt: "2026-11-03T00:00:00Z" }),
-        newsletter({ id: "n3", sender: "Stratechery", createdAt: "2026-11-04T00:00:00Z" }),
-        newsletter({ id: "n4", sender: "The Diff", createdAt: "2026-11-02T00:00:00Z" }),
-        newsletter({ id: "briefed", state: "briefed", sender: "Briefed" }),
-        newsletter({ id: "snoozed", sender: "Snoozed", snoozedUntil: FUTURE }),
-        source({ id: "article", state: "inbox" }),
-      ],
-      NOW,
-    );
-
-    expect(result).toEqual({ count: 4, senders: ["Stratechery", "Matt Levine"], since: "2026-11-01T00:00:00Z" });
   });
 });

@@ -6,6 +6,7 @@ import {
   addSource,
   addTopic,
   chooseTopics,
+  finishBrief,
   finishPrimer,
   finishSource,
   goDeeper,
@@ -533,5 +534,30 @@ describe("topic actions", () => {
 
     expect(db.select().from(schema.topics).get()).toMatchObject({ id, name: "AI evals", origin: "user" });
     expect(outboxEntries(db)).toEqual([{ type: "add_topic", payload: { id, domain: "AI", name: "AI evals" } }]);
+  });
+});
+
+describe("finishBrief", () => {
+  it("closes the brief and marks only its covered inbox newsletters briefed, sending the version read", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "covered", kind: "newsletter", state: "inbox" });
+    seedSource(db, { id: "queued", kind: "newsletter", state: "queued", queuePosition: 0 });
+    seedSource(db, { id: "later", kind: "newsletter", state: "inbox" });
+    db.insert(schema.briefs)
+      .values({
+        id: "b1", status: "open", content: null, sourceIds: JSON.stringify(["covered", "queued"]), since: null,
+        version: 3, createdAt: "2026-11-04T00:00:00Z", updatedAt: "2026-11-04T00:00:00Z",
+      })
+      .run();
+
+    finishBrief(db, "b1");
+
+    const brief = db.select().from(schema.briefs).where(eq(schema.briefs.id, "b1")).get();
+    expect(brief?.status).toBe("done");
+    expect(brief?.doneAt).not.toBeNull();
+    expect(sourceById(db, "covered")?.state).toBe("briefed");
+    expect(sourceById(db, "queued")?.state).toBe("queued");
+    expect(sourceById(db, "later")?.state).toBe("inbox");
+    expect(outboxEntries(db)).toEqual([{ type: "finish_brief", payload: { id: "b1", version: 3 } }]);
   });
 });

@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSyncStatus } from "@/sync/useSync";
+import { TabBarInsetContext } from "@/theme/tabBarInset";
 import { Text } from "@/theme/components/Text";
 
 import { fontFamily } from "@/theme/type";
@@ -67,41 +68,44 @@ function AddCircle() {
 
 export default function TabsLayout() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={{ flex: 1 }}>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          // Graphite is the chrome: the active tab is chrome, never a brand color.
-          tabBarActiveTintColor: theme.colors.chrome,
-          tabBarInactiveTintColor: theme.colors.ink3,
-          tabBarLabelStyle: { fontFamily: fontFamily.medium, fontSize: 10.5 },
-          tabBarStyle: { position: "absolute", backgroundColor: "transparent", borderTopColor: theme.colors.line },
-          tabBarBackground: () => (
-            <BlurView
-              tint={theme.scheme === "dark" ? "systemChromeMaterialDark" : "systemChromeMaterialLight"}
-              intensity={80}
-              style={StyleSheet.absoluteFill}
+    <TabBarInsetContext.Provider value={TAB_BAR_HEIGHT + insets.bottom}>
+      <View style={{ flex: 1 }}>
+        <Tabs
+          screenOptions={{
+            headerShown: false,
+            // Graphite is the chrome: the active tab is chrome, never a brand color.
+            tabBarActiveTintColor: theme.colors.chrome,
+            tabBarInactiveTintColor: theme.colors.ink3,
+            tabBarLabelStyle: { fontFamily: fontFamily.medium, fontSize: 10.5 },
+            tabBarStyle: { position: "absolute", backgroundColor: "transparent", borderTopColor: theme.colors.line },
+            tabBarBackground: () => (
+              <BlurView
+                tint={theme.scheme === "dark" ? "systemChromeMaterialDark" : "systemChromeMaterialLight"}
+                intensity={80}
+                style={StyleSheet.absoluteFill}
+              />
+            ),
+          }}
+        >
+          {TABS.map((tab) => (
+            <Tabs.Screen
+              key={tab.name}
+              name={tab.name}
+              options={{
+                title: tab.title,
+                tabBarButtonTestID: `tab-${tab.name}`,
+                ...(tab.name === "add"
+                  ? { tabBarLabel: () => null, tabBarIcon: () => <AddCircle />, tabBarAccessibilityLabel: "Add" }
+                  : { tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size} color={color as string} /> }),
+              }}
             />
-          ),
-        }}
-      >
-        {TABS.map((tab) => (
-          <Tabs.Screen
-            key={tab.name}
-            name={tab.name}
-            options={{
-              title: tab.title,
-              tabBarButtonTestID: `tab-${tab.name}`,
-              ...(tab.name === "add"
-                ? { tabBarLabel: () => null, tabBarIcon: () => <AddCircle />, tabBarAccessibilityLabel: "Add" }
-                : { tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size} color={color as string} /> }),
-            }}
-          />
-        ))}
-      </Tabs>
-      <SyncStatusLine />
-    </View>
+          ))}
+        </Tabs>
+        <SyncStatusLine />
+      </View>
+    </TabBarInsetContext.Provider>
   );
 }

@@ -104,6 +104,7 @@ class JobKind(StrEnum):
     TRANSCRIBE = "transcribe"
     FILE_TOPIC = "file_topic"
     TOPIC_PRIMER = "topic_primer"
+    CLEAN_TEXT = "clean_text"
 
 
 class TopicOrigin(StrEnum):
@@ -212,7 +213,6 @@ class Source(Base):
     processing_error: Mapped[str | None] = mapped_column(sqlalchemy.Text)
     reaction: Mapped[str | None] = mapped_column(sqlalchemy.String(16))
     note: Mapped[str | None] = mapped_column(sqlalchemy.Text)
-    prep_me: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
     # What duplicate detection compares: the URL with tracking noise removed (see archie_shared.urls).
     normalized_url: Mapped[str] = mapped_column(sqlalchemy.String(2048))
     # Set when this capture duplicated another source and was folded into it.
@@ -233,6 +233,10 @@ class Source(Base):
     read_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     snoozed_until: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     primer_opened_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    # Set while the source's primer sits in the queue as its own entry; shares one position space with
+    # `queue_position`, and null means the primer is not queued.
+    primer_queue_position: Mapped[float | None] = mapped_column(sqlalchemy.Double)
+    primer_snoozed_until: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     newsletter_kind: Mapped[str | None] = mapped_column(sqlalchemy.String(16))
     # Server only (never pulled): the feed guid the user chose with "Wrong episode?".
     episode_guid: Mapped[str | None] = mapped_column(sqlalchemy.String(1024))

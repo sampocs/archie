@@ -164,14 +164,30 @@ def test_newsletter_is_ready_after_only_a_summary(db: sqlalchemy.orm.Session, so
 def test_steps_to_retry_for_a_newsletter_never_includes_the_primer(
     db: sqlalchemy.orm.Session, source: models.Source
 ) -> None:
-    """With text only, analyze; with everything present, still only analyze."""
+    """Uncleaned text: clean then analyze, even with a summary. Cleaned text: analyze only, missing or not."""
     source.kind = models.SourceKind.NEWSLETTER.value
-    _write(db, source, kind=models.ArtifactKind.TEXT, content={})
+    clean_then_analyze = [models.JobKind.CLEAN_TEXT, models.JobKind.ANALYZE]
+    _write(db, source, kind=models.ArtifactKind.TEXT, content={"text": "raw"})
     db.flush()
-    assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.ANALYZE]
+    assert pipeline.steps_to_retry(db, source_id=source.id) == clean_then_analyze
 
     _write(db, source, kind=models.ArtifactKind.SUMMARY, content={})
     db.flush()
+    assert pipeline.steps_to_retry(db, source_id=source.id) == clean_then_analyze
+
+    _write(db, source, kind=models.ArtifactKind.TEXT, content={"text": "clean", pipeline.CLEANED_KEY: True})
+    db.flush()
+    assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.ANALYZE]
+
+
+def test_steps_to_retry_skips_cleaning_a_cleaned_newsletter_without_a_summary(
+    db: sqlalchemy.orm.Session, source: models.Source
+) -> None:
+    """Cleaning already happened, so only the missing summary is made."""
+    source.kind = models.SourceKind.NEWSLETTER.value
+    _write(db, source, kind=models.ArtifactKind.TEXT, content={"text": "clean", pipeline.CLEANED_KEY: True})
+    db.flush()
+
     assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.ANALYZE]
 
 
@@ -199,7 +215,7 @@ def test_enqueue_steps_adds_one_job_per_step_in_order(db: sqlalchemy.orm.Session
 
 
 def _write(
-    db: sqlalchemy.orm.Session, source: models.Source, *, kind: models.ArtifactKind, content: dict[str, str]
+    db: sqlalchemy.orm.Session, source: models.Source, *, kind: models.ArtifactKind, content: dict[str, str | bool]
 ) -> models.SourceArtifact:
     return pipeline.write_artifact(
         db, source=source, kind=kind, content=content, model="test-model", prompt_version="v1"

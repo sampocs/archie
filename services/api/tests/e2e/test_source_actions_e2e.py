@@ -1,4 +1,4 @@
-"""Reading-state actions through the real API: finish, prep, read, opened, snooze, queue, deeper, later, delete."""
+"""Reading-state actions through the real API: finish, primers, read, opened, snooze, queue, deeper, later, delete."""
 
 import uuid
 from typing import Any
@@ -53,8 +53,9 @@ def _insert_source(
     state: models.SourceState,
     processing: models.ProcessingStatus,
     with_card: bool = False,
+    with_primer: bool = False,
 ) -> str:
-    """A source the API can't create itself (a ready inbox newsletter), optionally with one live card."""
+    """A source the API can't create itself (a ready inbox newsletter), optionally with a live card or a primer."""
     engine = session.engine_for(live_stack.database_url)
     with sqlalchemy.orm.Session(engine) as db:
         changes.lock_user_writes(db, user_id)
@@ -71,6 +72,19 @@ def _insert_source(
         )
         db.add(source)
         db.flush()
+        if with_primer:
+            db.add(
+                models.SourceArtifact(
+                    id=uuid.uuid4(),
+                    user_id=user_id,
+                    source_id=source.id,
+                    kind=models.ArtifactKind.PRIMER.value,
+                    version=1,
+                    content={"markdown": "# Primer"},
+                    is_current=True,
+                    change_seq=changes.next_change_seq(),
+                )
+            )
         if with_card:
             artifact = models.SourceArtifact(
                 id=uuid.uuid4(),
@@ -138,77 +152,281 @@ def authed(live_stack: LiveStack) -> httpx.Client:
     return live_stack.authed(live_stack.sign_in())
 
 
-def test_finish_marks_consumed_with_reaction_and_note_and_lost_asks_for_a_primer(authed: httpx.Client) -> None:
-    """Finishing a queued source consumes it; "lost" also turns prep_me on; a second finish is refused."""
+def test_finish_marks_consumed_with_reaction_and_note(live_stack: LiveStack, authed: httpx.Client) -> None:
+    """Finishing a queued source consumes it; "lost" alone queues nothing; a second finish is refused."""
     source_id = _add(authed)
     seq_before = _source(authed, source_id)["change_seq"]
+    jobs_before = _jobs(live_stack, source_id)
 
     results = _push(authed, _action("finish_source", {"id": source_id, "reaction": "lost", "note": "hard"}))
     again = _push(authed, _action("finish_source", {"id": source_id}))
 
     row = _source(authed, source_id)
     assert results[0]["result"] == "applied"
-    assert (row["state"], row["reaction"], row["note"], row["prep_me"]) == ("consumed", "lost", "hard", True)
+    assert (row["state"], row["reaction"], row["note"]) == ("consumed", "lost", "hard")
+    assert row["primer_queue_position"] is None
     assert row["change_seq"] > seq_before
+    assert _jobs(live_stack, source_id) == jobs_before
     assert again[0] == {"id": again[0]["id"], "result": "rejected", "reason": "source is not queued"}
+
+
+def test_finish_with_queue_primer_puts_the_primer_at_the_top_of_the_queue(
+    live_stack: LiveStack, authed: httpx.Client
+) -> None:
+    """An article's primer is queued above every other entry; an article is not analyzed again."""
+    source_id = _add(authed)
+    other = _add(authed)
+    jobs_before = _jobs(live_stack, source_id)
+
+    _push(authed, _action("finish_source", {"id": source_id, "reaction": "lost", "queue_primer": True}))
+
+    row = _source(authed, source_id)
+    assert row["state"] == "consumed"
+    assert row["primer_queue_position"] < _source(authed, other)["queue_position"]
+    assert _jobs(live_stack, source_id) == jobs_before
+
+
+def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_primer(
+    live_stack: LiveStack, authed: httpx.Client
+) -> None:
+    """A finished newsletter is re-analyzed (so it gets cards); queueing its missing primer also writes one."""
+    user_id = _user_id(authed)
+    plain = _insert_source(
+        live_stack,
+        user_id=user_id,
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.QUEUED,
+        processing=models.ProcessingStatus.READY,
+    )
+    with_primer = _insert_source(
+        live_stack,
+        user_id=user_id,
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.QUEUED,
+        processing=models.ProcessingStatus.READY,
+    )
+
+    _push(
+        authed,
+        _action("finish_source", {"id": plain}),
+        _action("finish_source", {"id": with_primer, "queue_primer": True}),
+    )
+
+    plain_row, primed_row = _source(authed, plain), _source(authed, with_primer)
+    assert (plain_row["state"], plain_row["processing"], plain_row["primer_queue_position"]) == (
+        "consumed",
+        "processing",
+        None,
+    )
+    assert _jobs(live_stack, plain) == ["analyze"]
+    assert (primed_row["processing"], primed_row["primer_queue_position"]) == ("processing", 0)
+    assert _jobs(live_stack, with_primer) == ["analyze", "primer"]
 
 
 def test_a_repeated_action_is_a_duplicate_and_changes_nothing(authed: httpx.Client) -> None:
     """The same action id twice answers `duplicate` and the row's change_seq stays put."""
     source_id = _add(authed)
-    action = _action("set_prep_me", {"id": source_id, "prep_me": True})
+    action = _action("queue_primer", {"id": source_id, "queued": True})
 
     first = _push(authed, action)[0]
-    seq = _source(authed, source_id)["change_seq"]
+    row = _source(authed, source_id)
     second = _push(authed, action)[0]
 
     assert (first["result"], second["result"]) == ("applied", "duplicate")
-    assert _source(authed, source_id)["change_seq"] == seq
-    assert _source(authed, source_id)["prep_me"] is True
+    assert _source(authed, source_id)["change_seq"] == row["change_seq"]
+    assert _source(authed, source_id)["primer_queue_position"] == row["primer_queue_position"] == -1
 
 
 def test_another_users_source_is_not_found(live_stack: LiveStack, authed: httpx.Client) -> None:
     """Every source action on someone else's id is rejected as `source not found`."""
     other = live_stack.authed(live_stack.sign_in(apple_sub="mallory"))
     source_id = _add(authed)
-    payloads: dict[str, dict[str, Any]] = {
-        "finish_source": {"id": source_id},
-        "set_prep_me": {"id": source_id, "prep_me": True},
-        "set_read": {"id": source_id, "read": True},
-        "set_primer_opened": {"target": "source", "id": source_id, "opened": True},
-        "snooze": {"target": "source", "id": source_id, "until": SNOOZE_UNTIL},
-        "set_queue_position": {"id": source_id, "position": 3},
-        "go_deeper": {"id": source_id},
-        "read_later": {"id": source_id},
-        "delete_source": {"id": source_id},
-    }
+    payloads: list[tuple[str, dict[str, Any]]] = [
+        ("finish_source", {"id": source_id}),
+        ("queue_primer", {"id": source_id, "queued": True}),
+        ("request_primer", {"id": source_id}),
+        ("return_to_inbox", {"id": source_id}),
+        ("set_read", {"id": source_id, "read": True}),
+        ("set_primer_opened", {"target": "source", "id": source_id, "opened": True}),
+        ("snooze", {"target": "source", "id": source_id, "until": SNOOZE_UNTIL}),
+        ("snooze", {"target": "source_primer", "id": source_id, "until": SNOOZE_UNTIL}),
+        ("set_queue_position", {"id": source_id, "position": 3}),
+        ("set_queue_position", {"id": source_id, "target": "source_primer", "position": 3}),
+        ("go_deeper", {"id": source_id}),
+        ("read_later", {"id": source_id}),
+        ("delete_source", {"id": source_id}),
+    ]
 
-    results = _push(other, *[_action(kind, payload) for kind, payload in payloads.items()])
+    results = _push(other, *[_action(kind, payload) for kind, payload in payloads])
 
     assert {result["reason"] for result in results} == {"source not found"}
     assert _source(authed, source_id)["deleted_at"] is None
 
 
-def test_prep_me_and_queue_position_apply_to_queued_sources_only(authed: httpx.Client) -> None:
-    """Both write on a queued source and are refused once it is consumed."""
+def test_a_source_queue_position_applies_to_queued_sources_only(authed: httpx.Client) -> None:
+    """The default target writes a queued source's position and is refused once it is consumed."""
     source_id = _add(authed)
 
-    applied = _push(
-        authed,
-        _action("set_prep_me", {"id": source_id, "prep_me": True}),
-        _action("set_queue_position", {"id": source_id, "position": 2.5}),
-    )
+    applied = _push(authed, _action("set_queue_position", {"id": source_id, "position": 2.5}))
     _push(authed, _action("finish_source", {"id": source_id}))
-    refused = _push(
-        authed,
-        _action("set_prep_me", {"id": source_id, "prep_me": False}),
-        _action("set_queue_position", {"id": source_id, "position": 9}),
-    )
+    refused = _push(authed, _action("set_queue_position", {"id": source_id, "target": "source", "position": 9}))
+
+    assert applied[0]["result"] == "applied"
+    assert refused[0]["reason"] == "source is not queued"
+    assert _source(authed, source_id)["queue_position"] == 2.5
+
+
+def test_a_primer_queue_position_needs_a_queued_primer(authed: httpx.Client) -> None:
+    """`source_primer` moves only the primer's entry, and only while the primer is queued."""
+    source_id = _add(authed)
+    move_primer = {"id": source_id, "target": "source_primer"}
+    refused = _push(authed, _action("set_queue_position", {**move_primer, "position": 1}))
+
+    _push(authed, _action("queue_primer", {"id": source_id, "queued": True}))
+    applied = _push(authed, _action("set_queue_position", {**move_primer, "position": 7.5}))
 
     row = _source(authed, source_id)
-    assert [result["result"] for result in applied] == ["applied", "applied"]
-    assert [result["reason"] for result in refused] == ["source is not queued"] * 2
-    assert (row["prep_me"], row["queue_position"]) == (True, 2.5)
+    assert refused[0]["reason"] == "primer is not queued"
+    assert applied[0]["result"] == "applied"
+    assert (row["queue_position"], row["primer_queue_position"]) == (0, 7.5)
+
+
+def test_queued_sources_and_queued_primers_share_one_top_of_the_queue(
+    live_stack: LiveStack, authed: httpx.Client
+) -> None:
+    """Each new entry goes above the lowest position of either kind: source, primer, then an inbox item read later."""
+    first = _add(authed)
+    _push(authed, _action("queue_primer", {"id": first, "queued": True}))
+    inbox = _insert_source(
+        live_stack,
+        user_id=_user_id(authed),
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.INBOX,
+        processing=models.ProcessingStatus.READY,
+    )
+    _push(authed, _action("read_later", {"id": inbox}))
+    second = _add(authed)
+
+    assert _source(authed, first)["queue_position"] == 0
+    assert _source(authed, first)["primer_queue_position"] == -1
+    assert _source(authed, inbox)["queue_position"] == -2
+    assert _source(authed, second)["queue_position"] == -3
+
+
+def test_queue_primer_queues_and_unqueues_and_clears_a_snooze(authed: httpx.Client) -> None:
+    """Queueing puts the primer at the top unsnoozed; `queued: false` takes it out; a deleted source is refused."""
+    source_id = _add(authed)
+    _push(
+        authed,
+        _action("queue_primer", {"id": source_id, "queued": True}),
+        _action("snooze", {"target": "source_primer", "id": source_id, "until": SNOOZE_UNTIL}),
+        _action("queue_primer", {"id": source_id, "queued": True}),
+    )
+    requeued = _source(authed, source_id)
+
+    _push(authed, _action("queue_primer", {"id": source_id, "queued": False}))
+    unqueued = _source(authed, source_id)
+    _push(authed, _action("delete_source", {"id": source_id}))
+    refused = _push(authed, _action("queue_primer", {"id": source_id, "queued": True}))
+
+    assert requeued["primer_snoozed_until"] is None
+    assert requeued["primer_queue_position"] == -3
+    assert unqueued["primer_queue_position"] is None
+    assert unqueued["change_seq"] > requeued["change_seq"]
+    assert refused[0]["reason"] == "source not found"
+
+
+def test_queueing_a_newsletters_missing_primer_writes_it_once(live_stack: LiveStack, authed: httpx.Client) -> None:
+    """A newsletter without a primer gets one job and shows processing; one with a primer or a job on its way none."""
+    user_id = _user_id(authed)
+    without = _insert_source(
+        live_stack,
+        user_id=user_id,
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.INBOX,
+        processing=models.ProcessingStatus.READY,
+    )
+    primed = _insert_source(
+        live_stack,
+        user_id=user_id,
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.INBOX,
+        processing=models.ProcessingStatus.READY,
+        with_primer=True,
+    )
+
+    _push(
+        authed,
+        _action("queue_primer", {"id": without, "queued": True}),
+        _action("queue_primer", {"id": without, "queued": False}),
+        _action("queue_primer", {"id": without, "queued": True}),
+        _action("queue_primer", {"id": primed, "queued": True}),
+    )
+
+    assert (_source(authed, without)["processing"], _jobs(live_stack, without)) == ("processing", ["primer"])
+    primed_row = _source(authed, primed)
+    assert (primed_row["processing"], primed_row["primer_queue_position"]) == ("ready", -1)
+    assert _jobs(live_stack, primed) == []
+
+
+def test_request_primer_writes_a_ready_newsletters_missing_primer_only(
+    live_stack: LiveStack, authed: httpx.Client
+) -> None:
+    """A ready newsletter without a primer gets a primer job; an article, a busy one and a primed one are refused."""
+    user_id = _user_id(authed)
+
+    def newsletter(processing: models.ProcessingStatus, *, with_primer: bool = False) -> str:
+        return _insert_source(
+            live_stack,
+            user_id=user_id,
+            kind=models.SourceKind.NEWSLETTER,
+            state=models.SourceState.INBOX,
+            processing=processing,
+            with_primer=with_primer,
+        )
+
+    ready = newsletter(models.ProcessingStatus.READY)
+    busy = newsletter(models.ProcessingStatus.PROCESSING)
+    primed = newsletter(models.ProcessingStatus.READY, with_primer=True)
+    article = _add(authed)
+
+    results = _push(authed, *[_action("request_primer", {"id": source}) for source in (ready, busy, primed, article)])
+
+    assert results[0]["result"] == "applied"
+    assert [result["reason"] for result in results[1:]] == [
+        "source is not ready",
+        "source already has a primer",
+        "source is not a newsletter",
+    ]
+    assert (_source(authed, ready)["processing"], _jobs(live_stack, ready)) == ("processing", ["primer"])
+    assert _source(authed, ready)["primer_queue_position"] is None
+    assert _jobs(live_stack, busy) == _jobs(live_stack, primed) == []
+
+
+def test_return_to_inbox_undoes_adding_a_newsletter_to_the_queue(live_stack: LiveStack, authed: httpx.Client) -> None:
+    """A newsletter read later goes back to the inbox with no position; an article or an inbox item is refused."""
+    inbox = _insert_source(
+        live_stack,
+        user_id=_user_id(authed),
+        kind=models.SourceKind.NEWSLETTER,
+        state=models.SourceState.INBOX,
+        processing=models.ProcessingStatus.READY,
+    )
+    article = _add(authed)
+
+    _push(authed, _action("read_later", {"id": inbox}))
+    results = _push(
+        authed,
+        _action("return_to_inbox", {"id": inbox}),
+        _action("return_to_inbox", {"id": inbox}),
+        _action("return_to_inbox", {"id": article}),
+    )
+
+    row = _source(authed, inbox)
+    assert (row["state"], row["queue_position"]) == ("inbox", None)
+    assert results[0]["result"] == "applied"
+    assert [result["reason"] for result in results[1:]] == ["source is not queued", "source is not a newsletter"]
+    assert _source(authed, article)["state"] == "queued"
 
 
 def test_an_infinite_queue_position_is_malformed(authed: httpx.Client) -> None:
@@ -233,6 +451,23 @@ def test_snoozing_a_queued_source_moves_it_to_the_top_and_null_clears_it(authed:
     assert snoozed["snoozed_until"].startswith("2030-01-02T09:00:00")
     assert snoozed["queue_position"] < lowest_other
     assert _source(authed, first)["snoozed_until"] is None
+
+
+def test_snoozing_a_queued_primer_moves_only_the_primer_to_the_top(authed: httpx.Client) -> None:
+    """The primer's own snooze is set and its entry goes above everything; the source's snooze and place stay."""
+    source_id = _add(authed)
+    other = _add(authed)
+    _push(authed, _action("queue_primer", {"id": source_id, "queued": True}))
+    _push(authed, _action("set_queue_position", {"id": source_id, "target": "source_primer", "position": 5}))
+
+    _push(authed, _action("snooze", {"target": "source_primer", "id": source_id, "until": SNOOZE_UNTIL}))
+    snoozed = _source(authed, source_id)
+    _push(authed, _action("snooze", {"target": "source_primer", "id": source_id, "until": None}))
+
+    assert snoozed["primer_snoozed_until"].startswith("2030-01-02T09:00:00")
+    assert snoozed["primer_queue_position"] < _source(authed, other)["queue_position"]
+    assert (snoozed["snoozed_until"], snoozed["queue_position"]) == (None, 0)
+    assert _source(authed, source_id)["primer_snoozed_until"] is None
 
 
 def test_a_snooze_without_an_offset_is_malformed(authed: httpx.Client) -> None:

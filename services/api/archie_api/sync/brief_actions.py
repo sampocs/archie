@@ -16,7 +16,8 @@ from archie_api.sync import rows
 
 NO_BRIEF = "brief not found"
 NOT_OPEN = "brief is not open"
-MAX_FINISHED_SOURCE_IDS = 500
+# Only guards the payload size; a brief can cover a long backlog of newsletters.
+MAX_FINISHED_SOURCE_IDS = 5000
 
 
 class _FinishBriefPayload(pydantic.BaseModel):

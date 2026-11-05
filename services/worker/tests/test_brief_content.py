@@ -140,14 +140,36 @@ def test_stored_json_carries_ids_as_strings_and_domains_by_name() -> None:
 
 def test_the_newest_newsletters_get_full_text_until_the_budget_is_spent() -> None:
     """Lengths oldest first: the newest two fit in 150,000; the third doesn't, so it and the oldest are summaries."""
-    assert prompts.full_text_flags([10_000, 30_000, 100_000, 30_000]) == [False, False, True, True]
-    assert prompts.full_text_flags([30_000] * 5) == [True] * 5
-    assert prompts.full_text_flags([]) == []
+    full, summary = prompts.BriefInput.FULL, prompts.BriefInput.SUMMARY
+
+    assert _choose([10_000, 30_000, 100_000, 30_000]) == [summary, summary, full, full]
+    assert _choose([30_000] * 5) == [full] * 5
+    assert _choose([]) == []
 
 
 def test_an_older_issue_that_would_fit_after_a_long_one_still_gets_its_summary() -> None:
     """Once the budget is hit, every older newsletter is a summary, even a short one."""
-    assert prompts.full_text_flags([10, 140_000, 20_000]) == [False, False, True]
+    assert _choose([10, 140_000, 20_000]) == [
+        prompts.BriefInput.SUMMARY,
+        prompts.BriefInput.SUMMARY,
+        prompts.BriefInput.FULL,
+    ]
+
+
+def test_newsletters_older_than_the_summary_budget_are_omitted_even_when_short() -> None:
+    """Five fill the text budget; the sixth's summary fits 60,000, the seventh's doesn't, and the tiny eighth is out."""
+    full, summary, omitted = prompts.BriefInput.FULL, prompts.BriefInput.SUMMARY, prompts.BriefInput.OMITTED
+
+    choices = prompts.choose_brief_inputs(
+        text_lengths=[30_000] * 8, summary_lengths=[5, 40_000, 30_000, 1_000, 1_000, 1_000, 1_000, 1_000]
+    )
+
+    assert choices == [omitted, omitted, summary, full, full, full, full, full]
+
+
+def _choose(text_lengths: list[int]) -> list[prompts.BriefInput]:
+    """The choices when every summary is 1,000 characters."""
+    return prompts.choose_brief_inputs(text_lengths=text_lengths, summary_lengths=[1_000] * len(text_lengths))
 
 
 def test_the_brief_message_lists_domains_topics_and_each_newsletter_with_its_id() -> None:

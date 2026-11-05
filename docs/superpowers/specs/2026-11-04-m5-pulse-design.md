@@ -101,9 +101,13 @@ The phone applies it optimistically (brief done, those newsletters briefed).
      source_ids empty) — e.g. after every covered newsletter was queued. Done.
   3. Essays: `{source_id, pitch = summary gist}` from their current summary artifact; no LLM call.
   4. News: one call (`BRIEF_MODELS = ModelPair(primary=SONNET, fallback=OPUS)`), input = each news newsletter's id,
-     sender, subject, date and current cleaned text (each truncated to 30k characters; when the total passes 150k characters, the oldest are given
-     as their summary — gist, key ideas, numbers — instead, newest keeping full text), plus the domain list and the
-     owner's topics for relevance. Tool/JSON output = the content shape above minus essays. The style guide used by
+     sender, subject, date and current cleaned text (each truncated to 30k characters; newest first, text goes in
+     until 150k characters are spent, then older ones are given as their summary — gist, key ideas, numbers — until
+     60k summary characters are spent; older newsletters than that are deferred: left out of the call and out of the
+     brief's `source_ids` and `since`, so Done doesn't brief them, they stay in the inbox, and a later brief covers
+     them once this one is Done. Nothing is dropped), plus the domain list and the
+     owner's topics for relevance. Tool/JSON output = the content shape above minus essays; the model writes at most 12 stories in full and puts other
+     news in `also`. The style guide used by
      summaries applies (one reading voice). If there are no news newsletters, skip the call.
   5. Validate, drop unknown source ids, order domains by their top story's importance and stories within a domain by
      importance, keep at most 10 stories (the rest move to `also` as their headline), write content, source_ids, since,

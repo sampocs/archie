@@ -233,6 +233,30 @@ def test_a_newsletter_decision_writes_its_kind(engine: sqlalchemy.Engine) -> Non
     assert _source(engine, source_id).newsletter_kind == models.NewsletterKind.ESSAY.value
 
 
+@pytest.mark.parametrize(
+    ("kind", "state", "queued"),
+    [
+        (models.NewsletterKind.ESSAY, models.SourceState.INBOX, 1),
+        (models.NewsletterKind.NEWS, models.SourceState.INBOX, 0),
+        (models.NewsletterKind.ESSAY, models.SourceState.QUEUED, 0),
+    ],
+)
+def test_filing_an_inbox_newsletter_as_an_essay_requeues_the_brief(
+    engine: sqlalchemy.Engine, kind: models.NewsletterKind, state: models.SourceState, queued: int
+) -> None:
+    """A brief written before filing treated the essay as news; only an inbox essay needs a rewrite."""
+    user_id = _add_user(engine)
+    source_id = _add_analyzed_source(engine, user_id=user_id, kind=models.SourceKind.NEWSLETTER)
+    with sqlalchemy.orm.Session(engine) as db:
+        db.get_one(models.Source, source_id).state = state.value
+        db.commit()
+
+    _apply(engine, source_id, _decision(domain=Domain.POLITICS, topic="US politics", newsletter_kind=kind))
+
+    briefs = [job for job in _jobs(engine) if job.kind == models.JobKind.UPDATE_BRIEF.value]
+    assert len(briefs) == queued
+
+
 def test_parse_decision_cleans_the_models_answer() -> None:
     """An unknown domain is Other, a non-newsletter's kind is dropped, and a long name is cut to 80 characters."""
     decision = file_topic.parse_decision(

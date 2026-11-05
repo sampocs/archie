@@ -53,6 +53,14 @@ def test_a_ready_inbox_newsletter_queues_one_rewrite_until_it_starts_running(
     ]
 
 
+def test_the_rewrite_job_gets_only_two_attempts(db: sqlalchemy.orm.Session, user: models.User) -> None:
+    """The next newsletter re-triggers a rewrite anyway, so a failing one isn't retried three times."""
+    briefs.enqueue_update(db, user_id=user.id)
+
+    [job] = _brief_jobs(db, user_id=user.id)
+    assert job.max_attempts == briefs.UPDATE_MAX_ATTEMPTS == 2
+
+
 def test_another_users_queued_rewrite_does_not_block_this_users(db: sqlalchemy.orm.Session, user: models.User) -> None:
     """The one-queued rule is per user."""
     other = models.User(apple_sub=f"sub-{uuid.uuid4()}")

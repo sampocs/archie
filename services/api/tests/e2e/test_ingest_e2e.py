@@ -53,6 +53,18 @@ def recording_api_key(request: pytest.FixtureRequest, monkeypatch: pytest.Monkey
     recording.use_recording_api_key(request, monkeypatch)
 
 
+@pytest.fixture(autouse=True)
+def no_brief_rewrites(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A ready newsletter queues `update_brief`, which has its own cassette-backed tests; here it just completes.
+
+    Without this the live worker would run it with no cassette, so the replay would refuse the call and the job would
+    fail and retry in the background.
+    """
+    from archie_worker import handlers, loop
+
+    monkeypatch.setitem(handlers.HANDLERS, models.JobKind.UPDATE_BRIEF, loop.HandlerSpec(run=lambda db, job: None))
+
+
 @pytest.fixture
 def poll_timeout(request: pytest.FixtureRequest) -> float:
     """How long to wait for the worker: short on replay, long while recording live model calls."""

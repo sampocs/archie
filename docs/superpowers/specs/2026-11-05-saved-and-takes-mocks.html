@@ -1,0 +1,404 @@
+<title>Archie Saved and Takes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of phone mocks, each with a numbered flow note beside it; the page chrome stays quiet so the phones carry the color. */
+:root {
+  --page: #E9E6DE; --page-ink: #1C1B18; --page-ink-2: #5E5B54; --page-line: #D6D2C8; --note-bg: #F7F5F0;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bar: #F4F2ECD9;
+  --chrome: #1C1B18; --card-shadow: 0 1px 2px rgba(20,20,15,.04), 0 0 0 1px rgba(20,20,15,.05);
+  --k-macro: #3F7262; --k-ai: #6A5A9C; --k-crypto: #A8613A; --k-startups: #3D6690; --k-finance: #8A7533; --k-history: #8E5468;
+  --k-trading: #4F6F8A; --k-geo: #5E6B3A; --k-sports: #3A7A7A; --k-eng: #5A5F6E; --unread: #3D6690;
+  --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --review: #3F7262;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --page-ink: #F1EFE9; --page-ink-2: #A9A59B; --page-line: #2D2B27; --note-bg: #1B1A18; color-scheme: dark }
+body { background: var(--page); color: var(--page-ink); font-family: var(--sans); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 40px; }
+.intro h1 { font-size: 34px; letter-spacing: -.04em; margin: 0 0 8px; text-wrap: balance; }
+.intro p { color: var(--page-ink-2); line-height: 1.55; max-width: 70ch; margin: 0; }
+.legend-k { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink-2); }
+.scene { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 28px; align-items: start; border-top: 1px solid var(--page-line); padding-top: 32px; }
+@media (max-width: 860px) { .scene { grid-template-columns: minmax(0, 1fr); } .phone { margin: 0 auto; } }
+.note { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.note .num { font: 500 12px var(--mono); color: var(--page-ink-2); letter-spacing: .05em; }
+.note h2 { margin: 0; font-size: 22px; letter-spacing: -.03em; }
+.note p, .note li { color: var(--page-ink-2); line-height: 1.55; font-size: 15px; max-width: 64ch; }
+.note p { margin: 0; }
+.note ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+.note b { color: var(--page-ink); font-weight: 600; }
+.ask { background: var(--note-bg); border: 1px solid var(--page-line); border-radius: 14px; padding: 12px 14px; font-size: 14px; color: var(--page-ink-2); line-height: 1.5; }
+.ask strong { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--page-ink); display: block; margin-bottom: 4px; }
+
+/* ---------- Phone ---------- */
+.phone { width: 360px; max-width: 100%; height: 760px; border-radius: 52px; padding: 10px; background: #0c0c0d; box-shadow: 0 0 0 1px #2c2c30, 0 24px 60px rgba(0,0,0,.28); flex: none; box-sizing: border-box; }
+.screen { position: relative; width: 100%; height: 100%; border-radius: 43px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: var(--sans); color-scheme: light; }
+.island { position: absolute; top: 11px; left: 50%; transform: translateX(-50%); width: 104px; height: 30px; border-radius: 20px; background: #000; z-index: 90; }
+.statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px; padding: 18px 30px 0; z-index: 80; display: flex; justify-content: space-between; font: 600 14.5px/1 -apple-system, sans-serif; color: var(--ink); }
+.view { position: absolute; inset: 0; overflow-y: auto; scrollbar-width: none; padding: 58px 0 110px; }
+.view::-webkit-scrollbar { display: none; }
+.hdr { padding: 6px 22px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+.hdr .title { font-size: 32px; font-weight: 700; letter-spacing: -0.04em; }
+.hdr .date { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; margin-bottom: 7px; }
+.toggle { display: flex; background: var(--press); border-radius: 9px; padding: 2px; margin-bottom: 4px; }
+.toggle div { font-size: 12.5px; font-weight: 600; padding: 6px 10px; border-radius: 7px; color: var(--ink3); }
+.toggle div.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.search { margin: 14px 16px 0; height: 40px; border-radius: 12px; background: var(--press); display: flex; align-items: center; gap: 8px; padding: 0 12px; color: var(--ink3); font-size: 15px; }
+.fchips { display: flex; gap: 6px; padding: 12px 16px 0; overflow-x: auto; scrollbar-width: none; }
+.fchips div { flex: none; font-size: 13px; font-weight: 550; padding: 7px 12px; border-radius: 999px; background: var(--surface); color: var(--ink2); box-shadow: var(--card-shadow); }
+.fchips div.on { background: var(--chrome); color: #fff; box-shadow: none; }
+.fchips .n { opacity: .55; margin-left: 3px; font-weight: 500; }
+.sec { padding: 0 16px; margin-top: 22px; }
+.sec-label { padding: 0 6px; margin-bottom: 9px; font: 500 11px/1 var(--mono); color: var(--ink3); text-transform: uppercase; letter-spacing: .02em; display: flex; justify-content: space-between; }
+.sec-label a { color: var(--ink2); text-decoration: none; text-transform: none; font-family: var(--sans); font-size: 12.5px; font-weight: 600; letter-spacing: 0; }
+.group { background: var(--surface); border-radius: 18px; overflow: hidden; box-shadow: var(--card-shadow); }
+.row { display: flex; gap: 12px; align-items: center; padding: 12px 14px; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.art { width: 46px; height: 46px; border-radius: 10px; flex: none; position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,.06); display: grid; place-items: center; font: 700 18px/1 var(--sans); color: rgba(255,255,255,.92); }
+.art.person { border-radius: 50%; }
+.unread-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--unread); box-shadow: 0 0 0 2px var(--surface); }
+.meta { flex: 1; min-width: 0; }
+.meta .k { font: 600 10px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); margin-bottom: 4px; }
+.meta b { display: -webkit-box; font-size: 14.5px; font-weight: 600; letter-spacing: -0.012em; line-height: 1.3; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.meta span { display: block; font-size: 12.5px; color: var(--ink3); margin-top: 3px; }
+.status { flex: none; font-size: 11px; font-weight: 600; padding: 4px 7px; border-radius: 6px; color: var(--ink2); background: var(--press); }
+.status.unread { background: color-mix(in srgb, var(--unread) 12%, transparent); color: var(--unread); }
+.status.proc { color: var(--ink3); background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.prep { flex: none; font-size: 12px; font-weight: 600; padding: 6px 9px; border-radius: 8px; background: var(--press); color: var(--ink2); }
+.prep.on { background: color-mix(in srgb, var(--got) 14%, var(--surface)); color: var(--got); }
+.dom { padding: 14px 16px; border-top: 1px solid var(--line); }
+.dom:first-child { border-top: 0; }
+.dom .top { display: flex; align-items: center; gap: 10px; }
+.dom .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--k); }
+.dom .name { font-size: 16px; font-weight: 650; letter-spacing: -0.02em; flex: 1; }
+.dom .cnt { font: 500 12px/1 var(--mono); color: var(--ink3); }
+.dom .bar { height: 4px; border-radius: 2px; background: var(--press); margin: 10px 0 8px 20px; display: flex; overflow: hidden; gap: 2px; }
+.dom .bar i { display: block; height: 100%; background: var(--k); opacity: .85; }
+.dom .bar i:nth-child(2) { opacity: .5; } .dom .bar i:nth-child(3) { opacity: .25; }
+.topics { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 20px; }
+.topics div { font-size: 12.5px; font-weight: 500; padding: 5px 9px; border-radius: 7px; color: var(--ink2); background: var(--press); }
+.topics .n { color: var(--ink3); margin-left: 4px; font-family: var(--mono); font-size: 11px; }
+.topics div.mine { background: transparent; box-shadow: inset 0 0 0 1px var(--ink3); }
+.add-topic { font-size: 14px; color: var(--ink2); padding: 13px 16px; border-top: 1px solid var(--line); }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 84px; padding: 8px 14px 0; display: flex; justify-content: space-around; z-index: 30; background: var(--bar); backdrop-filter: blur(20px) saturate(1.6); -webkit-backdrop-filter: blur(20px) saturate(1.6); border-top: 1px solid var(--line); }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--ink3); width: 56px; }
+.tab i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid currentColor; box-sizing: border-box; }
+.tab.on { color: var(--chrome); } .tab.on span { font-weight: 600; }
+.tab .pl { width: 36px; height: 30px; border-radius: 9px; background: var(--ink); color: var(--bg); display: grid; place-items: center; font-size: 20px; }
+/* Item page */
+.navbar { position: absolute; top: 0; left: 0; right: 0; z-index: 10; height: 96px; padding: 54px 12px 0; display: flex; justify-content: space-between; align-items: flex-start; box-sizing: border-box; }
+.navbtn { height: 34px; min-width: 34px; padding: 0 12px; border-radius: 17px; display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 550; color: var(--chrome); background: var(--surface); box-shadow: var(--card-shadow); box-sizing: border-box; justify-content: center; }
+.item { padding: 100px 0 40px; }
+.ihead { display: flex; gap: 14px; padding: 0 22px; align-items: flex-end; }
+.cover { width: 92px; height: 92px; border-radius: 14px; flex: none; display: grid; place-items: center; font: 700 34px var(--sans); color: rgba(255,255,255,.92); }
+.ihead .k { font: 600 10.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--k); }
+.ihead .by { font-size: 13px; color: var(--ink2); margin-top: 5px; line-height: 1.35; }
+.chiprow { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-size: 11.5px; font-weight: 600; padding: 4px 8px; border-radius: 7px; background: var(--press); color: var(--ink2); }
+.pill.topic { background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.pill.verdict { color: var(--partly); background: color-mix(in srgb, var(--partly) 12%, transparent); }
+.ititle { font-size: 26px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.12; padding: 0 22px; margin-top: 14px; text-wrap: balance; }
+.actions { display: flex; gap: 8px; padding: 16px 22px 0; }
+.btn { height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 15px; font-weight: 600; padding: 0 16px; }
+.btn.primary { background: var(--chrome); color: #fff; flex: 1; }
+.btn.secondary { background: var(--surface); color: var(--ink); box-shadow: var(--card-shadow); }
+.btn.secondary.on { color: var(--got); }
+.isec { padding: 0 22px; margin-top: 24px; }
+.isec .sec-label { padding: 0; }
+.isec p { font-size: 16px; line-height: 1.62; margin: 0; color: var(--ink); }
+.ideas { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: i; }
+.ideas li { display: flex; gap: 10px; font-size: 15px; line-height: 1.5; }
+.ideas li::before { counter-increment: i; content: counter(i); font: 500 12px/1.9 var(--mono); color: var(--ink3); width: 14px; flex: none; }
+.ts { font: 500 11px var(--mono); padding: 2px 6px; border-radius: 5px; background: var(--press); color: var(--ink2); white-space: nowrap; }
+.nums { display: flex; flex-direction: column; gap: 8px; }
+.nums div { display: flex; justify-content: space-between; gap: 10px; font: 500 13.5px/1.45 var(--mono); }
+.collapsed { background: var(--surface); border-radius: 14px; box-shadow: var(--card-shadow); padding: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 600; }
+.collapsed span { font: 500 12px var(--mono); color: var(--ink3); }
+.empty-cards { font-size: 14px; color: var(--ink3); line-height: 1.5; }
+/* Sheet */
+.dim { position: absolute; inset: 0; background: rgba(10,10,8,.32); z-index: 40; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; z-index: 50; background: var(--bg); border-radius: 26px 26px 0 0; padding: 10px 20px 34px; display: flex; flex-direction: column; gap: 16px; }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--line); margin: 0 auto 4px; }
+.sheet h3 { margin: 0; font-size: 20px; letter-spacing: -.03em; }
+.verdicts { display: flex; flex-direction: column; gap: 8px; }
+.verdicts div { height: 46px; border-radius: 14px; display: flex; align-items: center; padding: 0 14px; font-weight: 600; font-size: 15px; background: var(--surface); box-shadow: var(--card-shadow); color: var(--v); }
+.verdicts div.on { background: color-mix(in srgb, var(--v) 14%, var(--surface)); box-shadow: inset 0 0 0 1.5px var(--v); }
+.field { min-height: 70px; border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; color: var(--ink3); font-size: 15px; display: flex; justify-content: space-between; }
+.sheet .btn.primary { flex: none; }
+.small { font-size: 13px; color: var(--ink3); line-height: 1.45; }
+.primer-card { background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+.primer-card b { font-size: 15px; }
+.primer-card span { font-size: 13px; color: var(--ink3); }
+.handle { flex: none; color: var(--ink3); font-size: 16px; letter-spacing: -2px; padding-left: 2px; }
+.swipe { position: relative; overflow: hidden; border-top: 1px solid var(--line); }
+.swipe .acts { position: absolute; inset: 0; display: flex; justify-content: flex-end; }
+.swipe .acts div { width: 78px; display: grid; place-items: center; color: #fff; font-size: 12.5px; font-weight: 600; }
+.swipe .row { background: var(--surface); transform: translateX(-156px); border-top: 0; }
+.back { flex: none; font: 500 11px var(--mono); color: var(--ink3); }
+.opts { display: flex; flex-direction: column; background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); overflow: hidden; }
+.opts div { display: flex; justify-content: space-between; align-items: center; padding: 13px 14px; border-top: 1px solid var(--line); font-size: 15px; font-weight: 550; }
+.opts div:first-child { border-top: 0; }
+.opts span { font: 500 12px var(--mono); color: var(--ink3); }
+/* ---------- Additions for Saved and Takes ---------- */
+.hdr .plus { width: 36px; height: 36px; border-radius: 50%; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 24px; font-weight: 400; margin-bottom: 4px; flex: none; }
+.seg { display: flex; background: var(--press); border-radius: 10px; padding: 2px; margin: 12px 16px 0; }
+.seg div { flex: 1; text-align: center; font-size: 13px; font-weight: 600; padding: 7px 0; border-radius: 8px; color: var(--ink3); }
+.seg div.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.meta .k .star { display: inline; color: #B8892A; font-size: 11px; margin: 0 0 0 5px; letter-spacing: 0; }
+.navbtn.fav { color: #B8892A; }
+.urlfield { height: 46px; border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); display: flex; align-items: center; justify-content: space-between; padding: 0 6px 0 14px; font-size: 15px; color: var(--ink2); }
+.urlfield span.p { font-size: 13px; font-weight: 600; padding: 7px 10px; border-radius: 9px; background: var(--press); color: var(--ink2); }
+.choices { display: flex; flex-direction: column; gap: 8px; }
+.choice { border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; }
+.choice b { font-size: 15px; font-weight: 600; }
+.choice span { font-size: 12.5px; color: var(--ink3); }
+.choice.on { box-shadow: inset 0 0 0 1.5px var(--chrome); }
+.cchips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.cchips div { font-size: 13px; font-weight: 600; padding: 6px 10px; border-radius: 999px; background: var(--press); color: var(--ink2); }
+.cchips div.on { background: var(--chrome); color: #fff; }
+.cchips div.new { background: transparent; box-shadow: inset 0 0 0 1px var(--ink3); }
+.orline { display: flex; align-items: center; gap: 10px; font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; }
+.orline::before, .orline::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.linkrow { border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); padding: 13px 14px; display: flex; justify-content: space-between; font-size: 15px; font-weight: 600; }
+.linkrow span { color: var(--ink3); font-weight: 500; }
+.ctiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ctile { background: var(--surface); border-radius: 16px; box-shadow: var(--card-shadow); overflow: hidden; }
+.ctile .mosaic { height: 92px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.ctile .mosaic i { display: block; }
+.ctile .cap { padding: 9px 11px 11px; }
+.ctile .cap b { display: block; font-size: 14px; font-weight: 650; letter-spacing: -0.01em; }
+.ctile .cap span { font: 500 11px var(--mono); color: var(--ink3); }
+.ctile.add { display: grid; place-items: center; min-height: 140px; background: transparent; box-shadow: inset 0 0 0 1.5px var(--line); color: var(--ink2); font-size: 14px; font-weight: 600; }
+.feed { display: flex; flex-direction: column; gap: 14px; padding: 0 16px; margin-top: 18px; }
+.post { background: var(--surface); border-radius: 18px; box-shadow: var(--card-shadow); overflow: hidden; }
+.post .media { height: 176px; position: relative; display: grid; place-items: center; }
+.post .media .play { width: 46px; height: 46px; border-radius: 50%; background: rgba(0,0,0,.45); color: #fff; display: grid; place-items: center; font-size: 17px; padding-left: 3px; box-sizing: border-box; }
+.post .media .dur { position: absolute; right: 10px; bottom: 10px; font: 500 11px var(--mono); color: #fff; background: rgba(0,0,0,.5); padding: 3px 6px; border-radius: 5px; }
+.post .body { padding: 11px 14px 13px; }
+.post .who { font-size: 12.5px; color: var(--ink3); display: flex; justify-content: space-between; }
+.post .who b { color: var(--ink); font-weight: 600; }
+.post p { margin: 5px 0 0; font-size: 14.5px; line-height: 1.45; }
+.post .mine { margin-top: 7px; font-size: 13px; color: var(--ink2); font-style: italic; }
+.ctitle { padding: 0 22px; }
+.ctitle h1 { font-size: 30px; letter-spacing: -0.04em; margin: 0; }
+.ctitle span { font: 500 11px var(--mono); color: var(--ink3); text-transform: uppercase; }
+.domrow { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border-top: 1px solid var(--line); }
+.domrow:first-child { border-top: 0; }
+.domrow .dot { width: 10px; height: 10px; border-radius: 3px; background: var(--k); flex: none; }
+.domrow .nm { flex: 1; min-width: 0; }
+.domrow .nm b { display: block; font-size: 15.5px; font-weight: 650; letter-spacing: -0.02em; }
+.domrow .nm span { display: block; font-size: 12.5px; color: var(--ink3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.domrow .cnt { font: 500 12px var(--mono); color: var(--ink3); }
+.qt { width: 46px; height: 46px; border-radius: 10px; flex: none; display: grid; place-items: center; font: 700 24px/1 Georgia, serif; background: var(--press); color: var(--ink2); box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
+.kindtag { font: 600 10px/1 var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink3); margin-bottom: 4px; }
+.kindtag.tp { color: var(--k-startups); } .kindtag.op { color: var(--k-history); }
+.take-body { padding: 0 22px; margin-top: 18px; font-size: 16px; line-height: 1.62; }
+.take-body p { margin: 0 0 12px; }
+.take-body ul { margin: 0 0 12px; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.take-body h4 { margin: 18px 0 6px; font: 500 11px var(--mono); text-transform: uppercase; color: var(--ink3); letter-spacing: .02em; }
+.qcard { padding: 12px 14px; border-top: 1px solid var(--line); }
+.qcard:first-child { border-top: 0; }
+.qcard b { display: block; font-size: 14.5px; font-weight: 600; line-height: 1.35; }
+.qcard span { display: block; font: 500 11px var(--mono); color: var(--ink3); margin-top: 4px; }
+.editor { padding: 100px 20px 40px; display: flex; flex-direction: column; gap: 12px; }
+.kseg { display: flex; background: var(--press); border-radius: 10px; padding: 2px; }
+.kseg div { flex: 1; text-align: center; font-size: 13.5px; font-weight: 600; padding: 8px 0; border-radius: 8px; color: var(--ink3); }
+.kseg div.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.tfield { border-radius: 14px; background: var(--surface); box-shadow: var(--card-shadow); padding: 13px 14px; font-size: 18px; font-weight: 650; letter-spacing: -0.02em; }
+.bodyfield { border-radius: 16px; background: var(--surface); box-shadow: var(--card-shadow); padding: 14px; font-size: 15px; line-height: 1.55; min-height: 300px; position: relative; color: var(--ink); }
+.bodyfield .caret { display: inline-block; width: 2px; height: 17px; background: var(--chrome); vertical-align: -3px; }
+.bodyfield .mic { position: absolute; right: 12px; bottom: 12px; width: 42px; height: 42px; border-radius: 50%; background: var(--chrome); color: #fff; display: grid; place-items: center; font-size: 17px; }
+.navbtn.primary { background: var(--chrome); color: #fff; }
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <span class="legend-k">Saved and Takes · draft for review</span>
+    <h1>Favorites, Collections, Takes, and a Library ＋</h1>
+    <p>Three additions and a navigation change. <b>Favorites</b> are a star on any normal library item. <b>Collections</b> are just-for-fun scrapbooks (Bears hype) that stay out of the learning side completely. <b>Takes</b> are things you write yourself (opinions and talking points), with dated versions and review cards. The ＋ tab becomes a button on Library, so the tab bar drops to four. Each screen has notes on what tapping does, and the open questions are in the boxes.</p>
+  </header>
+  <div id="scenes" style="display:flex;flex-direction:column;gap:40px"></div>
+</div>
+
+<script>
+const TABS = active => `<div class="tabbar">${["Today","Library","Review","Ask"].map(t => `<div class="tab ${t === active ? "on" : ""}"><i></i><span>${t}</span></div>`).join("")}</div>`;
+const SHELL = (inner, tabs = "") => `<div class="phone"><div class="screen"><div class="island"></div><div class="statusbar"><span>9:41</span><span>●●●</span></div>${inner}${tabs}</div></div>`;
+const row = r => `<div class="row"><div class="art ${r.person ? "person" : ""}" style="background:var(--k-${r.d})">${r.txt || ""}</div><div class="meta" style="--k:var(--k-${r.d})"><div class="k">${r.dn}${r.fav ? '<span class="star">★</span>' : ""}</div><b>${r.t}</b><span>${r.m}</span></div>${r.end || ""}</div>`;
+const SEG = on => `<div class="seg">${["All","Domains","Saved","Takes"].map(s => `<div class="${s === on ? "on" : ""}">${s}</div>`).join("")}</div>`;
+const LIBHDR = `<div class="hdr"><div class="title">Library</div><div class="plus">+</div></div>`;
+
+const libAll = SHELL(`<div class="view">
+  ${LIBHDR}
+  ${SEG("All")}
+  <div class="search">⌕ Search your library</div>
+  <div class="fchips"><div class="on">All</div><div>Queued<span class="n">9</span></div><div>Done<span class="n">31</span></div><div>Inbox<span class="n">2</span></div><div>Primers<span class="n">14</span></div></div>
+  <div class="sec"><div class="sec-label"><span>This week</span></div>
+    <div class="group">
+      ${row({ d: "ai", dn: "AI", fav: true, t: "@karpathy on why agents need memory, not more context", m: "X post · Done", person: true, txt: "K", end: '<div class="status">Done</div>' })}
+      ${row({ d: "ai", dn: "AI", t: "Dwarkesh: Dylan Patel on the data center buildout", m: "Podcast · saved Mon", txt: "D", end: '<div class="status">Queued</div>' })}
+      ${row({ d: "crypto", dn: "Crypto", t: "Bankless: How perps actually work", m: "Podcast · 1h 12m", txt: "B", end: '<div class="status">Done</div>' })}
+    </div></div>
+  <div class="sec"><div class="sec-label"><span>Earlier</span></div>
+    <div class="group">
+      ${row({ d: "startups", dn: "Startups", fav: true, t: "Hackers and Painters", m: "Article · Paul Graham", txt: "P", end: '<div class="status">Done</div>' })}
+      ${row({ d: "macro", dn: "Macro · Topic primer", t: "How the Fed works", m: "Primer · 7 min", txt: "◆", end: '<div class="status">Primer</div>' })}
+    </div></div>
+</div>`, TABS("Library"));
+
+const addSheet = SHELL(`<div class="view" style="filter:saturate(.9)">${LIBHDR}${SEG("All")}<div class="search">⌕ Search your library</div></div>
+<div class="dim"></div>
+<div class="sheet" style="top:64px"><div class="grabber"></div>
+  <h3>Add</h3>
+  <div class="urlfield">x.com/BearsFilmRoom/status/18…<span class="p">Paste</span></div>
+  <div class="choices">
+    <div class="choice"><b>Finished</b><span>Summary, primer and cards</span></div>
+    <div class="choice"><b>Queue it</b><span>Save it to read or listen to later</span></div>
+    <div class="choice on"><b>Save to a collection</b><span>Just keep it. No summary, no cards</span>
+      <div class="cchips"><div class="on">Bears hype</div><div>Funny</div><div class="new">＋ New</div></div></div>
+  </div>
+  <div class="btn primary">Save</div>
+  <div class="orline">or</div>
+  <div class="linkrow">✎ Write a take<span>›</span></div>
+</div>`, TABS("Library"));
+
+const mosaic = colors => `<div class="mosaic">${colors.map(c => `<i style="background:${c}"></i>`).join("")}</div>`;
+const libSaved = SHELL(`<div class="view">
+  ${LIBHDR}
+  ${SEG("Saved")}
+  <div class="sec"><div class="sec-label"><span>Favorites · 9</span></div>
+    <div class="group">
+      <div class="domrow" style="--k:var(--k-ai)"><div class="dot"></div><div class="nm"><b>AI</b><span>@karpathy on agents and memory · The bitter lesson…</span></div><div class="cnt">5 ›</div></div>
+      <div class="domrow" style="--k:var(--k-crypto)"><div class="dot"></div><div class="nm"><b>Crypto</b><span>How perps actually work · @cobie on L2 tokens</span></div><div class="cnt">2 ›</div></div>
+      <div class="domrow" style="--k:var(--k-startups)"><div class="dot"></div><div class="nm"><b>Startups</b><span>Hackers and Painters</span></div><div class="cnt">1 ›</div></div>
+      <div class="domrow" style="--k:var(--k-macro)"><div class="dot"></div><div class="nm"><b>Macro</b><span>Odd Lots: What's really going on in repo</span></div><div class="cnt">1 ›</div></div>
+    </div></div>
+  <div class="sec"><div class="sec-label"><span>Collections · 2</span></div>
+    <div class="ctiles">
+      <div class="ctile">${mosaic(["#0B162A", "#C83803", "#2B3A55", "#E0662D"])}<div class="cap"><b>Bears hype</b><span>14 saved</span></div></div>
+      <div class="ctile">${mosaic(["#B9A77A", "#7A8C6E", "#C9B8A0", "#8C7B6B"])}<div class="cap"><b>Funny</b><span>6 saved</span></div></div>
+      <div class="ctile add">＋ New collection</div>
+    </div></div>
+</div>`, TABS("Library"));
+
+const favDomain = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div></div></div>
+<div class="view" style="padding-top:100px">
+  <div class="ctitle"><span>Favorites</span><h1>AI</h1></div>
+  <div class="sec"><div class="group">
+    ${row({ d: "ai", dn: "AI · Agents", fav: true, t: "@karpathy on why agents need memory, not more context", m: "X post · starred Nov 3", person: true, txt: "K" })}
+    ${row({ d: "ai", dn: "AI · Research", fav: true, t: "The bitter lesson", m: "Article · Rich Sutton · starred Oct 28", txt: "R" })}
+    ${row({ d: "ai", dn: "AI · Chips", fav: true, t: "Dwarkesh: Dylan Patel on the data center buildout", m: "Podcast · starred Oct 20", txt: "D" })}
+    ${row({ d: "ai", dn: "AI · Agents", fav: true, t: "@swyx: the agent stack, one year in", m: "X thread · starred Oct 12", person: true, txt: "S" })}
+    ${row({ d: "ai", dn: "AI · Products", fav: true, t: "Stratechery: The AI distribution question", m: "Newsletter · starred Oct 2", txt: "S" })}
+  </div></div>
+</div>`, TABS("Library"));
+
+const itemFav = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div style="display:flex;gap:8px"><div class="navbtn fav">★</div><div class="navbtn">•••</div></div></div>
+<div class="view item">
+  <div class="ihead" style="--k:var(--k-ai)"><div class="cover" style="background:var(--k-ai);border-radius:50%">K</div>
+    <div><div class="k">AI · X post</div><div class="by">@karpathy · Nov 3<br>Done · ★ Favorite</div>
+      <div class="chiprow"><span class="pill topic">AI products & agents</span></div></div></div>
+  <div class="ititle">Why agents need memory, not more context</div>
+  <div class="isec"><div class="sec-label">Gist</div><p>Longer context windows don't make agents better at multi-day work. What helps is a small, curated memory the agent writes to and reads from on purpose.</p></div>
+  <div class="isec"><div class="sec-label">Key ideas</div><ol class="ideas"><li>Context is working memory; it's wiped every session.</li><li>Good memory is written deliberately, not logged automatically.</li><li>Retrieval quality matters more than window size past ~100k tokens.</li></ol></div>
+</div>`);
+
+const collection = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div class="navbtn">•••</div></div>
+<div class="view" style="padding-top:100px">
+  <div class="ctitle"><span>Collection · 14 saved</span><h1>Bears hype</h1></div>
+  <div class="feed">
+    <div class="post"><div class="media" style="background:linear-gradient(135deg,#0B162A,#2B3A55)"><div class="play">▶</div><div class="dur">0:48</div></div>
+      <div class="body"><div class="who"><span><b>@BearsFilmRoom</b> · X video</span><span>Nov 3</span></div><p>Every Caleb Williams off-script throw from Sunday, set to the Soldier Field crowd.</p><div class="mine">The 4th-quarter scramble at 0:31</div></div></div>
+    <div class="post"><div class="media" style="background:linear-gradient(135deg,#C83803,#E0662D)"><div class="play">▶</div><div class="dur">3:12</div></div>
+      <div class="body"><div class="who"><span><b>Chicago Bears</b> · YouTube</span><span>Oct 27</span></div><p>Mic'd up: the defense in the final drive</p></div></div>
+    <div class="post"><div class="media" style="background:linear-gradient(135deg,#2B3A55,#0B162A)"><div class="play">▶</div><div class="dur">1:05</div></div>
+      <div class="body"><div class="who"><span><b>@NFL</b> · X video</span><span>Oct 20</span></div><p>Walk-off pick six, all angles</p></div></div>
+  </div>
+</div>`, TABS("Library"));
+
+const take = (kind, cls, t, m) => `<div class="row"><div class="qt">❝</div><div class="meta"><div class="kindtag ${cls}">${kind}</div><b>${t}</b><span>${m}</span></div></div>`;
+const libTakes = SHELL(`<div class="view">
+  ${LIBHDR}
+  ${SEG("Takes")}
+  <div class="fchips"><div class="on">All<span class="n">5</span></div><div>Opinions<span class="n">2</span></div><div>Talking points<span class="n">3</span></div></div>
+  <div class="sec"><div class="group">
+    ${take("Talking point", "tp", "The argument for crypto", "Updated Nov 2 · 3 versions · 4 cards")}
+    ${take("Talking point", "tp", "Why AI capex isn't a bubble (yet)", "Updated Oct 29 · 3 cards")}
+    ${take("Opinion", "op", "My take on the 2024 election", "Written Nov 2024 · 2 cards")}
+    ${take("Opinion", "op", "Remote work is worse for juniors", "Updated Oct 3 · 2 versions · 3 cards")}
+    ${take("Talking point", "tp", "The case against a wealth tax", "Updated Sep 18 · 4 cards")}
+  </div></div>
+</div>`, TABS("Library"));
+
+const takePage = SHELL(`<div class="navbar"><div class="navbtn">‹</div><div style="display:flex;gap:8px"><div class="navbtn">Edit</div><div class="navbtn">•••</div></div></div>
+<div class="view item">
+  <div style="padding:0 22px"><div class="kindtag tp">Talking point</div></div>
+  <div class="ititle" style="margin-top:6px">The argument for crypto</div>
+  <div style="padding:6px 22px 0;font:500 11px var(--mono);color:var(--ink3);text-transform:uppercase">Updated Nov 2 · version 3</div>
+  <div class="take-body">
+    <p>Crypto's lasting use isn't speculation. It's moving dollars, and it already works.</p>
+    <h4>Main points</h4>
+    <ul><li>Stablecoins settle ~$10T a year, already Visa scale, with no bank in the middle.</li><li>Dollar demand abroad: people in high-inflation countries want dollars, and stablecoins are the easiest way to hold them.</li><li>Open rails: anyone can build payments on them without a bank partnership.</li></ul>
+    <h4>When they say "it's just a casino"</h4>
+    <p>Most volume is speculation, agreed. But the payment use is growing whatever happens to prices.</p>
+  </div>
+  <div class="isec"><div class="sec-label"><span>Cards from this · 4</span></div>
+    <div class="group">
+      <div class="qcard"><b>What are your three main points for crypto?</b><span>Due tomorrow</span></div>
+      <div class="qcard"><b>Roughly how much do stablecoins settle a year?</b><span>Due in 4 days</span></div>
+      <div class="qcard"><b>What do you say to "it's just a casino"?</b><span>New</span></div>
+    </div></div>
+  <div class="isec"><div class="collapsed">Earlier versions<span>2 ›</span></div></div>
+</div>`);
+
+const takeEditor = SHELL(`<div class="navbar"><div class="navbtn">Cancel</div><div class="navbtn primary">Save</div></div>
+<div class="view editor">
+  <div class="kseg"><div>Opinion</div><div class="on">Talking point</div></div>
+  <div class="tfield">The argument for crypto</div>
+  <div class="bodyfield">Crypto's lasting use isn't speculation. It's moving dollars, and it already works.<br><br>Main points<br>- Stablecoins settle ~$10T a year, already Visa scale<br>- Dollar demand abroad<br>- Open rails: anyone can build payments on them<span class="caret"></span></div>
+  <div class="small">Saving makes version 4 and rewrites this take's cards. Version 3 stays under Earlier versions.</div>
+</div>`);
+
+const SCENES = [
+  ["Library · All, with ＋ in the header", libAll, `<p>The ＋ tab is gone, so the tab bar is <b>Today · Library · Review · Ask</b>. Adding now starts from a ＋ button in the Library header, in the same filled chrome circle the tab used.</p>
+    <ul><li><b>The segmented control</b> moves under the title and grows to four: All · Domains · Saved · Takes. "List" is renamed "All".</li>
+    <li><b>Starred items</b> show a small gold ★ next to the domain label. Everything else about the list is unchanged.</li>
+    <li><b>Collections and Takes never appear here</b> or in search, Today or Ask. All stays "things you consumed".</li></ul>`,
+   `<strong>Open question</strong>Should the ＋ also show on Today? It's the other screen you're on when you think "save this". My suggestion: Library only for now, since most saves come from the share sheet anyway.`],
+  ["Add sheet", addSheet, `<p>Tapping ＋ slides this sheet over Library. It replaces the old Add tab and offers the same choices as the share sheet.</p>
+    <ul><li><b>Finished / Queue it</b> work as today, including "How'd it go?" and "Queue the primer too".</li>
+    <li><b>Save to a collection</b> shows your collections as chips, with the last one used preselected. "＋ New" asks for a name inline. Save drops the link into that collection only: no summary, no cards, nothing in the Library.</li>
+    <li><b>Write a take</b> opens the take editor (screen 9). It needs no link, so it sits under the link choices.</li>
+    <li><b>The share sheet</b> gets the same third choice, "Save to a collection", with the same chips.</li></ul>`, ""],
+  ["Library · Saved", libSaved, `<p>Everything you chose to keep: Favorites on top, Collections below.</p>
+    <ul><li><b>Favorites</b> are grouped by domain, sorted by how many each has. Each row previews its newest titles, and tapping it opens that domain's favorites (screen 4). Domains with no favorites are hidden.</li>
+    <li><b>Collections</b> are tiles with a mosaic of their four newest thumbnails, in the order you made them. Long-press to rename or delete.</li>
+    <li><b>＋ New collection</b> asks for a name. Collections can also be made from the add sheet.</li></ul>`, ""],
+  ["Favorites in one domain", favDomain, `<p>A plain list of starred items in that domain, newest star first, with the topic in the kicker so the AI list still reads as agents vs chips.</p>
+    <ul><li><b>Tapping a row</b> opens the normal item page.</li>
+    <li><b>Swipe left</b> to unstar.</li></ul>`,
+   `<strong>Later, not now</strong>Folders you name ("AI references") could go on top of this as an optional "Move to folder". Starring stays one tap until a domain gets crowded enough to need them.`],
+  ["Item page · starred", itemFav, `<p>The ★ button sits in the navbar next to •••. One tap stars the item, and tapping again unstars it. It works offline and syncs like any other change.</p>
+    <ul><li><b>The by-line</b> says "★ Favorite" so it's visible further down the page too.</li>
+    <li><b>Any library item can be starred:</b> podcasts, articles, X posts, newsletters, primers. Starring changes nothing else (state, cards, queue).</li></ul>`, ""],
+  ["A collection", collection, `<p>A collection is a feed you scroll, newest first. Each post shows the thumbnail, who posted it, where it's from, the caption or title, and your optional note.</p>
+    <ul><li><b>Tapping a post</b> opens the original in X, YouTube or Safari. Nothing plays inside Archie.</li>
+    <li><b>The thumbnail and caption</b> are fetched once when you save, using the same X and YouTube lookups the pipeline already uses. A link with no image gets a tile in the collection's color with the site name.</li>
+    <li><b>Long-press a post</b> for Edit note, Move to… and Remove.</li>
+    <li><b>••• menu:</b> Rename and Delete collection.</li></ul>`, ""],
+  ["Library · Takes", libTakes, `<p>Everything you wrote yourself, most recently updated first. Chips filter by kind.</p>
+    <ul><li><b>Opinion</b> = what you think and why (the 2024 election). <b>Talking point</b> = the case for something, whether or not you fully hold it (the argument for crypto).</li>
+    <li><b>Each row</b> shows when it was last updated, how many versions it has, and how many cards it made.</li>
+    <li><b>Takes aren't filed under domains</b> and don't show up in search or Ask in this version.</li></ul>`, ""],
+  ["A take", takePage, `<p>Your text, exactly as you wrote it (markdown: headings and bullets render), with the kind, the date and the version.</p>
+    <ul><li><b>Cards from this:</b> Archie writes 2–4 cards from every take, graded against your own wording. When you save a new version, these cards are rewritten and the old ones retired. Swipe a card away if you don't want it.</li>
+    <li><b>Earlier versions</b> lists every saved version with its date. Opening one shows it read-only, with "Restore this version", which saves it as a new version.</li>
+    <li><b>Edit</b> opens the editor. The ••• menu has Change kind and Delete take.</li></ul>`,
+   `<strong>Open question</strong>Your 2024 election take should probably keep its original date even if you fix a typo. My suggestion: Archie writes a new version only when you tap Save with a changed body, and the list shows "Written" for the first version's date next to "Updated" for the latest.`],
+  ["Writing a take", takeEditor, `<p>A full-screen editor: kind, title, then the body. To dictate, use the keyboard's mic button (iOS dictation), so there's nothing extra to build.</p>
+    <ul><li><b>Archie doesn't rewrite your text.</b> Dictation is transcribed as you said it, and you edit it yourself.</li>
+    <li><b>Save</b> stores a new version and starts the card job. Cancel throws away unsaved changes.</li>
+    <li><b>Offline:</b> writing and saving work offline. Cards are written once you're back online.</li></ul>`, ""],
+];
+document.getElementById("scenes").innerHTML = SCENES.map(([title, phone, body, ask], i) => `<section class="scene">${phone}<div class="note"><span class="num">${String(i + 1).padStart(2, "0")}</span><h2>${title}</h2>${body}${ask ? `<div class="ask">${ask}</div>` : ""}</div></section>`).join("");
+</script>

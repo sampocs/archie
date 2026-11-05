@@ -1,0 +1,41 @@
+appId: com.sampocs.archie
+---
+# Run after run_brief.sh has delivered the two newsletters (Morning Brew as news, ByteByteGo as an essay). Needs real keys
+# (a few cents: Haiku to clean and analyze, then Sonnet to write the brief).
+# The worker cleans, analyzes and files both before it writes the brief, so this is one long wait.
+- extendedWaitUntil:
+    visible:
+      id: "today-brief"
+    timeout: 300000
+- waitForAnimationToEnd
+- tapOn:
+    id: "today-brief-open"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "brief-screen"
+# A story's sources open its page, which lists the newsletters that covered it.
+- tapOn:
+    id: "brief-story-0-sources"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "story-covered-by"
+- tapOn:
+    id: "screen-back"
+- waitForAnimationToEnd
+# The essay's id isn't known in advance, so match its queue link by pattern.
+- scrollUntilVisible:
+    element:
+      id: "brief-essay-.*-queue"
+    timeout: 30000
+- tapOn:
+    id: "brief-essay-.*-queue"
+- scrollUntilVisible:
+    element:
+      id: "brief-done"
+    timeout: 30000
+- tapOn:
+    id: "brief-done"
+- waitForAnimationToEnd
+# Done marks the shown newsletters briefed, so nothing is left to brief and the preview goes away.
+- assertNotVisible:
+    id: "today-brief"

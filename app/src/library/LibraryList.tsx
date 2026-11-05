@@ -286,11 +286,6 @@ function LibraryItem(props: { source: LibrarySource; trailing?: ReactNode; filte
           </View>
         }
       />
-      {source.kind === "newsletter" ? (
-        <Text testID={`source-sender-${source.id}`} variant="secondary" tone="ink3" numberOfLines={1}>
-          {source.sender ?? "Newsletter"}
-        </Text>
-      ) : null}
       {source.syncError && expanded ? (
         <Text variant="secondary" tone="ink2">
           {source.syncError}

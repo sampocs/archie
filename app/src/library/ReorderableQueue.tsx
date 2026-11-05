@@ -24,6 +24,7 @@ type ReorderableQueueProps = {
 export const QUEUE_ROW_HEIGHT = 76;
 const NOT_DRAGGING = -1;
 const SHIFT_MS = 150;
+const LIFT_SCALE = 1.02;
 const RELEASE_FALLBACK_MS = 600;
 
 type DragState = {
@@ -113,6 +114,8 @@ type QueueRowProps = {
 function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRowProps) {
   const theme = useTheme();
 
+  const surface = theme.colors.surface;
+
   const panConfig = useMemo(
     () => ({
       activeOffsetY: [-6, 6] as [number, number],
@@ -148,8 +151,15 @@ function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRow
 
   const animatedStyle = useAnimatedStyle(() => {
     const from = drag.from.value;
-    if (from === NOT_DRAGGING) return { transform: [{ translateY: 0 }], zIndex: 0, shadowOpacity: 0 };
-    if (from === index) return { transform: [{ translateY: drag.translationY.value }], zIndex: 1, shadowOpacity: 0.18 };
+    if (from === NOT_DRAGGING) return { transform: [{ translateY: 0 }, { scale: 1 }], zIndex: 0, shadowOpacity: 0, backgroundColor: "transparent" };
+    if (from === index) {
+      return {
+        transform: [{ translateY: drag.translationY.value }, { scale: LIFT_SCALE }],
+        zIndex: 1,
+        shadowOpacity: 0.18,
+        backgroundColor: surface,
+      };
+    }
 
     // Rows between the dragged row's start and its drop point slide over by its height.
     const to = drag.to.value;
@@ -157,8 +167,15 @@ function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRow
     const passedDown = from < to && index > from && index <= to;
     const passedUp = to < from && index >= to && index < from;
     const shift = passedDown ? -draggedHeight : passedUp ? draggedHeight : 0;
-    return { transform: [{ translateY: withTiming(shift, { duration: SHIFT_MS }) }], zIndex: 0, shadowOpacity: 0 };
+    return {
+      transform: [{ translateY: withTiming(shift, { duration: SHIFT_MS }) }, { scale: 1 }],
+      zIndex: 0,
+      shadowOpacity: 0,
+      backgroundColor: "transparent",
+    };
   });
+  // The hairline is hidden on the lifted row, whose card edge replaces it.
+  const dividerStyle = useAnimatedStyle(() => ({ opacity: drag.from.value === index ? 0 : 1 }));
 
   const handle = (
     <GestureDetector gesture={pan}>
@@ -182,15 +199,34 @@ function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRow
       onLayout={(event) => onLayout(event.nativeEvent.layout.height)}
       style={[
         {
-          backgroundColor: theme.colors.surface,
+          // The row bleeds out to the surrounding card's edges (undoing its padding), so a lifted row is the full
+          // card width; the padding puts the content back where it sat.
+          marginHorizontal: -theme.spacing.lg,
+          paddingHorizontal: theme.spacing.lg,
+          borderRadius: theme.radii.card,
           shadowColor: theme.colors.ink,
           shadowRadius: 10,
           shadowOffset: { width: 0, height: 4 },
         },
-        divider ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: divider } : null,
         animatedStyle,
       ]}
     >
+      {divider ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              position: "absolute",
+              top: 0,
+              left: theme.spacing.lg,
+              right: theme.spacing.lg,
+              height: StyleSheet.hairlineWidth,
+              backgroundColor: divider,
+            },
+            dividerStyle,
+          ]}
+        />
+      ) : null}
       {children(handle)}
     </Animated.View>
   );

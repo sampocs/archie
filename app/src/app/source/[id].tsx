@@ -1,7 +1,7 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useEffect, useState } from "react";
-import { Linking, Pressable, View } from "react-native";
+import { Linking, Pressable, StyleSheet, View } from "react-native";
 
 import { db } from "@/db/client";
 import { setPrimerOpened } from "@/db/actions";
@@ -11,10 +11,12 @@ import { ItemActions } from "@/item/ItemActions";
 import { ItemHeader, REACTION_LABELS } from "@/item/ItemHeader";
 import { ItemMenu } from "@/item/ItemMenu";
 import { timestampUrl } from "@/item/timestampLink";
+import { splitFacts } from "@/summary/figures";
 import { requestSync } from "@/sync/useSync";
 import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
+import { fontFamily } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
 import { haptic } from "@/ui/haptics";
@@ -165,16 +167,28 @@ function SummarySections({ summary, source }: { summary: SummaryContent; source:
       ) : null}
 
       {summary.numbers.length > 0 ? (
-        <View style={{ gap: theme.spacing.md }}>
+        <View style={{ gap: theme.spacing.sm }}>
           <SectionTitle>Rough numbers</SectionTitle>
-          {summary.numbers.map((item, index) => (
-            <View key={index} style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start" }}>
-              <Text variant="monoLabel" style={{ flex: 1, textTransform: "none" }}>
-                {item.fact}
-              </Text>
-              <TimestampChip timestamp={item.timestamp} source={source} />
-            </View>
-          ))}
+          <Card testID="rough-numbers" style={{ paddingVertical: 0 }}>
+            {summary.numbers.map((item, index) => (
+              <View
+                key={index}
+                style={[
+                  { flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start", paddingVertical: theme.spacing.md },
+                  index > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.line } : null,
+                ]}
+              >
+                <Text style={{ flex: 1 }}>
+                  {splitFacts(item.fact).map((segment, segmentIndex) => (
+                    <Text key={segmentIndex} style={segment.figure ? { fontFamily: fontFamily.mono } : null}>
+                      {segment.text}
+                    </Text>
+                  ))}
+                </Text>
+                <TimestampChip timestamp={item.timestamp} source={source} />
+              </View>
+            ))}
+          </Card>
         </View>
       ) : null}
     </>

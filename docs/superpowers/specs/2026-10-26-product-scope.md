@@ -63,10 +63,9 @@ Every source the user consumes goes through:
 Tab bar: **Today · Library · ＋ · Review · Carl**
 
 ### Today
-- **Pulse brief** (see below)
+- **Pulse brief** (see below): a preview card that opens the brief
 - **Review**: number of cards due and estimated time
 - **Up next**: the top of my queue
-- **Newsletters**: how many are waiting in the inbox
 
 ### Library
 - One list of everything: queued, in progress, consumed, inbox, and primers. Search bar on top. Filters for status, type, and domain/topic.

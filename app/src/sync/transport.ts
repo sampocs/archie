@@ -120,7 +120,7 @@ export function createDbSyncStore(
         // A rejection doesn't bump the row's change_seq, so no pull would undo the optimistic edit; rewinding the
         // position makes the next pull re-send the server's topic or topic primer.
         // Source actions that change state, processing or the primer's queue entry optimistically rewind too, and
-        // still surface syncError on the source below. A rejected finish_brief (a stale version) re-pulls the brief
+        // still surface syncError on the source below. A rejected finish_brief (a brief already closed) re-pulls the brief
         // and the newsletters it marked briefed.
         const rewind =
           TOPIC_ACTIONS.has(entry.type) ||

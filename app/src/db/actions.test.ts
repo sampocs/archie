@@ -538,7 +538,7 @@ describe("topic actions", () => {
 });
 
 describe("finishBrief", () => {
-  it("closes the brief and marks only its covered inbox newsletters briefed, sending the version read", () => {
+  it("closes the brief and marks only its covered inbox newsletters briefed, sending the newsletters it showed", () => {
     const db = makeTestDb();
     seedSource(db, { id: "covered", kind: "newsletter", state: "inbox" });
     seedSource(db, { id: "queued", kind: "newsletter", state: "queued", queuePosition: 0 });
@@ -558,6 +558,6 @@ describe("finishBrief", () => {
     expect(sourceById(db, "covered")?.state).toBe("briefed");
     expect(sourceById(db, "queued")?.state).toBe("queued");
     expect(sourceById(db, "later")?.state).toBe("inbox");
-    expect(outboxEntries(db)).toEqual([{ type: "finish_brief", payload: { id: "b1", version: 3 } }]);
+    expect(outboxEntries(db)).toEqual([{ type: "finish_brief", payload: { id: "b1", source_ids: ["covered", "queued"] } }]);
   });
 });

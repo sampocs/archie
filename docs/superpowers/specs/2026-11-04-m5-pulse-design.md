@@ -10,16 +10,15 @@ background: "Pulse" in `2026-10-26-product-scope.md`; where they differ, this sp
   why it matters). Going deeper is optional: "Sources · N ›" opens the story page.
 - **Rolling.** The open brief is rewritten in the background whenever a newsletter finishes processing, so it is ready
   (and offline) when the owner opens Today. One brief is open per user at a time.
-- **"Since you last checked" = Done.** The brief covers every unbriefed newsletter (inbox state) received in the last
-  3 days. Tapping "Done ✓" at its end marks every newsletter it covers `briefed` and closes it; newsletters that
-  arrive later start the next brief. Unbriefed newsletters older than 3 days are left out of the brief (they stay in
-  the inbox, reachable from the Library).
+- **"Since you last checked" = Done.** The brief covers every unbriefed newsletter (inbox state), however old —
+  after weeks away it's still one brief, kept short by ranking. Tapping "Done ✓" marks exactly the newsletters the
+  phone showed as `briefed` and closes the brief; anything that arrived while you were reading starts the next one.
 - **News vs essays** (from `sources.newsletter_kind`, set by `file_topic`): news newsletters are split into stories;
   essays are never split or grouped. Essays appear at the end under "Worth reading" as a list (sender, subject, a
   one-line pitch = the essay's summary gist, and "＋ Queue"), so several can be compared before choosing. A newsletter
   with `newsletter_kind` null is treated as news.
 - **Ordering:** stories are grouped by domain. Domains are ordered by their most important story; stories within a
-  domain by importance. The top stories (at most 8 across all domains) are shown in full; the rest become one-line
+  domain by importance. The top stories (at most 10 across all domains) are shown in full; the rest become one-line
   "Also happening" items.
 - **Stories are awareness.** They never become library items or cards. Going deeper on one newsletter (its item page:
   full email, Open original, Make review cards, queue) is the path to keeping something.
@@ -83,10 +82,11 @@ Sync: the pull gains `briefs: list[BriefOut]` (`id, status, content, source_ids,
 updated_at, done_at, change_seq`), only the user's open brief and done briefs from the last 7 days. The phone stores
 them in a drizzle `briefs` table (content and source_ids as JSON text) with a re-pull migration.
 
-Action `finish_brief {id, version}`: rejects unless the brief is the user's, open, and `version` matches (so Done
-never marks newsletters the owner hasn't seen; the phone re-pulls on rejection). Sets every covered newsletter still
-in `inbox` to `briefed` (queued or consumed ones are left alone), status `done`, `done_at`. The next newsletter that
-finishes processing opens a new brief. The phone applies it optimistically (brief done, newsletters briefed).
+Action `finish_brief {id, source_ids}`: `source_ids` are the newsletters the phone showed. Rejects only when the
+brief isn't the user's or isn't open. Marks the given ids that are the user's newsletters still in `inbox` as
+`briefed` (queued or consumed ones are left alone), sets status `done`, `done_at`. If any unbriefed newsletters remain
+(e.g. one landed while the owner was reading), it enqueues `update_brief`, so the next brief holds only the new ones.
+The phone applies it optimistically (brief done, those newsletters briefed).
 
 ## Worker: `update_brief`
 
@@ -96,16 +96,17 @@ finishes processing opens a new brief. The phone applies it optimistically (brie
   that lands mid-run triggers a follow-up).
 - Steps:
   1. Load (or create) the user's open brief. Collect covered newsletters: the user's newsletter sources in `inbox`
-     state, READY, not deleted, created in the last 3 days.
+     state, READY, not deleted, however old.
   2. If none: leave an existing open brief's content as is when it has none, else clear it (content null,
      source_ids empty) — e.g. after every covered newsletter was queued. Done.
   3. Essays: `{source_id, pitch = summary gist}` from their current summary artifact; no LLM call.
   4. News: one call (`BRIEF_MODELS = ModelPair(primary=SONNET, fallback=OPUS)`), input = each news newsletter's id,
-     sender, subject, date and current cleaned text (each truncated to 30k characters), plus the domain list and the
+     sender, subject, date and current cleaned text (each truncated to 30k characters; when the total passes 150k characters, the oldest are given
+     as their summary — gist, key ideas, numbers — instead, newest keeping full text), plus the domain list and the
      owner's topics for relevance. Tool/JSON output = the content shape above minus essays. The style guide used by
      summaries applies (one reading voice). If there are no news newsletters, skip the call.
   5. Validate, drop unknown source ids, order domains by their top story's importance and stories within a domain by
-     importance, keep at most 8 stories (the rest move to `also` as their headline), write content, source_ids, since,
+     importance, keep at most 10 stories (the rest move to `also` as their headline), write content, source_ids, since,
      bump version and change_seq.
 - Failure: the job retries per the usual policy; a failed update leaves the previous content in place (the brief is
   never set to an error state).
@@ -119,12 +120,12 @@ re-briefing done briefs.
 ## Testing
 
 - Worker e2e with a recorded Sonnet cassette on the real fixtures: Morning Brew as news and `substack_bytebytego` as
-  the essay → domains ordered by top importance, every source id valid, the essay listed with its gist, ≤ 8 stories.
-- Unit tests for the post-processing (ordering, the 8-story cap moving the rest to `also`, dropping unknown source
+  the essay → domains ordered by top importance, every source id valid, the essay listed with its gist, ≤ 10 stories.
+- Unit tests for the post-processing (ordering, the 10-story cap moving the rest to `also`, dropping unknown source
   ids and stories left without sources) on hand-written content — this is the logic that could be wrong.
 - Worker/API e2e: newsletter READY enqueues one `update_brief` (a second READY while one is queued adds none);
-  `finish_brief` marks only inbox covered newsletters briefed, rejects a stale version, and a newsletter arriving
-  after the brief's version is not briefed.
+  `finish_brief` briefs only the given ids still in the inbox, rejects a closed brief, and a newsletter it didn't
+  include lands in the next brief.
 - App jest: reading time, "since" label, preview card lines, ordering is taken as stored.
 - Maestro `brief.yaml` (+ `run_brief.sh`, real keys, a few cents): deliver two newsletters through `/ingest/email`,
   wait for the preview, open the brief, open a story and see "Covered by", go back, queue the essay, tap Done, the

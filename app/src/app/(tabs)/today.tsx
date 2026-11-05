@@ -61,7 +61,7 @@ export default function TodayScreen() {
   // Up next is the combined queue: queued sources and queued primers.
   const queued = upNext(data.sources, now);
   const upNextItems = queued.slice(0, UP_NEXT_COUNT);
-  const brief = todayBrief(briefs, data.sources, now);
+  const brief = todayBrief(briefs, data.sources);
   const isEmpty = upNextItems.length === 0 && brief === null;
 
   const accountButton = (

@@ -36,8 +36,6 @@ export type TodayBrief =
 export type PreviewLines = { headlines: string[]; more: string | null };
 
 const BRIEF_STATUS_OPEN = "open";
-// The server briefs inbox newsletters received in the last three days.
-const BRIEF_WINDOW_MS = 3 * 24 * 60 * 60 * 1000;
 const PREVIEW_HEADLINES = 3;
 // A failed or unsupported newsletter has no text to brief, so it never makes a brief "writing".
 const UNBRIEFABLE_PROCESSING = new Set(["failed", "unsupported"]);
@@ -107,13 +105,12 @@ export function previewLines(content: BriefContent): PreviewLines {
 }
 
 /**
- * Today's brief card. The open brief's content wins; without it, newsletters the server will brief (inbox, from the
- * last three days, not failed) mean one is being written. `sources` are the phone's non-deleted ones.
+ * Today's brief card. The open brief's content wins; without it, newsletters the server will brief (inbox, not failed,
+ * however old) mean one is being written. `sources` are the phone's non-deleted ones.
  */
 export function todayBrief(
   briefs: BriefRow[],
-  sources: Pick<SourceRow, "kind" | "state" | "createdAt" | "processing">[],
-  now: Date,
+  sources: Pick<SourceRow, "kind" | "state" | "processing">[],
 ): TodayBrief {
   const open = briefs.find((brief) => brief.status === BRIEF_STATUS_OPEN);
   const content = open ? parseBriefContent(open.content) : null;
@@ -123,8 +120,7 @@ export function todayBrief(
     (source) =>
       source.kind === "newsletter" &&
       source.state === "inbox" &&
-      !UNBRIEFABLE_PROCESSING.has(source.processing) &&
-      now.getTime() - new Date(source.createdAt).getTime() <= BRIEF_WINDOW_MS,
+      !UNBRIEFABLE_PROCESSING.has(source.processing),
   ).length;
   return newsletters > 0 ? { kind: "writing", newsletters } : null;
 }

@@ -419,7 +419,8 @@ export function chooseEpisode(db: AppDb, sourceId: string, guid: string): void {
 
 /**
  * "Done ✓" on the brief: it closes, and the newsletters it covers that are still in the inbox become briefed (queued
- * or finished ones are left alone, as the server does). The version tells the server which content was read.
+ * or finished ones are left alone, as the server does). It sends the newsletters this brief showed, so one that landed
+ * while the owner was reading stays unbriefed and goes into the next brief.
  */
 export function finishBrief(db: AppDb, briefId: string): void {
   db.transaction((tx) => {
@@ -437,6 +438,6 @@ export function finishBrief(db: AppDb, briefId: string): void {
       .set({ state: "briefed", updatedAt: now })
       .where(and(inArray(schema.sources.id, sourceIds), eq(schema.sources.state, "inbox")))
       .run();
-    enqueue(tx, "finish_brief", { id: briefId, version: brief.version });
+    enqueue(tx, "finish_brief", { id: briefId, source_ids: sourceIds });
   });
 }

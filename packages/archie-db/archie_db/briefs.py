@@ -12,6 +12,8 @@ from archie_db import jobs, models
 
 # The `update_brief` job payload key naming whose brief to rewrite.
 USER_ID_KEY = "user_id"
+# Two tries are enough: the next newsletter to arrive re-triggers a rewrite anyway.
+UPDATE_MAX_ATTEMPTS = 2
 
 
 def covered_newsletters(db: sqlalchemy.orm.Session, *, user_id: int) -> list[models.Source]:
@@ -58,4 +60,10 @@ def enqueue_update(db: sqlalchemy.orm.Session, *, user_id: int) -> None:
     if already_queued:
         return
 
-    jobs.enqueue(db, kind=models.JobKind.UPDATE_BRIEF, user_id=user_id, payload={USER_ID_KEY: user_id})
+    jobs.enqueue(
+        db,
+        kind=models.JobKind.UPDATE_BRIEF,
+        user_id=user_id,
+        payload={USER_ID_KEY: user_id},
+        max_attempts=UPDATE_MAX_ATTEMPTS,
+    )

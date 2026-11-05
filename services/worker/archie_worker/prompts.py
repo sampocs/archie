@@ -11,6 +11,7 @@ from __future__ import annotations
 import datetime
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any
 
 from archie_db import models
@@ -257,6 +258,12 @@ MAX_BRIEF_TEXT_CHARACTERS = 30_000
 # The call's whole newsletter text stays under this: the newest issues get their text until it is spent, older ones
 # are given as their summary.
 MAX_BRIEF_TOTAL_CHARACTERS = 150_000
+# Summaries given in place of text stay under this too; newsletters older than that are left out of the call (and the
+# brief) until a later one, so the call's input never grows with the backlog.
+MAX_BRIEF_SUMMARY_CHARACTERS = 60_000
+# The model writes at most this many stories in full; its output must fit the token limit with every newsletter
+# covered. The server keeps `brief_content.MAX_STORIES` of them.
+MAX_MODEL_STORIES = 12
 
 BRIEF_SYSTEM = f"""You write the newsletter brief for a personal learning app: a two-minute read that tells the user \
 the stories people are talking about, so they don't have to read every newsletter. The brief is read, not browsed: \
@@ -274,7 +281,9 @@ several newsletters cover the same news, write it once and list all of their ids
 talked about everywhere scores high; minor deals, small updates and curiosities score low. A story on one of the \
 user's topics may score a little higher.
   - source_ids: the ids of the newsletters that cover the story, copied exactly.
-- also: one-line items for small news that is worth a mention but not a story, each with its newsletter ids.
+- also: one-line items for small news that is worth a mention but not a story, each with its newsletter ids. Write \
+at most {MAX_MODEL_STORIES} stories in full, the most important ones; put every other news item here as a one-line \
+item with its ids rather than as a story.
 
 Skip ads, sponsor content, promotions, trivia, quizzes, polls and the newsletters' own housekeeping. Never add facts \
 that are not in the newsletters.
@@ -340,18 +349,36 @@ class BriefNewsletter:
     is_summary: bool
 
 
-def full_text_flags(text_lengths: Sequence[int]) -> list[bool]:
-    """Which newsletters (lengths oldest first, already capped) get their full text within the 150,000 budget.
+class BriefInput(StrEnum):
+    """How one news newsletter goes into the brief's call."""
 
-    The newest come first: each keeps its text while the running total fits, and once one doesn't, it and every
-    older one are given as their summary.
+    FULL = "full"
+    SUMMARY = "summary"
+    OMITTED = "omitted"
+
+
+def choose_brief_inputs(*, text_lengths: Sequence[int], summary_lengths: Sequence[int]) -> list[BriefInput]:
+    """How each newsletter (lengths oldest first, text already capped) goes into the call.
+
+    Walking from the newest: each is `FULL` while the running text total fits `MAX_BRIEF_TOTAL_CHARACTERS`; after the
+    first that doesn't, each is a `SUMMARY` while the running summary total fits `MAX_BRIEF_SUMMARY_CHARACTERS`; after
+    the first that doesn't, it and every older one are `OMITTED` (deferred, not dropped).
     """
-    flags: list[bool] = []
-    total = 0
-    for length in reversed(text_lengths):
-        total += length
-        flags.append(total <= MAX_BRIEF_TOTAL_CHARACTERS and all(flags))
-    return list(reversed(flags))
+    choices: list[BriefInput] = []
+    text_total = 0
+    summary_total = 0
+    for text_length, summary_length in zip(reversed(text_lengths), reversed(summary_lengths), strict=True):
+        previous = choices[-1] if choices else BriefInput.FULL
+
+        if previous == BriefInput.FULL and text_total + text_length <= MAX_BRIEF_TOTAL_CHARACTERS:
+            text_total += text_length
+            choices.append(BriefInput.FULL)
+        elif previous != BriefInput.OMITTED and summary_total + summary_length <= MAX_BRIEF_SUMMARY_CHARACTERS:
+            summary_total += summary_length
+            choices.append(BriefInput.SUMMARY)
+        else:
+            choices.append(BriefInput.OMITTED)
+    return list(reversed(choices))
 
 
 def summary_text(analysis: Mapping[str, Any]) -> str:

@@ -96,6 +96,15 @@ def test_done_ignores_ids_that_are_not_the_users_inbox_newsletters(live_stack: L
     assert _state(live_stack, article) == models.SourceState.INBOX.value
 
 
+def test_done_accepts_a_brief_covering_a_thousand_newsletters(live_stack: LiveStack, authed: httpx.Client) -> None:
+    """A long backlog is a legitimate Done, not a malformed one (the old cap was 500)."""
+    brief_id = _add_brief(live_stack, user_id=_user_id(authed), source_ids=[])
+
+    [result] = _push(authed, _finish(brief_id, source_ids=[uuid.uuid4() for _ in range(1000)]))
+
+    assert result["result"] == models.ActionResult.APPLIED.value
+
+
 def test_done_is_refused_for_a_brief_that_is_not_open_or_not_the_users(
     live_stack: LiveStack, authed: httpx.Client
 ) -> None:

@@ -2,7 +2,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { snooze, type PrimerTarget } from "@/db/actions";
+import { snooze, type SnoozeTarget } from "@/db/actions";
 import { db } from "@/db/client";
 import { formatReturnTime, pickedDateUntil, snoozeChoices } from "@/library/snooze";
 import { requestSync } from "@/sync/useSync";
@@ -14,7 +14,7 @@ import { BottomSheet } from "./BottomSheet";
 import { haptic } from "./haptics";
 import { useNow } from "./useNow";
 
-type SnoozeSheetProps = { target: PrimerTarget; id: string; visible: boolean; onClose: () => void };
+type SnoozeSheetProps = { target: SnoozeTarget; id: string; visible: boolean; onClose: () => void };
 
 function ChoiceRow({ testID, label, time, onPress }: { testID: string; label: string; time?: string; onPress: () => void }) {
   const theme = useTheme();

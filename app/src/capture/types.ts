@@ -4,14 +4,14 @@ export type CaptureChoice = {
   intent: Intent | null;
   reaction: Reaction | null;
   note: string;
-  prepMe: boolean;
+  queuePrimer: boolean;
 };
 
 export const EMPTY_CHOICE: CaptureChoice = {
   intent: null,
   reaction: null,
   note: "",
-  prepMe: false,
+  queuePrimer: false,
 };
 
 /** Switching intent drops the other intent's answers: the server rejects a reaction on a queued source. */

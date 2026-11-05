@@ -15,6 +15,8 @@ import type { LibraryData, TopicRow } from "./join";
 
 type DomainsViewProps = { data: LibraryData };
 
+const UNREAD_DOT = 10;
+
 /** Library's Domains mode: a card per domain with a progress bar and its topic chips, plus "add a topic". */
 export function DomainsView({ data }: DomainsViewProps) {
   const theme = useTheme();
@@ -92,8 +94,23 @@ function TopicChip({ chip, onMenu }: { chip: DomainChip; onMenu: () => void }) {
         backgroundColor: chip.own ? "transparent" : theme.colors.press,
         borderWidth: chip.own ? 1 : 0,
         borderColor: theme.colors.line,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: theme.spacing.xs,
       }}
     >
+      {/* The topic's primer is waiting: the same unread dot artwork uses. */}
+      {chip.unreadPrimer ? (
+        <View
+          testID={`topic-chip-unread-${slugify(chip.topic.name)}`}
+          style={{
+            width: UNREAD_DOT,
+            height: UNREAD_DOT,
+            borderRadius: UNREAD_DOT / 2,
+            backgroundColor: theme.colors.unread,
+          }}
+        />
+      ) : null}
       <Text variant="secondary">{chip.own ? chip.topic.name : `${chip.topic.name} · ${chip.count}`}</Text>
     </Pressable>
   );

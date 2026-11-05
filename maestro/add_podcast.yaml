@@ -49,7 +49,7 @@ appId: com.sampocs.archie
 # A transcribed episode carries timestamps on its key ideas.
 - assertVisible:
     id: "timestamp"
-- scrollUntilVisible:
-    element:
-      id: "primer-toggle"
-    timeout: 20000
+# Queued: "Mark as done" beside the primer button, which shows the primer's reading time.
+- assertVisible:
+    id: "item-finish"
+- assertVisible: "◆ Primer · .* min"

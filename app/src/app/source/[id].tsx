@@ -1,13 +1,14 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Linking, Pressable, View } from "react-native";
 
 import { db } from "@/db/client";
-import { setPrimerOpened } from "@/db/actions";
+import { readLater, returnToInbox } from "@/db/actions";
 import * as schema from "@/db/schema";
 import { FullEmailSheet } from "@/item/FullEmailSheet";
 import { ItemActions } from "@/item/ItemActions";
+import { ItemBadgeLine } from "@/item/ItemBadgeLine";
 import { ItemHeader, REACTION_LABELS } from "@/item/ItemHeader";
 import { ItemMenu } from "@/item/ItemMenu";
 import { timestampUrl } from "@/item/timestampLink";
@@ -18,14 +19,15 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
 import { haptic } from "@/ui/haptics";
-import { Markdown } from "@/ui/Markdown";
+import { primerMarkdown, wordCount } from "@/library/primer";
 import { parseSummary, SummaryContent } from "@/ui/summaryContent";
+import { Toast } from "@/ui/Toast";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 type SourceRow = typeof schema.sources.$inferSelect;
 
 export default function SourceScreen() {
-  const { id, primer: primerParam } = useLocalSearchParams<{ id: string; primer?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data: sources } = useLiveQuery(db.select().from(schema.sources).where(eq(schema.sources.id, id)), [id]);
   const { data: artifacts } = useLiveQuery(
@@ -51,6 +53,8 @@ export default function SourceScreen() {
   const [finishOpen, setFinishOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [queuedToast, setQueuedToast] = useState(false);
+  const hideToast = useCallback(() => setQueuedToast(false), []);
 
   const source = sources[0];
   const mergedIntoId = source?.deletedAt ? source.mergedIntoId : null;
@@ -65,42 +69,79 @@ export default function SourceScreen() {
   const summary = artifacts.find((artifact) => artifact.kind === "summary");
   const primer = artifacts.find((artifact) => artifact.kind === "primer");
   const summaryContent = summary ? parseSummary(summary.content) : null;
-  const primerMarkdown = primer ? (JSON.parse(primer.content) as { markdown: string }).markdown : null;
+  const primerWords = primer ? wordCount(primerMarkdown(primer.content)) : null;
+
+  function addToQueue(): void {
+    readLater(db, source.id);
+    haptic("success");
+    requestSync();
+    setQueuedToast(true);
+  }
 
   return (
-    <Screen
-      title=""
-      onBack={router.back}
-      headerRight={
-        <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
-          <Text variant="largeTitle">•••</Text>
-        </Pressable>
-      }
-    >
-      <ItemHeader source={source} topicName={topics[0]?.name ?? null} />
-      <Text testID="item-title" variant="articleTitle">
-        {source.title ?? source.url}
-      </Text>
-      <ItemActions source={source} onFinish={() => setFinishOpen(true)} />
-      {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
-      {primerMarkdown ? (
-        <PrimerSection markdown={primerMarkdown} source={source} openOnArrival={primerParam === "1"} />
+    <View style={{ flex: 1 }}>
+      <Screen
+        title=""
+        onBack={router.back}
+        headerRight={
+          <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
+            <Text variant="largeTitle">•••</Text>
+          </Pressable>
+        }
+      >
+        <ItemHeader source={source} topicName={topics[0]?.name ?? null} />
+        <Text testID="item-title" variant="articleTitle">
+          {source.title ?? source.url}
+        </Text>
+        <ItemBadgeLine source={source} onAddToQueue={addToQueue} />
+        <ItemActions source={source} primerWords={primerWords} onFinish={() => setFinishOpen(true)} />
+        {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
+        {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
+        <NoteSection reaction={source.reaction} note={source.note} />
+        {source.state === "consumed" && cards.length > 0 ? <CardsSection cards={cards} /> : null}
+        <FinishSheet
+          sourceId={source.id}
+          primerWords={primerWords}
+          visible={finishOpen}
+          onClose={() => setFinishOpen(false)}
+        />
+        <ItemMenu source={source} visible={menuOpen} onClose={() => setMenuOpen(false)} />
+        <FullEmailSheet sourceId={source.id} visible={emailOpen} onClose={() => setEmailOpen(false)} />
+      </Screen>
+      {/* Undo sends the reverse action rather than cancelling the first, which may already have synced. */}
+      {queuedToast ? (
+        <Toast
+          message="Added to your queue"
+          actionLabel="Undo"
+          onAction={() => {
+            returnToInbox(db, source.id);
+            haptic("light");
+            requestSync();
+          }}
+          onHide={hideToast}
+        />
       ) : null}
-      {source.kind === "newsletter" ? <FullEmailRow onPress={() => setEmailOpen(true)} /> : null}
-      <NoteSection reaction={source.reaction} note={source.note} />
-      {source.state === "consumed" && cards.length > 0 ? <CardsSection cards={cards} /> : null}
-      <FinishSheet sourceId={source.id} visible={finishOpen} onClose={() => setFinishOpen(false)} />
-      <ItemMenu source={source} visible={menuOpen} onClose={() => setMenuOpen(false)} />
-      <FullEmailSheet sourceId={source.id} visible={emailOpen} onClose={() => setEmailOpen(false)} />
-    </Screen>
+    </View>
   );
 }
 
-function FullEmailRow({ onPress }: { onPress: () => void }) {
+// A newsletter whose web version the parser found keeps its real url; the rest have a `newsletter:` placeholder.
+const NEWSLETTER_URL_PREFIX = "newsletter:";
+
+function EmailLinks({ url, onOpenEmail }: { url: string; onOpenEmail: () => void }) {
+  const theme = useTheme();
+
   return (
-    <Pressable testID="item-full-email" onPress={onPress} hitSlop={8}>
-      <Text variant="headline">Open the full email ›</Text>
-    </Pressable>
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.lg }}>
+      <Pressable testID="item-full-email" onPress={onOpenEmail} hitSlop={8}>
+        <Text variant="headline">Open the full email ›</Text>
+      </Pressable>
+      {url.startsWith(NEWSLETTER_URL_PREFIX) ? null : (
+        <Pressable testID="item-open-original" onPress={() => void Linking.openURL(url)} hitSlop={8}>
+          <Text variant="headline">Open original ›</Text>
+        </Pressable>
+      )}
+    </View>
   );
 }
 
@@ -178,36 +219,6 @@ function SummarySections({ summary, source }: { summary: SummaryContent; source:
         </View>
       ) : null}
     </>
-  );
-}
-
-function PrimerSection({
-  markdown,
-  source,
-  openOnArrival,
-}: {
-  markdown: string;
-  source: SourceRow;
-  openOnArrival: boolean;
-}) {
-  const theme = useTheme();
-  const [open, setOpen] = useState(openOnArrival);
-  const needsMark = open && source.primerOpenedAt === null;
-
-  // Opening the primer is what marks it read (it leaves Today's "Primers ready").
-  useEffect(() => {
-    if (!needsMark) return;
-    setPrimerOpened(db, "source", source.id, true);
-    requestSync();
-  }, [needsMark, source.id]);
-
-  return (
-    <View testID="source-primer" style={{ gap: theme.spacing.md }}>
-      <Pressable testID="primer-toggle" onPress={() => setOpen((current) => !current)} hitSlop={8}>
-        <Text variant="headline">{open ? "▾" : "▸"} Background you might need</Text>
-      </Pressable>
-      {open ? <Markdown text={markdown} /> : null}
-    </View>
   );
 }
 

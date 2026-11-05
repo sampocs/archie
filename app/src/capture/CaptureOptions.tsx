@@ -74,11 +74,11 @@ export function CaptureOptions({ value, onChange }: CaptureOptionsProps) {
             justifyContent: "space-between",
           }}
         >
-          <Text>Prep me</Text>
+          <Text>Queue the primer too</Text>
           <Switch
-            testID="prep-me"
-            value={value.prepMe}
-            onValueChange={(prepMe) => onChange({ ...value, prepMe })}
+            testID="queue-primer"
+            value={value.queuePrimer}
+            onValueChange={(queuePrimer) => onChange({ ...value, queuePrimer })}
           />
         </View>
       )}

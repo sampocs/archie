@@ -17,7 +17,7 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
   if (state.kind === "writing") {
     const newsletters = `${state.newsletters} ${state.newsletters === 1 ? "newsletter" : "newsletters"}`;
     return (
-      <Card testID="today-brief">
+      <Card testID="today-brief-writing">
         <PreviewTop title="Writing your brief…" meta={newsletters} />
       </Card>
     );

@@ -1,4 +1,4 @@
-import { primerButtonKind } from "./PrimerButton";
+import { primerButtonKind } from "./primerButtonKind";
 
 describe("primerButtonKind", () => {
   it("opens an existing primer whatever the pipeline is doing", () => {

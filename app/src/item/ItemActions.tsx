@@ -4,7 +4,8 @@ import type * as schema from "@/db/schema";
 import { Button } from "@/theme/components/Button";
 import { useTheme } from "@/theme/useTheme";
 
-import { PrimerButton, primerButtonKind } from "./PrimerButton";
+import { PrimerButton } from "./PrimerButton";
+import { primerButtonKind } from "./primerButtonKind";
 
 type SourceRow = typeof schema.sources.$inferSelect;
 type ItemActionsProps = { source: SourceRow; primerWords: number | null; onFinish: () => void };

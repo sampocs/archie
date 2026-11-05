@@ -30,8 +30,8 @@ def finish_brief(db: orm.Session, *, user: models.User, payload: dict[str, objec
     """Close the open brief and mark the newsletters the phone showed in it briefed, if they are still in the inbox.
 
     Only the given ids are marked, so Done never briefs a newsletter the user hasn't seen; ids that aren't the user's
-    inbox newsletters (queued, consumed, deleted or another user's) are ignored. When the brief covered newsletters
-    the phone didn't show, or unbriefed ones are waiting, the next brief's rewrite is queued so it holds just those.
+    inbox newsletters (queued, consumed, deleted or another user's) are ignored. When unbriefed newsletters
+    are still waiting (including ones the phone didn't show), the next brief's rewrite is queued so it holds just those.
     """
     parsed = rows.parse(_FinishBriefPayload, payload)
     if parsed is None:
@@ -48,8 +48,7 @@ def finish_brief(db: orm.Session, *, user: models.User, payload: dict[str, objec
     brief.updated_at = sqlalchemy.func.now()
     brief.change_seq = changes.next_change_seq()
 
-    has_unshown = bool(set(brief.source_ids) - set(parsed.source_ids))
-    if has_unshown or briefs.covered_newsletters(db, user_id=user.id):
+    if briefs.covered_newsletters(db, user_id=user.id):
         briefs.enqueue_update(db, user_id=user.id)
     return None
 

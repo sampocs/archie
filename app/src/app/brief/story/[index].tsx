@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -23,7 +23,10 @@ const SOURCE_ART_SIZE = 34;
 
 /** One brief story, a step deeper: its fuller paragraph and the newsletters that covered it. */
 export default function BriefStoryScreen() {
-  const { index, brief: briefId } = useLocalSearchParams<{ index: string; brief: string }>();
+  const { index, brief: briefId } = useLocalSearchParams<{
+    index: string;
+    brief: string;
+  }>();
   const router = useRouter();
   const theme = useTheme();
   const { data: briefs } = useLiveQuery(
@@ -35,7 +38,15 @@ export default function BriefStoryScreen() {
   const entry = content ? storiesInOrder(content)[Number(index)] : undefined;
   const sourceIds = entry?.story.source_ids ?? [];
   const { data: sources } = useLiveQuery(
-    db.select().from(schema.sources).where(inArray(schema.sources.id, sourceIds)),
+    db
+      .select()
+      .from(schema.sources)
+      .where(
+        and(
+          inArray(schema.sources.id, sourceIds),
+          isNull(schema.sources.deletedAt),
+        ),
+      ),
     [sourceIds.join(",")],
   );
 
@@ -60,7 +71,12 @@ export default function BriefStoryScreen() {
         </Text>
         <Card style={{ paddingVertical: 0 }}>
           {covering.map((source, position) => (
-            <CoveringRow key={source.id} source={source} domain={entry.domain} first={position === 0} />
+            <CoveringRow
+              key={source.id}
+              source={source}
+              domain={entry.domain}
+              first={position === 0}
+            />
           ))}
         </Card>
       </View>
@@ -68,7 +84,15 @@ export default function BriefStoryScreen() {
   );
 }
 
-function CoveringRow({ source, domain, first }: { source: SourceRow; domain: DomainName; first: boolean }) {
+function CoveringRow({
+  source,
+  domain,
+  first,
+}: {
+  source: SourceRow;
+  domain: DomainName;
+  first: boolean;
+}) {
   const theme = useTheme();
   const router = useRouter();
   const subject = source.title ?? "Untitled";
@@ -81,16 +105,34 @@ function CoveringRow({ source, domain, first }: { source: SourceRow; domain: Dom
         router.push({ pathname: "/source/[id]", params: { id: source.id } });
       }}
       style={[
-        { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 11 },
-        !first && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.line },
+        {
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          paddingVertical: 11,
+        },
+        !first && {
+          borderTopWidth: StyleSheet.hairlineWidth,
+          borderTopColor: theme.colors.line,
+        },
       ]}
     >
-      <ArtworkTile imageUrl={null} domain={domain} monogram={monogramFor(source)} size={SOURCE_ART_SIZE} />
+      <ArtworkTile
+        imageUrl={null}
+        domain={domain}
+        monogram={monogramFor(source)}
+        size={SOURCE_ART_SIZE}
+      />
       <View style={{ flex: 1 }}>
         <Text variant="headline" style={{ fontSize: 14 }} numberOfLines={1}>
           {source.sender ?? "Newsletter"}
         </Text>
-        <Text variant="secondary" tone="ink3" style={{ fontSize: 12.5 }} numberOfLines={1}>
+        <Text
+          variant="secondary"
+          tone="ink3"
+          style={{ fontSize: 12.5 }}
+          numberOfLines={1}
+        >
           {`${subject} · ${WEEKDAYS[new Date(source.createdAt).getDay()]}`}
         </Text>
       </View>

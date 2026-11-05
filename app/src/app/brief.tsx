@@ -1,8 +1,14 @@
-import { desc, inArray } from "drizzle-orm";
+import { and, desc, inArray, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent, Pressable, StyleSheet, View } from "react-native";
+import {
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 
 import {
   briefReadingMinutes,
@@ -41,13 +47,23 @@ export default function BriefScreen() {
   const theme = useTheme();
   const now = useNow();
   const [progress, setProgress] = useState(0);
-  const { data: briefs } = useLiveQuery(db.select().from(schema.briefs).orderBy(desc(schema.briefs.createdAt)));
+  const { data: briefs } = useLiveQuery(
+    db.select().from(schema.briefs).orderBy(desc(schema.briefs.createdAt)),
+  );
 
   // The open brief; once Done closes it, the screen keeps showing it (now the newest done one) while it leaves.
   const brief = briefs.find(isOpenBrief) ?? briefs[0];
   const sourceIds = brief ? (JSON.parse(brief.sourceIds) as string[]) : [];
   const { data: sources } = useLiveQuery(
-    db.select().from(schema.sources).where(inArray(schema.sources.id, sourceIds)),
+    db
+      .select()
+      .from(schema.sources)
+      .where(
+        and(
+          inArray(schema.sources.id, sourceIds),
+          isNull(schema.sources.deletedAt),
+        ),
+      ),
     [brief?.sourceIds],
   );
   const content = brief ? parseBriefContent(brief.content) : null;
@@ -55,7 +71,11 @@ export default function BriefScreen() {
   function trackProgress(event: NativeSyntheticEvent<NativeScrollEvent>): void {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const scrollable = contentSize.height - layoutMeasurement.height;
-    setProgress(scrollable > 0 ? Math.min(1, Math.max(0, contentOffset.y / scrollable)) : 1);
+    setProgress(
+      scrollable > 0
+        ? Math.min(1, Math.max(0, contentOffset.y / scrollable))
+        : 1,
+    );
   }
 
   const progressBar = (
@@ -68,14 +88,22 @@ export default function BriefScreen() {
         overflow: "hidden",
       }}
     >
-      <View style={{ height: "100%", width: `${progress * 100}%`, backgroundColor: theme.colors.chrome }} />
+      <View
+        style={{
+          height: "100%",
+          width: `${progress * 100}%`,
+          backgroundColor: theme.colors.chrome,
+        }}
+      />
     </View>
   );
 
   if (!brief || !content) return <Screen title="Brief" onBack={router.back} />;
 
   const minutes = `${briefReadingMinutes(content)} min`;
-  const meta = brief.since ? `${briefSinceLabel(brief.since, now)} · ${minutes}` : minutes;
+  const meta = brief.since
+    ? `${briefSinceLabel(brief.since, now)} · ${minutes}`
+    : minutes;
 
   const briefId = brief.id;
   function done(): void {
@@ -86,9 +114,21 @@ export default function BriefScreen() {
   }
 
   return (
-    <Screen title="" onBack={router.back} subheader={progressBar} onScroll={trackProgress}>
+    <Screen
+      title=""
+      onBack={router.back}
+      subheader={progressBar}
+      onScroll={trackProgress}
+    >
       <View testID="brief-screen" style={styles.titleRow}>
-        <Text variant="headline" style={{ fontSize: 20, letterSpacing: -0.03 * 20, fontFamily: fontFamily.bold }}>
+        <Text
+          variant="headline"
+          style={{
+            fontSize: 20,
+            letterSpacing: -0.03 * 20,
+            fontFamily: fontFamily.bold,
+          }}
+        >
           {briefTitle(now)}
         </Text>
         <Text variant="monoLabel" tone="ink3">
@@ -97,7 +137,11 @@ export default function BriefScreen() {
       </View>
 
       {domainSections(content).map((section) => (
-        <DomainStories key={section.stories[0].index} briefId={briefId} section={section} />
+        <DomainStories
+          key={section.stories[0].index}
+          briefId={briefId}
+          section={section}
+        />
       ))}
 
       {content.also.length > 0 ? (
@@ -106,11 +150,18 @@ export default function BriefScreen() {
             Also happening
           </Text>
           {content.also.map((line, index) => (
-            <View key={index} style={{ flexDirection: "row", gap: theme.spacing.sm }}>
+            <View
+              key={index}
+              style={{ flexDirection: "row", gap: theme.spacing.sm }}
+            >
               <Text variant="secondary" tone="ink2" style={styles.alsoLine}>
                 •
               </Text>
-              <Text variant="secondary" tone="ink2" style={[styles.alsoLine, { flex: 1 }]}>
+              <Text
+                variant="secondary"
+                tone="ink2"
+                style={[styles.alsoLine, { flex: 1 }]}
+              >
                 {line.text}
               </Text>
             </View>
@@ -118,13 +169,16 @@ export default function BriefScreen() {
         </Card>
       ) : null}
 
-      {content.essays.length > 0 ? <WorthReading content={content} sources={sources} /> : null}
+      {content.essays.length > 0 ? (
+        <WorthReading content={content} sources={sources} />
+      ) : null}
 
       {isOpenBrief(brief) ? (
         <View style={{ gap: theme.spacing.sm }}>
           <Button testID="brief-done" label="Done ✓" onPress={done} />
           <Text variant="secondary" tone="ink3" style={styles.hint}>
-            Marks these stories and the essays you didn't queue as briefed. The next newsletter starts a new brief.
+            Marks these stories and the essays you didn't queue as briefed. The
+            next newsletter starts a new brief.
           </Text>
         </View>
       ) : null}
@@ -143,14 +197,25 @@ function domainSections(content: BriefContent): DomainSection[] {
   return sections;
 }
 
-function DomainStories({ briefId, section }: { briefId: string; section: DomainSection }) {
+function DomainStories({
+  briefId,
+  section,
+}: {
+  briefId: string;
+  section: DomainSection;
+}) {
   const theme = useTheme();
   const router = useRouter();
 
   return (
     <View testID={`brief-domain-${section.domain}`} style={{ gap: 10 }}>
       <View style={styles.domainHeading}>
-        <View style={[styles.domainSquare, { backgroundColor: theme.domains[section.domain] }]} />
+        <View
+          style={[
+            styles.domainSquare,
+            { backgroundColor: theme.domains[section.domain] },
+          ]}
+        />
         <Text variant="headline" style={styles.domainLabel}>
           {section.domain}
         </Text>
@@ -165,7 +230,10 @@ function DomainStories({ briefId, section }: { briefId: string; section: DomainS
             testID={`brief-story-${index}`}
             style={[
               styles.story,
-              position > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.line },
+              position > 0 && {
+                borderTopWidth: StyleSheet.hairlineWidth,
+                borderTopColor: theme.colors.line,
+              },
             ]}
           >
             <Text variant="headline" style={styles.storyHeadline}>
@@ -173,18 +241,30 @@ function DomainStories({ briefId, section }: { briefId: string; section: DomainS
             </Text>
             <Text style={styles.storyBody}>
               {story.body}
-              {story.why ? <Text tone="ink2" style={styles.storyBody}>{` ${story.why}`}</Text> : null}
+              {story.why ? (
+                <Text
+                  tone="ink2"
+                  style={styles.storyBody}
+                >{` ${story.why}`}</Text>
+              ) : null}
             </Text>
             <Pressable
               testID={`brief-story-${index}-sources`}
               hitSlop={8}
               onPress={() => {
                 haptic("light");
-                router.push({ pathname: "/brief/story/[index]", params: { index: String(index), brief: briefId } });
+                router.push({
+                  pathname: "/brief/story/[index]",
+                  params: { index: String(index), brief: briefId },
+                });
               }}
               style={{ alignSelf: "flex-start", marginTop: 6 }}
             >
-              <Text variant="secondary" tone="ink2" style={{ fontFamily: fontFamily.semibold, fontSize: 13 }}>
+              <Text
+                variant="secondary"
+                tone="ink2"
+                style={{ fontFamily: fontFamily.semibold, fontSize: 13 }}
+              >
                 {`Sources · ${story.source_ids.length} ›`}
               </Text>
             </Pressable>
@@ -195,7 +275,13 @@ function DomainStories({ briefId, section }: { briefId: string; section: DomainS
   );
 }
 
-function WorthReading({ content, sources }: { content: BriefContent; sources: SourceRow[] }) {
+function WorthReading({
+  content,
+  sources,
+}: {
+  content: BriefContent;
+  sources: SourceRow[];
+}) {
   const theme = useTheme();
   const router = useRouter();
   const sourcesById = new Map(sources.map((source) => [source.id, source]));
@@ -222,20 +308,36 @@ function WorthReading({ content, sources }: { content: BriefContent; sources: So
             <Pressable
               key={essay.source_id}
               testID={`brief-essay-${essay.source_id}`}
-              onPress={() => router.push({ pathname: "/source/[id]", params: { id: essay.source_id } })}
+              onPress={() =>
+                router.push({
+                  pathname: "/source/[id]",
+                  params: { id: essay.source_id },
+                })
+              }
               style={[
                 styles.essay,
-                position > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.line },
+                position > 0 && {
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  borderTopColor: theme.colors.line,
+                },
               ]}
             >
               <View style={{ flex: 1, gap: 3 }}>
                 <Text variant="kicker" tone="ink3" numberOfLines={1}>
                   {source?.sender ?? "Newsletter"}
                 </Text>
-                <Text variant="headline" style={{ fontSize: 14.5, lineHeight: 14.5 * 1.3 }} numberOfLines={2}>
+                <Text
+                  variant="headline"
+                  style={{ fontSize: 14.5, lineHeight: 14.5 * 1.3 }}
+                  numberOfLines={2}
+                >
                   {source?.title ?? "Untitled"}
                 </Text>
-                <Text variant="secondary" tone="ink2" style={{ fontSize: 12.5 }}>
+                <Text
+                  variant="secondary"
+                  tone="ink2"
+                  style={{ fontSize: 12.5 }}
+                >
                   {essay.pitch}
                 </Text>
               </View>
@@ -245,7 +347,10 @@ function WorthReading({ content, sources }: { content: BriefContent; sources: So
                 hitSlop={8}
                 onPress={() => queue(essay.source_id)}
               >
-                <Text variant="secondary" style={{ fontFamily: fontFamily.semibold, fontSize: 13 }}>
+                <Text
+                  variant="secondary"
+                  style={{ fontFamily: fontFamily.semibold, fontSize: 13 }}
+                >
                   {queued ? "✓ Queued" : "＋ Queue"}
                 </Text>
               </Pressable>
@@ -258,14 +363,44 @@ function WorthReading({ content, sources }: { content: BriefContent; sources: So
 }
 
 const styles = StyleSheet.create({
-  titleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingHorizontal: 6 },
-  domainHeading: { flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 6 },
+  titleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    paddingHorizontal: 6,
+  },
+  domainHeading: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 6,
+  },
   domainSquare: { width: 10, height: 10, borderRadius: 3 },
-  domainLabel: { flex: 1, fontFamily: fontFamily.bold, fontSize: 17, letterSpacing: -0.025 * 17 },
+  domainLabel: {
+    flex: 1,
+    fontFamily: fontFamily.bold,
+    fontSize: 17,
+    letterSpacing: -0.025 * 17,
+  },
   story: { paddingVertical: 13 },
-  storyHeadline: { fontSize: 15.5, letterSpacing: -0.015 * 15.5, lineHeight: 15.5 * 1.3, marginBottom: 4 },
+  storyHeadline: {
+    fontSize: 15.5,
+    letterSpacing: -0.015 * 15.5,
+    lineHeight: 15.5 * 1.3,
+    marginBottom: 4,
+  },
   storyBody: { fontSize: 14.5, lineHeight: 14.5 * 1.55 },
-  essay: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12 },
+  essay: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 12,
+  },
   alsoLine: { lineHeight: 13.5 * 1.5 },
-  hint: { textAlign: "center", fontSize: 12.5, lineHeight: 12.5 * 1.4, paddingHorizontal: 14 },
+  hint: {
+    textAlign: "center",
+    fontSize: 12.5,
+    lineHeight: 12.5 * 1.4,
+    paddingHorizontal: 14,
+  },
 });

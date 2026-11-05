@@ -43,7 +43,7 @@ background: "Pulse" in `2026-10-26-product-scope.md`; where they differ, this sp
 - **Story page** (`app/src/app/brief/story/[index].tsx` — stories are addressed by brief id + index): domain kicker
   "<Domain> · Story", the headline as the title, the story's longer `detail` paragraph, and "Covered by": one row per
   source newsletter (monogram tile in the domain color, sender, subject · weekday) opening `/source/[id]`.
-- Reading time M = ceil(words of all story bodies + also lines / 220), minimum 1.
+- Reading time M = ceil(words of all story bodies, their "why" sentences and also lines / 220), minimum 1.
 - Library: briefed newsletters already show the "Briefed" tag; unchanged.
 
 ## Data
@@ -74,7 +74,7 @@ briefs
 }
 ```
 
-`domain` is one of the fixed domains' display names (`archie_shared.domains`), e.g. "Politics"; `importance` 1–10; `why` may be empty. Domains and
+`domain` stores the domain's display name (the `archie_shared.domains.Domain` value, e.g. "Politics"), matched case-insensitively; `importance` 1–10; `why` may be empty. Domains and
 stories are stored already ordered. Every `source_ids` entry must be one of the brief's covered newsletters (ids the
 model returns that aren't are dropped; a story left with none is dropped).
 

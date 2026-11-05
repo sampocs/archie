@@ -1,4 +1,4 @@
-"""Reading-state actions on a source (and on topic primers for opened/snoozed): each returns a reason or None.
+"""Reading-state actions on a source, its queued primer, and topic primers: each returns a reason or None.
 
 The caller holds the user's write lock; every check runs before the first write (see `actions.apply_actions`).
 """
@@ -20,14 +20,31 @@ _NOT_IN_INBOX = "source is not in the inbox"
 _NOT_NEWSLETTER = "source is not a newsletter"
 _NOT_READY = "source is not ready"
 _NO_PRIMER = "topic primer not found"
+_PRIMER_NOT_QUEUED = "primer is not queued"
+_HAS_PRIMER = "source already has a primer"
 _INBOX_STATES = frozenset({models.SourceState.INBOX, models.SourceState.BRIEFED})
 
 
 class PrimerTarget(StrEnum):
-    """What a primer-opened or snooze action points at."""
+    """What a primer-opened action points at."""
 
     SOURCE = "source"
     TOPIC_PRIMER = "topic_primer"
+
+
+class SnoozeTarget(StrEnum):
+    """What a snooze action hides: a source, a source's queued primer, or a topic primer."""
+
+    SOURCE = "source"
+    SOURCE_PRIMER = "source_primer"
+    TOPIC_PRIMER = "topic_primer"
+
+
+class QueueTarget(StrEnum):
+    """Which queue entry a position applies to: a queued source, or a source's queued primer."""
+
+    SOURCE = "source"
+    SOURCE_PRIMER = "source_primer"
 
 
 class _SourcePayload(pydantic.BaseModel):
@@ -37,10 +54,11 @@ class _SourcePayload(pydantic.BaseModel):
 class _FinishPayload(_SourcePayload):
     reaction: models.Reaction | None = None
     note: str | None = pydantic.Field(default=None, max_length=capture.MAX_NOTE_LENGTH)
+    queue_primer: bool = False
 
 
-class _PrepMePayload(_SourcePayload):
-    prep_me: bool
+class _QueuePrimerPayload(_SourcePayload):
+    queued: bool
 
 
 class _ReadPayload(_SourcePayload):
@@ -53,16 +71,20 @@ class _PrimerOpenedPayload(_SourcePayload):
 
 
 class _SnoozePayload(_SourcePayload):
-    target: PrimerTarget
+    target: SnoozeTarget
     until: pydantic.AwareDatetime | None
 
 
 class _QueuePositionPayload(_SourcePayload):
     position: float = pydantic.Field(allow_inf_nan=False)
+    target: QueueTarget = QueueTarget.SOURCE
 
 
 def finish_source(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
-    """Mark a queued source consumed, with the optional reaction and note; "Parts lost me" also pushes its primer."""
+    """Mark a queued source consumed, with the optional reaction and note, and queue its primer when asked.
+
+    A newsletter is analyzed again once consumed, which now gives it cards.
+    """
     parsed = rows.parse(_FinishPayload, payload)
     if parsed is None:
         return rows.MALFORMED
@@ -78,19 +100,82 @@ def finish_source(db: orm.Session, *, user: models.User, payload: dict[str, obje
         source.reaction = parsed.reaction.value
     if parsed.note:
         source.note = parsed.note
-    if parsed.reaction == models.Reaction.LOST:
-        source.prep_me = True
+    changes.touch(source)
+
+    # Analyze goes first, so a newsletter's primer (if this queues one) is written after its cards.
+    if source.kind == models.SourceKind.NEWSLETTER:
+        pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
+        pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.ANALYZE])
+    if parsed.queue_primer:
+        rows.queue_primer(db, source=source)
+    return None
+
+
+def queue_primer(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
+    """Put a source's primer in the queue as its own entry (writing a newsletter's first), or take it out."""
+    parsed = rows.parse(_QueuePrimerPayload, payload)
+    if parsed is None:
+        return rows.MALFORMED
+    source = rows.owned_source(db, user=user, source_id=parsed.id)
+    if source is None:
+        return rows.NO_SOURCE
+
+    if parsed.queued:
+        rows.queue_primer(db, source=source)
+        return None
+    source.primer_queue_position = None
+    changes.touch(source)
+    return None
+
+
+def request_primer(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
+    """Write a ready newsletter's primer, which newsletters only get on request."""
+    parsed = rows.parse(_SourcePayload, payload)
+    if parsed is None:
+        return rows.MALFORMED
+    source = rows.owned_source(db, user=user, source_id=parsed.id)
+    if source is None:
+        return rows.NO_SOURCE
+    if source.kind != models.SourceKind.NEWSLETTER:
+        return _NOT_NEWSLETTER
+    if source.processing != models.ProcessingStatus.READY:
+        return _NOT_READY
+    if pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.PRIMER) is not None:
+        return _HAS_PRIMER
+
+    rows.start_primer(db, source=source)
+    return None
+
+
+def return_to_inbox(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
+    """Undo "Add to queue": a queued newsletter goes back to the inbox."""
+    parsed = rows.parse(_SourcePayload, payload)
+    if parsed is None:
+        return rows.MALFORMED
+    source = rows.owned_source(db, user=user, source_id=parsed.id)
+    if source is None:
+        return rows.NO_SOURCE
+    if source.kind != models.SourceKind.NEWSLETTER:
+        return _NOT_NEWSLETTER
+    if source.state != models.SourceState.QUEUED:
+        return _NOT_QUEUED
+
+    source.state = models.SourceState.INBOX.value
+    source.queue_position = None
     changes.touch(source)
     return None
 
 
 def snooze(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
-    """Hide a source or topic primer until `until` (None unsnoozes); a snoozed queued source returns at the top."""
+    """Hide a source, its queued primer or a topic primer until `until` (None unsnoozes).
+
+    A snoozed queue entry (a queued source or a queued primer) returns at the top of the queue.
+    """
     parsed = rows.parse(_SnoozePayload, payload)
     if parsed is None:
         return rows.MALFORMED
 
-    if parsed.target == PrimerTarget.TOPIC_PRIMER:
+    if parsed.target == SnoozeTarget.TOPIC_PRIMER:
         primer = rows.owned_topic_primer(db, user=user, primer_id=parsed.id)
         if primer is None:
             return _NO_PRIMER
@@ -101,6 +186,14 @@ def snooze(db: orm.Session, *, user: models.User, payload: dict[str, object]) ->
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
+
+    if parsed.target == SnoozeTarget.SOURCE_PRIMER:
+        if parsed.until is not None and source.primer_queue_position is not None:
+            source.primer_queue_position = rows.top_queue_position(db, user_id=user.id)
+        source.primer_snoozed_until = parsed.until
+        changes.touch(source)
+        return None
+
     if parsed.until is not None and source.state == models.SourceState.QUEUED:
         source.queue_position = rows.top_queue_position(db, user_id=user.id)
     source.snoozed_until = parsed.until
@@ -152,22 +245,6 @@ def delete_source(db: orm.Session, *, user: models.User, payload: dict[str, obje
     return None
 
 
-def set_prep_me(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
-    """Ask for (or drop) a primer on a queued source."""
-    parsed = rows.parse(_PrepMePayload, payload)
-    if parsed is None:
-        return rows.MALFORMED
-    source = rows.owned_source(db, user=user, source_id=parsed.id)
-    if source is None:
-        return rows.NO_SOURCE
-    if source.state != models.SourceState.QUEUED:
-        return _NOT_QUEUED
-
-    source.prep_me = parsed.prep_me
-    changes.touch(source)
-    return None
-
-
 def set_read(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
     """Mark an inbox newsletter read or unread."""
     parsed = rows.parse(_ReadPayload, payload)
@@ -210,16 +287,23 @@ def set_primer_opened(db: orm.Session, *, user: models.User, payload: dict[str, 
 
 
 def set_queue_position(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
-    """Move a queued source to the position the phone computed."""
+    """Move a queued source, or a source's queued primer, to the position the phone computed."""
     parsed = rows.parse(_QueuePositionPayload, payload)
     if parsed is None:
         return rows.MALFORMED
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
+
+    if parsed.target == QueueTarget.SOURCE_PRIMER:
+        if source.primer_queue_position is None:
+            return _PRIMER_NOT_QUEUED
+        source.primer_queue_position = parsed.position
+        changes.touch(source)
+        return None
+
     if source.state != models.SourceState.QUEUED:
         return _NOT_QUEUED
-
     source.queue_position = parsed.position
     changes.touch(source)
     return None

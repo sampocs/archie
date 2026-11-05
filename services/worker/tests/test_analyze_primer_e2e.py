@@ -149,6 +149,27 @@ def test_analyze_and_primer_together_make_the_source_ready(engine: sqlalchemy.En
     assert [call.step for call in _llm_calls(engine)] == [models.JobKind.ANALYZE.value, models.JobKind.PRIMER.value]
 
 
+def test_a_requested_newsletter_primer_returns_the_newsletter_to_ready(
+    engine: sqlalchemy.Engine, replay: Replay
+) -> None:
+    """A summarized newsletter is processing while its requested primer is written, and ready once it lands."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT, kind=models.SourceKind.NEWSLETTER)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE, models.JobKind.PRIMER)
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    with sqlalchemy.orm.Session(engine) as db:
+        source = db.get_one(models.Source, source_id)
+        pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
+        db.commit()
+
+    with replay("primer_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    [primer] = _artifacts(engine, source_id, models.ArtifactKind.PRIMER)
+    assert primer.is_current
+    assert _source(engine, source_id).processing == models.ProcessingStatus.READY.value
+
+
 def test_analyze_queues_filing_for_a_user_who_has_chosen_topics(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """A never-filed source of a user with topics gets a `file_topic` job after its analyze."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)

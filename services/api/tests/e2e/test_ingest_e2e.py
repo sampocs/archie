@@ -1,4 +1,5 @@
-"""Newsletter ingest through the real stack: a raw email posted to `/ingest/email` becomes an analyzed Inbox source.
+"""Newsletter ingest through the real stack: a raw email posted to `/ingest/email` becomes a cleaned, analyzed Inbox
+source.
 
 The API, the worker loop and Postgres are real; the emails are real newsletters (scrubbed fixtures) and Anthropic is
 replayed from recorded real responses. Re-record with `uv run pytest services/api/tests/e2e/test_ingest_e2e.py
@@ -31,6 +32,7 @@ INGEST_SECRET = "test-ingest-secret"
 INGEST_DOMAIN = "example.com"
 SUBSTACK_SUBJECT = "How Netflix Uses AI Agents for Performance Engineering"
 SUBSTACK_URL = "https://blog.bytebytego.com/p/how-netflix-uses-ai-agents-for-performance"
+MORNING_BREW_URL = "https://example.invalid/tracked"  # the fixture's scrubbed "View Online" link
 OVER_LIMIT_BYTES = 11 * 1024 * 1024
 
 READY_TIMEOUT_SECONDS = 30.0
@@ -133,7 +135,7 @@ def test_an_email_with_no_readable_text_is_stored_as_a_failed_source_without_a_c
 def test_a_substack_post_becomes_a_ready_inbox_source_with_only_a_summary(
     live_stack: LiveStack, request: pytest.FixtureRequest, poll_timeout: float
 ) -> None:
-    """Delivered mail is analyzed from its captured text: a summary, no primer, no cards, one costed call."""
+    """Delivered mail is cleaned, then analyzed from its captured text: a summary, no primer, no cards, two calls."""
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     address = authed.get("/me").json()["ingest_address"]
     assert address.endswith(f"@{INGEST_DOMAIN}")
@@ -152,7 +154,7 @@ def test_a_substack_post_becomes_a_ready_inbox_source_with_only_a_summary(
     assert current["summary"]["content"]["summary"]["gist"].strip()
     assert "primer" not in current
     assert [card for card in pulled["rows"]["cards"] if card["deleted_at"] is None] == []
-    assert [call.step for call in _llm_calls(live_stack)] == ["analyze"]
+    assert [call.step for call in _llm_calls(live_stack)] == ["clean_text", "analyze"]
 
     # Cloudflare retries deliveries: the same message again must not add a second source.
     assert _deliver(live_stack, raw=_fixture("substack_bytebytego"), to=address).status_code == 202
@@ -160,10 +162,10 @@ def test_a_substack_post_becomes_a_ready_inbox_source_with_only_a_summary(
 
 
 @pytest.mark.worker
-def test_a_morning_brew_issue_without_a_web_link_gets_a_placeholder_url_and_a_summary(
+def test_a_morning_brew_issue_links_to_its_web_version_and_is_analyzed_from_cleaned_text(
     live_stack: LiveStack, request: pytest.FixtureRequest, poll_timeout: float
 ) -> None:
-    """With no web URL the source url is `newsletter:<message-id>`, and it is still analyzed."""
+    """The "View Online" link is the url; the referral block is cleaned out of the text the summary came from."""
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     address = authed.get("/me").json()["ingest_address"]
 
@@ -173,8 +175,13 @@ def test_a_morning_brew_issue_without_a_web_link_gets_a_placeholder_url_and_a_su
 
     source = pulled["rows"]["sources"][0]
     assert (source["sender"], source["title"]) == ("Morning Brew", "☕ Putting it to a vote")
-    assert source["url"].startswith("newsletter:")
-    assert [call.step for call in _llm_calls(live_stack)] == ["analyze"]
+    assert source["url"] == MORNING_BREW_URL
+    assert [call.step for call in _llm_calls(live_stack)] == ["clean_text", "analyze"]
+
+    # `/sources/{id}/text` serves the current, cleaned text.
+    text = authed.get(f"/sources/{source['id']}/text").json()["text"]
+    assert "**Mission control:**" in text
+    assert "Your referral count" not in text
 
 
 def test_a_chosen_address_delivers_to_its_user(live_stack: LiveStack) -> None:

@@ -1,254 +1,242 @@
 interactions:
 - request:
-    body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Source
-      kind: newsletter\\nTitle: How Netflix Uses AI Agents for Performance Engineering\\nURL:
-      https://blog.bytebytego.com/p/how-netflix-uses-ai-agents-for-performance\\n\\n<text>\\nHow
+    body: "{\"max_tokens\":1000,\"messages\":[{\"role\":\"user\",\"content\":\"Subject:
+      How Netflix Uses AI Agents for Performance Engineering\\n\\n<email>\\n[1] How
       does full-stack observability impact engineering speed, incident response, and
-      cost control?\\nIn this eBook from Datadog, you\u2019ll learn how real teams
-      across industries are using observability to:\\nReduce mean time to resolution
-      (MTTR)\\nCut tooling costs and improve team efficiency\\nAlign business and
-      engineering KPIs\\nSee how unifying your stack leads to faster troubleshooting
-      and long-term operational gains.\\nPerformance engineering is the discipline
-      in which you design, analyze, and optimize software systems so that they run
-      quickly. Also, they should use resources efficiently. In distributed architectures,
-      the focus of any performance engineering activity is on shaving milliseconds
-      off response times. Or locating execution bottlenecks in CPU or memory. Or making
-      sure infrastructure costs are kept under control.\\nHistorically, performance
-      engineering work has been slow. And manual. You often depend on a small group
-      of really skilled developers. However, with the rise of AI-assisted software
-      development, there\u2019s a contradiction. Developers can write and ship code
-      faster than ever. No matter what their skill level may be. But that code often
-      introduces subtle performance problems.\\nTo solve this problem, the Netflix
-      engineering team has developed an autonomous performance agent system. In this
-      article, we\u2019ll be learning more about it. Here\u2019s what we will cover:\\nBottlenecks
-      for traditional performance work\\nThe problem with AI-Generated code\\nCan
-      LLMs handle profile data\\nThe agentic profiling pipeline\\nThe problems Netflix
-      found in production\\nSafety, verification, and trust architecture\\nShifting
-      left\\nDisclaimer: This post is based on publicly shared details from various
-      sources. References at the end. Please comment if you notice any inaccuracies.\\nTraditional
-      performance engineering work at Netflix was built on a highly iterative loop
-      that is pretty much manual in nature.\\nFirst, you trigger profiling for an
-      application. A developer tries to detect high latency or increased resource
-      usage by triggering a profiler on a live production server.\\nIn the second
-      step, the profiler outputs raw trace data or flame graphs. The developer downloads
-      these details to their local machine.\\nThird, the developer spends time looking
-      at complex, color-coded flame graphs. They try to spot wide stack frames that
-      might show signs of higher-than-normal CPU or memory consumption.\\nNext, the
-      developer goes through the codebase looking for cryptic method names found in
-      the flame graph. They try to make sense of the surrounding application logic
-      to figure things out.\\nFifth, the developer traces the execution path and identifies
-      the inefficient operation. They write a proposed patch to fix the operation.\\nMoving
-      further, the developers deploy the patch to an environment where any change
-      in performance levels can be measured.\\nAt the end, when new code paths are
-      deployed in production, the developer starts the manual process once again.\\nAs
-      you may have noticed, this workflow doesn\u2019t scale. Everything depends on
-      a few domain experts who have a deep sense of understanding about low-level
+      cost control?\\n\\n[2] In this eBook from Datadog, you\u2019ll learn how real
+      teams across industries are using observability to:\\n\\n[3] Reduce mean time
+      to resolution (MTTR)\\n\\n[4] Cut tooling costs and improve team efficiency\\n\\n[5]
+      Align business and engineering KPIs\\n\\n[6] See how unifying your stack leads
+      to faster troubleshooting and long-term operational gains.\\n\\n[7] Performance
+      engineering is the discipline in which you design, analyze, and optimize software
+      systems so that they run quickly. Also, they should use resources efficiently.
+      In distributed architectures, the focus of any performance engineering activity
+      is on shaving milliseconds off response times. Or locating execution bottlenecks
+      in CPU or memory. Or making sure infrastructure costs are kept under control.\\n\\n[8]
+      Historically, performance engineering work has been slow. And manual. You often
+      depend on a small group of really skilled developers. However, with the rise
+      of AI-assisted software development, there\u2019s a contradiction. Developers
+      can write and ship code faster than ever. No matter what their skill level may
+      be. But that code often introduces subtle performance problems.\\n\\n[9] To
+      solve this problem, the Netflix engineering team has developed an autonomous
+      performance agent system. In this article, we\u2019ll be learning more about
+      it. Here\u2019s what we will cover:\\n\\n[10] Bottlenecks for traditional performance
+      work\\n\\n[11] The problem with AI-Generated code\\n\\n[12] Can LLMs handle
+      profile data\\n\\n[13] The agentic profiling pipeline\\n\\n[14] The problems
+      Netflix found in production\\n\\n[15] Safety, verification, and trust architecture\\n\\n[16]
+      Shifting left\\n\\n[17] *Disclaimer: This post is based on publicly shared details
+      from various sources. References at the end. Please comment if you notice any
+      inaccuracies.*\\n\\n[18] Traditional performance engineering work at Netflix
+      was built on a highly iterative loop that is pretty much manual in nature.\\n\\n[19]
+      First, you trigger profiling for an application. A developer tries to detect
+      high latency or increased resource usage by triggering a profiler on a live
+      production server.\\n\\n[20] In the second step, the profiler outputs raw trace
+      data or flame graphs. The developer downloads these details to their local machine.\\n\\n[21]
+      Third, the developer spends time looking at complex, color-coded flame graphs.
+      They try to spot wide stack frames that might show signs of higher-than-normal
+      CPU or memory consumption.\\n\\n[22] Next, the developer goes through the codebase
+      looking for cryptic method names found in the flame graph. They try to make
+      sense of the surrounding application logic to figure things out.\\n\\n[23] Fifth,
+      the developer traces the execution path and identifies the inefficient operation.
+      They write a proposed patch to fix the operation.\\n\\n[24] Moving further,
+      the developers deploy the patch to an environment where any change in performance
+      levels can be measured.\\n\\n[25] At the end, when new code paths are deployed
+      in production, the developer starts the manual process once again.\\n\\n[26]
+      As you may have noticed, this workflow doesn\u2019t scale. Everything depends
+      on a few domain experts who have a deep sense of understanding about low-level
       execution stacks. Since human attention is a scarce resource, you can investigate
       performance issues only for major incidents or obvious system slowdowns. Smaller
-      but steady resource drains go unnoticed.\\nFast-moving teams ship more code
-      than ever, and AI tools add even more. Their CI has to keep up without the bill
-      getting out of hand.\\nThat is why teams at Braintrust, Raycast, OpenRouter,
-      Comcast and Jane Street run GitHub Actions on WarpBuild:\\nTwice as fast at
-      half the cost\\nLinux, macOS and Windows on x86-64 and ARM64\\nUnlimited macOS
-      concurrency\\nOne line change to runs-on\\nUse code START50 for $50 in free
-      credits.\\nThe use of AI coding assistants has increased performance problems.
-      There are two main reasons for this. The speed trap and the context gap.\\nDevelopers
-      who are using AI tools can generate and ship code up to 10 times faster than
-      before. No matter their skill level or knowledge of the system. But you cannot
-      guarantee that code that is fast to generate also performs well. While your
-      average developer might be able to write 10K lines of code in a few minutes,
-      the team might have to spend years debugging regressions. Or dealing with code
-      bloat. Or handling other architecture-related problems.\\nAlso, if you\u2019ve
-      noticed, LLMs are great at syntax and local-level logic. If you ask an LLM to
-      write a function or an API endpoint, it writes code that compiles successfully
-      and runs without any obvious errors. It might also pass standard unit tests.
-      However, the LLM has no idea about the host platform\u2019s runtime environment.\\nFor
-      example, you can\u2019t expect the LLM to know that a particular utility function
-      being used in your code might run 10 million times per second on a critical
-      request path. It cannot see the overall call stack. Neither can it understand
-      memory allocation challenges that might exist inside a container running at
-      peak load within your platform. Therefore, the code you write might appear good
-      enough in isolation. But it can still waste a huge amount of resources when
-      you run it at scale.\\nNetflix wanted to test whether automation could remove
-      these issues. They set up an experiment to find out if an LLM can read and make
-      sense of raw profiling data directly.\\nDifferent languages have different profilers.
-      But they use a shared language and store the same core information. For example,
-      JVM\u2019s async-profiler or Java Flight Recorder operates at 100 Hz sampling
-      to capture execution traces, memory allocation rates, and thread lock contention.
-      Python\u2019s py-spy provides low-overhead, async stack sampling of live production
-      processes. Go has pprof, which generates goroutine profiles, heap snapshots,
-      and block contention data.\\nEach one of these profilers breaks down execution
-      into call stacks. They track two main metrics. First, you have the inclusive
-      time. This is the total time spent executing a function. It includes every child
-      function and the subroutines called by this function. Second, you have the Self
-      (CPU) Time. It\u2019s the time spent running code purely inside the function
-      itself. No external calls are involved.\\nWith this exercise, the Netflix engineering
-      team came to the conclusion that a single analytical pipeline could understand
-      data from almost any programming runtime.\\nAnother advantage of LLMs is that
-      they don\u2019t have to guess how an algorithm works from scratch. Since LLMs
-      have been broadly trained on many software repositories, they are mostly familiar
-      with classic programming anti-patterns. For example, they know that quadratic
-      loops where a hot method is called again and again for each item in a collection
-      aren\u2019t a good idea. Also, loop invariants where you compute a calculation
-      for every iteration of the loop instead of making the calculation once at the
-      beginning. Other patterns include excessive object allocation on hot execution
-      paths and \u201CN+1\u201D query patterns.\\nDue to this knowledge base of LLMs,
-      you don\u2019t need to ask an AI model to guess why an application might be
-      performing poorly. You can build a workflow that asks the model to pattern-match
-      known performance bugs against actual call stacks.\\nNetflix built an automated
-      performance system that wraps the LLM inside a well-defined pipeline.\\nA key
-      lesson Netflix engineers learnt during this implementation was about scoping.
-      If you feed an LLM a complete, raw stack trace without boundaries, it can get
-      distracted. Often, the model spends a lot of reasoning tokens analyzing internal
-      JVM garbage collection pauses, low-level Linux kernel syscalls, or even 3rd
-      party open-source framework overhead.\\nApplication developers don\u2019t have
-      any control over such internal library concerns or OS routines. Therefore, you
-      need to provide the agent with strict package prefix rules. This way, the model
-      can ignore generic platform noise and focus on tracing only the specific application
-      code.\\nWhen the Netflix engineering team deployed the profiling pipeline against
-      its production service, the agent found 4 major categories of performance bugs.\\nFirst
-      was an algorithmic bottleneck that wasted 8.8% of CPU resources. The agent found
-      an aggregation method using Java Streams where an immutable map was updated
-      inside a reduction step.\\n// Anti-pattern: O(N^2) accumulation inside stream
-      reduction\\nstream().reduce(ImmutableMap.of(), (acc, val) -> {\\nreturn ImmutableMap.builder()\\n.putAll(acc)
-      // Copies every existing entry on every single step\\n.put(val)\\n.build();\\n});\\nSince
-      putAll(acc) copies every existing key-value pair on every step, you need to
-      copy elements again and again to build a map of size N. This results in quadratic
-      complexity.\\nThe agent modified the quadratic builder reduction with a linear
-      collection approach.\\n// Optimized: O(N) single-pass collection\\nstream()\\n.flatMap(e
-      -> e.entrySet().stream())\\n.collect(toMap(Entry::getKey, Entry::getValue));\\nThe
-      second category was about regular expressions on the hot path. In a service,
-      the developer had to sanitize incoming request strings by modifying characters
-      that weren\u2019t allowed. The earlier implementation ran a raw regular expression
-      substitution on every request.\\n// Anti-pattern: Dynamic regex evaluation per
-      request\\nString sanitized = input.replaceAll(\u201D[^a-zA-Z0-9.-]\u201D, \u201C_\u201D);\\nAs
-      you might know, evaluating regular expressions involves parsing and state-machine
-      transitions. This logic on high-volume traffic used 46% of the service\u2019s
-      CPU time.\\nThe agent replaced the regex evaluation with a pre-computed lookup
-      table that checked characters by index. The execution got 22 times faster.\\nThe
-      next category was related to unnecessary object allocation that caused OOM crashes.
-      A service frequently checked whether incoming data payloads contained specific
-      metadata fields. To perform the check, the code was creating a new, heavy HashSet
-      on every incoming call.\\nHowever, the underlying data object already had an
-      internal lookup method available. Also, instantiating millions of such objects
-      consumed 47% of the service\u2019s total heap collections.\\nThe agent fixed
-      this issue by removing the redundant object instantiations and modified the
-      code to reuse the cached method.\\nThe next category was around library misuse.
-      For example, the discovery involved metric telemetry instrumentation. One of
-      the services tracked operations by looking up a counter from a metric registry
-      on every single call.\\n// Anti-pattern: Looking up metric instances on every
-      function execution\\nMetrics.counter(\u201Drequest.count\u201D).increment();\\nWhen
+      but steady resource drains go unnoticed.\\n\\n[27] Fast-moving teams ship more
+      code than ever, and AI tools add even more. Their CI has to keep up without
+      the bill getting out of hand.\\n\\n[28] That is why teams at Braintrust, Raycast,
+      OpenRouter, Comcast and Jane Street run GitHub Actions on WarpBuild:\\n\\n[29]
+      Twice as fast at half the cost\\n\\n[30] Linux, macOS and Windows on x86-64
+      and ARM64\\n\\n[31] Unlimited macOS concurrency\\n\\n[32] One line change to
+      runs-on\\n\\n[33] Use code START50 for $50 in free credits.\\n\\n[34] The use
+      of AI coding assistants has increased performance problems. There are two main
+      reasons for this. The speed trap and the context gap.\\n\\n[35] Developers who
+      are using AI tools can generate and ship code up to 10 times faster than before.
+      No matter their skill level or knowledge of the system. But you cannot guarantee
+      that code that is fast to generate also performs well. While your average developer
+      might be able to write 10K lines of code in a few minutes, the team might have
+      to spend years debugging regressions. Or dealing with code bloat. Or handling
+      other architecture-related problems.\\n\\n[36] Also, if you\u2019ve noticed,
+      LLMs are great at syntax and local-level logic. If you ask an LLM to write a
+      function or an API endpoint, it writes code that compiles successfully and runs
+      without any obvious errors. It might also pass standard unit tests. However,
+      the LLM has no idea about the host platform\u2019s runtime environment.\\n\\n[37]
+      For example, you can\u2019t expect the LLM to know that a particular utility
+      function being used in your code might run 10 million times per second on a
+      critical request path. It cannot see the overall call stack. Neither can it
+      understand memory allocation challenges that might exist inside a container
+      running at peak load within your platform. Therefore, the code you write might
+      appear good enough in isolation. But it can still waste a huge amount of resources
+      when you run it at scale.\\n\\n[38] Netflix wanted to test whether automation
+      could remove these issues. They set up an experiment to find out if an LLM can
+      read and make sense of raw profiling data directly.\\n\\n[39] Different languages
+      have different profilers. But they use a shared language and store the same
+      core information. For example, JVM\u2019s async-profiler or Java Flight Recorder
+      operates at 100 Hz sampling to capture execution traces, memory allocation rates,
+      and thread lock contention. Python\u2019s py-spy provides low-overhead, async
+      stack sampling of live production processes. Go has pprof, which generates goroutine
+      profiles, heap snapshots, and block contention data.\\n\\n[40] Each one of these
+      profilers breaks down execution into call stacks. They track two main metrics.
+      First, you have the inclusive time. This is the total time spent executing a
+      function. It includes every child function and the subroutines called by this
+      function. Second, you have the Self (CPU) Time. It\u2019s the time spent running
+      code purely inside the function itself. No external calls are involved.\\n\\n[41]
+      With this exercise, the Netflix engineering team came to the conclusion that
+      a single analytical pipeline could understand data from almost any programming
+      runtime.\\n\\n[42] Another advantage of LLMs is that they don\u2019t have to
+      guess how an algorithm works from scratch. Since LLMs have been broadly trained
+      on many software repositories, they are mostly familiar with classic programming
+      anti-patterns. For example, they know that quadratic loops where a hot method
+      is called again and again for each item in a collection aren\u2019t a good idea.
+      Also, loop invariants where you compute a calculation for every iteration of
+      the loop instead of making the calculation once at the beginning. Other patterns
+      include excessive object allocation on hot execution paths and \u201CN+1\u201D
+      query patterns.\\n\\n[43] Due to this knowledge base of LLMs, you don\u2019t
+      need to ask an AI model to guess why an application might be performing poorly.
+      You can build a workflow that asks the model to pattern-match known performance
+      bugs against actual call stacks.\\n\\n[44] Netflix built an automated performance
+      system that wraps the LLM inside a well-defined pipeline.\\n\\n[45] A key lesson
+      Netflix engineers learnt during this implementation was about scoping. If you
+      feed an LLM a complete, raw stack trace without boundaries, it can get distracted.
+      Often, the model spends a lot of reasoning tokens analyzing internal JVM garbage
+      collection pauses, low-level Linux kernel syscalls, or even 3rd party open-source
+      framework overhead.\\n\\n[46] Application developers don\u2019t have any control
+      over such internal library concerns or OS routines. Therefore, you need to provide
+      the agent with strict package prefix rules. This way, the model can ignore generic
+      platform noise and focus on tracing only the specific application code.\\n\\n[47]
+      When the Netflix engineering team deployed the profiling pipeline against its
+      production service, the agent found 4 major categories of performance bugs.\\n\\n[48]
+      First was an algorithmic bottleneck that wasted 8.8% of CPU resources. The agent
+      found an aggregation method using Java Streams where an immutable map was updated
+      inside a reduction step.\\n\\n[49] ```\\n// Anti-pattern: O(N^2) accumulation
+      inside stream reduction\\nstream().reduce(ImmutableMap.of(), (acc, val) -> {\\nreturn
+      ImmutableMap.builder()\\n.putAll(acc) // Copies every existing entry on every
+      single step\\n.put(val)\\n.build();\\n});\\n```\\nSince putAll(acc) copies every
+      existing key-value pair on every step, you need to copy elements again and again
+      to build a map of size N. This results in quadratic complexity.\\n\\n[50] The
+      agent modified the quadratic builder reduction with a linear collection approach.\\n\\n[51]
+      ```\\n// Optimized: O(N) single-pass collection\\nstream()\\n.flatMap(e -> e.entrySet().stream())\\n.collect(toMap(Entry::getKey,
+      Entry::getValue));\\n```\\nThe second category was about regular expressions
+      on the hot path. In a service, the developer had to sanitize incoming request
+      strings by modifying characters that weren\u2019t allowed. The earlier implementation
+      ran a raw regular expression substitution on every request.\\n\\n[52] ```\\n//
+      Anti-pattern: Dynamic regex evaluation per request\\nString sanitized = input.replaceAll(\u201D[^a-zA-Z0-9.-]\u201D,
+      \u201C_\u201D);\\n```\\nAs you might know, evaluating regular expressions involves
+      parsing and state-machine transitions. This logic on high-volume traffic used
+      46% of the service\u2019s CPU time.\\n\\n[53] The agent replaced the regex evaluation
+      with a pre-computed lookup table that checked characters by index. The execution
+      got 22 times faster.\\n\\n[54] The next category was related to unnecessary
+      object allocation that caused OOM crashes. A service frequently checked whether
+      incoming data payloads contained specific metadata fields. To perform the check,
+      the code was creating a new, heavy HashSet on every incoming call.\\n\\n[55]
+      However, the underlying data object already had an internal lookup method available.
+      Also, instantiating millions of such objects consumed 47% of the service\u2019s
+      total heap collections.\\n\\n[56] The agent fixed this issue by removing the
+      redundant object instantiations and modified the code to reuse the cached method.\\n\\n[57]
+      The next category was around library misuse. For example, the discovery involved
+      metric telemetry instrumentation. One of the services tracked operations by
+      looking up a counter from a metric registry on every single call.\\n\\n[58]
+      ```\\n// Anti-pattern: Looking up metric instances on every function execution\\nMetrics.counter(\u201Drequest.count\u201D).increment();\\n```\\nWhen
       the query was sent to the registry, it needed dictionary lookups and internal
       synchronization locks. The profiler showed that the work consumed 66% of the
-      CPU, whereas the actual business logic used only 0.3%.\\nThe agent fixed it
-      by caching the metric counter reference at the time of class initialization.
-      Also, it found that the same issue was happening across three independent services.\\nIf
-      you have an AI agent that can optimize code, it\u2019s quite dangerous if the
-      changes are applied without automatic verification. If the agent makes a change
-      that breaks business logic, it\u2019s worse than inefficient code.\\nTo prevent
-      regressions, the agentic pipeline uses the standard SDLC.\\nIn stage 1, you
-      verify the logic. Before you move any code, the agent\u2019s branch must pass
-      all existing unit, integration, and contract tests. This is to make sure that
-      the changes made by the change don\u2019t alter basic inputs, outputs, or handling
-      of edge cases.\\nIn stage 2, you have the canary deployment. If the tests pass,
-      the pipeline spins up a canary deployment in production. The canary instance
-      gets a portion of the traffic. It runs side-by-side with an identical baseline
-      instance that runs the original code.\\nStage 3 is about generating the observability
-      report. The platform collects hard telemetry metrics over a big enough window.
-      Some metrics are relative CPU utilization, median latency, P99 latency, and
-      memory allocation rates. They also don\u2019t use any AI model to check the
-      canary results.\\nIn stage 4, you have the final engineering decision. When
-      the canary version shows a good level of performance improvement with zero increase
-      in error rates, the system opens a PR. This PR goes for human review. It includes
-      the code change, the original flame graph, and the canary report. The final
-      decision on deploying the change to production is taken by the human developer.\\nAutomated
-      production profiling is quite effective. But if you just rely on it, you end
-      up exposing several limitations.\\nBy the time an agent finds an anti-pattern
-      in production, you\u2019ve already paid for days or weeks of wasted compute
-      capacity.\\nSecond, developers are anyway cautious about changing a running
-      service. If you have a service that handles production traffic without crashing,
-      the developers hesitate to just make changes for the sake of optimization.\\nLastly,
+      CPU, whereas the actual business logic used only 0.3%.\\n\\n[59] The agent fixed
+      it by caching the metric counter reference at the time of class initialization.
+      Also, it found that the same issue was happening across three independent services.\\n\\n[60]
+      If you have an AI agent that can optimize code, it\u2019s quite dangerous if
+      the changes are applied without automatic verification. If the agent makes a
+      change that breaks business logic, it\u2019s worse than inefficient code.\\n\\n[61]
+      To prevent regressions, the agentic pipeline uses the standard SDLC.\\n\\n[62]
+      In stage 1, you verify the logic. Before you move any code, the agent\u2019s
+      branch must pass all existing unit, integration, and contract tests. This is
+      to make sure that the changes made by the change don\u2019t alter basic inputs,
+      outputs, or handling of edge cases.\\n\\n[63] In stage 2, you have the canary
+      deployment. If the tests pass, the pipeline spins up a canary deployment in
+      production. The canary instance gets a portion of the traffic. It runs side-by-side
+      with an identical baseline instance that runs the original code.\\n\\n[64] Stage
+      3 is about generating the observability report. The platform collects hard telemetry
+      metrics over a big enough window. Some metrics are relative CPU utilization,
+      median latency, P99 latency, and memory allocation rates. They also don\u2019t
+      use any AI model to check the canary results.\\n\\n[65] In stage 4, you have
+      the final engineering decision. When the canary version shows a good level of
+      performance improvement with zero increase in error rates, the system opens
+      a PR. This PR goes for human review. It includes the code change, the original
+      flame graph, and the canary report. The final decision on deploying the change
+      to production is taken by the human developer.\\n\\n[66] Automated production
+      profiling is quite effective. But if you just rely on it, you end up exposing
+      several limitations.\\n\\n[67] By the time an agent finds an anti-pattern in
+      production, you\u2019ve already paid for days or weeks of wasted compute capacity.\\n\\n[68]
+      Second, developers are anyway cautious about changing a running service. If
+      you have a service that handles production traffic without crashing, the developers
+      hesitate to just make changes for the sake of optimization.\\n\\n[69] Lastly,
       multiple teams often make the exact same mistakes when it comes to patterns.
       If you run a super-expensive agent on 10 different services just to find the
-      same problem, it\u2019s not very efficient.\\nThese limitations led to Netflix
-      making the decision to shift performance checks left into the early development
-      cycle. Also, they wanted the agents to share their findings across the entire
-      engineering organization.\\nHowever, as you might know, language models are
-      stateless. Every time you send a prompt to an LLM, it starts with a clean slate.
-      It might no retain any memory of the bug it found some time back in another
-      service. The Netflix engineering team built a Pattern Catalog to make the models
-      achieve persistence. This was done by pairing a stateless LLM with a stateful
-      catalog. Or a shared memory across the fleet.\\nThe Pattern Catalog was built
-      around 4 key principles.\\nFirst, it has to be centralized and serve as the
-      single source of truth for all engineering teams. This way, no two teams end
-      up debugging the same issues.\\nThe second principle is that the same catalog
-      entries should work across distinct environments. For example, offline profiling,
-      CI/CD pull request checks, and local development tools.\\nThird, you need to
-      format entries so that an automation script can easily inject them into an LLM\u2019s
-      system prompt.\\nLastly, the contents of the catalog should be reviewable by
-      human developers.\\nTo implement the Pattern Catalog, the Netflix engineering
-      team used a simple Git repository filled with plain Markdown files. They didn\u2019t
-      use vector databases or complex knowledge stores. The idea was borrowed from
-      the \u201CLLM-wiki\u201D concept popularized by Andrej Karpathy.\\nBy using
-      a standard Git repository, the developers got several advantages. For one, developers
-      can diff changes, open pull requests, and use git features to find out why an
-      entry was created. It also scales well to 100s of detailed performance rules
-      without the need for complex search infrastructure. Lastly, plain Markdown is
-      easy for both humans and language models to read without translation layers.\\nWith
-      the Pattern Catalog in place, Netflix can handle performance engineering via
-      two paths. Reactive and Proactive.\\nIn the reactive path, your system profiles
+      same problem, it\u2019s not very efficient.\\n\\n[70] These limitations led
+      to Netflix making the decision to shift performance checks left into the early
+      development cycle. Also, they wanted the agents to share their findings across
+      the entire engineering organization.\\n\\n[71] However, as you might know, language
+      models are stateless. Every time you send a prompt to an LLM, it starts with
+      a clean slate. It might no retain any memory of the bug it found some time back
+      in another service. The Netflix engineering team built a Pattern Catalog to
+      make the models achieve persistence. This was done by pairing a stateless LLM
+      with a stateful catalog. Or a shared memory across the fleet.\\n\\n[72] The
+      Pattern Catalog was built around 4 key principles.\\n\\n[73] First, it has to
+      be centralized and serve as the single source of truth for all engineering teams.
+      This way, no two teams end up debugging the same issues.\\n\\n[74] The second
+      principle is that the same catalog entries should work across distinct environments.
+      For example, offline profiling, CI/CD pull request checks, and local development
+      tools.\\n\\n[75] Third, you need to format entries so that an automation script
+      can easily inject them into an LLM\u2019s system prompt.\\n\\n[76] Lastly, the
+      contents of the catalog should be reviewable by human developers.\\n\\n[77]
+      To implement the Pattern Catalog, the Netflix engineering team used a simple
+      Git repository filled with plain Markdown files. They didn\u2019t use vector
+      databases or complex knowledge stores. The idea was borrowed from the \u201CLLM-wiki\u201D
+      concept popularized by Andrej Karpathy.\\n\\n[78] By using a standard Git repository,
+      the developers got several advantages. For one, developers can diff changes,
+      open pull requests, and use git features to find out why an entry was created.
+      It also scales well to 100s of detailed performance rules without the need for
+      complex search infrastructure. Lastly, plain Markdown is easy for both humans
+      and language models to read without translation layers.\\n\\n[79] With the Pattern
+      Catalog in place, Netflix can handle performance engineering via two paths.
+      Reactive and Proactive.\\n\\n[80] In the reactive path, your system profiles
       production services on a recurring schedule or on demand. When the agent finds
       a new bottleneck, it tests the fix on a canary instance. If everything goes
       fine, the patch is merged, and the agent documents the new finding in the Pattern
-      Catalog.\\nIn the proactive path, the process starts when a developer creates
-      a new PR. CI tooling performs a fast regex or symbol match against the Pattern
-      Catalog index. If the code in the PR matches known anti-patterns, the CI bot
-      calls an LLM and provides it with the pull request diff. The LLM checks the
-      context and leaves an inline comment that explains the inefficiency. It shows
-      the resource impact and suggests a fix. All this happens before the code ever
-      merges to the main branch.\\nThe key learning from the Netflix engineering experience
-      is that automating performance engineering work is not an all-or-nothing game.
-      You can have organizations adopt workflows along a four-level maturity spectrum.\\nLevel
-      0 is the manual situation. This is the level where machine learning is not used.
-      Human developers manually capture traces, interpret flame graphs, and trace
-      code paths.\\nLevel 1 is the assist approach. This is the entry point for AI
-      adoption. The LLM acts as an analytical copilot. A developer initiates the profiling
-      process. But they don\u2019t spend time studying flame graphs. Instead, they
-      feed the stack dump to the model. The model finds the hot execution path.\\nLevel
-      2 is the orchestration level. This is the current state at Netflix. A lot of
-      proactive scanning happens. Also, they use the Pattern Catalog.\\nLevel 3 is
-      the fully autonomous level. This is the long-term vision at Netflix for performance
-      agents. At Level 3, the agents will create their own optimization strategies.
-      They will explore multiple alternative implementations. Or run automated benchmarks.\\nReferences:\\n</text>\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"summary\":{\"type\":\"object\",\"properties\":{\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"domain\":{\"type\":\"string\",\"enum\":[\"AI\",\"Macro\",\"Crypto\",\"Startups\",\"Finance\",\"Tech\",\"History\",\"Security\",\"Sports\",\"Other\"]},\"topic\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"concepts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"is_educational\":{\"type\":\"boolean\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"}},\"required\":[\"kind\",\"question\",\"answer\"],\"additionalProperties\":false}}},\"required\":[\"summary\",\"domain\",\"topic\",\"tags\",\"concepts\",\"is_educational\",\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
-      process sources for a personal learning app. A source is an article, an X post
-      or thread, or an episode (podcast or video) that the user consumed or plans
-      to. A newsletter is an email digest; summarize its main stories. The user wants
-      \\\"level 2\\\" knowledge of its subject: enough to hold a real conversation
-      about it, including the vocabulary, how things work, the key players, rough
-      numbers, and the current debates.\\n\\nFrom the text, produce:\\n- summary:
-      the gist in 2-3 sentences, the key ideas, and the numbers worth remembering.
-      The text of an episode may carry markers like [12:14] or [1:02:03] at roughly
-      one-minute intervals; give each key idea and number the marker nearest before
-      where it comes up, copied exactly, and null when the text has no markers. Skip
-      ads and sponsor reads.\\n- domain: the one broad domain the source belongs to.\\n-
-      topic: a short, reusable topic name under that domain (e.g. \\\"Stablecoins\\\",
-      \\\"Fed policy\\\", \\\"NFL quarterbacks\\\").\\n- tags: 3-8 short tags.\\n-
-      concepts: the key concepts the source relies on or teaches, as short noun phrases.\\n-
-      is_educational: true when the source teaches something worth remembering (how
-      things work, history, ideas, numbers). false for pure entertainment such as
-      banter, sports chat, jokes or gossip. A mostly entertaining source with real
-      teaching in it (e.g. how a contract works, why a play scheme succeeds) is still
-      true.\\n- cards: when is_educational is true, 3-5 open-recall review cards of
-      kind concept, mechanism (\\\"why does X cause Y\\\") or number (a rough figure
-      worth knowing). Each card asks ONE focused question, never a compound one with
-      several parts. Each answer is what a good response would cover in 1-3 sentences.
-      Avoid trivia that only matters to this one source. Cards come only from the
-      educational stretches of a source: a mostly entertaining show with one educational
-      segment gets cards for that segment; still 3-5. When is_educational is false,
-      cards is an empty list.\\n\\nWrite in plain, conversational English for a smart
-      reader who is new to the subject. Short sentences. Define any jargon the first
-      time it appears. Prefer concrete examples and rough numbers (\\\"~1 GW\\\",
-      not \\\"1.07 GW\\\").\"}"
+      Catalog.\\n\\n[81] In the proactive path, the process starts when a developer
+      creates a new PR. CI tooling performs a fast regex or symbol match against the
+      Pattern Catalog index. If the code in the PR matches known anti-patterns, the
+      CI bot calls an LLM and provides it with the pull request diff. The LLM checks
+      the context and leaves an inline comment that explains the inefficiency. It
+      shows the resource impact and suggests a fix. All this happens before the code
+      ever merges to the main branch.\\n\\n[82] The key learning from the Netflix
+      engineering experience is that automating performance engineering work is not
+      an all-or-nothing game. You can have organizations adopt workflows along a four-level
+      maturity spectrum.\\n\\n[83] Level 0 is the manual situation. This is the level
+      where machine learning is not used. Human developers manually capture traces,
+      interpret flame graphs, and trace code paths.\\n\\n[84] Level 1 is the assist
+      approach. This is the entry point for AI adoption. The LLM acts as an analytical
+      copilot. A developer initiates the profiling process. But they don\u2019t spend
+      time studying flame graphs. Instead, they feed the stack dump to the model.
+      The model finds the hot execution path.\\n\\n[85] Level 2 is the orchestration
+      level. This is the current state at Netflix. A lot of proactive scanning happens.
+      Also, they use the Pattern Catalog.\\n\\n[86] Level 3 is the fully autonomous
+      level. This is the long-term vision at Netflix for performance agents. At Level
+      3, the agents will create their own optimization strategies. They will explore
+      multiple alternative implementations. Or run automated benchmarks.\\n\\n[87]
+      **References:**\\n</email>\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"drop\":{\"type\":\"array\",\"items\":{\"type\":\"integer\"}}},\"required\":[\"drop\"],\"additionalProperties\":false}}},\"system\":\"You
+      tidy newsletter emails for a personal learning app. The user reads the newsletter's
+      stories; everything around them is clutter.\\n\\nThe email's paragraphs are
+      numbered like [12]. List the numbers of the paragraphs to drop:\\n- ads, sponsor
+      notes and \\\"sponsored by\\\" blocks, product recommendations and affiliate
+      disclaimers\\n- referral and \\\"share the newsletter\\\" blocks\\n- trivia,
+      quizzes, puzzles and their answers, word of the day\\n- sign-offs, author credits,
+      footers, \\\"forwarded to you? sign up\\\" lines, unsubscribe and legal boilerplate\\n\\nKeep
+      every paragraph that belongs to a story, including its headline, section label
+      and photo credit, and the opening note. When unsure, keep it. Never rewrite
+      anything: answer only with paragraph numbers.\"}"
     headers:
       accept:
       - application/json
@@ -259,7 +247,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '20855'
+      - '18880'
       content-type:
       - application/json
       host:
@@ -290,128 +278,471 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-5-5","id":"msg_011CghFemEhnAcnKUjLrDKPi","type":"message","role":"assistant","content":[{"type":"text","text":"{\"summary\":{\"gist\":\"Netflix
-        built an AI agent pipeline that reads raw production profiling data, finds
-        performance bugs in code, and proposes verified fixes. It runs a canary test
-        before a human approves the change. Netflix also stores known performance
-        bugs in a shared Git repo of Markdown files so the AI can learn from past
-        findings.\",\"key_ideas\":[{\"timestamp\":null,\"idea\":\"Traditional performance
-        work is manual: someone profiles a live server, reads flame graphs (charts
-        showing where CPU time goes), digs through code, writes a patch, and repeats.
-        It depends on a few experts and only catches big problems.\"},{\"timestamp\":null,\"idea\":\"AI
-        coding tools let developers write code much faster, but that code often has
-        hidden performance problems. An LLM sees code that compiles and passes tests,
-        but it does not see the runtime environment or the full call stack (the chain
-        of function calls).\"},{\"timestamp\":null,\"idea\":\"Profilers from different
-        languages (Java, Python, Go) store similar core data. Inclusive time is the
-        total time in a function including its callees. Self time is the time spent
-        in the function itself. One analysis pipeline can handle many runtimes.\"},{\"timestamp\":null,\"idea\":\"LLMs
-        know classic anti-patterns such as quadratic loops, repeated loop calculations,
-        excess object allocation, and N+1 queries. So they can match known bugs against
-        real call stacks.\"},{\"timestamp\":null,\"idea\":\"Scoping matters. Without
-        limits, the LLM wastes effort on JVM garbage collection, kernel calls, and
-        third-party libraries. Netflix gives it package prefix rules so it only looks
-        at application code.\"},{\"timestamp\":null,\"idea\":\"The agent found four
-        bug types in production: an O(N^2) stream reduction (8.8% of CPU), a regex
-        run on every request (46% of CPU, sped up 22x with a lookup table), redundant
-        object allocation causing out-of-memory crashes (47% of heap), and repeated
-        metric lookups (66% of CPU).\"},{\"timestamp\":null,\"idea\":\"Safety pipeline:
-        existing tests must pass, then a canary instance runs beside a baseline instance,
-        then hard metrics (CPU, latency, memory) are compared with no AI judging the
-        result, then a pull request goes to a human who makes the final call.\"},{\"timestamp\":null,\"idea\":\"Language
-        models are stateless, so each prompt starts fresh. Netflix pairs the LLM with
-        a Pattern Catalog, a shared memory of known bugs.\"},{\"timestamp\":null,\"idea\":\"The
-        Pattern Catalog is a plain Git repo of Markdown files, not a vector database.
-        Git gives diffs, pull requests, and history, and it is readable by both humans
-        and models. The idea was borrowed from Andrej Karpathy''s LLM-wiki concept.\"},{\"timestamp\":null,\"idea\":\"Two
-        paths use the catalog. Reactive: scan production, test a fix on a canary,
-        merge, and record the finding. Proactive: when a PR opens, a fast regex or
-        symbol match checks it against the catalog, and if it matches, an LLM leaves
-        an inline review comment before merge.\"},{\"timestamp\":null,\"idea\":\"Automation
-        has four maturity levels: Level 0 is fully manual, Level 1 is an AI copilot
-        that reads stack dumps, Level 2 is orchestration with proactive scanning and
-        the catalog (Netflix''s current state), and Level 3 is fully autonomous agents
-        that try multiple implementations and benchmark them.\"}],\"numbers\":[{\"timestamp\":null,\"fact\":\"AI-assisted
-        developers can ship code up to 10 times faster than before.\"},{\"timestamp\":null,\"fact\":\"JVM
-        profilers such as async-profiler and Java Flight Recorder sample at about
-        100 Hz (100 times per second).\"},{\"timestamp\":null,\"fact\":\"A utility
-        function might run 10 million times per second on a critical request path.\"},{\"timestamp\":null,\"fact\":\"Algorithmic
-        bottleneck wasted 8.8% of CPU.\"},{\"timestamp\":null,\"fact\":\"Regex sanitization
-        used 46% of the service''s CPU time; the lookup-table fix made it 22 times
-        faster.\"},{\"timestamp\":null,\"fact\":\"Redundant HashSet allocations consumed
-        47% of the service''s total heap collections.\"},{\"timestamp\":null,\"fact\":\"Metric
-        counter lookups consumed 66% of CPU, while the actual business logic used
-        only 0.3%.\"},{\"timestamp\":null,\"fact\":\"The same metric-lookup issue
-        appeared in three independent services.\"}]},\"domain\":\"Tech\",\"topic\":\"AI-driven
-        performance engineering\",\"tags\":[\"Netflix\",\"AI agents\",\"performance
-        engineering\",\"profiling\",\"LLM\",\"CI/CD\",\"observability\"],\"concepts\":[\"performance
-        engineering\",\"profiling\",\"flame graph\",\"inclusive time\",\"self time\",\"call
-        stack\",\"anti-pattern\",\"quadratic complexity\",\"canary deployment\",\"stateless
-        LLM\",\"Pattern Catalog\",\"shift left\",\"maturity levels\"],\"is_educational\":true,\"cards\":[{\"kind\":\"concept\",\"question\":\"What
-        is a flame graph, and why do developers use it in performance work?\",\"answer\":\"A
-        flame graph is a chart that shows how a program''s CPU time is spread across
-        its function calls. Wider blocks mean more time spent there, so developers
-        use it to spot the expensive parts of the code.\"},{\"kind\":\"mechanism\",\"question\":\"Why
-        can AI-written code that passes all tests still waste a lot of resources in
-        production?\",\"answer\":\"An LLM sees code in isolation. It does not know
-        the runtime environment, the full call stack, or how often a function runs
-        at scale. So a function that looks fine can be expensive when it runs millions
-        of times under peak load.\"},{\"kind\":\"mechanism\",\"question\":\"Why does
-        Netflix pair its LLM with a Git repo of Markdown files?\",\"answer\":\"LLMs
-        are stateless and forget past findings between prompts. A shared, version-controlled
-        catalog gives them persistent memory of known bugs, and it is easy for humans
-        to review and for scripts to inject into prompts.\"},{\"kind\":\"number\",\"question\":\"How
-        much CPU did a regex-based sanitization step use in the Netflix service, and
-        how much faster did it get after the fix?\",\"answer\":\"The regex evaluation
-        used 46% of the service''s CPU time. Replacing it with a precomputed lookup
-        table made the execution about 22 times faster.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":6966,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2087,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgip9Fx7BZsqR7y4BttdJ","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQStAsKEAgTGAI4AUIIdGhpbmtpbmcSDGVh+3lXZyGGBEHbXxoM6MPX25z257ANTuBQIjBYK89jPH90rhRbYK17t5y4uh9KIqZhMsFals7ap2upwI7YbWQG7P/EO92kBVTxWj4q0QrJbvPSxsrAAeiT9jCjw6uc33L8rmKqpNZDPBCakGZOT5uxESpzT3kXeV9OMHbbSGKRh2vtmYtxEcxsLQiuQYJSudF1VJfXvfC3igrT7eTz5Sz0eHf7PzbzrpAYyCh0/0HkwqhraarhylAZLqHjuS27sByBRlWOAijJP6b5nZQrOhGyq8r6XPtCB3cf5PSGEL5xFxWLNZ0Mh5y/l2uN2DZj3sLPCLWLhkeGaePId23J3HxnDFqtBj811MBDU7QZ7mFYoz7SGnP/wP/dKOGOa9XjL/QY89sjmNWh67rqHgyT81sB5HngIS7v2/mipA2RIVxsVNt0rkAdAF3p8kD2i87awF1yFEq2gFY7l+aTAGItd02EfjgtKXIrpoBKav3N5jVGu0osxsTGgEnh0zAo/GtHuuuI92TbM2N+TQM6l8eXOXzXNXIqdmOTl510OMmVjeIOdSJ76cs3cHhOL+hhblqBgRC3WIp9odXKr/tpIjEq8RXQDWnGTc4hTnxfPBhF5rGOmNohXB5fKpJpVt7B/hsPsltXY22t1F3PhemMOESUrvewQxZ9YPj6HDM8JLieMcgm5WcZDsXcOMxhMOaLhe8eFdpj4v2w4NetAhl2A9ARRMfr2f5LJAvFx1X10pjWWkIhRDHVp9Q3f8qThsgmorK5fwnbFTIPO1/WW7B7SkwoW/QaHImJsC2ad8nX6XhJWkEtcloFAm5tVxllItLlO3eW29KQCT3hru1JQmJ+qzZ+p3Eh8n9cjUjx5l5/iOPvwY60bJ5IlanwOtTn1O0xddHQPrOUhCX2ZNkSuuZKfsTUc7Ojtm80O1NU35K/LPTPWj+8JBdZlWkV3MvnQyoMHQCUoM5jm991gSYndflObYuAJa8BPBBCnv8+sSashMVvCxz3HbLyCqydmBQdrBalG0CN70TzveXllnHGMDZEj7jnPyai69yc+dYDDxR6tX1cFi4MZMCSoBR7JMhkq1n1X2qhIVzUYeyvjH9OEogWKfHeygkMx/7dU92we3HZAqnO3PGe9xKKBYNK3IL6McSnZ5tRBsNixDyintAuYRDaAK/9+aPA7fuX5lXNmLYJVoBH8jjHHkfzNtiZ5ens5S/7USIsId25V3UQw+H146vDshdOUN4wrVnOt8qvf7P9kOJyxeSyJ/QnTTqWALezvxxFrw3mU9wVgZiK0t2ULU32BxGPmofCGs1tXfICCCuYEYyLLUWKaCSKE3HpVADneyOBTOL039LxzTIS+5OidzbS8zY3z+k7/A5lDPHJ09LmyzYx74pz90yo/P1kTZ8vOLjzZZDt/5QN0nCJlHfyYxCjD0VHqH5qXMqmhW5tqzzGqa/yNtQuzEbp1OC7VT7VOKXAZ87VvUp12vNmV+A/Pu3v4ocay/HNJrs8x+cyRLJ6IvxH3+Ntp3Icn/GUX2ErBcqAjHxZZu8F6LAexwLBChURHER83FZ+LXHx7KJ0m1InEnwz3egFgrw6jpjLaiZx4PicLD1FtJHe4d2NdoDZN+osqxxAwTGHsbuYAlcGDNqXUvwiYLUzYrQmc5fG8AMVaFctvu12jckxjE34pm6AbXk4LGYSuJls4sc/saTDu9hBrSEH7VKdTmb5BOjfs2ZC6Y1IY/h2JK+z45zPXzUEo7xmE35QMaZA/JICVSi7rPI/gqPiBZSx622f2hrjQ4Hvlm7wI+OvnG8Ir1DYI5UPdE8ChOcUXQ7sOAl0qDyRAK1ngt+SEqW5mrnPvJCfIMExEtc9pOKb9+UqnlnvTorlMb7toF2TWJKbUP3x4E4rGS/gy17e8kkKrWq3NkWa8FNb0J9WF8tn9hgB"},{"type":"text","text":"{\"drop\":[1,2,3,4,5,6,28,29,30,31,32,33]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":6010,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":427,"output_tokens_details":{"thinking_tokens":394},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
-      - '9997000'
+      - '9998000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-04T04:25:47Z'
+      - '2026-11-05T00:12:28Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
-      - '1998000'
+      - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-04T04:25:55Z'
+      - '2026-11-05T00:12:30Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-04T04:25:46Z'
+      - '2026-11-05T00:12:27Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11995000'
+      - '11998000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-04T04:25:47Z'
+      - '2026-11-05T00:12:28Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a550db51998af8d7-ORD
+      - a557a59d7f4d5d77-ORD
       connection:
       - keep-alive
       content-length:
-      - '6652'
+      - '2594'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Wed, 04 Nov 2026 04:25:55 GMT
+      - Thu, 05 Nov 2026 00:12:30 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=9324
+      - x-originResponse;dur=3205
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-144425d373bd1e3d50c14751f8c8e014-d123dfb07980ec2b-01
+      - 00-2571292e594ac588904ff517ecf3954f-63bc745054b8e54f-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Source
+      kind: newsletter\\nTitle: How Netflix Uses AI Agents for Performance Engineering\\nURL:
+      https://blog.bytebytego.com/p/how-netflix-uses-ai-agents-for-performance\\n\\n<text>\\nPerformance
+      engineering is the discipline in which you design, analyze, and optimize software
+      systems so that they run quickly. Also, they should use resources efficiently.
+      In distributed architectures, the focus of any performance engineering activity
+      is on shaving milliseconds off response times. Or locating execution bottlenecks
+      in CPU or memory. Or making sure infrastructure costs are kept under control.\\n\\nHistorically,
+      performance engineering work has been slow. And manual. You often depend on
+      a small group of really skilled developers. However, with the rise of AI-assisted
+      software development, there\u2019s a contradiction. Developers can write and
+      ship code faster than ever. No matter what their skill level may be. But that
+      code often introduces subtle performance problems.\\n\\nTo solve this problem,
+      the Netflix engineering team has developed an autonomous performance agent system.
+      In this article, we\u2019ll be learning more about it. Here\u2019s what we will
+      cover:\\n\\nBottlenecks for traditional performance work\\n\\nThe problem with
+      AI-Generated code\\n\\nCan LLMs handle profile data\\n\\nThe agentic profiling
+      pipeline\\n\\nThe problems Netflix found in production\\n\\nSafety, verification,
+      and trust architecture\\n\\nShifting left\\n\\n*Disclaimer: This post is based
+      on publicly shared details from various sources. References at the end. Please
+      comment if you notice any inaccuracies.*\\n\\nTraditional performance engineering
+      work at Netflix was built on a highly iterative loop that is pretty much manual
+      in nature.\\n\\nFirst, you trigger profiling for an application. A developer
+      tries to detect high latency or increased resource usage by triggering a profiler
+      on a live production server.\\n\\nIn the second step, the profiler outputs raw
+      trace data or flame graphs. The developer downloads these details to their local
+      machine.\\n\\nThird, the developer spends time looking at complex, color-coded
+      flame graphs. They try to spot wide stack frames that might show signs of higher-than-normal
+      CPU or memory consumption.\\n\\nNext, the developer goes through the codebase
+      looking for cryptic method names found in the flame graph. They try to make
+      sense of the surrounding application logic to figure things out.\\n\\nFifth,
+      the developer traces the execution path and identifies the inefficient operation.
+      They write a proposed patch to fix the operation.\\n\\nMoving further, the developers
+      deploy the patch to an environment where any change in performance levels can
+      be measured.\\n\\nAt the end, when new code paths are deployed in production,
+      the developer starts the manual process once again.\\n\\nAs you may have noticed,
+      this workflow doesn\u2019t scale. Everything depends on a few domain experts
+      who have a deep sense of understanding about low-level execution stacks. Since
+      human attention is a scarce resource, you can investigate performance issues
+      only for major incidents or obvious system slowdowns. Smaller but steady resource
+      drains go unnoticed.\\n\\nFast-moving teams ship more code than ever, and AI
+      tools add even more. Their CI has to keep up without the bill getting out of
+      hand.\\n\\nThe use of AI coding assistants has increased performance problems.
+      There are two main reasons for this. The speed trap and the context gap.\\n\\nDevelopers
+      who are using AI tools can generate and ship code up to 10 times faster than
+      before. No matter their skill level or knowledge of the system. But you cannot
+      guarantee that code that is fast to generate also performs well. While your
+      average developer might be able to write 10K lines of code in a few minutes,
+      the team might have to spend years debugging regressions. Or dealing with code
+      bloat. Or handling other architecture-related problems.\\n\\nAlso, if you\u2019ve
+      noticed, LLMs are great at syntax and local-level logic. If you ask an LLM to
+      write a function or an API endpoint, it writes code that compiles successfully
+      and runs without any obvious errors. It might also pass standard unit tests.
+      However, the LLM has no idea about the host platform\u2019s runtime environment.\\n\\nFor
+      example, you can\u2019t expect the LLM to know that a particular utility function
+      being used in your code might run 10 million times per second on a critical
+      request path. It cannot see the overall call stack. Neither can it understand
+      memory allocation challenges that might exist inside a container running at
+      peak load within your platform. Therefore, the code you write might appear good
+      enough in isolation. But it can still waste a huge amount of resources when
+      you run it at scale.\\n\\nNetflix wanted to test whether automation could remove
+      these issues. They set up an experiment to find out if an LLM can read and make
+      sense of raw profiling data directly.\\n\\nDifferent languages have different
+      profilers. But they use a shared language and store the same core information.
+      For example, JVM\u2019s async-profiler or Java Flight Recorder operates at 100
+      Hz sampling to capture execution traces, memory allocation rates, and thread
+      lock contention. Python\u2019s py-spy provides low-overhead, async stack sampling
+      of live production processes. Go has pprof, which generates goroutine profiles,
+      heap snapshots, and block contention data.\\n\\nEach one of these profilers
+      breaks down execution into call stacks. They track two main metrics. First,
+      you have the inclusive time. This is the total time spent executing a function.
+      It includes every child function and the subroutines called by this function.
+      Second, you have the Self (CPU) Time. It\u2019s the time spent running code
+      purely inside the function itself. No external calls are involved.\\n\\nWith
+      this exercise, the Netflix engineering team came to the conclusion that a single
+      analytical pipeline could understand data from almost any programming runtime.\\n\\nAnother
+      advantage of LLMs is that they don\u2019t have to guess how an algorithm works
+      from scratch. Since LLMs have been broadly trained on many software repositories,
+      they are mostly familiar with classic programming anti-patterns. For example,
+      they know that quadratic loops where a hot method is called again and again
+      for each item in a collection aren\u2019t a good idea. Also, loop invariants
+      where you compute a calculation for every iteration of the loop instead of making
+      the calculation once at the beginning. Other patterns include excessive object
+      allocation on hot execution paths and \u201CN+1\u201D query patterns.\\n\\nDue
+      to this knowledge base of LLMs, you don\u2019t need to ask an AI model to guess
+      why an application might be performing poorly. You can build a workflow that
+      asks the model to pattern-match known performance bugs against actual call stacks.\\n\\nNetflix
+      built an automated performance system that wraps the LLM inside a well-defined
+      pipeline.\\n\\nA key lesson Netflix engineers learnt during this implementation
+      was about scoping. If you feed an LLM a complete, raw stack trace without boundaries,
+      it can get distracted. Often, the model spends a lot of reasoning tokens analyzing
+      internal JVM garbage collection pauses, low-level Linux kernel syscalls, or
+      even 3rd party open-source framework overhead.\\n\\nApplication developers don\u2019t
+      have any control over such internal library concerns or OS routines. Therefore,
+      you need to provide the agent with strict package prefix rules. This way, the
+      model can ignore generic platform noise and focus on tracing only the specific
+      application code.\\n\\nWhen the Netflix engineering team deployed the profiling
+      pipeline against its production service, the agent found 4 major categories
+      of performance bugs.\\n\\nFirst was an algorithmic bottleneck that wasted 8.8%
+      of CPU resources. The agent found an aggregation method using Java Streams where
+      an immutable map was updated inside a reduction step.\\n\\n```\\n// Anti-pattern:
+      O(N^2) accumulation inside stream reduction\\nstream().reduce(ImmutableMap.of(),
+      (acc, val) -> {\\nreturn ImmutableMap.builder()\\n.putAll(acc) // Copies every
+      existing entry on every single step\\n.put(val)\\n.build();\\n});\\n```\\nSince
+      putAll(acc) copies every existing key-value pair on every step, you need to
+      copy elements again and again to build a map of size N. This results in quadratic
+      complexity.\\n\\nThe agent modified the quadratic builder reduction with a linear
+      collection approach.\\n\\n```\\n// Optimized: O(N) single-pass collection\\nstream()\\n.flatMap(e
+      -> e.entrySet().stream())\\n.collect(toMap(Entry::getKey, Entry::getValue));\\n```\\nThe
+      second category was about regular expressions on the hot path. In a service,
+      the developer had to sanitize incoming request strings by modifying characters
+      that weren\u2019t allowed. The earlier implementation ran a raw regular expression
+      substitution on every request.\\n\\n```\\n// Anti-pattern: Dynamic regex evaluation
+      per request\\nString sanitized = input.replaceAll(\u201D[^a-zA-Z0-9.-]\u201D,
+      \u201C_\u201D);\\n```\\nAs you might know, evaluating regular expressions involves
+      parsing and state-machine transitions. This logic on high-volume traffic used
+      46% of the service\u2019s CPU time.\\n\\nThe agent replaced the regex evaluation
+      with a pre-computed lookup table that checked characters by index. The execution
+      got 22 times faster.\\n\\nThe next category was related to unnecessary object
+      allocation that caused OOM crashes. A service frequently checked whether incoming
+      data payloads contained specific metadata fields. To perform the check, the
+      code was creating a new, heavy HashSet on every incoming call.\\n\\nHowever,
+      the underlying data object already had an internal lookup method available.
+      Also, instantiating millions of such objects consumed 47% of the service\u2019s
+      total heap collections.\\n\\nThe agent fixed this issue by removing the redundant
+      object instantiations and modified the code to reuse the cached method.\\n\\nThe
+      next category was around library misuse. For example, the discovery involved
+      metric telemetry instrumentation. One of the services tracked operations by
+      looking up a counter from a metric registry on every single call.\\n\\n```\\n//
+      Anti-pattern: Looking up metric instances on every function execution\\nMetrics.counter(\u201Drequest.count\u201D).increment();\\n```\\nWhen
+      the query was sent to the registry, it needed dictionary lookups and internal
+      synchronization locks. The profiler showed that the work consumed 66% of the
+      CPU, whereas the actual business logic used only 0.3%.\\n\\nThe agent fixed
+      it by caching the metric counter reference at the time of class initialization.
+      Also, it found that the same issue was happening across three independent services.\\n\\nIf
+      you have an AI agent that can optimize code, it\u2019s quite dangerous if the
+      changes are applied without automatic verification. If the agent makes a change
+      that breaks business logic, it\u2019s worse than inefficient code.\\n\\nTo prevent
+      regressions, the agentic pipeline uses the standard SDLC.\\n\\nIn stage 1, you
+      verify the logic. Before you move any code, the agent\u2019s branch must pass
+      all existing unit, integration, and contract tests. This is to make sure that
+      the changes made by the change don\u2019t alter basic inputs, outputs, or handling
+      of edge cases.\\n\\nIn stage 2, you have the canary deployment. If the tests
+      pass, the pipeline spins up a canary deployment in production. The canary instance
+      gets a portion of the traffic. It runs side-by-side with an identical baseline
+      instance that runs the original code.\\n\\nStage 3 is about generating the observability
+      report. The platform collects hard telemetry metrics over a big enough window.
+      Some metrics are relative CPU utilization, median latency, P99 latency, and
+      memory allocation rates. They also don\u2019t use any AI model to check the
+      canary results.\\n\\nIn stage 4, you have the final engineering decision. When
+      the canary version shows a good level of performance improvement with zero increase
+      in error rates, the system opens a PR. This PR goes for human review. It includes
+      the code change, the original flame graph, and the canary report. The final
+      decision on deploying the change to production is taken by the human developer.\\n\\nAutomated
+      production profiling is quite effective. But if you just rely on it, you end
+      up exposing several limitations.\\n\\nBy the time an agent finds an anti-pattern
+      in production, you\u2019ve already paid for days or weeks of wasted compute
+      capacity.\\n\\nSecond, developers are anyway cautious about changing a running
+      service. If you have a service that handles production traffic without crashing,
+      the developers hesitate to just make changes for the sake of optimization.\\n\\nLastly,
+      multiple teams often make the exact same mistakes when it comes to patterns.
+      If you run a super-expensive agent on 10 different services just to find the
+      same problem, it\u2019s not very efficient.\\n\\nThese limitations led to Netflix
+      making the decision to shift performance checks left into the early development
+      cycle. Also, they wanted the agents to share their findings across the entire
+      engineering organization.\\n\\nHowever, as you might know, language models are
+      stateless. Every time you send a prompt to an LLM, it starts with a clean slate.
+      It might no retain any memory of the bug it found some time back in another
+      service. The Netflix engineering team built a Pattern Catalog to make the models
+      achieve persistence. This was done by pairing a stateless LLM with a stateful
+      catalog. Or a shared memory across the fleet.\\n\\nThe Pattern Catalog was built
+      around 4 key principles.\\n\\nFirst, it has to be centralized and serve as the
+      single source of truth for all engineering teams. This way, no two teams end
+      up debugging the same issues.\\n\\nThe second principle is that the same catalog
+      entries should work across distinct environments. For example, offline profiling,
+      CI/CD pull request checks, and local development tools.\\n\\nThird, you need
+      to format entries so that an automation script can easily inject them into an
+      LLM\u2019s system prompt.\\n\\nLastly, the contents of the catalog should be
+      reviewable by human developers.\\n\\nTo implement the Pattern Catalog, the Netflix
+      engineering team used a simple Git repository filled with plain Markdown files.
+      They didn\u2019t use vector databases or complex knowledge stores. The idea
+      was borrowed from the \u201CLLM-wiki\u201D concept popularized by Andrej Karpathy.\\n\\nBy
+      using a standard Git repository, the developers got several advantages. For
+      one, developers can diff changes, open pull requests, and use git features to
+      find out why an entry was created. It also scales well to 100s of detailed performance
+      rules without the need for complex search infrastructure. Lastly, plain Markdown
+      is easy for both humans and language models to read without translation layers.\\n\\nWith
+      the Pattern Catalog in place, Netflix can handle performance engineering via
+      two paths. Reactive and Proactive.\\n\\nIn the reactive path, your system profiles
+      production services on a recurring schedule or on demand. When the agent finds
+      a new bottleneck, it tests the fix on a canary instance. If everything goes
+      fine, the patch is merged, and the agent documents the new finding in the Pattern
+      Catalog.\\n\\nIn the proactive path, the process starts when a developer creates
+      a new PR. CI tooling performs a fast regex or symbol match against the Pattern
+      Catalog index. If the code in the PR matches known anti-patterns, the CI bot
+      calls an LLM and provides it with the pull request diff. The LLM checks the
+      context and leaves an inline comment that explains the inefficiency. It shows
+      the resource impact and suggests a fix. All this happens before the code ever
+      merges to the main branch.\\n\\nThe key learning from the Netflix engineering
+      experience is that automating performance engineering work is not an all-or-nothing
+      game. You can have organizations adopt workflows along a four-level maturity
+      spectrum.\\n\\nLevel 0 is the manual situation. This is the level where machine
+      learning is not used. Human developers manually capture traces, interpret flame
+      graphs, and trace code paths.\\n\\nLevel 1 is the assist approach. This is the
+      entry point for AI adoption. The LLM acts as an analytical copilot. A developer
+      initiates the profiling process. But they don\u2019t spend time studying flame
+      graphs. Instead, they feed the stack dump to the model. The model finds the
+      hot execution path.\\n\\nLevel 2 is the orchestration level. This is the current
+      state at Netflix. A lot of proactive scanning happens. Also, they use the Pattern
+      Catalog.\\n\\nLevel 3 is the fully autonomous level. This is the long-term vision
+      at Netflix for performance agents. At Level 3, the agents will create their
+      own optimization strategies. They will explore multiple alternative implementations.
+      Or run automated benchmarks.\\n\\n**References:**\\n</text>\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"summary\":{\"type\":\"object\",\"properties\":{\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"domain\":{\"type\":\"string\",\"enum\":[\"AI\",\"Macro\",\"Crypto\",\"Startups\",\"Finance\",\"Tech\",\"History\",\"Security\",\"Sports\",\"Other\"]},\"topic\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"concepts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"is_educational\":{\"type\":\"boolean\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"}},\"required\":[\"kind\",\"question\",\"answer\"],\"additionalProperties\":false}}},\"required\":[\"summary\",\"domain\",\"topic\",\"tags\",\"concepts\",\"is_educational\",\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
+      process sources for a personal learning app. A source is an article, an X post
+      or thread, or an episode (podcast or video) that the user consumed or plans
+      to. A newsletter is an email digest; summarize its main stories. The user wants
+      \\\"level 2\\\" knowledge of its subject: enough to hold a real conversation
+      about it, including the vocabulary, how things work, the key players, rough
+      numbers, and the current debates.\\n\\nFrom the text, produce:\\n- summary:
+      the gist in 2-3 sentences, the key ideas, and the numbers worth remembering.
+      The text of an episode may carry markers like [12:14] or [1:02:03] at roughly
+      one-minute intervals; give each key idea and number the time of the marker nearest
+      before where it comes up, copied exactly but without the brackets (12:14, 1:02:03),
+      and null when the text has no markers. Skip ads and sponsor reads.\\n- domain:
+      the one broad domain the source belongs to.\\n- topic: a short, reusable topic
+      name under that domain (e.g. \\\"Stablecoins\\\", \\\"Fed policy\\\", \\\"NFL
+      quarterbacks\\\").\\n- tags: 3-8 short tags.\\n- concepts: the key concepts
+      the source relies on or teaches, as short noun phrases.\\n- is_educational:
+      true when the source teaches something worth remembering (how things work, history,
+      ideas, numbers). false for pure entertainment such as banter, sports chat, jokes
+      or gossip. A mostly entertaining source with real teaching in it (e.g. how a
+      contract works, why a play scheme succeeds) is still true.\\n- cards: when is_educational
+      is true, 3-5 open-recall review cards of kind concept, mechanism (\\\"why does
+      X cause Y\\\") or number (a rough figure worth knowing). Each card asks ONE
+      focused question, never a compound one with several parts. Each answer is what
+      a good response would cover in 1-3 sentences. Avoid trivia that only matters
+      to this one source. Cards come only from the educational stretches of a source:
+      a mostly entertaining show with one educational segment gets cards for that
+      segment; still 3-5. When is_educational is false, cards is an empty list.\\n\\nWrite
+      in plain, conversational English for a smart reader who is new to the subject.
+      Short sentences. Define any jargon the first time it appears. Prefer concrete
+      examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\"}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '20393'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgip9VwVavwjDGaFjVxUG","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSsAkKEAgTGAI4AUIIdGhpbmtpbmcSDIc5VPdi2ufEKlg2cxoMkIZgkV6H0x5qiEMLIjApzMMfbtkcSc0hq/Ct4Q7qjUAVGx5oZBe2EUQSvkhpQdGaSSrx8fJcAbLiIFdzf64qzQhjr5NYOKnYcpdLbiqxt2E++3AtVB2TB6UFS95xBqzw5k8Va3ogZ4rEl82CCG4Yg9LycHXpgRt09a9PPlYpmQumCggaGp9VfbiXaPd0/xGrP/I/TazlCWJ2FkslxZAi5m+agqd0pYWDmrNUSIYQ6GZigCK+bqWo0fZwsM3L53qd7C+TvaDGtCEr6+1fyiZR22yZ8qVyqUcSKrCXUTDu0LJxDaXDUaN/vRmf86NrE1LiFBQ7mQ/oYaWQpXe6X+9n+vExchQGwyUIs75ViOb9kmLmnRbtcJBDF65N4t6YlJEme09M4npmIh/Bo38gvB27x+ZcnPlq16/05aL+pFXNXswyNxbmNbqDynXeto/kvGb71mQpusoyht8tZGfTT5IL2DwdwM5wQ2F1QMX7dV5WfgYo6IG9cPgmZtJRBgn+2m5J6ed4VwLJaQLQC1D0AFnPYTPD0/tEMUh+SbuDCHUu6hTWPym04XU65GrHfL2x+9u+cbE3AfyYYDmb5ngL8HMIYWuU79iGwRTSLJiQzvXPotwkhjObG09/u9vT1vycGZ4YKmeD4GUOK2/zjMsT/zuznf6CmRE1O63T6IP0JBU96n1IpURn1WG5dLc+go/WnHipYK9z7+ElGT9Jzxu5rOIzKdpWoLNbZclbcTlVs62Hj4B25OgUdy8BwOmMKeiiaDz1S4gzSabUNcYAq/YwcFCa0Nt87e/AC3JTur3gKYJLkwgxw533IEvszZ6kFtzbNFTCrKDTqdAeO2pnar1tFPh7HUHreJNRaE+5wnazSlm9e97tENryWzaHpSRKY66qcPaKg1hHrr2e2MvcB+95gJ97Mb+BFC9lKTB+Zop2N7CK1ECh2aQVYiE+bEO9i27h/HXZ0xv1Q2hOy6siLyyEIV7aWJrDlHrPEq3dKl0Zohdl7WngNuMmtvm3x0WAJD96NTotwfCiBFJixTZ2FFZz9/6eMJ+udRWTQ0/88M5xqBTcvIvl+80mWC3Rsb48K3ng9RkV+yJ91/vq9AToTLTF4A/XPiBQaMCX+Fqcacrh/v40ROwgjO0VfXmu8OrRjE/pgtMWzQ9FqcVpVZoEfHvWU5gaaHoN035ek5fT0PJ/bEYMmiSpkmRvjNpett9aKIAKKD51lpMawfpBbkxtq0dVHmlXE1GgnC71mnjwG2NLXtJubtUeQaVxBqOCjtgaQ02CVeBrTONwox0Jcl2BmLhQXW4ioKuLXHPbPUgzjhYEvBc/fk10ED9M0c2OsF5RYa2FOuvdYZQp/sT4HR+DWpfMJmWzcoUQMosBXKxxFOwZAogChjkQZGkBu1qZFHoTRzKHZy7R44Z37d16kBh+16Aeb5IamvKUTvWTxQvI8IfaP10LIKKydaNs51KNvio7t+zneSZYa7uZMHl40+pgijp9a6cT3SjaAbziU+48UdfRXDgMDpMrIxzjjwOpTbpkD4wJN03OHtUnCoBLzleUt8vZxEkYAQ=="},{"type":"text","text":"{\"summary\":{\"gist\":\"Netflix
+        built an AI performance agent that reads raw profiler output, finds wasteful
+        code, tests fixes on a canary server, and asks a human to approve the change.
+        A shared Git-based Pattern Catalog of known anti-patterns lets the system
+        remember findings across teams and check pull requests before they merge.\",\"key_ideas\":[{\"timestamp\":null,\"idea\":\"Performance
+        engineering means making software fast and cheap to run. Traditionally, finding
+        slow code was manual and depended on a few expert developers reading flame
+        graphs (charts showing where a program spends its time).\"},{\"timestamp\":null,\"idea\":\"AI
+        coding tools let developers write code up to 10 times faster, but fast-to-write
+        code often hides performance problems. LLMs check syntax and local logic well,
+        but they cannot see the runtime environment or the full call stack at scale.\"},{\"timestamp\":null,\"idea\":\"Profilers
+        across languages share a common idea. They break execution into call stacks
+        and report inclusive time (everything a function triggers) and self time (work
+        done inside the function itself). So one analysis pipeline can work across
+        many runtimes.\"},{\"timestamp\":null,\"idea\":\"LLMs know classic anti-patterns
+        such as quadratic loops, loop invariants, excessive allocation, and N+1 queries.
+        So the workflow can pattern-match known bugs against real call stacks instead
+        of asking the model to guess.\"},{\"timestamp\":null,\"idea\":\"Scoping matters.
+        Without boundaries, the model wastes effort on JVM garbage collection, kernel
+        calls, and third-party framework code. Strict package prefix rules keep it
+        focused on the application''s own code.\"},{\"timestamp\":null,\"idea\":\"Safety
+        comes from a standard software release process. Changes must pass unit, integration,
+        and contract tests. Then a canary (a small share of live traffic runs the
+        new code next to an unchanged baseline). Telemetry is compared without using
+        an AI judge. A human makes the final deploy decision.\"},{\"timestamp\":null,\"idea\":\"Production-only
+        profiling has limits. Waste is paid for while it runs, teams hesitate to change
+        healthy services, and the same mistake gets found again in many services.
+        So Netflix moved checks earlier, into development.\"},{\"timestamp\":null,\"idea\":\"LLMs
+        are stateless, so the Pattern Catalog acts as shared memory. It is a plain
+        Markdown Git repository, inspired by Andrej Karpathy''s LLM-wiki idea, with
+        no vector database. Git gives diffs, pull requests, and history, and humans
+        can review entries.\"},{\"timestamp\":null,\"idea\":\"There are two paths.
+        The reactive path profiles production, tests fixes on canaries, and records
+        new findings in the catalog. The proactive path runs a fast regex or symbol
+        match on each pull request, and an LLM leaves an inline comment with the resource
+        impact and a suggested fix before merge.\"},{\"timestamp\":null,\"idea\":\"Netflix
+        describes a four-level maturity ladder. Level 0 is manual work. Level 1 is
+        an AI assistant that reads stack dumps. Level 2 is orchestration with proactive
+        scanning and the catalog, which is where Netflix is now. Level 3 is a long-term
+        goal where agents create and benchmark their own optimization strategies.\"}],\"numbers\":[{\"timestamp\":null,\"fact\":\"Developers
+        using AI tools can generate and ship code up to 10 times faster than before.\"},{\"timestamp\":null,\"fact\":\"A
+        utility function on a critical request path might run 10 million times per
+        second, so small inefficiencies multiply hard.\"},{\"timestamp\":null,\"fact\":\"JVM
+        async-profiler and Java Flight Recorder can sample at 100 Hz (100 samples
+        per second).\"},{\"timestamp\":null,\"fact\":\"An O(N^2) stream reduction
+        that copied the map on every step wasted 8.8% of CPU.\"},{\"timestamp\":null,\"fact\":\"A
+        per-request regex sanitizer used 46% of one service''s CPU. A precomputed
+        lookup table made it 22 times faster.\"},{\"timestamp\":null,\"fact\":\"Creating
+        a new HashSet on every call used 47% of one service''s heap allocations and
+        caused OOM crashes.\"},{\"timestamp\":null,\"fact\":\"Metric counter lookups
+        on every call consumed 66% of CPU, while the real business logic used only
+        0.3%. The same bug appeared in three services.\"}]},\"domain\":\"Tech\",\"topic\":\"AI-assisted
+        performance engineering\",\"tags\":[\"performance engineering\",\"profiling\",\"LLM
+        agents\",\"Netflix\",\"canary deployment\",\"code review\",\"observability\"],\"concepts\":[\"flame
+        graph\",\"call stack\",\"inclusive time\",\"self CPU time\",\"profiler sampling\",\"anti-pattern\",\"quadratic
+        complexity\",\"canary deployment\",\"stateless LLM\",\"Pattern Catalog\",\"shift
+        left testing\",\"maturity spectrum\"],\"is_educational\":true,\"cards\":[{\"kind\":\"concept\",\"question\":\"What
+        is the difference between inclusive time and self time in a profiler?\",\"answer\":\"Inclusive
+        time is the total time a function spends running, including every function
+        it calls. Self time is only the time spent in the function''s own code, not
+        in anything it calls.\"},{\"kind\":\"mechanism\",\"question\":\"Why does an
+        LLM alone often miss performance problems in code it writes?\",\"answer\":\"An
+        LLM checks syntax and local logic, so the code compiles and passes unit tests.
+        It cannot see the runtime environment, the full call stack, or how often a
+        function runs under production load, so waste only shows up at scale.\"},{\"kind\":\"mechanism\",\"question\":\"Why
+        does Netflix pair a stateless LLM with a Pattern Catalog?\",\"answer\":\"LLMs
+        start every prompt with no memory of past bugs. The catalog is a shared store
+        of known anti-patterns that gets injected into prompts, so one team''s findings
+        can help every other team and the same bug is not rediscovered repeatedly.\"},{\"kind\":\"number\",\"question\":\"How
+        much CPU did a per-request regex sanitizer use in one Netflix service, and
+        how much faster was the fix?\",\"answer\":\"The regex used 46% of the service''s
+        CPU time. The agent replaced it with a precomputed lookup table, which ran
+        about 22 times faster.\"},{\"kind\":\"mechanism\",\"question\":\"Why do strict
+        package prefix rules help an agent analyze a profile?\",\"answer\":\"Without
+        them, the model spends effort on JVM garbage collection, kernel calls, and
+        third-party framework overhead that developers cannot change. Prefix rules
+        keep the analysis on the application code they can actually fix.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":6749,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2360,"output_tokens_details":{"thinking_tokens":242},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9998000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-05T00:12:31Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-05T00:12:41Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-05T00:12:30Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11998000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-05T00:12:31Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a557a5b23a4293b1-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '8595'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Thu, 05 Nov 2026 00:12:41 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=11463
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-52f7bfdf6233308e33a35448111a1ce0-1c340711f25d7fc1-01
       transfer-encoding:
       - chunked
       vary:

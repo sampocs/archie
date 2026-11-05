@@ -5,6 +5,7 @@ from __future__ import annotations
 import email.message
 import pathlib
 
+import pytest
 from archie_api.ingest import email_message
 
 FIXTURES = pathlib.Path(__file__).parent / "fixtures" / "newsletters"
@@ -23,15 +24,37 @@ def test_a_substack_post_yields_its_subject_sender_web_url_and_article_text() ->
     assert "<div" not in parsed.text
 
 
-def test_a_morning_brew_issue_has_no_web_url_but_readable_text() -> None:
-    """An issue with no web link still parses to readable text."""
+def test_a_morning_brew_issue_takes_its_web_url_from_view_online_and_keeps_paragraphs_as_markdown() -> None:
+    """With no List-Post or Substack line, the "View Online" link is the web URL; the text is markdown paragraphs."""
     parsed = email_message.parse((FIXTURES / "morning_brew.eml").read_bytes())
 
     assert parsed.subject == "☕ Putting it to a vote"
     assert parsed.sender == "Morning Brew"
-    assert parsed.web_url is None
+    assert parsed.web_url == "https://example.invalid/tracked"
     assert len(parsed.text.split()) >= MIN_WORDS
     assert "<td" not in parsed.text
+    # Markdown keeps the bold lead-ins and separates paragraphs with a blank line.
+    assert "**Mission control:** Currently, Republicans control both chambers" in parsed.text
+    assert "\n\n**It’s the economy, stupid.**" in parsed.text
+
+
+@pytest.mark.parametrize(
+    ("link", "web_url"),
+    [
+        ('<a href="https://example.com/web">View  in your\n browser</a>', "https://example.com/web"),
+        ('<a href="https://example.com/web"><span>READ</span> online</a>', "https://example.com/web"),
+        ('<a href="http://example.com/web">View Online</a>', None),
+        ('<a href="https://example.com/web">View our sponsor online</a>', None),
+    ],
+)
+def test_only_an_https_link_whose_text_names_the_web_version_is_the_web_url(link: str, web_url: str | None) -> None:
+    """Link text matches case- and whitespace-insensitively among the known phrasings; http links are not taken."""
+    message = email.message.EmailMessage()
+    message["Subject"] = "Issue"
+    message.set_content("Plain part.")
+    message.add_alternative(f"<html><body><p>Hello</p>{link}</body></html>", subtype="html")
+
+    assert email_message.parse(message.as_bytes()).web_url == web_url
 
 
 def test_a_message_without_a_message_id_gets_a_stable_hash_id() -> None:

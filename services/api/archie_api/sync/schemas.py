@@ -19,7 +19,9 @@ class ActionType(StrEnum):
     ADD_SOURCE = "add_source"
     RETRY_SOURCE = "retry_source"
     FINISH_SOURCE = "finish_source"
-    SET_PREP_ME = "set_prep_me"
+    QUEUE_PRIMER = "queue_primer"
+    REQUEST_PRIMER = "request_primer"
+    RETURN_TO_INBOX = "return_to_inbox"
     SET_READ = "set_read"
     SET_PRIMER_OPENED = "set_primer_opened"
     SNOOZE = "snooze"
@@ -36,6 +38,8 @@ class ActionType(StrEnum):
     SET_SOURCE_TOPIC = "set_source_topic"
     CHOOSE_TOPICS = "choose_topics"
     CHOOSE_EPISODE = "choose_episode"
+    # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
+    SET_PREP_ME = "set_prep_me"
 
 
 class ActionIn(pydantic.BaseModel):
@@ -81,7 +85,6 @@ class SourceOut(pydantic.BaseModel):
     processing_error: str | None
     reaction: str | None
     note: str | None
-    prep_me: bool
     merged_into_id: uuid.UUID | None
     sender: str | None
     domain: str | None
@@ -91,6 +94,8 @@ class SourceOut(pydantic.BaseModel):
     read_at: datetime.datetime | None
     snoozed_until: datetime.datetime | None
     primer_opened_at: datetime.datetime | None
+    primer_queue_position: float | None
+    primer_snoozed_until: datetime.datetime | None
     newsletter_kind: str | None
     created_at: datetime.datetime
     updated_at: datetime.datetime

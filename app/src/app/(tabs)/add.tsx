@@ -40,7 +40,7 @@ export default function AddScreen() {
       intent: choice.intent,
       reaction: choice.reaction,
       note: choice.note.trim(),
-      prepMe: choice.prepMe,
+      queuePrimer: choice.queuePrimer,
     });
     requestSync();
     setUrl("");

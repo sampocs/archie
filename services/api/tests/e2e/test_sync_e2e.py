@@ -158,18 +158,23 @@ def test_a_finished_source_starts_consumed(live_stack: LiveStack) -> None:
     assert _pull_sources(authed)[action["payload"]["id"]]["state"] == "consumed"
 
 
-def test_reaction_note_and_prep_me_are_stored_and_synced(live_stack: LiveStack) -> None:
-    """Optional fields reach the row and the pull: reaction on a finished capture, prep_me on a queued one."""
+def test_reaction_note_and_queue_primer_are_stored_and_synced(live_stack: LiveStack) -> None:
+    """Optional fields reach the row and the pull: reaction on a finished capture, a queued primer on a queued one.
+
+    The primer goes to the top of the queue, above its own source.
+    """
     authed = live_stack.authed(live_stack.sign_in())
     finished = _add_source("https://example.com/a", intent="finished", reaction="mostly", note="good")
-    queued = _add_source("https://example.com/b", prep_me=True)
+    queued = _add_source("https://example.com/b", queue_primer=True)
 
     _push(authed, finished, queued)
     sources = _pull_sources(authed)
 
     finished_row, queued_row = sources[finished["payload"]["id"]], sources[queued["payload"]["id"]]
-    assert (finished_row["reaction"], finished_row["note"], finished_row["prep_me"]) == ("mostly", "good", False)
-    assert (queued_row["reaction"], queued_row["prep_me"]) == (None, True)
+    assert (finished_row["reaction"], finished_row["note"]) == ("mostly", "good")
+    assert finished_row["primer_queue_position"] is None
+    assert queued_row["reaction"] is None
+    assert (queued_row["queue_position"], queued_row["primer_queue_position"]) == (0, -1)
     assert (finished_row["processing_error"], finished_row["merged_into_id"]) == (None, None)
 
 
@@ -206,7 +211,7 @@ def test_a_capture_without_a_title_is_stored(live_stack: LiveStack) -> None:
     [
         ({"reaction": "great"}, "finished", "reaction must be easy, mostly or lost"),
         ({"reaction": "easy"}, "queue", "reaction needs intent finished"),
-        ({"prep_me": True}, "finished", "prep_me needs intent queue"),
+        ({"queue_primer": True}, "finished", "queue_primer needs intent queue"),
         ({"note": "x" * 2001}, "queue", "note is longer than 2000 characters"),
         ({"capture": {"text": ""}}, "queue", "capture text is empty"),
         ({"capture": {"text": "  \n"}}, "queue", "capture text is empty"),
@@ -262,16 +267,30 @@ def test_a_duplicate_url_merges_into_the_existing_source(live_stack: LiveStack) 
 
 
 def test_a_duplicate_never_moves_a_source_backwards(live_stack: LiveStack) -> None:
-    """Re-sharing a finished source as queue leaves it consumed and finished, and never sets prep_me on it."""
+    """Re-sharing a finished source as queue leaves it consumed and finished, and never queues its primer."""
     authed = live_stack.authed(live_stack.sign_in())
-    original = _add_source("https://example.com/a", intent="finished", reaction="easy", note="keep", prep_me=False)
+    original = _add_source("https://example.com/a", intent="finished", reaction="easy", note="keep", queue_primer=False)
     _push(authed, original)
 
-    _push(authed, _add_source("https://example.com/a", intent="queue", prep_me=True))
+    _push(authed, _add_source("https://example.com/a", intent="queue", queue_primer=True))
     kept = _pull_sources(authed)[original["payload"]["id"]]
 
     assert (kept["state"], kept["intent"]) == ("consumed", "finished")
-    assert (kept["reaction"], kept["note"], kept["prep_me"]) == ("easy", "keep", False)
+    assert (kept["reaction"], kept["note"], kept["primer_queue_position"]) == ("easy", "keep", None)
+
+
+def test_a_duplicate_share_queues_the_primer_of_a_queued_source_once(live_stack: LiveStack) -> None:
+    """Sharing a queued page again with queue_primer queues its primer; a third share leaves it where it is."""
+    authed = live_stack.authed(live_stack.sign_in())
+    original = _add_source("https://example.com/a")
+    _push(authed, original, _add_source("https://example.com/b"))
+
+    _push(authed, _add_source("https://example.com/a", queue_primer=True))
+    queued = _pull_sources(authed)[original["payload"]["id"]]["primer_queue_position"]
+    _push(authed, _add_source("https://example.com/a", queue_primer=True))
+
+    assert queued == -2
+    assert _pull_sources(authed)[original["payload"]["id"]]["primer_queue_position"] == queued
 
 
 def test_a_duplicate_does_not_advance_a_source_the_user_is_already_reading(live_stack: LiveStack) -> None:

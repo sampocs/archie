@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useContext } from "react";
 import {
   KeyboardAvoidingView,
   NativeScrollEvent,
@@ -11,6 +11,7 @@ import {
 import { ScrollView } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { TabBarInsetContext } from "../tabBarInset";
 import { useTheme } from "../useTheme";
 import { Text } from "./Text";
 
@@ -32,6 +33,7 @@ const SCROLL_EVENT_THROTTLE_MS = 32;
 export function Screen({ title, children, headerRight, onBack, footer, subheader, onScroll }: ScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const tabBarInset = useContext(TabBarInsetContext);
 
   // A pinned footer rides above the keyboard; otherwise a typed-in field would hide the screen's submit button.
   // Only footer screens opt in: tab screens sit above the tab bar, which the keyboard's height already includes.
@@ -56,7 +58,12 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
       <ScrollView
         onScroll={onScroll}
         scrollEventThrottle={onScroll ? SCROLL_EVENT_THROTTLE_MS : undefined}
-        contentContainerStyle={{ padding: theme.spacing.gutterCards, gap: theme.spacing.section }}
+        contentContainerStyle={{
+          padding: theme.spacing.gutterCards,
+          paddingBottom: theme.spacing.gutterCards + tabBarInset,
+          gap: theme.spacing.section,
+        }}
+        scrollIndicatorInsets={{ bottom: tabBarInset }}
         keyboardShouldPersistTaps="handled"
         // Scrolls a focused field (search, adding a topic) above the keyboard.
         automaticallyAdjustKeyboardInsets

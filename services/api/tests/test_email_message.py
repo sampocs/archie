@@ -38,6 +38,14 @@ def test_a_morning_brew_issue_takes_its_web_url_from_view_online_and_keeps_parag
     assert "\n\n**It’s the economy, stupid.**" in parsed.text
 
 
+def test_a_newsletter_table_row_of_short_cells_reads_as_one_line() -> None:
+    """Morning Brew's market table comes through a row per line, not one figure per paragraph."""
+    parsed = email_message.parse((FIXTURES / "morning_brew.eml").read_bytes())
+
+    assert "Nasdaq · 25,164.32 · -1.07%" in parsed.text.splitlines()
+    assert "10-Year · 4.894% · -4.0 bps" in parsed.text.splitlines()
+
+
 @pytest.mark.parametrize(
     ("link", "web_url"),
     [

@@ -16,6 +16,7 @@ dev = [
     { name = "archie-testing", editable = "packages/archie-testing" },
     { name = "httpx", specifier = ">=0.28" },
     { name = "httpx2", specifier = ">=2.13.0" },
+    { name = "lxml-stubs", specifier = ">=0.5.1" },
     { name = "mypy", specifier = "==1.18.2" },
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-recording", specifier = ">=0.14.1" },
@@ -95,6 +96,7 @@ dependencies = [
     { name = "archie-db" },
     { name = "archie-shared" },
     { name = "fastapi" },
+    { name = "lxml" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "trafilatura" },
     { name = "uvicorn", extra = ["standard"] },
@@ -105,6 +107,7 @@ requires-dist = [
     { name = "archie-db", editable = "packages/archie-db" },
     { name = "archie-shared", editable = "packages/archie-shared" },
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "lxml", specifier = ">=6.0" },
     { name = "pyjwt", extras = ["crypto"], specifier = ">=2.15.1" },
     { name = "trafilatura", specifier = ">=2.3.1" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
@@ -929,6 +932,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ac/7e/2b7118b28d5bb69dfc4f349e1ca92334cf986601d3c809caa62cfa3bfab6/lxml_html_clean-0.4.6.tar.gz", hash = "sha256:ea9db067c3053854fd87f8d5a1cf01221dc893b54dbf6019c689052e05c64f22", size = 26385, upload-time = "2026-10-26T11:14:45.978Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f5/36/4898b5e3951635846ed0e445e042fadf02b7c5e811a9e43da5b3557bc8d2/lxml_html_clean-0.4.6-py3-none-any.whl", hash = "sha256:cc037270ba500a65e7235409dcddcae8ef37300f26dea826b61d917bf0236880", size = 14952, upload-time = "2026-10-26T11:14:44.73Z" },
+]
+
+[[package]]
+name = "lxml-stubs"
+version = "0.5.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/da/1a3a3e5d159b249fc2970d73437496b908de8e4716a089c69591b4ffa6fd/lxml-stubs-0.5.1.tar.gz", hash = "sha256:e0ec2aa1ce92d91278b719091ce4515c12adc1d564359dfaf81efa7d4feab79d", size = 14778, upload-time = "2024-01-10T09:37:46.521Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1f/c9/e0f8e4e6e8a69e5959b06499582dca6349db6769cc7fdfb8a02a7c75a9ae/lxml_stubs-0.5.1-py3-none-any.whl", hash = "sha256:1f689e5dbc4b9247cb09ae820c7d34daeb1fdbd1db06123814b856dae7787272", size = 13584, upload-time = "2024-01-10T09:37:44.931Z" },
 ]
 
 [[package]]

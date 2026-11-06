@@ -19,23 +19,24 @@ appId: com.sampocs.archie
     timeout: 5000
 - tapOn:
     id: "add-url"
-- inputText: "https://example.com/"
+# A path no other flow uses: `make maestro` keeps one user's data across flows, and library_queue also adds example.com.
+- inputText: "https://example.com/favorites-flow"
 - tapOn:
     id: "intent-queue"
 - tapOn:
     id: "add-save"
-# Save closes the sheet and stays on Library; wait for the sheet to go (its field also reads example.com), then open
-# the new row.
+# Save closes the sheet and stays on Library; wait for the sheet to go (its field holds the same text), then open the
+# new row (its title is the URL: example.com has no page there).
 - extendedWaitUntil:
     notVisible:
       id: "add-url"
     timeout: 5000
 - extendedWaitUntil:
     visible:
-      text: ".*example\\.com.*"
+      text: ".*favorites-flow.*"
     timeout: 10000
 - tapOn:
-    text: ".*example\\.com.*"
+    text: ".*favorites-flow.*"
 - tapOn:
     id: "item-favorite"
 - assertVisible:

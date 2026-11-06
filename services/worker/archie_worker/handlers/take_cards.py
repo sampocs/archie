@@ -32,7 +32,8 @@ class _TakeCard(pydantic.BaseModel):
 
 
 class _TakeCardsOutput(pydantic.BaseModel):
-    cards: list[_TakeCard]
+    # An empty list would retire the old cards and write none, so it fails the call and the old cards stay live.
+    cards: list[_TakeCard] = pydantic.Field(min_length=1)
 
 
 @dataclass(frozen=True)

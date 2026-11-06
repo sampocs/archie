@@ -13,6 +13,8 @@ import re
 import uuid
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 import pytest
@@ -153,32 +155,64 @@ def test_a_version_still_being_cleaned_gets_no_cards(engine: sqlalchemy.Engine) 
     assert [job.status for job in _jobs(engine)] == [models.JobStatus.DONE.value]
 
 
+class MidCallChange(StrEnum):
+    """What happens to the take while the model call is in flight."""
+
+    NEW_VERSION = "new_version"
+    DELETED = "deleted"
+
+
+@pytest.mark.parametrize("change", list(MidCallChange))
 def test_a_save_during_the_call_wins(
-    engine: sqlalchemy.Engine, replay: Replay, monkeypatch: pytest.MonkeyPatch
+    engine: sqlalchemy.Engine, replay: Replay, monkeypatch: pytest.MonkeyPatch, change: MidCallChange
 ) -> None:
-    """A version added mid-call is re-checked under the lock: nothing is written and the old card stays live."""
+    """A version added or a delete made mid-call is re-checked under the lock: the old card stays, none are added."""
     user_id = _add_user(engine)
     ids = _add_take(engine, user_id=user_id, bodies=[CLEANED])
     old_card_id = _add_old_card(engine, take_id=ids.take_id, version_id=ids.version_ids[0])
     _enqueue(engine, ids.version_ids[0])
     real_complete = llm.complete
 
-    def complete_then_save(*args: Any, **kwargs: Any) -> Any:
+    def complete_then_change(*args: Any, **kwargs: Any) -> Any:
         completion = real_complete(*args, **kwargs)
         with sqlalchemy.orm.Session(engine) as db:
             changes.lock_user_writes(db, user_id)
-            _add_version(db, user_id=user_id, take_id=ids.take_id, version=2, body="Newer.")
-            db.get_one(models.Take, ids.take_id).current_version = 2
+            take = db.get_one(models.Take, ids.take_id)
+            if change == MidCallChange.DELETED:
+                take.deleted_at = datetime.now(UTC)
+            else:
+                _add_version(db, user_id=user_id, take_id=ids.take_id, version=2, body="Newer.")
+                take.current_version = 2
             db.commit()
         return completion
 
-    monkeypatch.setattr(llm, "complete", complete_then_save)
+    monkeypatch.setattr(llm, "complete", complete_then_change)
 
     with replay("take_cards_crypto"):
         loop.run_one(engine, handlers=handlers.HANDLERS)
 
-    assert [card.id for card in _live_cards(engine)] == [old_card_id]
+    assert [card.id for card in _cards(engine)] == [old_card_id]
     assert [job.status for job in _jobs(engine)] == [models.JobStatus.DONE.value]
+
+
+def test_an_empty_card_list_fails_the_job_and_keeps_the_old_cards(
+    engine: sqlalchemy.Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A model answer with no cards must not retire the take's existing ones."""
+    user_id = _add_user(engine)
+    ids = _add_take(engine, user_id=user_id, bodies=[CLEANED])
+    old_card_id = _add_old_card(engine, take_id=ids.take_id, version_id=ids.version_ids[0])
+    _enqueue(engine, ids.version_ids[0])
+
+    def complete_with_no_cards(*args: Any, **kwargs: Any) -> llm.Completion:
+        return llm.Completion(model="test-model", text='{"cards": []}')
+
+    monkeypatch.setattr(llm, "complete", complete_with_no_cards)
+
+    loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert [card.id for card in _live_cards(engine)] == [old_card_id]
+    assert [job.status for job in _jobs(engine)] != [models.JobStatus.DONE.value]
 
 
 def test_without_a_key_the_job_fails_and_nothing_is_written(engine: sqlalchemy.Engine) -> None:

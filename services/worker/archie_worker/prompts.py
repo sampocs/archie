@@ -9,7 +9,6 @@ prompt version.
 from __future__ import annotations
 
 import datetime
-import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
@@ -130,24 +129,31 @@ class PrimerOutput:
     foundation_cards: list[FoundationCard]
 
 
-# The block must close the response: a tag quoted mid-primer is left in the text.
-_FOUNDATION_CARDS_PATTERN = re.compile(r"<foundation_cards>(?P<cards>.*?)</foundation_cards>\s*\Z", re.DOTALL)
+_FOUNDATION_CARDS_OPEN = "<foundation_cards>"
+_FOUNDATION_CARDS_CLOSE = "</foundation_cards>"
 _FOUNDATION_CARDS: pydantic.TypeAdapter[list[FoundationCard]] = pydantic.TypeAdapter(list[FoundationCard])
 
 
 def split_primer_output(text: str) -> PrimerOutput:
     """The primer's markdown and the foundation cards written after it.
 
-    A primer without the block (older recordings, or a model that left it out) keeps its text whole and has no cards;
-    a malformed block costs the cards, never the primer.
+    The block is the LAST opening tag with a closing tag after it: a tag quoted earlier in the primer stays in the
+    markdown, and any text the model adds after the closing tag is dropped. A primer without such a block (older
+    recordings, or a model that left it out) keeps its text whole and has no cards; a malformed block costs the
+    cards, never the primer.
     """
-    match = _FOUNDATION_CARDS_PATTERN.search(text)
-    if match is None:
+    open_index = text.rfind(_FOUNDATION_CARDS_OPEN)
+    if open_index == -1:
         return PrimerOutput(markdown=text, foundation_cards=[])
 
-    markdown = text[: match.start()].rstrip()
+    cards_start = open_index + len(_FOUNDATION_CARDS_OPEN)
+    close_index = text.find(_FOUNDATION_CARDS_CLOSE, cards_start)
+    if close_index == -1:
+        return PrimerOutput(markdown=text, foundation_cards=[])
+
+    markdown = text[:open_index].rstrip()
     try:
-        cards = _FOUNDATION_CARDS.validate_json(match.group("cards"))
+        cards = _FOUNDATION_CARDS.validate_json(text[cards_start:close_index])
     except pydantic.ValidationError:
         _logger.warning("Dropped a malformed foundation cards block")
         return PrimerOutput(markdown=markdown, foundation_cards=[])

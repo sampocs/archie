@@ -557,6 +557,29 @@ def test_split_primer_output_cuts_the_cards_block_and_caps_it() -> None:
     ]
 
 
+def test_split_primer_output_keeps_a_tag_mentioned_mid_text_before_the_real_block() -> None:
+    """The block is the last opening tag, so an earlier mention stays in the markdown with the body after it."""
+    cards = [{"question": "Q?", "answer": "A."}]
+    body = "# P\n\nWe use a <foundation_cards> tag here.\n\nMore body."
+    text = f"{body}\n\n<foundation_cards>{json.dumps(cards)}</foundation_cards>"
+
+    output = prompts.split_primer_output(text)
+
+    assert output.markdown == body
+    assert [(card.question, card.answer) for card in output.foundation_cards] == [("Q?", "A.")]
+
+
+def test_split_primer_output_drops_text_after_the_closing_tag() -> None:
+    """Chatter after the block neither hides the cards nor leaves the raw tag in the markdown."""
+    cards = [{"question": "Q?", "answer": "A."}]
+    text = f"# P\n\nBody.\n\n<foundation_cards>{json.dumps(cards)}</foundation_cards>\n\nHope this helps!"
+
+    output = prompts.split_primer_output(text)
+
+    assert output.markdown == "# P\n\nBody."
+    assert [(card.question, card.answer) for card in output.foundation_cards] == [("Q?", "A.")]
+
+
 def test_split_primer_output_keeps_a_primer_without_cards_whole() -> None:
     """An older recording, or a model that left the block out, keeps all its text and has no cards."""
     text = "# Primer\n\nBody with <foundation_cards> mentioned mid-text.\n\nMore."

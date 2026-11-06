@@ -6,7 +6,7 @@ import { Text } from "@/theme/components/Text";
 import type { Signal } from "@/theme/tokens";
 import { useTheme } from "@/theme/useTheme";
 
-const GRADE_SIGNALS: Record<ReviewGrade, Signal> = { got_it: "gotIt", partly: "partly", missed: "missed" };
+export const GRADE_SIGNALS: Record<ReviewGrade, Signal> = { got_it: "gotIt", partly: "partly", missed: "missed" };
 
 /** The grade label on a pill tinted with its signal colour. */
 export function VerdictPill({ grade }: { grade: ReviewGrade }) {

@@ -3,9 +3,8 @@ import * as Notifications from "expo-notifications";
 import type { AppDb } from "@/db/client";
 import { getReviewSettings } from "@/db/reviewSettings";
 
-import { makeReviewData } from "./eligibility";
 import { reminderPlan } from "./reminder";
-import { reviewQueries } from "./useReviewData";
+import { readReviewData } from "./useReviewData";
 
 const REMINDER_TITLE = "Time to review";
 
@@ -23,14 +22,7 @@ export async function scheduleReminders(db: AppDb, options: { askPermission?: bo
     }
     if (!(await hasPermission(options.askPermission ?? false))) return;
 
-    const queries = reviewQueries(db);
-    const data = makeReviewData({
-      cards: queries.cards.all(),
-      sources: queries.sources.all(),
-      topicPrimers: queries.topicPrimers.all(),
-      topics: queries.topics.all(),
-    });
-    const plan = reminderPlan(data, settings, new Date());
+    const plan = reminderPlan(readReviewData(db), settings, new Date());
 
     await Notifications.cancelAllScheduledNotificationsAsync();
     for (const { at, body } of plan) {

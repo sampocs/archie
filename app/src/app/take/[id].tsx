@@ -139,7 +139,7 @@ export default function TakeScreen() {
         ) : null}
       </View>
       <RawTextSheet visible={rawOpen} rawBody={current.rawBody} onClose={() => setRawOpen(false)} />
-      <TakeMenus take={take} visible={menuOpen} onClose={() => setMenuOpen(false)} onDeleted={() => router.back()} />
+      <TakeMenus take={take} visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </Screen>
   );
 }

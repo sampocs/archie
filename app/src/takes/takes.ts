@@ -1,6 +1,9 @@
 import type * as schema from "@/db/schema";
 import { cardsWord } from "@/review/labels";
 
+export const MAX_TAKE_TITLE_LENGTH = 200;
+export const MAX_TAKE_BODY_LENGTH = 20_000;
+
 export type TakeKind = "opinion" | "talking_point";
 export type TakeRow = typeof schema.takes.$inferSelect;
 export type TakeVersionRow = typeof schema.takeVersions.$inferSelect;

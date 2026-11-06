@@ -1,4 +1,7 @@
-/** Save needs both a title and a body with something other than whitespace in them. */
+import { MAX_TAKE_BODY_LENGTH } from "./takes";
+
+/** Save needs a title and a body with something other than whitespace in them, and a body the server will accept. */
 export function canSaveTake(input: { title: string; body: string }): boolean {
-  return input.title.trim().length > 0 && input.body.trim().length > 0;
+  const body = input.body.trim();
+  return input.title.trim().length > 0 && body.length > 0 && Array.from(body).length <= MAX_TAKE_BODY_LENGTH;
 }

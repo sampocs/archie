@@ -44,13 +44,13 @@ export default function ReviewSettingsScreen() {
         {settings.reminderEnabled ? (
           <Pressable testID="reminder-time-row" onPress={() => setPicking(true)} style={rowStyle}>
             <Text>Time</Text>
-            <Text testID="reminder-time" variant="monoLabel" tone="ink3">
+            <Text testID="reminder-time" tone="ink2">
               {formatReminderTime(settings.reminderMinutes)}
             </Text>
           </Pressable>
         ) : null}
       </Card>
-      <Text testID="reminder-caption" variant="caption" tone="ink3">
+      <Text testID="reminder-caption" variant="secondary" tone="ink3">
         Only sent when cards are due
       </Text>
 

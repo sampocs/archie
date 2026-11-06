@@ -17,6 +17,17 @@ export function reviewQueries(database: AppDb) {
   };
 }
 
+/** The same rows, read once (a session's card list, the reminder plan). */
+export function readReviewData(database: AppDb): ReviewData {
+  const queries = reviewQueries(database);
+  return makeReviewData({
+    cards: queries.cards.all(),
+    sources: queries.sources.all(),
+    topicPrimers: queries.topicPrimers.all(),
+    topics: queries.topics.all(),
+  });
+}
+
 /** Everything the review screens read, live. */
 export function useReviewData(): ReviewData {
   const queries = useMemo(() => reviewQueries(db), []);

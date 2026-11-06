@@ -5,11 +5,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 
-type ToastProps = { message: string; actionLabel: string; onAction: () => void; onHide: () => void };
+// Without an action (e.g. a failure notice) it is just the message.
+type ToastProps = { message: string; actionLabel?: string; onAction?: () => void; onHide: () => void };
 
 const VISIBLE_MS = 4000;
 
-/** A short confirmation pinned to the bottom with one action (e.g. Undo); it hides itself after a few seconds. */
+/** A short message pinned to the bottom, with at most one action (e.g. Undo); it hides itself after a few seconds. */
 export function Toast({ message, actionLabel, onAction, onHide }: ToastProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -36,19 +37,23 @@ export function Toast({ message, actionLabel, onAction, onHide }: ToastProps) {
         paddingVertical: theme.spacing.md,
       }}
     >
-      <Text tone="onChrome">{message}</Text>
-      <Pressable
-        testID="toast-action"
-        hitSlop={12}
-        onPress={() => {
-          onAction();
-          onHide();
-        }}
-      >
-        <Text variant="headline" tone="onChrome">
-          {actionLabel}
-        </Text>
-      </Pressable>
+      <Text tone="onChrome" style={{ flexShrink: 1 }}>
+        {message}
+      </Text>
+      {actionLabel && onAction ? (
+        <Pressable
+          testID="toast-action"
+          hitSlop={12}
+          onPress={() => {
+            onAction();
+            onHide();
+          }}
+        >
+          <Text variant="headline" tone="onChrome">
+            {actionLabel}
+          </Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

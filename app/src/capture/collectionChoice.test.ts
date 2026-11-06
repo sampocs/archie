@@ -1,4 +1,4 @@
-import { canSaveToCollection, collectionPickLabel, defaultCollectionPick } from "./collectionChoice";
+import { canSaveToCollection, collectionPickLabel, defaultCollectionPick, resolveCollectionPick } from "./collectionChoice";
 import { chooseIntent, EMPTY_CHOICE } from "./types";
 
 const collections = [
@@ -47,5 +47,14 @@ describe("chooseIntent with collections", () => {
     const inCollection = chooseIntent(EMPTY_CHOICE, "collection", pick);
 
     expect(chooseIntent(inCollection, "queue")).toEqual({ ...EMPTY_CHOICE, intent: "queue" });
+  });
+});
+
+describe("resolveCollectionPick", () => {
+  it("keeps a listed existing pick or a new pick, and falls back to the default for a deleted collection", () => {
+    expect(resolveCollectionPick({ kind: "existing", id: "gone" }, collections, "a")).toEqual({ kind: "existing", id: "a" });
+    expect(resolveCollectionPick({ kind: "existing", id: "b" }, collections, "a")).toEqual({ kind: "existing", id: "b" });
+    expect(resolveCollectionPick({ kind: "new", name: "Trips" }, collections, "a")).toEqual({ kind: "new", name: "Trips" });
+    expect(resolveCollectionPick(null, collections, "a")).toEqual({ kind: "existing", id: "a" });
   });
 });

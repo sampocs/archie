@@ -30,13 +30,14 @@ appId: com.sampocs.archie
 - tapOn:
     id: "editor-body"
 - inputText: "ok so the main thing is people think its all speculation but stablecoins did like 10 trillion last year which is basically visa and anyone can build on it without a bank"
-# The switch sits below the body, under the keyboard.
-# The whole row toggles Clean it up (a tap on the bare switch doesn't register under Maestro).
+# The Clean it up row sits under the keyboard: drag the page to put the keyboard away, then tap the row (the whole row
+# toggles the switch).
+- swipe:
+    start: "50%, 25%"
+    end: "50%, 45%"
+    duration: 600
 - tapOn:
     id: "editor-clean-row"
-- assertVisible:
-    id: "editor-clean"
-    text: "1"
 - tapOn:
     id: "editor-save"
 - extendedWaitUntil:

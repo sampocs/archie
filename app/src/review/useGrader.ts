@@ -46,11 +46,15 @@ export function useGrader({ card, wasDue, sessionKey, onGraded }: GraderArgs) {
   const latest = useRef({ card, onGraded });
   latest.current = { card, onGraded };
   const mounted = useRef(true);
+  const abort = useRef(new AbortController());
   const submitted = useRef(false);
   useEffect(() => {
     mounted.current = true;
+    const controller = abort.current;
     return () => {
       mounted.current = false;
+      // Leaving the card mid-grade cancels the request rather than letting it run to its timeout.
+      controller.abort();
     };
   }, []);
 
@@ -86,6 +90,7 @@ export function useGrader({ card, wasDue, sessionKey, onGraded }: GraderArgs) {
           signal,
         }),
       GRADE_TIMEOUT_MS,
+      abort.current.signal,
     );
     if (!mounted.current) return;
     if (verdict === null) {

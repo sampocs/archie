@@ -5,6 +5,7 @@ import {
   elapsedMinutes,
   gradeWithin,
   isOffline,
+  micVisible,
   knewItInput,
   nextLiveIndex,
   OFFLINE_REASON,
@@ -79,6 +80,25 @@ describe("gradeWithin", () => {
     respond({ grade: "got_it", missing: "" });
     await expect(verdict).resolves.toBeNull();
     expect(signal?.aborted).toBe(true);
+  });
+
+  it("aborting the outer signal aborts the call's signal and resolves null", async () => {
+    const outer = new AbortController();
+    let signal: AbortSignal | undefined;
+    const verdict = gradeWithin((given) => {
+      signal = given;
+      return new Promise(() => {});
+    }, 3000, outer.signal);
+
+    outer.abort();
+    await expect(verdict).resolves.toBeNull();
+    expect(signal?.aborted).toBe(true);
+  });
+
+  it("an outer signal already aborted gives null without waiting", async () => {
+    const outer = new AbortController();
+    outer.abort();
+    await expect(gradeWithin(() => new Promise(() => {}), 3000, outer.signal)).resolves.toBeNull();
   });
 
   it("a failed call or a malformed body is null", async () => {
@@ -192,5 +212,18 @@ describe("doneSummaryLine", () => {
     expect(doneSummaryLine(8, 4, { at: new Date(dayAt(1)), count: 5 }, NOW)).toBe(
       "8 cards in 4 minutes. Next review tomorrow: 5 cards.",
     );
+  });
+});
+
+describe("micVisible", () => {
+  it("online always shows the mic", () => {
+    expect(micVisible(true, "idle")).toBe(true);
+    expect(micVisible(true, "recording")).toBe(true);
+  });
+
+  it("offline hides it only when idle, so an in-progress recording can still be stopped", () => {
+    expect(micVisible(false, "idle")).toBe(false);
+    expect(micVisible(false, "recording")).toBe(true);
+    expect(micVisible(false, "transcribing")).toBe(true);
   });
 });

@@ -24,7 +24,16 @@ appId: com.sampocs.archie
     id: "intent-queue"
 - tapOn:
     id: "add-save"
-# Save closes the sheet and stays on Library; open the new row.
+# Save closes the sheet and stays on Library; wait for the sheet to go (its field also reads example.com), then open
+# the new row.
+- extendedWaitUntil:
+    notVisible:
+      id: "add-url"
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      text: ".*example\\.com.*"
+    timeout: 10000
 - tapOn:
     text: ".*example\\.com.*"
 - tapOn:
@@ -42,11 +51,12 @@ appId: com.sampocs.archie
     id: "favorites-domain-other"
 - assertVisible:
     id: "favorites-page"
+# The row's title becomes "Example Domain" once fetched and its meta has no host, so match the row by id.
 - assertVisible:
-    text: ".*example\\.com.*"
+    id: "favorite-row-.*"
 - swipe:
     from:
-      text: ".*example\\.com.*"
+      id: "favorite-row-.*"
     direction: LEFT
 - tapOn:
     id: "favorite-unstar-.*"

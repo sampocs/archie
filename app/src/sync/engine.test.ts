@@ -3,9 +3,14 @@ import { eq, sql } from "drizzle-orm";
 
 import migrations from "../../drizzle/migrations";
 import {
+  addCollectionItem,
+  createCollection,
   dropCard,
+  editCollectionItemNote,
   goDeeper,
   queuePrimer,
+  removeCollectionItem,
+  renameCollection,
   requestPrimer,
   returnToInbox,
   reviewCard,
@@ -24,6 +29,8 @@ import {
   OutboxEntry,
   PulledArtifact,
   PulledCard,
+  PulledCollection,
+  PulledCollectionItem,
   PulledSource,
   PulledTopic,
   PulledTopicPrimer,
@@ -971,7 +978,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;
@@ -1325,4 +1332,160 @@ describe("sign-out during a sync run", () => {
     expect(db.select().from(schema.sources).get()?.syncError).toBeNull();
     expect(db.select().from(schema.syncState).get()?.lastPushFailed).toBe(0);
   });
+});
+
+const pulledCollection = (overrides: Partial<PulledCollection>): PulledCollection => ({
+  id: "c1",
+  name: "Bears hype",
+  position: 0,
+  created_at: "2026-11-05T00:00:00Z",
+  updated_at: "2026-11-05T00:00:00Z",
+  deleted_at: null,
+  ...overrides,
+});
+
+const pulledItem = (overrides: Partial<PulledCollectionItem>): PulledCollectionItem => ({
+  id: "i1",
+  collection_id: "c1",
+  url: "https://x.com/BearsFilmRoom/status/1",
+  kind: "x",
+  title: null,
+  author: null,
+  image_url: null,
+  duration_seconds: null,
+  note: null,
+  metadata_status: "ready",
+  created_at: "2026-11-05T00:00:00Z",
+  updated_at: "2026-11-05T00:00:00Z",
+  deleted_at: null,
+  ...overrides,
+});
+
+describe("database SyncStore: collections", () => {
+  it("stores pulled collections and posts, and a page without them is fine", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: {
+        sources: [],
+        artifacts: [],
+        cards: [],
+        collections: [pulledCollection({ name: "Bears hype" })],
+        collection_items: [pulledItem({ title: "Walk-off pick six", duration_seconds: 65 })],
+      },
+      position: 3,
+      more: false,
+    });
+    await store.applyPage({ rows: { sources: [], artifacts: [], cards: [] }, position: 4, more: false });
+
+    expect(db.select().from(schema.collections).get()).toMatchObject({ id: "c1", name: "Bears hype", position: 0 });
+    expect(db.select().from(schema.collectionItems).get()).toMatchObject({
+      id: "i1",
+      collectionId: "c1",
+      kind: "x",
+      title: "Walk-off pick six",
+      durationSeconds: 65,
+      metadataStatus: "ready",
+    });
+    expect(await store.getPosition()).toBe(4);
+  });
+
+  it("a re-pull updates a collection and its post over the local copy", async () => {
+    const { db, store } = makeDbStore();
+    const rows = { sources: [], artifacts: [], cards: [] };
+    await store.applyPage({
+      rows: { ...rows, collections: [pulledCollection({})], collection_items: [pulledItem({})] },
+      position: 1,
+      more: false,
+    });
+
+    await store.applyPage({
+      rows: {
+        ...rows,
+        collections: [pulledCollection({ name: "Bears film room" })],
+        collection_items: [pulledItem({ note: "the scramble", deleted_at: "2026-11-06T00:00:00Z" })],
+      },
+      position: 2,
+      more: false,
+    });
+
+    expect(db.select().from(schema.collections).get()?.name).toBe("Bears film room");
+    expect(db.select().from(schema.collectionItems).get()).toMatchObject({
+      note: "the scramble",
+      deletedAt: "2026-11-06T00:00:00Z",
+    });
+  });
+
+  it("a re-pull of a collection or post with an unsent edit keeps the local copy", async () => {
+    const { db, store } = makeDbStore();
+    const page = {
+      rows: { sources: [], artifacts: [], cards: [], collections: [pulledCollection({})], collection_items: [pulledItem({})] },
+      position: 1,
+      more: false,
+    };
+    await store.applyPage(page);
+    renameCollection(db, "c1", "Mine");
+    editCollectionItemNote(db, "i1", "mine");
+
+    await store.applyPage({ ...page, position: 2 });
+
+    expect(db.select().from(schema.collections).get()?.name).toBe("Mine");
+    expect(db.select().from(schema.collectionItems).get()?.note).toBe("mine");
+  });
+
+  it("a rejected create_collection deletes the optimistic collection and its posts", async () => {
+    const { db, store } = makeDbStore();
+    const collectionId = createCollection(db, "Bears hype");
+    addCollectionItem(db, { collectionId, url: "https://example.com/a" });
+    const create = db.select().from(schema.outbox).all().find((entry) => entry.type === "create_collection")!;
+
+    await store.rejectAction(create.id, "id already exists");
+
+    expect(db.select().from(schema.collections).all()).toEqual([]);
+    expect(db.select().from(schema.collectionItems).all()).toEqual([]);
+  });
+
+  it("a rejected add_collection_item deletes the optimistic post and touches no source", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: { sources: [pulledSource({})], artifacts: [], cards: [], collections: [pulledCollection({})] },
+      position: 5,
+      more: false,
+    });
+    addCollectionItem(db, { collectionId: "c1", url: "https://example.com/a" });
+    const add = db.select().from(schema.outbox).get()!;
+
+    await store.rejectAction(add.id, "collection not found");
+
+    expect(db.select().from(schema.collectionItems).all()).toEqual([]);
+    expect(db.select().from(schema.collections).all()).toHaveLength(1);
+    expect(sourceRow(db)?.syncError).toBeNull();
+    expect(await store.getPosition()).toBe(5);
+  });
+
+  it.each(["update_collection", "update_collection_item"])(
+    "a rejected %s rewinds the position and touches no source",
+    async (type) => {
+      const { db, store } = makeDbStore();
+      await store.applyPage({
+        rows: {
+          sources: [pulledSource({})],
+          artifacts: [],
+          cards: [],
+          collections: [pulledCollection({})],
+          collection_items: [pulledItem({})],
+        },
+        position: 5,
+        more: false,
+      });
+      if (type === "update_collection") renameCollection(db, "c1", "New name");
+      else removeCollectionItem(db, "i1");
+      const entry = db.select().from(schema.outbox).get()!;
+
+      await store.rejectAction(entry.id, "collection not found");
+
+      expect(entry.type).toBe(type);
+      expect(await store.getPosition()).toBe(0);
+      expect(sourceRow(db)?.syncError).toBeNull();
+    },
+  );
 });

@@ -1,0 +1,75 @@
+appId: com.sampocs.archie
+---
+# Make a collection from the add sheet while saving a link into it, see the post on the collection page and not in
+# Library → All, then delete the collection from its tile's long-press menu.
+- runFlow: login.yaml
+- tapOn:
+    id: "library-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "library-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+# A path and a name no other flow uses: `make maestro` keeps one user's data across flows.
+- inputText: "https://example.com/collections-flow"
+# Dismiss the keyboard: it covers Save.
+- tapOn: "Paste a link to save it."
+- tapOn:
+    id: "intent-collection"
+# No collections yet, so the dropdown reads "New collection…" and Save asks for the name.
+- assertVisible:
+    id: "collection-dropdown"
+    text: ".*New collection….*"
+- tapOn:
+    id: "add-save"
+- extendedWaitUntil:
+    visible: "New collection"
+    timeout: 5000
+- inputText: "Maestro scrapbook"
+- tapOn: "Create"
+# Save closes the sheet; wait for it to go (its field holds the URL the checks below look for).
+- extendedWaitUntil:
+    notVisible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "library-mode-saved"
+- assertVisible:
+    id: "saved-collections"
+- tapOn:
+    id: "collection-tile-.*"
+- extendedWaitUntil:
+    visible:
+      id: "collection-page"
+    timeout: 5000
+- assertVisible:
+    id: "collection-kicker"
+    text: "(?i).*1 saved.*"
+# The post's caption becomes the page title once the preview lands, so match the post by id.
+- assertVisible:
+    id: "collection-post-.*"
+- tapOn:
+    id: "screen-back"
+# A collection post is never a source: All doesn't list it.
+- tapOn:
+    id: "library-mode-all"
+- assertNotVisible:
+    text: ".*collections-flow.*"
+- tapOn:
+    id: "library-mode-saved"
+- longPressOn: "Maestro scrapbook"
+- tapOn:
+    id: "collection-menu-delete"
+- tapOn: "Delete"
+- extendedWaitUntil:
+    notVisible: "Maestro scrapbook"
+    timeout: 5000

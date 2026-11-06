@@ -8,6 +8,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { apiFetch, UnauthorizedError } from "@/api/client";
 import { clearSession, useSession } from "@/auth/session";
+import { CollectionsMirror } from "@/collections/CollectionsMirror";
 import { SignOutContext } from "@/context/SignOutContext";
 import { db, seedSyncState, useDbMigrations } from "@/db/client";
 import * as schema from "@/db/schema";
@@ -40,6 +41,7 @@ export default function RootLayout() {
         <SyncRoot sessionKey={session.sessionKey} onUnauthorized={() => void clearSession()} />
       )}
       {session.status === "signedIn" && <ReminderRoot />}
+      {session.status === "signedIn" && <CollectionsMirror />}
       <AppStack />
     </GestureHandlerRootView>
   );
@@ -93,6 +95,7 @@ function AppStack() {
           <Stack.Screen name="primer/[id]" />
           <Stack.Screen name="topic/[id]" />
           <Stack.Screen name="favorites/[domain]" />
+          <Stack.Screen name="collection/[id]" />
           <Stack.Screen name="brief" />
           <Stack.Screen name="brief/story/[index]" />
           <Stack.Screen name="settings/removed-topics" />

@@ -44,6 +44,10 @@ class ActionType(StrEnum):
     SET_CARDS_OFF = "set_cards_off"
     REQUEST_NEWS_QUIZ = "request_news_quiz"
     SET_FAVORITE = "set_favorite"
+    CREATE_COLLECTION = "create_collection"
+    UPDATE_COLLECTION = "update_collection"
+    ADD_COLLECTION_ITEM = "add_collection_item"
+    UPDATE_COLLECTION_ITEM = "update_collection_item"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 
@@ -200,6 +204,41 @@ class BriefOut(pydantic.BaseModel):
     change_seq: int
 
 
+class CollectionOut(pydantic.BaseModel):
+    """A collection as the phone stores it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    name: str
+    position: float
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    deleted_at: datetime.datetime | None
+    change_seq: int
+
+
+class CollectionItemOut(pydantic.BaseModel):
+    """A saved post as the phone stores it; the preview fields stay null until `fetch_collection_item` fills them."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    collection_id: uuid.UUID
+    url: str
+    kind: str
+    title: str | None
+    author: str | None
+    image_url: str | None
+    duration_seconds: int | None
+    note: str | None
+    metadata_status: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    deleted_at: datetime.datetime | None
+    change_seq: int
+
+
 class PulledRows(pydantic.BaseModel):
     """Changed rows by table."""
 
@@ -209,6 +248,8 @@ class PulledRows(pydantic.BaseModel):
     topics: list[TopicOut]
     topic_primers: list[TopicPrimerOut]
     briefs: list[BriefOut]
+    collections: list[CollectionOut]
+    collection_items: list[CollectionItemOut]
 
 
 class PullResponse(pydantic.BaseModel):

@@ -42,6 +42,22 @@ class SourceKind(StrEnum):
     NEWSLETTER = "newsletter"
 
 
+class CollectionItemKind(StrEnum):
+    """What a saved post links to; only X and YouTube have their own preview lookups."""
+
+    X = "x"
+    YOUTUBE = "youtube"
+    LINK = "link"
+
+
+class MetadataStatus(StrEnum):
+    """Whether a saved post's preview (title, author, thumbnail) has been fetched."""
+
+    PENDING = "pending"
+    READY = "ready"
+    FAILED = "failed"
+
+
 class ProcessingStatus(StrEnum):
     """Where a source stands in the capture pipeline, separate from the user's reading `SourceState`."""
 
@@ -140,6 +156,7 @@ class JobKind(StrEnum):
     CLEAN_TEXT = "clean_text"
     UPDATE_BRIEF = "update_brief"
     NEWS_QUIZ = "news_quiz"
+    FETCH_COLLECTION_ITEM = "fetch_collection_item"
 
 
 class TopicOrigin(StrEnum):
@@ -379,6 +396,55 @@ class Brief(Base):
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     done_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class Collection(Base):
+    """A just-for-fun scrapbook ("Bears hype"). Its posts are never sources and never reach the learning side."""
+
+    __tablename__ = "collections"
+    __table_args__ = (sqlalchemy.Index("ix_collections_user_id_change_seq", "user_id", "change_seq"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(sqlalchemy.String(200))
+    # Tile order on Saved; a new collection goes at the end, so this is creation order until something reorders it.
+    position: Mapped[float] = mapped_column(sqlalchemy.Double)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class CollectionItem(Base):
+    """A link saved into a collection, with the preview `fetch_collection_item` fills in once.
+
+    Lives in its own table rather than `sources`, so no library, search, review or pipeline query can see it.
+    """
+
+    __tablename__ = "collection_items"
+    __table_args__ = (
+        sqlalchemy.Index("ix_collection_items_user_id_change_seq", "user_id", "change_seq"),
+        sqlalchemy.Index("ix_collection_items_collection_id", "collection_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    collection_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("collections.id", ondelete="CASCADE")
+    )
+    url: Mapped[str] = mapped_column(sqlalchemy.String(2048))
+    kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    # The preview: the post's caption or the page's title, who posted it, its thumbnail and a video's length.
+    title: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    author: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    image_url: Mapped[str | None] = mapped_column(sqlalchemy.String(2048))
+    duration_seconds: Mapped[int | None] = mapped_column(sqlalchemy.Integer)
+    note: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    metadata_status: Mapped[str] = mapped_column(sqlalchemy.String(16), server_default=MetadataStatus.PENDING.value)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 

@@ -10,6 +10,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `library_queue.yaml` | Library queue: reorder by drag, snooze from a swipe; Snoozed · 1 |
 | `library_search.yaml` | Library search finds items by title and filters the list |
 | `favorites.yaml` | Star an item from its page, find it under Library → Saved → Other, unstar it with a swipe; Saved shows its empty state |
+| `collections.yaml` | Save a link from the Library ＋ into a new collection, see it on the collection page and not in All, delete the collection from its tile |
 | `topics.yaml` | Topics: add, remove and restore a topic |
 | `finish_item.yaml` | Finish an item: it leaves the queue and lands in the finished state |
 | `topic_picker.yaml` | Signs in as `picker-user` (no topics chosen yet), the topic picker appears, pick topics and continue |
@@ -31,7 +32,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 ## Running
 
 1. Boot an iOS simulator (e.g. iPhone 17 Pro) and install the debug build: `cd app && npx expo run:ios`. Leave Metro running.
-2. `make maestro` with the backend up in another terminal (`make start-local`). Runs `add_link`, `sign_out`, `source_page`, `library_queue`, `library_search`, `favorites`, `topics`, `finish_item`, `topic_picker` and `today_primer`.
+2. `make maestro` with the backend up in another terminal (`make start-local`). Runs `add_link`, `sign_out`, `source_page`, `library_queue`, `library_search`, `favorites`, `collections`, `topics`, `finish_item`, `topic_picker` and `today_primer`.
    `source_page` and `today_primer` call Anthropic for real, so a run spends a few cents.
    `make maestro-podcast` runs `add_podcast` separately because it spends real API credits.
 3. `make maestro-newsletter` with the backend up (`make start-local`): runs `run_newsletter.sh`, which needs `INGEST_SECRET` and the owner's keys in `.env` and spends a few cents.

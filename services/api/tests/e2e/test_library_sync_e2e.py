@@ -178,6 +178,8 @@ def test_topics_topic_primers_and_sources_page_in_position_order(live_stack: Liv
         "briefs",
         "collections",
         "collection_items",
+        "takes",
+        "take_versions",
     }
 
 

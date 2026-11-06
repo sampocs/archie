@@ -13,6 +13,9 @@ from archie_db import models
 # A `fetch_collection_item` job's payload key: the saved post to fill in.
 COLLECTION_ITEM_ID_KEY = "collection_item_id"
 
+# The payload key of `clean_take` and `take_cards` jobs: the take version to clean up or write cards from.
+TAKE_VERSION_ID_KEY = "take_version_id"
+
 
 def enqueue(
     db: sqlalchemy.orm.Session,

@@ -58,6 +58,13 @@ class MetadataStatus(StrEnum):
     FAILED = "failed"
 
 
+class TakeKind(StrEnum):
+    """What a take is: what the owner thinks (an opinion), or the case they make for something (a talking point)."""
+
+    OPINION = "opinion"
+    TALKING_POINT = "talking_point"
+
+
 class ProcessingStatus(StrEnum):
     """Where a source stands in the capture pipeline, separate from the user's reading `SourceState`."""
 
@@ -85,13 +92,17 @@ class ArtifactKind(StrEnum):
 
 
 class CardKind(StrEnum):
-    """The shape of a spaced-repetition card; `foundation` cards come from primers, `quiz` cards from briefs."""
+    """The shape of a spaced-repetition card.
+
+    `foundation` cards come from primers, `quiz` cards from briefs, `take` cards from the owner's takes.
+    """
 
     CONCEPT = "concept"
     MECHANISM = "mechanism"
     NUMBER = "number"
     FOUNDATION = "foundation"
     QUIZ = "quiz"
+    TAKE = "take"
 
 
 class FsrsState(StrEnum):
@@ -157,6 +168,8 @@ class JobKind(StrEnum):
     UPDATE_BRIEF = "update_brief"
     NEWS_QUIZ = "news_quiz"
     FETCH_COLLECTION_ITEM = "fetch_collection_item"
+    CLEAN_TAKE = "clean_take"
+    TAKE_CARDS = "take_cards"
 
 
 class TopicOrigin(StrEnum):
@@ -448,6 +461,53 @@ class CollectionItem(Base):
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 
+class Take(Base):
+    """Something the owner wrote: an opinion or a talking point.
+
+    Title and kind live here; only the body is versioned.
+    """
+
+    __tablename__ = "takes"
+    __table_args__ = (sqlalchemy.Index("ix_takes_user_id_change_seq", "user_id", "change_seq"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    title: Mapped[str] = mapped_column(sqlalchemy.String(200))
+    # The `take_versions.version` the take page shows; every save that changes the body adds one.
+    current_version: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class TakeVersion(Base):
+    """One dated version of a take's body, with the raw text the owner typed or dictated for it."""
+
+    __tablename__ = "take_versions"
+    __table_args__ = (
+        sqlalchemy.UniqueConstraint("take_id", "version", name="uq_take_versions_version"),
+        sqlalchemy.Index("ix_take_versions_user_id_change_seq", "user_id", "change_seq"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    take_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("takes.id", ondelete="CASCADE")
+    )
+    version: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    # What the take page shows (markdown); null while `clean_take` is still writing it.
+    body: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    raw_body: Mapped[str] = mapped_column(sqlalchemy.Text)
+    # Clean it up was on for this version.
+    cleaned: Mapped[bool] = mapped_column(sqlalchemy.Boolean)
+    # Clean it up gave up: `body` holds the raw text and the take page offers Try again.
+    clean_failed: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
 class SourceCapture(Base):
     """The text the phone or the fetcher captured for a source; the pipeline's input, kept on the server only."""
 
@@ -500,15 +560,16 @@ class SourceArtifact(Base):
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 
-# Exactly one origin per card. A later origin (e.g. takes) adds its column here and to the migration's CHECK.
-CARD_ORIGIN_CHECK = "num_nonnulls(source_id, topic_primer_id, brief_id) = 1"
+# Exactly one origin per card; `take_version_id` only records which version a take card came from.
+CARD_ORIGIN_CHECK = "num_nonnulls(source_id, topic_primer_id, brief_id, take_id) = 1"
 
 
 class Card(Base):
     """A spaced-repetition question and answer, with its FSRS state as the phone's scheduler last wrote it.
 
     Its origin is a source (cards from the summary, or foundation cards from the source's primer, with `artifact_id`
-    naming that summary or primer version), a topic primer (foundation cards) or a brief (quiz cards).
+    naming that summary or primer version), a topic primer (foundation cards), a brief (quiz cards) or a take (take
+    cards, with `take_version_id` naming the version they were written from).
     """
 
     __tablename__ = "cards"
@@ -530,6 +591,12 @@ class Card(Base):
     )
     brief_id: Mapped[uuid.UUID | None] = mapped_column(
         postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("briefs.id", ondelete="CASCADE")
+    )
+    take_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("takes.id", ondelete="CASCADE")
+    )
+    take_version_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("take_versions.id", ondelete="CASCADE")
     )
     kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
     question: Mapped[str] = mapped_column(sqlalchemy.Text)

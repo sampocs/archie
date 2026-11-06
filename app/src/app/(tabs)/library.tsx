@@ -6,6 +6,8 @@ import { Pressable, View } from "react-native";
 import { DomainsView } from "@/library/DomainsView";
 import { LibraryList } from "@/library/LibraryList";
 import { isLibraryFilter, type LibraryFilter } from "@/library/sections";
+import { SavedView } from "@/library/SavedView";
+import { TakesView } from "@/library/TakesView";
 import { useLibraryData } from "@/library/useLibraryData";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
@@ -15,11 +17,13 @@ import { haptic } from "@/ui/haptics";
 
 const HEADER_ADD_SIZE = 36;
 
-type Mode = "list" | "domains";
+type Mode = "all" | "domains" | "saved" | "takes";
 
 const MODES: { mode: Mode; label: string }[] = [
-  { mode: "list", label: "List" },
+  { mode: "all", label: "All" },
   { mode: "domains", label: "Domains" },
+  { mode: "saved", label: "Saved" },
+  { mode: "takes", label: "Takes" },
 ];
 
 export default function LibraryScreen() {
@@ -27,19 +31,17 @@ export default function LibraryScreen() {
   const router = useRouter();
   const data = useLibraryData();
   const params = useLocalSearchParams<{ filter?: string; at?: string }>();
-  const [mode, setMode] = useState<Mode>("list");
+  const [mode, setMode] = useState<Mode>("all");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<LibraryFilter>(isLibraryFilter(params.filter) ? params.filter : "all");
 
   // Today links here with a filter (and a fresh `at`, so the same link works twice) while the tab may be mounted.
   useEffect(() => {
     if (!isLibraryFilter(params.filter)) return;
-    setMode("list");
+    setMode("all");
     setFilter(params.filter);
     setQuery("");
   }, [params.filter, params.at]);
-
-  const showList = mode === "list" || query.trim() !== "";
 
   return (
     <Screen
@@ -90,8 +92,16 @@ export default function LibraryScreen() {
           </Pressable>
         ))}
       </View>
-      <TextField testID="library-search" placeholder="Search your library" value={query} onChangeText={setQuery} />
-      {showList ? <LibraryList data={data} query={query} filter={filter} onFilterChange={setFilter} /> : <DomainsView data={data} />}
+      {/* Search and filter chips belong to All. */}
+      {mode === "all" ? (
+        <>
+          <TextField testID="library-search" placeholder="Search your library" value={query} onChangeText={setQuery} />
+          <LibraryList data={data} query={query} filter={filter} onFilterChange={setFilter} />
+        </>
+      ) : null}
+      {mode === "domains" ? <DomainsView data={data} /> : null}
+      {mode === "saved" ? <SavedView data={data} /> : null}
+      {mode === "takes" ? <TakesView /> : null}
     </Screen>
   );
 }

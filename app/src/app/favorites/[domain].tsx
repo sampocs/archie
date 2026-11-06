@@ -48,7 +48,7 @@ export default function FavoritesScreen() {
                     source={source}
                     testID={`favorite-row-${source.id}`}
                     kickerSuffix={source.topic?.name}
-                    meta={favoriteMeta({ kind: source.kind, favoritedAt: source.favoritedAt! })}
+                    meta={favoriteMeta({ kind: source.kind, favoritedAt: source.favoritedAt })}
                   />
                 </SwipeRow>
               );

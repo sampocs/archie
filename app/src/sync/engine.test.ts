@@ -1,7 +1,17 @@
+import Database from "better-sqlite3";
 import { eq, sql } from "drizzle-orm";
 
 import migrations from "../../drizzle/migrations";
-import { goDeeper, queuePrimer, requestPrimer, returnToInbox, snooze } from "@/db/actions";
+import {
+  dropCard,
+  goDeeper,
+  queuePrimer,
+  requestPrimer,
+  returnToInbox,
+  reviewCard,
+  setCardsOff,
+  snooze,
+} from "@/db/actions";
 
 import { ClientError, NetworkError, UnauthorizedError } from "@/api/client";
 import type { AppDb } from "@/db/client";
@@ -900,7 +910,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;
@@ -975,6 +985,160 @@ describe("database SyncStore: M4 migration and rejections", () => {
 
     expect(await store.getPosition()).toBe(0);
     expect(sourceRow(db)?.syncError).toBe("nope");
+  });
+});
+
+describe("database SyncStore: cards and review actions", () => {
+  const reviewedFields = {
+    fsrsState: "review" as const,
+    stability: 4.5,
+    difficulty: 5.2,
+    dueAt: "2026-11-10T00:00:00.000Z",
+    lastReviewAt: "2026-11-05T00:00:00.000Z",
+    reps: 3,
+    lapses: 1,
+  };
+  const newFields = { ...reviewedFields, fsrsState: "new" as const, stability: null, difficulty: null, dueAt: null, lastReviewAt: null, reps: 0, lapses: 0 };
+  const cardPage = (cards: PulledCard[], position = 5): PullPage => ({
+    rows: { sources: [pulledSource({})], artifacts: [], cards },
+    position,
+    more: false,
+  });
+
+  it("stores a pulled card's FSRS state and origins, with no source", async () => {
+    const { db, store } = makeDbStore();
+
+    await store.applyPage(
+      cardPage([
+        pulledCard({
+          id: "quiz",
+          source_id: null,
+          brief_id: "b1",
+          kind: "quiz",
+          fsrs_state: "review",
+          stability: 4.5,
+          difficulty: 5.2,
+          due_at: "2026-11-10T00:00:00Z",
+          last_review_at: "2026-11-05T00:00:00Z",
+          reps: 3,
+          lapses: 1,
+          expires_at: "2026-11-12T00:00:00Z",
+        }),
+        pulledCard({ id: "legacy" }),
+      ]),
+    );
+
+    const card = (id: string) => db.select().from(schema.cards).where(eq(schema.cards.id, id)).get();
+    expect(card("quiz")).toMatchObject({
+      sourceId: null,
+      topicPrimerId: null,
+      briefId: "b1",
+      fsrsState: "review",
+      stability: 4.5,
+      difficulty: 5.2,
+      dueAt: "2026-11-10T00:00:00Z",
+      lastReviewAt: "2026-11-05T00:00:00Z",
+      reps: 3,
+      lapses: 1,
+      expiresAt: "2026-11-12T00:00:00Z",
+    });
+    // A server older than M6 sends no FSRS fields: the card is new.
+    expect(card("legacy")).toMatchObject({ sourceId: "s1", briefId: null, fsrsState: "new", stability: null, reps: 0, lapses: 0 });
+  });
+
+  it("keeps a card's local schedule while its review_card is unsent", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(cardPage([pulledCard({})]));
+    reviewCard(db, {
+      cardId: "c1",
+      grade: "got_it",
+      gradedBy: "model",
+      answer: "A.",
+      missing: "",
+      wasDue: true,
+      reviewedAt: new Date("2026-11-05T00:00:00Z"),
+      stateBefore: newFields,
+      stateAfter: reviewedFields,
+    });
+
+    await store.applyPage(cardPage([pulledCard({ answer: "Server answer" })], 6));
+
+    expect(db.select().from(schema.cards).get()).toMatchObject({ ...reviewedFields, answer: "A." });
+    expect(await store.getPosition()).toBe(6);
+  });
+
+  it("stores a pulled source's cards_off as 1", async () => {
+    const { db, store } = makeDbStore();
+
+    await store.applyPage({ rows: { sources: [pulledSource({ cards_off: true })], artifacts: [], cards: [] }, position: 1, more: false });
+
+    expect(sourceRow(db)?.cardsOff).toBe(1);
+  });
+
+  it.each(["review_card", "drop_card"])(
+    "a rejected %s rewinds the position and leaves the source alone",
+    async (type) => {
+      const { db, store } = makeDbStore();
+      await store.applyPage(cardPage([pulledCard({})]));
+      const actions = {
+        review_card: () =>
+          reviewCard(db, {
+            cardId: "c1",
+            grade: "missed",
+            gradedBy: "self",
+            answer: null,
+            missing: null,
+            wasDue: true,
+            reviewedAt: new Date("2026-11-05T00:00:00Z"),
+            stateBefore: newFields,
+            stateAfter: reviewedFields,
+          }),
+        drop_card: () => dropCard(db, "c1"),
+      };
+      actions[type as keyof typeof actions]();
+      const entry = db.select().from(schema.outbox).get()!;
+
+      await store.rejectAction(entry.id, "nope");
+
+      expect(await store.getPosition()).toBe(0);
+      expect(sourceRow(db)?.syncError).toBeNull();
+    },
+  );
+
+  it("a rejected set_cards_off rewinds the position and surfaces syncError on the source", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(cardPage([pulledCard({})]));
+    setCardsOff(db, "s1", true);
+    const entry = db.select().from(schema.outbox).get()!;
+
+    await store.rejectAction(entry.id, "nope");
+
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)?.syncError).toBe("nope");
+  });
+
+  // 0007 rebuilds the cards table (source_id became nullable) with a hand-trimmed copy of the old columns.
+  it("the 0007_review migration keeps existing cards, as new cards", () => {
+    const sqlite = new Database(":memory:");
+    const sqlByKey = migrations.migrations as Record<string, string>;
+    const runMigration = (idx: number) => {
+      for (const statement of sqlByKey[`m${String(idx).padStart(4, "0")}`].split("--> statement-breakpoint")) {
+        if (statement.trim()) sqlite.exec(statement);
+      }
+    };
+    const reviewIdx = migrations.journal.entries.find((entry) => entry.tag === "0007_review")!.idx;
+    for (let idx = 0; idx < reviewIdx; idx++) runMigration(idx);
+    sqlite
+      .prepare(
+        "INSERT INTO cards (id, source_id, kind, question, answer, created_at) VALUES ('c1', 's1', 'concept', 'Q?', 'A.', 'x')",
+      )
+      .run();
+
+    runMigration(reviewIdx);
+
+    expect(sqlite.prepare("SELECT * FROM cards").all()).toEqual([
+      expect.objectContaining({ id: "c1", source_id: "s1", question: "Q?", fsrs_state: "new", reps: 0, lapses: 0, due_at: null }),
+    ]);
   });
 });
 

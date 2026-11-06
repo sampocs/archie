@@ -107,7 +107,10 @@ export default function TakeEditorScreen() {
           scrollEnabled={false}
           style={{ minHeight: 250, textAlignVertical: "top", paddingTop: 14, paddingBottom: 14 }}
         />
-        <View
+        {/* The whole row toggles, not just the small switch. */}
+        <Pressable
+          testID="editor-clean-row"
+          onPress={() => setClean(!clean)}
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -131,7 +134,7 @@ export default function TakeEditorScreen() {
             onValueChange={setClean}
             trackColor={{ true: theme.signals.gotIt }}
           />
-        </View>
+        </Pressable>
         <Text testID="editor-hint" variant="secondary" tone="ink3">
           {editorHint(take)}
         </Text>

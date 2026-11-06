@@ -16,16 +16,21 @@ import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
 import { useNow } from "@/ui/useNow";
 
+export type CardsOf = { kind: "source"; id: string } | { kind: "take"; id: string };
+
 /**
- * "Cards from this": the source's live cards in session order, each with its kind and when it is next due. Rows of
- * cards that can't be reviewed yet ("After you finish") aren't pressable; every row swipes to Remove.
+ * "Cards from this": the source's or take's live cards in session order, each with when it is next due (and, for a
+ * source's, its kind). Rows of cards that can't be reviewed yet ("After you finish") aren't pressable; every row swipes
+ * to Remove.
  */
-export function CardsSection({ sourceId }: { sourceId: string }) {
+export function CardsSection({ of }: { of: CardsOf }) {
   const theme = useTheme();
   const router = useRouter();
   const data = useReviewData();
   const now = useNow();
-  const cards = orderCards(data.cards.filter((card) => card.sourceId === sourceId));
+  const cards = orderCards(
+    data.cards.filter((card) => (of.kind === "source" ? card.sourceId === of.id : card.takeId === of.id)),
+  );
   if (cards.length === 0) return null;
 
   const anyReviewable = cards.some((card) => isReviewable(card, data));
@@ -40,7 +45,7 @@ export function CardsSection({ sourceId }: { sourceId: string }) {
             testID="cards-practise"
             accessibilityRole="button"
             hitSlop={8}
-            onPress={() => router.push(`/review/session?mode=source&id=${sourceId}`)}
+            onPress={() => router.push(`/review/session?mode=${of.kind}&id=${of.id}`)}
           >
             <Text variant="headline">Practise</Text>
           </Pressable>
@@ -49,6 +54,7 @@ export function CardsSection({ sourceId }: { sourceId: string }) {
     >
       {cards.map((card, index) => {
         const reviewable = isReviewable(card, data);
+        const due = cardDueLabel(card, data, now);
 
         return (
           <SwipeRow
@@ -74,8 +80,9 @@ export function CardsSection({ sourceId }: { sourceId: string }) {
               style={{ gap: theme.spacing.xs, paddingVertical: theme.spacing.md }}
             >
               <Text>{card.question}</Text>
+              {/* A take card's kind label ("Take") adds nothing on the take's own page. */}
               <Text variant="secondary" tone="ink3">
-                {`${KIND_LABELS[card.kind] ?? card.kind} · ${cardDueLabel(card, data, now)}`}
+                {of.kind === "take" ? due : `${KIND_LABELS[card.kind] ?? card.kind} · ${due}`}
               </Text>
             </Pressable>
           </SwipeRow>

@@ -1,7 +1,8 @@
 import { cardDomain, cardOrigin, cardTopicId, isOpenQuiz, isReviewable } from "./eligibility";
-import { cardRow, dayAt, NOW, reviewData, sourceRow, topicPrimerRow, topicRow } from "./testCards";
+import { cardRow, dayAt, NOW, reviewData, sourceRow, takeRow, topicPrimerRow, topicRow } from "./testCards";
 
 const primerCard = cardRow({ id: "f1", sourceId: null, topicPrimerId: "p1", kind: "foundation" });
+const takeCard = cardRow({ id: "tc1", sourceId: null, takeId: "k1", kind: "take" });
 
 describe("isReviewable", () => {
   it.each([
@@ -43,6 +44,12 @@ describe("isReviewable", () => {
     expect(isReviewable(primerCard, reviewData([], { topicPrimers: [] }))).toBe(false);
   });
 
+  it("a take card at once, while its take is live", () => {
+    expect(isReviewable(takeCard, reviewData([], { takes: [takeRow({ id: "k1" })] }))).toBe(true);
+    expect(isReviewable(takeCard, reviewData([], { takes: [takeRow({ id: "k1", deletedAt: dayAt(-1) })] }))).toBe(false);
+    expect(isReviewable(takeCard, reviewData([]))).toBe(false);
+  });
+
   it("a deleted card is not", () => {
     expect(isReviewable(cardRow({ deletedAt: dayAt(-1) }), reviewData([]))).toBe(false);
   });
@@ -75,11 +82,13 @@ describe("card origin, topic and domain", () => {
     expect(cardOrigin(cardRow({}))).toEqual({ kind: "source", sourceId: "s1" });
     expect(cardOrigin(primerCard)).toEqual({ kind: "topicPrimer", topicPrimerId: "p1" });
     expect(cardOrigin(briefCard)).toEqual({ kind: "brief", briefId: "b1" });
+    expect(cardOrigin(takeCard)).toEqual({ kind: "take", takeId: "k1" });
     expect(cardOrigin(cardRow({ sourceId: null }))).toEqual({ kind: "unknown" });
 
     expect([cardTopicId(cardRow({}), data), cardDomain(cardRow({}), data)]).toEqual(["t1", "AI"]);
     expect([cardTopicId(primerCard, data), cardDomain(primerCard, data)]).toEqual(["t1", "Economics"]);
     expect([cardTopicId(briefCard, data), cardDomain(briefCard, data)]).toEqual([null, null]);
+    expect([cardTopicId(takeCard, data), cardDomain(takeCard, data)]).toEqual([null, null]);
     expect(cardTopicId(cardRow({ sourceId: "gone" }), data)).toBeNull();
     expect(cardDomain(primerCard, reviewData([], { topicPrimers: [] }))).toBeNull();
   });

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Keyboard, View } from "react-native";
 
-import { cardDomain, type ReviewData } from "@/review/eligibility";
-import { KIND_LABELS } from "@/review/labels";
+import type { ReviewData } from "@/review/eligibility";
+import { cardKicker } from "@/review/kicker";
 import type { CardRow } from "@/review/types";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
@@ -14,11 +14,7 @@ type QuestionCardProps = { card: CardRow; data: ReviewData };
 export function QuestionCard({ card, data }: QuestionCardProps) {
   const theme = useTheme();
   const keyboardUp = useKeyboardUp();
-  // Quiz cards have no domain: they read "This week · News" in the neutral colour.
-  const kicker =
-    card.kind === "quiz"
-      ? { label: "This week", suffix: "News", domain: null }
-      : { label: undefined, suffix: KIND_LABELS[card.kind], domain: cardDomain(card, data) };
+  const kicker = cardKicker(card, data);
 
   return (
     <View style={{ paddingHorizontal: theme.spacing.gutterText - theme.spacing.gutterCards, gap: theme.spacing.sm }}>

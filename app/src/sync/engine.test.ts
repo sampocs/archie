@@ -4,6 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import migrations from "../../drizzle/migrations";
 import {
   addCollectionItem,
+  changeTakeKind,
   createCollection,
   dropCard,
   editCollectionItemNote,
@@ -12,8 +13,11 @@ import {
   removeCollectionItem,
   renameCollection,
   requestPrimer,
+  restoreTakeVersion,
+  retryTakeCleanup,
   returnToInbox,
   reviewCard,
+  saveTake,
   setCardsOff,
   setFavorite,
   snooze,
@@ -32,6 +36,8 @@ import {
   PulledCollection,
   PulledCollectionItem,
   PulledSource,
+  PulledTake,
+  PulledTakeVersion,
   PulledTopic,
   PulledTopicPrimer,
   PullPage,
@@ -978,7 +984,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;
@@ -1488,4 +1494,192 @@ describe("database SyncStore: collections", () => {
       expect(sourceRow(db)?.syncError).toBeNull();
     },
   );
+});
+
+const pulledTake = (overrides: Partial<PulledTake>): PulledTake => ({
+  id: "k1",
+  kind: "opinion",
+  title: "Remote work is worse for juniors",
+  current_version: 1,
+  created_at: "2026-11-05T00:00:00Z",
+  updated_at: "2026-11-05T00:00:00Z",
+  deleted_at: null,
+  ...overrides,
+});
+
+const pulledVersion = (overrides: Partial<PulledTakeVersion>): PulledTakeVersion => ({
+  id: "v1",
+  take_id: "k1",
+  version: 1,
+  body: "Juniors learn by overhearing.",
+  raw_body: "Juniors learn by overhearing.",
+  cleaned: false,
+  clean_failed: false,
+  created_at: "2026-11-05T00:00:00Z",
+  ...overrides,
+});
+
+describe("database SyncStore: takes", () => {
+  const takePage = (overrides: Partial<PullPage["rows"]> = {}, position = 5): PullPage => ({
+    rows: {
+      sources: [pulledSource({})],
+      artifacts: [],
+      cards: [],
+      takes: [pulledTake({})],
+      take_versions: [pulledVersion({})],
+      ...overrides,
+    },
+    position,
+    more: false,
+  });
+  const takeRow = (db: AppDb) => db.select().from(schema.takes).where(eq(schema.takes.id, "k1")).get();
+  const versionIds = (db: AppDb) =>
+    db.select().from(schema.takeVersions).all().map((version) => version.id).sort();
+  const outboxEntry = (db: AppDb, type: string) =>
+    db.select().from(schema.outbox).all().find((entry) => entry.type === type)!;
+
+  it("stores pulled takes, versions and take cards; a page without them is fine", async () => {
+    const { db, store } = makeDbStore();
+
+    await store.applyPage(
+      takePage({
+        take_versions: [pulledVersion({ cleaned: true, clean_failed: true })],
+        cards: [pulledCard({ id: "c1", source_id: null, kind: "take", take_id: "k1", take_version_id: "v1" })],
+      }),
+    );
+    await store.applyPage({ rows: { sources: [], artifacts: [], cards: [pulledCard({ id: "c2" })] }, position: 6, more: false });
+
+    expect(takeRow(db)).toMatchObject({ kind: "opinion", title: "Remote work is worse for juniors", currentVersion: 1 });
+    expect(db.select().from(schema.takeVersions).get()).toMatchObject({
+      id: "v1",
+      takeId: "k1",
+      body: "Juniors learn by overhearing.",
+      cleaned: 1,
+      cleanFailed: 1,
+    });
+    const card = (id: string) => db.select().from(schema.cards).where(eq(schema.cards.id, id)).get();
+    expect(card("c1")).toMatchObject({ sourceId: null, takeId: "k1", takeVersionId: "v1" });
+    expect(card("c2")).toMatchObject({ sourceId: "s1", takeId: null, takeVersionId: null });
+    expect(await store.getPosition()).toBe(6);
+  });
+
+  it("a re-pull of a take or version with an unsent edit keeps the local copy", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(takePage({ take_versions: [pulledVersion({ cleaned: true, clean_failed: true })] }));
+    changeTakeKind(db, "k1", "talking_point");
+    retryTakeCleanup(db, "k1", "v1");
+
+    await store.applyPage(takePage({ take_versions: [pulledVersion({ cleaned: true, clean_failed: true })] }, 6));
+
+    expect(takeRow(db)?.kind).toBe("talking_point");
+    expect(db.select().from(schema.takeVersions).get()).toMatchObject({ body: null, cleanFailed: 0 });
+  });
+
+  it("a re-pull keeps an unsent optimistic version", async () => {
+    const { db, store } = makeDbStore();
+    const id = saveTake(db, { id: null, kind: "opinion", title: "Mine", body: "Mine.", clean: false });
+    const versionId = JSON.parse(outboxEntry(db, "save_take").payload).version_id;
+
+    await store.applyPage(
+      takePage({ takes: [], take_versions: [pulledVersion({ id: versionId, take_id: id, body: "Older." })] }),
+    );
+
+    expect(db.select().from(schema.takeVersions).get()?.body).toBe("Mine.");
+  });
+
+  it("a rejected save_take of a new take deletes it and its version and rewinds", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(takePage({ takes: [], take_versions: [] }));
+    const id = saveTake(db, { id: null, kind: "opinion", title: "Mine", body: "Mine.", clean: false });
+
+    await store.rejectAction(outboxEntry(db, "save_take").id, "take is empty");
+
+    expect(db.select().from(schema.takes).where(eq(schema.takes.id, id)).get()).toBeUndefined();
+    expect(db.select().from(schema.takeVersions).all()).toEqual([]);
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)?.syncError).toBeNull();
+  });
+
+  it("a rejected save_take on a pulled take deletes only the new version and points the take back", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(takePage());
+    saveTake(db, { id: "k1", kind: "opinion", title: "Remote work is worse for juniors", body: "Changed.", clean: false });
+    expect(takeRow(db)?.currentVersion).toBe(2);
+
+    await store.rejectAction(outboxEntry(db, "save_take").id, "take is longer than 20000 characters");
+
+    expect(versionIds(db)).toEqual(["v1"]);
+    expect(takeRow(db)?.currentVersion).toBe(1);
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)?.syncError).toBeNull();
+  });
+
+  it("a rejected restore_take_version deletes the optimistic copy", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(
+      takePage({
+        takes: [pulledTake({ current_version: 2 })],
+        take_versions: [pulledVersion({}), pulledVersion({ id: "v2", version: 2, body: "Second." })],
+      }),
+    );
+    restoreTakeVersion(db, "k1", 1);
+    expect(takeRow(db)?.currentVersion).toBe(3);
+
+    await store.rejectAction(outboxEntry(db, "restore_take_version").id, "take version not found");
+
+    expect(versionIds(db)).toEqual(["v1", "v2"]);
+    expect(takeRow(db)?.currentVersion).toBe(2);
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)?.syncError).toBeNull();
+  });
+
+  it.each(["update_take", "retry_take_cleanup"])("a rejected %s rewinds and touches no source", async (type) => {
+    const { db, store } = makeDbStore();
+    await store.applyPage(takePage());
+    if (type === "update_take") changeTakeKind(db, "k1", "talking_point");
+    else retryTakeCleanup(db, "k1", "v1");
+    const entry = db.select().from(schema.outbox).get()!;
+
+    await store.rejectAction(entry.id, "take not found");
+
+    expect(entry.type).toBe(type);
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)?.syncError).toBeNull();
+    expect(takeRow(db)).toBeDefined();
+    expect(versionIds(db)).toEqual(["v1"]);
+  });
+
+  // 0010 only adds tables and columns; the test guards against a generated cards rebuild that drops a schedule.
+  it("the 0010_takes migration keeps an existing card and its schedule", () => {
+    const sqlite = new Database(":memory:");
+    const sqlByKey = migrations.migrations as Record<string, string>;
+    const runMigration = (idx: number) => {
+      for (const statement of sqlByKey[`m${String(idx).padStart(4, "0")}`].split("--> statement-breakpoint")) {
+        if (statement.trim()) sqlite.exec(statement);
+      }
+    };
+    const takesIdx = migrations.journal.entries.find((entry) => entry.tag === "0010_takes")!.idx;
+    for (let idx = 0; idx < takesIdx; idx++) runMigration(idx);
+    sqlite
+      .prepare(
+        "INSERT INTO cards (id, source_id, kind, question, answer, created_at, fsrs_state, stability, due_at, reps) " +
+          "VALUES ('c1', 's1', 'concept', 'Q?', 'A.', 'x', 'review', 3.5, '2026-11-09T00:00:00Z', 2)",
+      )
+      .run();
+
+    runMigration(takesIdx);
+
+    expect(sqlite.prepare("SELECT * FROM cards").all()).toEqual([
+      expect.objectContaining({
+        id: "c1",
+        source_id: "s1",
+        fsrs_state: "review",
+        stability: 3.5,
+        due_at: "2026-11-09T00:00:00Z",
+        reps: 2,
+        take_id: null,
+        take_version_id: null,
+      }),
+    ]);
+  });
 });

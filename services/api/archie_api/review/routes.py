@@ -306,10 +306,16 @@ def _transcribe(
     if keys.openai is None:
         raise fastapi.HTTPException(status_code=502, detail="transcription failed")
 
-    response = speech.post_openai(
-        audio=audio, filename=_AUDIO_FILENAME, media_type=_AUDIO_MEDIA_TYPE, api_key=keys.openai, prompt=prompt
-    )
-    if not response.is_success:
+    try:
+        response = speech.post_openai(
+            audio=audio, filename=_AUDIO_FILENAME, media_type=_AUDIO_MEDIA_TYPE, api_key=keys.openai, prompt=prompt
+        )
+    except httpx.HTTPError as error:
+        _logger.warning("OpenAI transcription failed: %r", error)
+        raise fastapi.HTTPException(status_code=502, detail="transcription failed") from error
+
+    openai_text = _response_text(response) if response.is_success else None
+    if openai_text is None:
         raise fastapi.HTTPException(status_code=502, detail="transcription failed")
 
     llm.record_audio_call(
@@ -319,7 +325,16 @@ def _transcribe(
         model=llm.OPENAI_TRANSCRIBE,
         audio_seconds=audio_seconds,
     )
-    return str(response.json()["text"]).strip()
+    return openai_text
+
+
+def _response_text(response: httpx.Response) -> str | None:
+    """The `text` of a provider's JSON answer, or None when the body isn't that."""
+    try:
+        return str(response.json()["text"]).strip()
+    except (ValueError, KeyError, TypeError) as error:
+        _logger.warning("Transcription answer had no text: %r", error)
+        return None
 
 
 def _groq_text(*, audio: bytes, api_key: str, prompt: str) -> str | None:
@@ -340,4 +355,4 @@ def _groq_text(*, audio: bytes, api_key: str, prompt: str) -> str | None:
     if not response.is_success:
         _logger.warning("Groq answered %s, falling back to OpenAI", response.status_code)
         return None
-    return str(response.json()["text"]).strip()
+    return _response_text(response)

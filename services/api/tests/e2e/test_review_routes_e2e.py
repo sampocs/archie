@@ -18,6 +18,7 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, models, session
+from archie_llm import speech
 from archie_shared import config
 from archie_testing import recording
 from archie_testing.harness import LiveStack
@@ -183,6 +184,102 @@ def test_transcription_refuses_long_big_unowned_or_unconfigured_requests(
     unconfigured = transcribe(authed)
     assert (unconfigured.status_code, unconfigured.json()) == (503, {"detail": "transcription isn't set up"})
     assert _llm_calls(live_stack) == []
+
+
+def _post_clip(authed: httpx.Client, card: models.Card) -> httpx.Response:
+    return authed.post(
+        "/review/transcribe",
+        data={"card_id": str(card.id), "duration_ms": "4000"},
+        files={"audio": ("answer.m4a", AUDIO_PATH.read_bytes(), "audio/m4a")},
+    )
+
+
+def _failing_groq(monkeypatch: pytest.MonkeyPatch, outcome: httpx.Response | Exception) -> None:
+    """Make Groq fail by `outcome`; failure injection only, so no provider body is faked on a success path."""
+
+    def post_groq(**_: Any) -> httpx.Response:
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+    monkeypatch.setattr(speech, "post_groq", post_groq)
+
+
+def _failing_openai(monkeypatch: pytest.MonkeyPatch, outcome: httpx.Response | Exception) -> None:
+    def post_openai(**_: Any) -> httpx.Response:
+        if isinstance(outcome, Exception):
+            raise outcome
+        return outcome
+
+    monkeypatch.setattr(speech, "post_openai", post_openai)
+
+
+@pytest.mark.parametrize(
+    "groq_failure",
+    [httpx.Response(503, text="down"), httpx.ConnectError("no route"), httpx.Response(200, json={"oops": 1})],
+    ids=["non-2xx", "httpx-error", "no-text"],
+)
+def test_a_failed_groq_call_falls_back_to_openai_and_is_billed_to_openai(
+    live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch, groq_failure: Any
+) -> None:
+    """Groq refusing, being unreachable or answering without text hands the clip to OpenAI's recorded transcript."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    card = _seed_card(live_stack, user_id=_user_id(authed))
+    _failing_groq(monkeypatch, groq_failure)
+
+    with _replay(request, "review_transcribe_openai"):
+        response = _post_clip(authed, card)
+
+    assert response.status_code == 200
+    assert "inflation" in response.json()["text"].lower()
+    [call] = _llm_calls(live_stack)
+    assert (call.provider, call.model) == ("openai", "gpt-4o-mini-transcribe")
+
+
+def test_openai_only_keys_transcribe_through_openai(
+    live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With no Groq key the clip goes straight to OpenAI."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    card = _seed_card(live_stack, user_id=_user_id(authed))
+    monkeypatch.delenv(config.GROQ_API_KEY_ENV)
+
+    with _replay(request, "review_transcribe_openai"):
+        response = _post_clip(authed, card)
+
+    assert response.status_code == 200
+    [call] = _llm_calls(live_stack)
+    assert call.provider == "openai"
+
+
+@pytest.mark.parametrize(
+    "openai_failure",
+    [httpx.Response(500, text="down"), httpx.ConnectError("no route"), httpx.Response(200, json={"oops": 1})],
+    ids=["non-2xx", "httpx-error", "no-text"],
+)
+def test_when_openai_fails_too_the_answer_is_502_and_nothing_is_billed(
+    live_stack: LiveStack, monkeypatch: pytest.MonkeyPatch, openai_failure: Any
+) -> None:
+    """The phone falls back on any failure, so a dead fallback is a clean 502, not a 500."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    card = _seed_card(live_stack, user_id=_user_id(authed))
+    _failing_groq(monkeypatch, httpx.Response(503, text="down"))
+    _failing_openai(monkeypatch, openai_failure)
+
+    response = _post_clip(authed, card)
+
+    assert (response.status_code, response.json()) == (502, {"detail": "transcription failed"})
+    assert _llm_calls(live_stack) == []
+
+
+def test_without_a_groq_key_a_failed_openai_call_is_502(live_stack: LiveStack, monkeypatch: pytest.MonkeyPatch) -> None:
+    """OpenAI as the only provider has nowhere to fall back to."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    card = _seed_card(live_stack, user_id=_user_id(authed))
+    monkeypatch.delenv(config.GROQ_API_KEY_ENV)
+    _failing_openai(monkeypatch, httpx.Response(500, text="down"))
+
+    assert _post_clip(authed, card).status_code == 502
 
 
 def _replay(request: pytest.FixtureRequest, cassette: str) -> Any:

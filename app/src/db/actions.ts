@@ -541,7 +541,9 @@ export const MAX_COLLECTION_NAME_LENGTH = 100;
 
 // Stored as the server stores it (whitespace collapsed), and cut to its limit so a typed name is never rejected.
 function cleanCollectionName(name: string): string {
-  return name.split(/\s+/).filter(Boolean).join(" ").slice(0, MAX_COLLECTION_NAME_LENGTH);
+  // By code point, so an emoji is never cut in half (a lone surrogate cannot be encoded by the server).
+  const collapsed = name.split(/\s+/).filter(Boolean).join(" ");
+  return Array.from(collapsed).slice(0, MAX_COLLECTION_NAME_LENGTH).join("");
 }
 
 // A new collection goes after the last live one, as on the server.

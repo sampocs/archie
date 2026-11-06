@@ -9,7 +9,7 @@ import { savedCountLabel, type CollectionItemRow } from "@/collections/collectio
 import { PostCard } from "@/collections/PostCard";
 import { PostMenus } from "@/collections/PostMenus";
 import { confirmDeleteCollection, promptCollectionName } from "@/collections/prompts";
-import { useCollectionsData } from "@/collections/useCollectionsData";
+import { useCollectionsState } from "@/collections/useCollectionsData";
 import { requestSync } from "@/sync/useSync";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
@@ -21,7 +21,7 @@ export default function CollectionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
-  const collections = useCollectionsData();
+  const { collections, loaded } = useCollectionsState();
   const [menuOpen, setMenuOpen] = useState(false);
   const [postInMenu, setPostInMenu] = useState<CollectionItemRow | null>(null);
 
@@ -29,10 +29,10 @@ export default function CollectionScreen() {
 
   // Deleted here or on another device: nothing left to show.
   useEffect(() => {
-    if (!collection) router.back();
-  }, [collection, router]);
+    if (loaded && !collection) router.back();
+  }, [loaded, collection, router]);
 
-  if (!collection) return null;
+  if (!loaded || !collection) return null;
 
   const menuItems: MenuItem[] = [
     {
@@ -62,7 +62,6 @@ export default function CollectionScreen() {
             deleteCollection(db, collection.id);
             haptic("success");
             requestSync();
-            router.back();
           },
         }),
     },

@@ -16,6 +16,7 @@ import { FontScalingContext } from "@/theme/fontScaling";
 import { fontAssets } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 
+import { isUnpushedCollectionRejection } from "./rejection";
 import { resolveShare } from "./resolveShare";
 import { buildCollectionShareActions, buildShareAction, shareDeepLink, submitShare } from "./submit";
 
@@ -78,7 +79,8 @@ export function ShareSheet(props: InitialProps) {
       const outcome = await submitShare([buildShareAction({ url, choice, capture })], sessionKey);
       setPhase(outcome === "saved" ? { name: "saved" } : { name: "unreachable" });
     } catch (error) {
-      setPhase({ name: "rejected", reason: error instanceof Error ? error.message : String(error) });
+      const reason = error instanceof Error ? error.message : String(error);
+      setPhase(isUnpushedCollectionRejection(reason) ? { name: "unreachable" } : { name: "rejected", reason });
     }
   }
 

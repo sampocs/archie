@@ -46,6 +46,23 @@ describe("collections", () => {
     expect(collection(db, id)?.name).toHaveLength(100);
   });
 
+  it("cuts a name by code point so an emoji is never split", () => {
+    const db = makeTestDb();
+    const typed = "x".repeat(99) + "😀😀";
+    const expected = "x".repeat(99) + "😀";
+    const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/;
+
+    const id = createCollection(db, typed);
+    const renamedId = createCollection(db, "other");
+    renameCollection(db, renamedId, typed);
+
+    expect(collection(db, id)?.name).toBe(expected);
+    expect(collection(db, id)?.name).not.toMatch(loneSurrogate);
+    expect(outbox(db)[0].payload.name).toBe(expected);
+    expect(outbox(db)[0].payload.name).not.toMatch(loneSurrogate);
+    expect(collection(db, renamedId)?.name).toBe(expected);
+  });
+
   it("saves a post as a pending link that is never a source", () => {
     const db = makeTestDb();
     const collectionId = createCollection(db, "Bears hype");

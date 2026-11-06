@@ -7,14 +7,24 @@ import * as schema from "@/db/schema";
 
 import { groupCollections, type CollectionWithItems } from "./collections";
 
-/** Every live collection with its posts, for Saved, the collection page and the add sheet. */
-export function useCollectionsData(): CollectionWithItems[] {
-  const { data: collections } = useLiveQuery(
+/**
+ * Every live collection with its posts, plus whether both live queries have answered: drizzle's `useLiveQuery`
+ * returns `[]` on first render, so "no collection" only means "gone" once `loaded`.
+ */
+export function useCollectionsState(): { collections: CollectionWithItems[]; loaded: boolean } {
+  const { data: collections, updatedAt: collectionsUpdatedAt } = useLiveQuery(
     db.select().from(schema.collections).where(isNull(schema.collections.deletedAt)),
   );
-  const { data: items } = useLiveQuery(
+  const { data: items, updatedAt: itemsUpdatedAt } = useLiveQuery(
     db.select().from(schema.collectionItems).where(isNull(schema.collectionItems.deletedAt)),
   );
 
-  return useMemo(() => groupCollections(collections, items), [collections, items]);
+  const grouped = useMemo(() => groupCollections(collections, items), [collections, items]);
+
+  return { collections: grouped, loaded: collectionsUpdatedAt !== undefined && itemsUpdatedAt !== undefined };
+}
+
+/** Every live collection with its posts, for Saved, the collection page and the add sheet. */
+export function useCollectionsData(): CollectionWithItems[] {
+  return useCollectionsState().collections;
 }

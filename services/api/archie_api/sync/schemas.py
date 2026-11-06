@@ -39,6 +39,10 @@ class ActionType(StrEnum):
     CHOOSE_TOPICS = "choose_topics"
     CHOOSE_EPISODE = "choose_episode"
     FINISH_BRIEF = "finish_brief"
+    REVIEW_CARD = "review_card"
+    DROP_CARD = "drop_card"
+    SET_CARDS_OFF = "set_cards_off"
+    REQUEST_NEWS_QUIZ = "request_news_quiz"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 

@@ -105,6 +105,7 @@ function AppStack() {
           <Stack.Screen name="share" />
           <Stack.Screen name="topic-picker" />
           <Stack.Screen name="add" options={{ presentation: "modal" }} />
+          <Stack.Screen name="take/edit" options={{ presentation: "modal" }} />
         </Stack.Protected>
       </Stack>
     </SignOutContext.Provider>

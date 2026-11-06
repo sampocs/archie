@@ -34,6 +34,8 @@ class PulledTable(StrEnum):
     TOPICS = "topics"
     TOPIC_PRIMERS = "topic_primers"
     BRIEFS = "briefs"
+    COLLECTIONS = "collections"
+    COLLECTION_ITEMS = "collection_items"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -46,7 +48,7 @@ class MergedPage[RowT: _Positioned]:
 
 
 def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL_PAGE_SIZE) -> schemas.PullResponse:
-    """Rows (deleted ones included) from the six synced tables with a position above `since`, oldest first.
+    """Rows (deleted ones included) from the eight synced tables with a position above `since`, oldest first.
 
     Of the briefs, only the open one and those done in the last 7 days are sent.
     """
@@ -64,6 +66,10 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
         PulledTable.TOPICS: _changed_rows(db, models.Topic, user_id=user_id, since=since, limit=limit),
         PulledTable.TOPIC_PRIMERS: _changed_rows(db, models.TopicPrimer, user_id=user_id, since=since, limit=limit),
         PulledTable.BRIEFS: _changed_rows(db, models.Brief, recent_brief, user_id=user_id, since=since, limit=limit),
+        PulledTable.COLLECTIONS: _changed_rows(db, models.Collection, user_id=user_id, since=since, limit=limit),
+        PulledTable.COLLECTION_ITEMS: _changed_rows(
+            db, models.CollectionItem, user_id=user_id, since=since, limit=limit
+        ),
     }
     page = merge_page(tables=tables, since=since, limit=limit)
 
@@ -75,6 +81,10 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
             topics=[schemas.TopicOut.model_validate(row) for row in page.rows[PulledTable.TOPICS]],
             topic_primers=[schemas.TopicPrimerOut.model_validate(row) for row in page.rows[PulledTable.TOPIC_PRIMERS]],
             briefs=[schemas.BriefOut.model_validate(row) for row in page.rows[PulledTable.BRIEFS]],
+            collections=[schemas.CollectionOut.model_validate(row) for row in page.rows[PulledTable.COLLECTIONS]],
+            collection_items=[
+                schemas.CollectionItemOut.model_validate(row) for row in page.rows[PulledTable.COLLECTION_ITEMS]
+            ],
         ),
         position=page.position,
         more=page.more,
@@ -100,7 +110,16 @@ def merge_page[RowT: _Positioned](*, tables: Mapping[str, Sequence[RowT]], since
 
 
 def _changed_rows[
-    RowT: (models.Source, models.SourceArtifact, models.Card, models.Topic, models.TopicPrimer, models.Brief)
+    RowT: (
+        models.Source,
+        models.SourceArtifact,
+        models.Card,
+        models.Topic,
+        models.TopicPrimer,
+        models.Brief,
+        models.Collection,
+        models.CollectionItem,
+    )
 ](
     db: orm.Session, model: type[RowT], *criteria: sqlalchemy.ColumnElement[bool], user_id: int, since: int, limit: int
 ) -> list[RowT]:

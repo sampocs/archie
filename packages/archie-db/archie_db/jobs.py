@@ -10,6 +10,9 @@ import sqlalchemy.orm
 
 from archie_db import models
 
+# A `fetch_collection_item` job's payload key: the saved post to fill in.
+COLLECTION_ITEM_ID_KEY = "collection_item_id"
+
 
 def enqueue(
     db: sqlalchemy.orm.Session,

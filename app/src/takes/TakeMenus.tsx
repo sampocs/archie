@@ -9,12 +9,12 @@ import { MenuSheet } from "@/ui/MenuSheet";
 import { confirmDeleteTake } from "./prompts";
 import { TAKE_KIND_LABELS, type TakeKind, type TakeWithVersions } from "./takes";
 
-type TakeMenusProps = { take: TakeWithVersions; visible: boolean; onClose: () => void; onDeleted: () => void };
+type TakeMenusProps = { take: TakeWithVersions; visible: boolean; onClose: () => void };
 
 const KINDS: TakeKind[] = ["opinion", "talking_point"];
 
 /** The take page's ••• menu, and the kind chooser it opens. */
-export function TakeMenus({ take, visible, onClose, onDeleted }: TakeMenusProps) {
+export function TakeMenus({ take, visible, onClose }: TakeMenusProps) {
   const [kindOpen, setKindOpen] = useState(false);
 
   return (
@@ -37,7 +37,6 @@ export function TakeMenus({ take, visible, onClose, onDeleted }: TakeMenusProps)
                   deleteTake(db, take.id);
                   haptic("success");
                   requestSync();
-                  onDeleted();
                 },
               }),
           },

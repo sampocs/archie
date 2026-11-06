@@ -2,7 +2,7 @@ import { randomUUID } from "expo-crypto";
 
 import type { Intent, Reaction } from "@/capture/types";
 import { wireState, type FsrsFields, type GradedBy, type ReviewGrade } from "@/review/types";
-import { saveMakesVersion, type TakeKind } from "@/takes/takes";
+import { MAX_TAKE_BODY_LENGTH, MAX_TAKE_TITLE_LENGTH, saveMakesVersion, type TakeKind } from "@/takes/takes";
 import type { DomainName } from "@/topics/domains";
 
 import { and, eq, inArray, isNotNull, isNull, max, min, sql } from "drizzle-orm";
@@ -656,7 +656,7 @@ export function setCardAnswer(db: AppDb, cardId: string, answer: string): void {
   db.update(schema.cards).set({ answer }).where(eq(schema.cards.id, cardId)).run();
 }
 
-export const MAX_TAKE_TITLE_LENGTH = 200;
+export { MAX_TAKE_BODY_LENGTH, MAX_TAKE_TITLE_LENGTH };
 
 // Stored as the server stores it (whitespace collapsed), cut by code point so a typed title is never rejected.
 function cleanTakeTitle(title: string): string {

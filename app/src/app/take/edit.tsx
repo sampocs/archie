@@ -7,7 +7,7 @@ import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
 import { canSaveTake } from "@/takes/editor";
 import { KindToggle } from "@/takes/KindToggle";
-import { editorHint, editorStart, type TakeKind } from "@/takes/takes";
+import { editorHint, editorStart, MAX_TAKE_BODY_LENGTH, MAX_TAKE_TITLE_LENGTH, type TakeKind } from "@/takes/takes";
 import { useTakesState } from "@/takes/useTakesData";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
@@ -15,8 +15,6 @@ import { TextField } from "@/theme/components/TextField";
 import { textStyles } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
-
-const MAX_TITLE_LENGTH = 200;
 
 export default function TakeEditorScreen() {
   const router = useRouter();
@@ -42,6 +40,11 @@ export default function TakeEditorScreen() {
     setBody(start.body);
     setClean(start.clean);
   }, [ready, take]);
+
+  // A take that is gone (deleted elsewhere, bad link) has nothing to edit and no Cancel to show.
+  useEffect(() => {
+    if (id && loaded && take === null) router.back();
+  }, [id, loaded, take, router]);
 
   if (!ready) return null;
 
@@ -94,7 +97,7 @@ export default function TakeEditorScreen() {
           value={title}
           onChangeText={setTitle}
           placeholder="Title"
-          maxLength={MAX_TITLE_LENGTH}
+          maxLength={MAX_TAKE_TITLE_LENGTH}
           returnKeyType="next"
           style={textStyles.headline}
         />
@@ -103,6 +106,7 @@ export default function TakeEditorScreen() {
           value={body}
           onChangeText={setBody}
           placeholder="Write it out, or dictate with the keyboard's mic"
+          maxLength={MAX_TAKE_BODY_LENGTH}
           multiline
           scrollEnabled={false}
           style={{ minHeight: 250, textAlignVertical: "top", paddingTop: 14, paddingBottom: 14 }}

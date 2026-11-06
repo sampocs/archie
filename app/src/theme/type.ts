@@ -28,7 +28,6 @@ export type TextVariant =
   | "largeTitle"
   | "articleTitle"
   | "reviewQuestion"
-  | "reviewQuestionCompact"
   | "headline"
   | "readingBody"
   | "body"
@@ -42,7 +41,6 @@ export const textStyles: Record<TextVariant, TextStyle> = {
   largeTitle: { fontFamily: fontFamily.bold, fontSize: 32, letterSpacing: -0.04 * 32 },
   articleTitle: { fontFamily: fontFamily.bold, fontSize: 28, letterSpacing: -0.04 * 28 },
   reviewQuestion: { fontFamily: fontFamily.semibold, fontSize: 27 },
-  reviewQuestionCompact: { fontFamily: fontFamily.semibold, fontSize: 21 },
   headline: { fontFamily: fontFamily.semibold, fontSize: 16, letterSpacing: -0.018 * 16 },
   readingBody: { fontFamily: fontFamily.regular, fontSize: 16, lineHeight: 16 * 1.62 },
   body: { fontFamily: fontFamily.regular, fontSize: 15 },

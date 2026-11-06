@@ -51,7 +51,7 @@ pass after the last milestone. This milestone picks reasonable defaults and buil
 - **Review session** (`app/src/app/review/session.tsx`, full screen, `?mode=due|ahead|topic|source|quiz&id=`):
   - Top: ✕ (ends the session, keeping what was graded) and "n of N".
   - Question card: domain colour kicker "<Domain> · <Kind label>" (Foundation, Concept, Mechanism, Rough number,
-    News), question in the large review type (shrinks to 21pt when the keyboard is up).
+    News), question in the large review type (the same size while the keyboard is up).
   - Answer box: a big white card with Drop, 🎙 and ↑. 🎙 records until tapped again, then transcribes into the box
     (editable). ↑ submits; with an empty box it reads "Show answer" and goes straight to self-grade.
   - Graded (mock 01 "Partly"): "You said …", the verdict pill in its colour, the missing line (partly/missed only),

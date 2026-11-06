@@ -36,6 +36,8 @@ class PulledTable(StrEnum):
     BRIEFS = "briefs"
     COLLECTIONS = "collections"
     COLLECTION_ITEMS = "collection_items"
+    TAKES = "takes"
+    TAKE_VERSIONS = "take_versions"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -48,7 +50,7 @@ class MergedPage[RowT: _Positioned]:
 
 
 def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL_PAGE_SIZE) -> schemas.PullResponse:
-    """Rows (deleted ones included) from the eight synced tables with a position above `since`, oldest first.
+    """Rows (deleted ones included) from the ten synced tables with a position above `since`, oldest first.
 
     Of the briefs, only the open one and those done in the last 7 days are sent.
     """
@@ -70,6 +72,8 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
         PulledTable.COLLECTION_ITEMS: _changed_rows(
             db, models.CollectionItem, user_id=user_id, since=since, limit=limit
         ),
+        PulledTable.TAKES: _changed_rows(db, models.Take, user_id=user_id, since=since, limit=limit),
+        PulledTable.TAKE_VERSIONS: _changed_rows(db, models.TakeVersion, user_id=user_id, since=since, limit=limit),
     }
     page = merge_page(tables=tables, since=since, limit=limit)
 
@@ -85,6 +89,8 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
             collection_items=[
                 schemas.CollectionItemOut.model_validate(row) for row in page.rows[PulledTable.COLLECTION_ITEMS]
             ],
+            takes=[schemas.TakeOut.model_validate(row) for row in page.rows[PulledTable.TAKES]],
+            take_versions=[schemas.TakeVersionOut.model_validate(row) for row in page.rows[PulledTable.TAKE_VERSIONS]],
         ),
         position=page.position,
         more=page.more,
@@ -119,6 +125,8 @@ def _changed_rows[
         models.Brief,
         models.Collection,
         models.CollectionItem,
+        models.Take,
+        models.TakeVersion,
     )
 ](
     db: orm.Session, model: type[RowT], *criteria: sqlalchemy.ColumnElement[bool], user_id: int, since: int, limit: int

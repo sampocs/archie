@@ -1,0 +1,73 @@
+# Clean it up: a rambling dictation becomes a cleaned take with "See what you said", and the take gets cards.
+# Needs the owner's keys in .env (a few cents: Sonnet cleanup + Haiku cards); local backend only;
+# run it through `make maestro-takes-clean`.
+appId: com.sampocs.archie
+---
+- runFlow: login.yaml
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "library-mode-takes"
+# Takes is empty for this user, so the empty state's button opens the editor.
+- tapOn:
+    id: "takes-write"
+- extendedWaitUntil:
+    visible:
+      id: "take-editor"
+    timeout: 5000
+- tapOn:
+    id: "editor-title"
+- inputText: "Maestro clean take"
+- tapOn:
+    id: "editor-body"
+- inputText: "ok so the main thing is people think its all speculation but stablecoins did like 10 trillion last year which is basically visa and anyone can build on it without a bank"
+# The Clean it up row sits under the keyboard: drag the page to put the keyboard away, then tap the row (the whole row
+# toggles the switch).
+- swipe:
+    start: "50%, 25%"
+    end: "50%, 45%"
+    duration: 600
+- tapOn:
+    id: "editor-clean-row"
+- tapOn:
+    id: "editor-save"
+- extendedWaitUntil:
+    notVisible:
+      id: "take-editor"
+    timeout: 5000
+- tapOn: ".*Maestro clean take.*"
+- assertVisible:
+    id: "take-page"
+# The cleanup is one Sonnet call; the page shows the raw text under "Cleaning up…" until the next pull brings it
+# (follow-up pulls at 2/5/10 s after the save, then the 60 s poll).
+- extendedWaitUntil:
+    visible:
+      id: "take-origin"
+    timeout: 150000
+# "See what you said ›" is a nested text, so iOS exposes it by its words, not its testID.
+- tapOn: "See what you said ›"
+- assertVisible:
+    id: "take-raw-text"
+    text: ".*stablecoins did like 10 trillion.*"
+# Close by tapping the dimmed backdrop (BottomSheet's own close).
+- tapOn:
+    id: "take-raw-sheet-backdrop"
+    point: "50%,10%"
+- extendedWaitUntil:
+    notVisible:
+      id: "take-raw-sheet"
+    timeout: 5000
+# Then take_cards (Haiku) writes its cards, which arrive with a later pull.
+- extendedWaitUntil:
+    visible:
+      id: "cards-section"
+    timeout: 150000

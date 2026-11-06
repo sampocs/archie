@@ -1,7 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Keyboard, Pressable } from "react-native";
+import { Keyboard, Pressable, View } from "react-native";
 
 import { CaptureOptions } from "@/capture/CaptureOptions";
 import { canSaveToCollection, resolveCollectionPick } from "@/capture/collectionChoice";
@@ -18,6 +18,7 @@ import { Button } from "@/theme/components/Button";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { TextField } from "@/theme/components/TextField";
+import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
 
 function isHttpUrl(text: string): boolean {
@@ -31,6 +32,7 @@ function isHttpUrl(text: string): boolean {
 
 export default function AddScreen() {
   const router = useRouter();
+  const theme = useTheme();
   const [url, setUrl] = useState("");
   const [choice, setChoice] = useState<CaptureChoice>(EMPTY_CHOICE);
   const collections = useCollectionsData().map(({ id, name }) => ({ id, name }));
@@ -129,6 +131,37 @@ export default function AddScreen() {
         }
       />
       <Button testID="add-save" label="Save" disabled={!canSave} onPress={save} />
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+        <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.line }} />
+        <Text variant="monoLabel" tone="ink3">
+          or
+        </Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.line }} />
+      </View>
+      <Pressable
+        testID="add-write-take"
+        onPress={() => {
+          haptic("light");
+          router.replace("/take/edit");
+        }}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.line,
+          borderWidth: 1,
+          borderRadius: 14,
+          paddingVertical: 13,
+          paddingHorizontal: 14,
+          ...(theme.scheme === "light"
+            ? { shadowColor: "#0E0E0C", shadowOpacity: 0.06, shadowRadius: 2, shadowOffset: { width: 0, height: 1 } }
+            : {}),
+        }}
+      >
+        <Text variant="headline">✎ Write a take</Text>
+        <Text tone="ink3">›</Text>
+      </Pressable>
     </Screen>
   );
 }

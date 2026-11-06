@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq, inArray, max } from "drizzle-orm";
 
 import { apiFetch } from "@/api/client";
 import type { AppDb } from "@/db/client";
@@ -54,6 +54,12 @@ const CARD_ACTIONS = new Set(["review_card", "drop_card"]);
 
 // Actions whose payload id is a collection or a saved post: a rejection re-pulls the server's copy and touches no source.
 const COLLECTION_ACTIONS = new Set(["update_collection", "update_collection_item"]);
+
+// Actions whose payload id is a take: a rejection re-pulls the server's copy and touches no source.
+const TAKE_ACTIONS = new Set(["update_take", "retry_take_cleanup"]);
+
+// Take actions that add a version on the phone: a rejection removes it (the server never made it).
+const TAKE_VERSION_ACTIONS = new Set(["save_take", "restore_take_version"]);
 
 // Source actions whose optimistic edit a rejection must undo by re-pulling the server copy.
 const REWOUND_SOURCE_ACTIONS = new Set([
@@ -114,6 +120,7 @@ export function createDbSyncStore(
           id?: string;
           topics?: { id: string }[];
           target?: string;
+          version_id?: string;
         };
 
         // The server created none of these topics, so the optimistic rows would otherwise linger forever.
@@ -136,17 +143,39 @@ export function createDbSyncStore(
           return;
         }
 
+        // The server made no version (and, for a new take, no take): drop ours, point the take back at its newest
+        // remaining version (or drop a take left with none), and re-pull the server's copy.
+        if (TAKE_VERSION_ACTIONS.has(entry.type) && payload.id) {
+          const takeId = payload.id;
+          if (payload.version_id) {
+            tx.delete(schema.takeVersions).where(eq(schema.takeVersions.id, payload.version_id)).run();
+          }
+          const newest = tx
+            .select({ version: max(schema.takeVersions.version) })
+            .from(schema.takeVersions)
+            .where(eq(schema.takeVersions.takeId, takeId))
+            .get()?.version;
+          if (newest == null) {
+            tx.delete(schema.takes).where(eq(schema.takes.id, takeId)).run();
+          } else {
+            tx.update(schema.takes).set({ currentVersion: newest }).where(eq(schema.takes.id, takeId)).run();
+          }
+          tx.update(schema.syncState).set({ position: 0 }).where(eq(schema.syncState.id, 1)).run();
+          return;
+        }
+
         // A rejection doesn't bump the row's change_seq, so no pull would undo the optimistic edit; rewinding the
         // position makes the next pull re-send the server's topic or topic primer.
         // Source actions that change state, processing or the primer's queue entry optimistically rewind too, and
         // still surface syncError on the source below. A rejected finish_brief (a brief already closed) re-pulls the brief
         // and the newsletters it marked briefed; a rejected card action re-pulls the card's schedule or undoes its drop;
-        // a rejected collection edit re-pulls the collection or post.
+        // a rejected collection edit re-pulls the collection or post; a rejected take edit re-pulls the take.
         const rowIsNotSource =
           TOPIC_ACTIONS.has(entry.type) ||
           BRIEF_ACTIONS.has(entry.type) ||
           CARD_ACTIONS.has(entry.type) ||
-          COLLECTION_ACTIONS.has(entry.type);
+          COLLECTION_ACTIONS.has(entry.type) ||
+          TAKE_ACTIONS.has(entry.type);
         const rewind =
           rowIsNotSource ||
           payload.target === "topic_primer" ||
@@ -197,16 +226,19 @@ export function createDbSyncStore(
       db.transaction((tx) => {
         if (signedOutSinceStart()) return;
 
-        // A row (source, card, topic, topic primer, brief, collection or saved post) with an unsent local action keeps
-        // its local copy; it returns on a later pull once the push bumps its change_seq. No timestamp comparison: phone
-        // and server clocks can't be trusted.
+        // A row (source, card, topic, topic primer, brief, collection, saved post, take, or the take version an action
+        // made or changed) with an unsent local action keeps its local copy; it returns on a later pull once the push
+        // bumps its change_seq. No timestamp comparison: phone and server clocks can't be trusted.
         const unsent = new Set(
           tx
             .select()
             .from(schema.outbox)
             .where(eq(schema.outbox.status, "pending"))
             .all()
-            .map((entry) => (JSON.parse(entry.payload) as { id?: string }).id),
+            .flatMap((entry) => {
+              const payload = JSON.parse(entry.payload) as { id?: string; version_id?: string };
+              return [payload.id, payload.version_id];
+            }),
         );
 
         for (const source of page.rows.sources) {
@@ -283,6 +315,8 @@ export function createDbSyncStore(
             reps: card.reps ?? 0,
             lapses: card.lapses ?? 0,
             expiresAt: card.expires_at ?? null,
+            takeId: card.take_id ?? null,
+            takeVersionId: card.take_version_id ?? null,
           };
           tx.insert(schema.cards)
             .values({ id: card.id, ...values })
@@ -377,6 +411,39 @@ export function createDbSyncStore(
           tx.insert(schema.collectionItems)
             .values({ id: item.id, ...values })
             .onConflictDoUpdate({ target: schema.collectionItems.id, set: values })
+            .run();
+        }
+
+        for (const take of page.rows.takes ?? []) {
+          if (unsent.has(take.id)) continue;
+          const values = {
+            kind: take.kind,
+            title: take.title,
+            currentVersion: take.current_version,
+            createdAt: take.created_at,
+            updatedAt: take.updated_at,
+            deletedAt: take.deleted_at,
+          };
+          tx.insert(schema.takes)
+            .values({ id: take.id, ...values })
+            .onConflictDoUpdate({ target: schema.takes.id, set: values })
+            .run();
+        }
+
+        for (const version of page.rows.take_versions ?? []) {
+          if (unsent.has(version.id)) continue;
+          const values = {
+            takeId: version.take_id,
+            version: version.version,
+            body: version.body,
+            rawBody: version.raw_body,
+            cleaned: version.cleaned ? 1 : 0,
+            cleanFailed: version.clean_failed ? 1 : 0,
+            createdAt: version.created_at,
+          };
+          tx.insert(schema.takeVersions)
+            .values({ id: version.id, ...values })
+            .onConflictDoUpdate({ target: schema.takeVersions.id, set: values })
             .run();
         }
 

@@ -50,10 +50,14 @@ export const artifacts = sqliteTable("artifacts", {
 export const cards = sqliteTable("cards", {
   id: text("id").primaryKey(),
   // Exactly one origin is set: a source (its summary's cards, or foundation cards from its primer), a topic primer
-  // (foundation cards) or a brief (quiz cards). Later origins add their own column; see review/eligibility.ts.
+  // (foundation cards), a brief (quiz cards) or a take (take cards). Later origins add their own column; see
+  // review/eligibility.ts.
   sourceId: text("source_id"),
   topicPrimerId: text("topic_primer_id"),
   briefId: text("brief_id"),
+  takeId: text("take_id"),
+  // Which version of the take the card was written from.
+  takeVersionId: text("take_version_id"),
   kind: text("kind").notNull(),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
@@ -184,4 +188,31 @@ export const collectionItems = sqliteTable("collection_items", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
   deletedAt: text("deleted_at"),
+});
+
+// Takes (Library → Takes): what the owner writes. Title and kind live on the take; only the body is versioned.
+export const takes = sqliteTable("takes", {
+  id: text("id").primaryKey(),
+  // opinion | talking_point
+  kind: text("kind").notNull(),
+  title: text("title").notNull(),
+  // The take_versions.version the take page shows.
+  currentVersion: integer("current_version").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  deletedAt: text("deleted_at"),
+});
+
+export const takeVersions = sqliteTable("take_versions", {
+  id: text("id").primaryKey(),
+  takeId: text("take_id").notNull(),
+  version: integer("version").notNull(),
+  // What the take page shows (markdown); null while Clean it up runs.
+  body: text("body"),
+  // What the owner typed or dictated.
+  rawBody: text("raw_body").notNull(),
+  cleaned: integer("cleaned").notNull(),
+  // Clean it up gave up: body holds the raw text and the page offers Try again.
+  cleanFailed: integer("clean_failed").notNull().default(0),
+  createdAt: text("created_at").notNull(),
 });

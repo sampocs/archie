@@ -3,7 +3,8 @@ import { EMPTY_CHOICE } from "@/capture/types";
 import {
   buildCollectionShareActions,
   buildShareAction,
-  decodeShareParam,   encodeShareParam,
+  decodeShareParam,
+  encodeShareParam,
   shareDeepLink,
   submitShare,
 } from "./submit";

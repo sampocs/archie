@@ -67,6 +67,10 @@ class _ReadPayload(_SourcePayload):
     read: bool
 
 
+class _FavoritePayload(_SourcePayload):
+    favorited: bool
+
+
 class _PrimerOpenedPayload(_SourcePayload):
     target: PrimerTarget
     opened: bool
@@ -281,6 +285,25 @@ def set_read(db: orm.Session, *, user: models.User, payload: dict[str, object]) 
         return _NOT_IN_INBOX
 
     source.read_at = sqlalchemy.func.now() if parsed.read else None
+    changes.touch(source)
+    return None
+
+
+def set_favorite(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
+    """Star a source or clear its star; asking for the state it is already in writes nothing.
+
+    Starring again keeps the first star's time, so "newest star first" doesn't reshuffle when a phone resends.
+    """
+    parsed = rows.parse(_FavoritePayload, payload)
+    if parsed is None:
+        return rows.MALFORMED
+    source = rows.owned_source(db, user=user, source_id=parsed.id)
+    if source is None:
+        return rows.NO_SOURCE
+    if parsed.favorited == (source.favorited_at is not None):
+        return None
+
+    source.favorited_at = sqlalchemy.func.now() if parsed.favorited else None
     changes.touch(source)
     return None
 

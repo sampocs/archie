@@ -37,6 +37,7 @@ HANDLERS: dict[schemas.ActionType, ActionHandler] = {
     schemas.ActionType.READ_LATER: source_actions.read_later,
     schemas.ActionType.DELETE_SOURCE: source_actions.delete_source,
     schemas.ActionType.SET_PREP_ME: source_actions.set_prep_me,
+    schemas.ActionType.SET_FAVORITE: source_actions.set_favorite,
     schemas.ActionType.CHOOSE_EPISODE: episodes.choose_episode,
     schemas.ActionType.ADD_TOPIC: topic_actions.add_topic,
     schemas.ActionType.RENAME_TOPIC: topic_actions.rename_topic,

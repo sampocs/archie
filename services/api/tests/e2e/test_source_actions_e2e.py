@@ -287,6 +287,7 @@ def test_another_users_source_is_not_found(live_stack: LiveStack, authed: httpx.
         ("set_queue_position", {"id": source_id, "target": "source_primer", "position": 3}),
         ("go_deeper", {"id": source_id}),
         ("read_later", {"id": source_id}),
+        ("set_favorite", {"id": source_id, "favorited": True}),
         ("delete_source", {"id": source_id}),
     ]
 

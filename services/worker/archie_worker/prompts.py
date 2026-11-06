@@ -1,5 +1,5 @@
-"""Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic`, `clean_text` and
-`update_brief` steps.
+"""Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic`, `clean_text`, `update_brief`
+and `take_cards` steps.
 
 Bump the matching version whenever a prompt or the schema changes in a way that alters output: it is stored
 on every artifact, so old versions stay attributable. A brief is rewritten on every newsletter and keeps no
@@ -15,7 +15,7 @@ from enum import StrEnum
 from typing import Any
 
 import pydantic
-from archie_db import card_rows, models
+from archie_db import card_rows, models, takes
 from archie_shared import logging
 from archie_shared.domains import Domain
 
@@ -546,3 +546,36 @@ def news_quiz_message(stories: Sequence[QuizStory]) -> str:
         f"Why it matters: {story.why}\nDetail: {story.detail}"
         for story in stories
     )
+
+
+TAKE_CARDS_SYSTEM = """You write review cards from the user's own take for a personal learning app. A take is \
+something the user thinks (an opinion) or the case they make for something (a talking point), in their own words. The \
+cards help them remember their own argument well enough to make it out loud.
+
+Write 2-4 open-recall cards. Good questions ask for the take's main points ("What are your three main points for \
+...?"), a rough number the take cites, and the user's answer to an objection the take names ("What do you say to \
+...?"). Ask only about what the take says. Each answer is 1-3 sentences made of the take's own words and claims: never \
+add a fact, number or argument that isn't in the take, and never correct, soften or strengthen what it says. The \
+user's spoken answer is graded against these answers."""
+
+TAKE_CARDS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "cards": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"question": {"type": "string"}, "answer": {"type": "string"}},
+                "required": ["question", "answer"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["cards"],
+    "additionalProperties": False,
+}
+
+
+def take_cards_message(*, kind: models.TakeKind, title: str, body: str) -> str:
+    """The take's kind, title and body, as the page shows it."""
+    return f"Kind: {takes.KIND_NAMES[kind]}\nTitle: {title}\n\n<take>\n{body}\n</take>"

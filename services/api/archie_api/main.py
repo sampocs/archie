@@ -14,6 +14,7 @@ from archie_shared import config, logging
 from archie_api import deps, test_routes
 from archie_api.auth import routes as auth_routes
 from archie_api.ingest import routes as ingest_routes
+from archie_api.review import routes as review_routes
 from archie_api.sources import routes as sources_routes
 from archie_api.sync import routes as sync_routes
 from archie_api.topics import routes as topics_routes
@@ -37,6 +38,7 @@ def create_app() -> fastapi.FastAPI:
     app.include_router(sync_routes.router)
     app.include_router(ingest_routes.router)
     app.include_router(sources_routes.router)
+    app.include_router(review_routes.router)
     app.include_router(topics_routes.router)
 
     if _test_routes_enabled():

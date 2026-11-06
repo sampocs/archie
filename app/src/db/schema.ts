@@ -32,6 +32,8 @@ export const sources = sqliteTable("sources", {
   primerSnoozedUntil: text("primer_snoozed_until"),
   newsletterKind: text("newsletter_kind"),
   cardsOff: integer("cards_off").notNull().default(0),
+  // When the user starred it; null = not starred. Favorites sort newest star first.
+  favoritedAt: text("favorited_at"),
 });
 
 export const artifacts = sqliteTable("artifacts", {

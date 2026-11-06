@@ -122,7 +122,7 @@ export default function SourceScreen() {
         {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
         {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
         <NoteSection reaction={source.reaction} note={source.note} />
-        <CardsSection sourceId={source.id} />
+        <CardsSection of={{ kind: "source", id: source.id }} />
         <FinishSheet
           sourceId={source.id}
           primerWords={primerWords}

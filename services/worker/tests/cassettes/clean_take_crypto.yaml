@@ -1,0 +1,132 @@
+interactions:
+- request:
+    body: '{"max_tokens":2000,"messages":[{"role":"user","content":"Kind: talking
+      point\nTitle: The argument for crypto\n\n<notes>\nok so the main thing is people
+      think it''s all speculation and like most of it is, fine, but the actual use
+      that''s working is moving dollars. stablecoins did something like 10 trillion
+      last year which is basically visa. and people in argentina or turkey want dollars
+      and this is the easiest way. and the other thing is anyone can build on it,
+      you don''t need a bank partner\n</notes>"}],"model":"claude-sonnet-5-5","system":"You
+      turn the user''s own dictated or typed notes into a short take for a personal
+      learning app. A take is something the user thinks (an opinion) or the case they
+      make for something (a talking point), in their own words.\n\nRewrite the notes
+      as markdown:\n- First the thesis, in one plain sentence with no heading.\n-
+      Then a \"## Main points\" heading and 2-5 bullets, one per point the user makes.\n-
+      Only when the notes answer an objection, end with a heading naming it (for example
+      ## When they say \"it''s just a casino\") and the user''s answer in a short
+      paragraph.\n\nKeep only what the user said. Never add a fact, number, name,
+      example or argument that isn''t in the notes, never define a term they didn''t
+      define, and never make a claim stronger or weaker than they made it: keep their
+      hedges (\"I think\", \"maybe\", \"roughly\") and their stance. Keep their numbers
+      as they gave them. Drop filler (\"ok so\", \"like\", \"you know\") and repetition.
+      Answer with the take''s markdown only.\n\nThe voice below shapes how sentences
+      read; it never licenses adding definitions, examples or numbers.\nWrite in plain,
+      conversational English for a smart reader who is new to the subject. Short sentences.
+      Define any jargon the first time it appears. Prefer concrete examples and rough
+      numbers (\"~1 GW\", not \"1.07 GW\")."}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '1864'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-sonnet-5-5","id":"msg_011Cgm4BGoACj2LHAFKuHrsJ","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"The
+        case for crypto is that, speculation aside, it has one use that''s actually
+        working: moving dollars.\n\n## Main points\n\n- Stablecoins did something
+        like 10 trillion last year, which is basically Visa.\n- People in Argentina
+        or Turkey want dollars, and this is the easiest way to get them.\n- Anyone
+        can build on it. You don''t need a bank partner.\n\n## When they say \"it''s
+        all speculation\"\n\nMost of it is, and that''s fine. But the use that''s
+        actually working is moving dollars."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":569,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":695,"output_tokens_details":{"thinking_tokens":537},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-06T04:37:42Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1999000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-06T04:37:47Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-06T04:37:41Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11999000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-06T04:37:42Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a561678448bff84e-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '3966'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 06 Nov 2026 04:37:47 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=6443
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-93d2737ed8a9695ecbb66afee7455345-0d60693eedcb4621-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

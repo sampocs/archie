@@ -1,6 +1,7 @@
 // Row factories for review logic tests: our own rows, filled with neutral defaults. Sources, topics and topic primers
 // come from the Library's factories (their rows carry a few joined fields the review code ignores).
 import { sourceRow, topicPrimerRow, topicRow } from "@/library/testRows";
+import type { TakeRow, TakeVersionRow } from "@/takes/takes";
 
 import { makeReviewData, type ReviewData } from "./eligibility";
 import type { CardRow } from "./types";
@@ -20,6 +21,8 @@ export const cardRow = (overrides: Partial<CardRow>): CardRow => ({
   sourceId: "s1",
   topicPrimerId: null,
   briefId: null,
+  takeId: null,
+  takeVersionId: null,
   kind: "concept",
   question: "Q?",
   answer: "A.",
@@ -50,7 +53,7 @@ export const reviewCard = (overrides: Partial<CardRow> & { dueAt: string }): Car
 /** Review data where source s1 is consumed with its primer opened, and topic t1 has an opened primer p1. */
 export function reviewData(
   cards: CardRow[],
-  rows: Partial<Pick<Parameters<typeof makeReviewData>[0], "sources" | "topicPrimers" | "topics">> = {},
+  rows: Partial<Pick<Parameters<typeof makeReviewData>[0], "sources" | "topicPrimers" | "topics" | "takes">> = {},
 ): ReviewData {
   return makeReviewData({
     cards,
@@ -59,5 +62,29 @@ export function reviewData(
     ],
     topicPrimers: rows.topicPrimers ?? [topicPrimerRow({ id: "p1", topicId: "t1", openedAt: "2026-11-03T00:00:00Z" })],
     topics: rows.topics ?? [topicRow({ id: "t1" })],
+    takes: rows.takes ?? [],
   });
 }
+
+export const takeRow = (overrides: Partial<TakeRow>): TakeRow => ({
+  id: "k1",
+  kind: "talking_point",
+  title: "T",
+  currentVersion: 1,
+  createdAt: "2026-11-01T00:00:00Z",
+  updatedAt: "2026-11-01T00:00:00Z",
+  deletedAt: null,
+  ...overrides,
+});
+
+export const takeVersionRow = (overrides: Partial<TakeVersionRow>): TakeVersionRow => ({
+  id: "v1",
+  takeId: "k1",
+  version: 1,
+  body: "Body.",
+  rawBody: "Body.",
+  cleaned: 0,
+  cleanFailed: 0,
+  createdAt: "2026-11-01T00:00:00Z",
+  ...overrides,
+});

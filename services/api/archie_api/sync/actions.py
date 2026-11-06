@@ -15,6 +15,7 @@ from archie_api.sync import (
     review_actions,
     schemas,
     source_actions,
+    take_actions,
     topic_actions,
 )
 
@@ -67,6 +68,11 @@ HANDLERS: dict[schemas.ActionType, ActionHandler] = {
     schemas.ActionType.UPDATE_COLLECTION: collection_actions.update_collection,
     schemas.ActionType.ADD_COLLECTION_ITEM: collection_actions.add_collection_item,
     schemas.ActionType.UPDATE_COLLECTION_ITEM: collection_actions.update_collection_item,
+    # Takes
+    schemas.ActionType.SAVE_TAKE: take_actions.save_take,
+    schemas.ActionType.UPDATE_TAKE: take_actions.update_take,
+    schemas.ActionType.RESTORE_TAKE_VERSION: take_actions.restore_take_version,
+    schemas.ActionType.RETRY_TAKE_CLEANUP: take_actions.retry_take_cleanup,
 }
 
 

@@ -7,7 +7,7 @@ from typing import Protocol
 from archie_db import changes, models
 from sqlalchemy import exc, orm
 
-from archie_api.sync import brief_actions, capture, episodes, schemas, source_actions, topic_actions
+from archie_api.sync import brief_actions, capture, episodes, review_actions, schemas, source_actions, topic_actions
 
 _ACTION_ID_USED = "action id already used"
 NOT_SUPPORTED = "action not supported yet"
@@ -47,6 +47,11 @@ HANDLERS: dict[schemas.ActionType, ActionHandler] = {
     schemas.ActionType.SET_SOURCE_TOPIC: topic_actions.set_source_topic,
     schemas.ActionType.CHOOSE_TOPICS: topic_actions.choose_topics,
     schemas.ActionType.FINISH_BRIEF: brief_actions.finish_brief,
+    # Review
+    schemas.ActionType.REVIEW_CARD: review_actions.review_card,
+    schemas.ActionType.DROP_CARD: review_actions.drop_card,
+    schemas.ActionType.SET_CARDS_OFF: review_actions.set_cards_off,
+    schemas.ActionType.REQUEST_NEWS_QUIZ: review_actions.request_news_quiz,
 }
 
 

@@ -236,6 +236,9 @@ def go_deeper(db: orm.Session, *, user: models.User, payload: dict[str, object])
     source.state = models.SourceState.CONSUMED.value
     source.snoozed_until = None
     source.read_at = source.read_at or sqlalchemy.func.now()
+
+    # Going deeper asks for cards, so it undoes "No cards for this".
+    source.cards_off = False
     pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
     pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.ANALYZE, models.JobKind.PRIMER])
     return None

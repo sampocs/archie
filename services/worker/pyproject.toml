@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 dependencies = [
   "archie-shared",
   "archie-db",
+  "archie-llm",
   "httpx>=0.28.1",
   "anthropic>=2.4",
   "pydantic>=2.10",
@@ -21,6 +22,7 @@ archie-refile-sources = "archie_worker.refile:main"
 [tool.uv.sources]
 archie-shared = { workspace = true }
 archie-db = { workspace = true }
+archie-llm = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

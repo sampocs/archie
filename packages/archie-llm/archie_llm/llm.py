@@ -1,8 +1,12 @@
-"""Every model call goes through `complete`: it falls back to a second model and records each call's cost."""
+"""Every model call goes through `complete`: it falls back to a second model and records each call's cost.
+
+Shared by the worker and the API.
+"""
 
 from __future__ import annotations
 
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -11,9 +15,7 @@ import anthropic
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import models
-from archie_shared import config, logging
-
-from archie_worker import errors
+from archie_shared import logging
 
 HAIKU = "claude-haiku-5-5"
 SONNET = "claude-sonnet-5-5"
@@ -21,6 +23,9 @@ OPUS = "claude-opus-5-5"
 
 PROVIDER = "anthropic"
 CORRECTIONS_STEP = "corrections"
+GRADE_STEP = "grade"
+CARE_STEP = "care"
+ANSWER_TRANSCRIPTION_STEP = "transcribe_answer"
 GROQ_WHISPER = "whisper-large-v3-turbo"
 OPENAI_TRANSCRIBE = "gpt-4o-mini-transcribe"
 REQUEST_TIMEOUT_SECONDS = 300
@@ -33,7 +38,7 @@ _UNUSABLE_STOP_REASONS = frozenset({"refusal", "max_tokens"})
 
 _TOKENS_PER_PRICE_UNIT = Decimal(1_000_000)
 
-_logger = logging.get_logger(logging.LoggerName.WORKER, "llm")
+_logger = logging.get_logger(logging.LoggerName.LLM, "llm")
 
 
 @dataclass(frozen=True)
@@ -41,7 +46,8 @@ class ModelPair:
     """A step's model and the stronger one to try when the first gives no usable answer."""
 
     primary: str
-    fallback: str
+    # None for a step that tries one model only.
+    fallback: str | None = None
 
 
 ANALYZE_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
@@ -50,6 +56,12 @@ CORRECTIONS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 FILE_TOPIC_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 CLEAN_TEXT_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 BRIEF_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
+GRADE_MODELS = ModelPair(primary=HAIKU)
+CARE_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+NEWS_QUIZ_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+
+# For short, latency-sensitive calls where reasoning would only add delay.
+THINKING_DISABLED: dict[str, str] = {"type": "disabled"}
 
 
 @dataclass(frozen=True)
@@ -82,8 +94,9 @@ class CallContext:
     user_id: int
     # None for calls that belong to no source, such as a topic primer.
     source_id: uuid.UUID | None
-    job_id: int
-    # A `JobKind` value, or a sub-step name such as `CORRECTIONS_STEP`.
+    # None for calls that belong to no job, such as the API's.
+    job_id: int | None
+    # A `JobKind` value, or a sub-step name such as `CORRECTIONS_STEP` or `GRADE_STEP`.
     step: str
 
 
@@ -96,7 +109,7 @@ class Completion:
 
 
 class ModelOutputError(Exception):
-    """Both models stopped on a refusal or the output cap, so there is no usable answer."""
+    """Every model tried stopped on a refusal or the output cap, so there is no usable answer."""
 
 
 def cost_usd(*, model: str, input_tokens: int, output_tokens: int) -> Decimal:
@@ -110,14 +123,6 @@ def audio_cost_usd(*, model: str, audio_seconds: Decimal) -> Decimal:
     return _AUDIO_PRICES_PER_HOUR[model] * audio_seconds / _SECONDS_PER_HOUR
 
 
-def api_key_for(user: models.User) -> str:
-    """The key that pays for this user's calls: the owner's for whitelisted users, otherwise they need their own."""
-    if not user.is_whitelisted:
-        raise errors.PermanentJobError(errors.FailureReason.NEEDS_API_KEY)
-
-    return config.Settings().require_anthropic_api_key()
-
-
 def complete(
     engine: sqlalchemy.Engine,
     *,
@@ -128,21 +133,28 @@ def complete(
     user_message: str,
     max_tokens: int,
     json_schema: dict[str, Any] | None = None,
+    thinking: Mapping[str, Any] | None = None,
+    timeout_seconds: float = REQUEST_TIMEOUT_SECONDS,
 ) -> Completion:
     """Ask `models.primary`, then `models.fallback` if it refused, ran out of tokens, or the service failed it.
 
     A service failure is a 5xx/529 answer or a connection error; a failure of the fallback is re-raised for the worker
     loop to retry, as is any other API error (a 4xx would fail the fallback the same way). Every answered call is
     recorded.
+
+    `models.fallback` is optional: a pair without one tries only the primary. `thinking` holds extended-thinking
+    options (e.g. `THINKING_DISABLED`), passed to `messages.create` only when given. `timeout_seconds` is the
+    Anthropic client timeout, `REQUEST_TIMEOUT_SECONDS` by default.
     """
     # No SDK retries: the worker loop owns retrying, so a failed call is not silently billed twice.
-    client = anthropic.Anthropic(api_key=api_key, max_retries=0, timeout=REQUEST_TIMEOUT_SECONDS)
+    client = anthropic.Anthropic(api_key=api_key, max_retries=0, timeout=timeout_seconds)
     output_options: dict[str, Any] = (
         {"output_config": {"format": {"type": "json_schema", "schema": json_schema}}} if json_schema else {}
     )
 
     # `models` is the ModelPair parameter here, shadowing the `archie_db.models` module inside this function.
-    attempts = (models.primary, models.fallback)
+    attempts = [model for model in (models.primary, models.fallback) if model is not None]
+    thinking_options: dict[str, Any] = {"thinking": dict(thinking)} if thinking else {}
     for attempt, model in enumerate(attempts):
         try:
             response = client.messages.create(
@@ -151,12 +163,13 @@ def complete(
                 system=system,
                 messages=[{"role": "user", "content": user_message}],
                 **output_options,
+                **thinking_options,
             )
         except (anthropic.APIStatusError, anthropic.APIConnectionError) as error:
             if not _is_service_failure(error) or attempt == len(attempts) - 1:
                 raise
 
-            _logger.warning("%s failed for job %d, trying %s: %r", model, context.job_id, models.fallback, error)
+            _logger.warning("%s failed for %s, trying %s: %r", model, context.step, models.fallback, error)
             continue
 
         _record_call(engine, context=context, model=model, response=response)
@@ -164,9 +177,9 @@ def complete(
         if response.stop_reason not in _UNUSABLE_STOP_REASONS:
             return Completion(model=model, text=_text_of(response))
 
-        _logger.warning("%s stopped on %s for job %d", model, response.stop_reason, context.job_id)
+        _logger.warning("%s stopped on %s for %s", model, response.stop_reason, context.step)
 
-    raise ModelOutputError(f"{models.primary} and {models.fallback} both gave no usable answer")
+    raise ModelOutputError(f"{' and '.join(attempts)} gave no usable answer")
 
 
 def record_audio_call(

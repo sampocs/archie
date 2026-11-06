@@ -8,6 +8,7 @@ dependencies = [
   "uvicorn[standard]>=0.32",
   "archie-shared",
   "archie-db",
+  "archie-llm",
   "pyjwt[crypto]>=2.15.1",
   "trafilatura>=2.3.1",
   "lxml>=6.0",
@@ -19,6 +20,7 @@ archie-launch = "archie_api.launch:main"
 [tool.uv.sources]
 archie-shared = { workspace = true }
 archie-db = { workspace = true }
+archie-llm = { workspace = true }
 
 [build-system]
 requires = ["hatchling"]

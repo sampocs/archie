@@ -27,6 +27,7 @@ Replay = Callable[[str], contextlib.AbstractContextManager[object]]
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 TOPIC_NAME = "Fed & monetary policy"
 SOURCE_TITLES = ["Powell's Jackson Hole speech", "Why the yield curve inverted"]
+MIN_FOUNDATION_CARDS = 2
 
 
 @pytest.fixture(autouse=True)
@@ -63,11 +64,48 @@ def test_topic_primer_writes_the_first_version(engine: sqlalchemy.Engine, replay
     assert primer.version == 1
     assert primer.content["markdown"].startswith("#")
     assert primer.model == llm.SONNET
-    assert primer.prompt_version == prompts.TOPIC_PRIMER_PROMPT_VERSION == "topic-primer-v1"
+    assert primer.prompt_version == prompts.TOPIC_PRIMER_PROMPT_VERSION == "topic-primer-v2"
+    assert "<foundation_cards>" not in primer.content["markdown"]
     [call] = _llm_calls(engine)
     assert call.step == models.JobKind.TOPIC_PRIMER.value
     assert call.source_id is None
     assert _only_job(engine).status == models.JobStatus.DONE.value
+
+
+def test_topic_primer_writes_foundation_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """The primer's foundation cards belong to the topic primer, not to any source."""
+    topic_id = _add_topic(engine, source_titles=SOURCE_TITLES)
+    _enqueue(engine, topic_id)
+
+    with replay("topic_primer_fed"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    [primer] = _primers(engine, topic_id)
+    cards = _cards(engine, topic_id)
+    assert MIN_FOUNDATION_CARDS <= len(cards) <= prompts.MAX_FOUNDATION_CARDS
+    assert all(card.topic_primer_id == primer.id and card.source_id is None for card in cards)
+    assert all(card.kind == models.CardKind.FOUNDATION.value and card.deleted_at is None for card in cards)
+    assert all(card.question.strip() and card.answer.strip() for card in cards)
+
+
+def test_a_new_topic_primer_version_retires_the_older_versions_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """Writing a newer version retires the foundation cards of every older one and keeps its own."""
+    topic_id = _add_topic(engine, source_titles=SOURCE_TITLES)
+    _write(engine, topic_id, "# Older")
+    older_card_seqs = _add_foundation_cards(engine, topic_id)
+    _enqueue(engine, topic_id)
+
+    with replay("topic_primer_fed"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    older, newer = _primers(engine, topic_id)
+    cards = _cards(engine, topic_id)
+    retired = [card for card in cards if card.topic_primer_id == older.id]
+    assert {card.id for card in retired} == set(older_card_seqs)
+    assert all(card.deleted_at is not None and card.change_seq > older_card_seqs[card.id] for card in retired)
+    live = [card for card in cards if card.topic_primer_id == newer.id]
+    assert MIN_FOUNDATION_CARDS <= len(live) <= prompts.MAX_FOUNDATION_CARDS
+    assert all(card.deleted_at is None for card in live)
 
 
 def test_removed_topic_gets_no_primer_and_no_call(engine: sqlalchemy.Engine) -> None:
@@ -173,6 +211,36 @@ def _write(engine: sqlalchemy.Engine, topic_id: uuid.UUID, markdown: str) -> int
         return primer.change_seq
 
 
+def _add_foundation_cards(engine: sqlalchemy.Engine, topic_id: uuid.UUID) -> dict[uuid.UUID, int]:
+    """Two foundation cards on the topic's current primer, which is then left not current so a new one is written.
+
+    Returns each card's change position.
+    """
+    with sqlalchemy.orm.Session(engine) as db:
+        primer = db.scalars(
+            sqlalchemy.select(models.TopicPrimer).where(
+                models.TopicPrimer.topic_id == topic_id, models.TopicPrimer.is_current
+            )
+        ).one()
+        changes.lock_user_writes(db, primer.user_id)
+        cards = [
+            models.Card(
+                id=uuid.uuid4(),
+                user_id=primer.user_id,
+                topic_primer_id=primer.id,
+                kind=models.CardKind.FOUNDATION.value,
+                question=f"Older question {index}?",
+                answer="Older answer.",
+                change_seq=changes.next_change_seq(),
+            )
+            for index in range(2)
+        ]
+        db.add_all(cards)
+        primer.is_current = False
+        db.commit()
+        return {card.id: card.change_seq for card in cards}
+
+
 def _primers(engine: sqlalchemy.Engine, topic_id: uuid.UUID) -> list[models.TopicPrimer]:
     with sqlalchemy.orm.Session(engine) as db:
         return list(
@@ -180,6 +248,18 @@ def _primers(engine: sqlalchemy.Engine, topic_id: uuid.UUID) -> list[models.Topi
                 sqlalchemy.select(models.TopicPrimer)
                 .where(models.TopicPrimer.topic_id == topic_id)
                 .order_by(models.TopicPrimer.version)
+            )
+        )
+
+
+def _cards(engine: sqlalchemy.Engine, topic_id: uuid.UUID) -> list[models.Card]:
+    """Every card, live or retired, on any version of the topic's primer."""
+    with sqlalchemy.orm.Session(engine) as db:
+        return list(
+            db.scalars(
+                sqlalchemy.select(models.Card)
+                .join(models.TopicPrimer, models.Card.topic_primer_id == models.TopicPrimer.id)
+                .where(models.TopicPrimer.topic_id == topic_id)
             )
         )
 

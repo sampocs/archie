@@ -85,11 +85,16 @@ export const domainColors: Record<ColorScheme, Record<Domain, string>> = {
   },
 };
 
-export type Signal = "gotIt" | "partly" | "missed" | "reviewCard";
+export type Signal = "gotIt" | "partly" | "missed" | "reviewCard" | "favorite";
 
 export const signalColors: Record<ColorScheme, Record<Signal, string>> = {
-  light: { gotIt: "#3F7262", partly: "#A97F22", missed: "#B04A3C", reviewCard: "#3F7262" },
-  dark: { gotIt: "#79B39E", partly: "#D6AC4E", missed: "#E3806F", reviewCard: "#2F5A4C" },
+  light: { gotIt: "#3F7262", partly: "#A97F22", missed: "#B04A3C", reviewCard: "#3F7262",
+    // The favorites ★, and nothing else.
+    favorite: "#B8892A",
+  },
+  dark: { gotIt: "#79B39E", partly: "#D6AC4E", missed: "#E3806F", reviewCard: "#2F5A4C",
+    favorite: "#D9B45A",
+  },
 };
 
 export const radii = {

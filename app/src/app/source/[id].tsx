@@ -1,10 +1,11 @@
+import { Ionicons } from "@expo/vector-icons";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useCallback, useEffect, useState } from "react";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 
 import { db } from "@/db/client";
-import { readLater, returnToInbox } from "@/db/actions";
+import { readLater, returnToInbox, setFavorite } from "@/db/actions";
 import * as schema from "@/db/schema";
 import { CardsSection } from "@/item/CardsSection";
 import { FullEmailSheet } from "@/item/FullEmailSheet";
@@ -32,6 +33,7 @@ type SourceRow = typeof schema.sources.$inferSelect;
 export default function SourceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const theme = useTheme();
   const { data: sources } = useLiveQuery(db.select().from(schema.sources).where(eq(schema.sources.id, id)), [id]);
   const { data: artifacts } = useLiveQuery(
     db
@@ -69,6 +71,7 @@ export default function SourceScreen() {
 
   if (!source || source.deletedAt) return <Screen title="Source" />;
 
+  const starred = source.favoritedAt !== null;
   const summary = artifacts.find((artifact) => artifact.kind === "summary");
   const primer = artifacts.find((artifact) => artifact.kind === "primer");
   const summaryContent = summary ? parseSummary(summary.content) : null;
@@ -87,9 +90,27 @@ export default function SourceScreen() {
         title=""
         onBack={router.back}
         headerRight={
-          <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
-            <Text variant="largeTitle">•••</Text>
-          </Pressable>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}>
+            <Pressable
+              testID="item-favorite"
+              accessibilityLabel={starred ? "Remove from favorites" : "Add to favorites"}
+              onPress={() => {
+                haptic("selection");
+                setFavorite(db, source.id, !starred);
+                requestSync();
+              }}
+              hitSlop={12}
+            >
+              <Ionicons
+                name={starred ? "star" : "star-outline"}
+                size={24}
+                color={starred ? theme.signals.favorite : theme.colors.ink}
+              />
+            </Pressable>
+            <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
+              <Text variant="largeTitle">•••</Text>
+            </Pressable>
+          </View>
         }
       >
         <ItemHeader source={source} topicName={topics[0]?.name ?? null} />

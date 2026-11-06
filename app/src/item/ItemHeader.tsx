@@ -58,7 +58,8 @@ export function ItemHeader({ source, topicName }: { source: SourceRow; topicName
         <View style={{ flex: 1, gap: theme.spacing.xs }}>
           <Kicker domain={source.domain} suffix={kindLabel(source.kind)} />
           <Text testID="item-byline" variant="secondary" tone="ink2">
-            {datedByline(source, now)}
+            {/* The star is repeated in the by-line so it's visible below the navbar too. */}
+            {`${datedByline(source, now)}${source.favoritedAt ? " · ★ Favorite" : ""}`}
           </Text>
         </View>
       </View>

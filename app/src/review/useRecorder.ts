@@ -1,4 +1,5 @@
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from "expo-audio";
+import { File } from "expo-file-system";
 import { useEffect, useRef, useState } from "react";
 
 import { apiUpload } from "@/api/client";
@@ -93,7 +94,8 @@ export function useRecorder({ cardId, sessionKey, onText, onError }: RecorderArg
     const form = new FormData();
     form.append("card_id", cardId);
     form.append("duration_ms", String(durationMs));
-    form.append("audio", { uri, name: "answer.m4a", type: "audio/m4a" } as unknown as Blob);
+    // Expo's fetch only sends file parts it can read bytes from: a File, not React Native's { uri, name, type }.
+    form.append("audio", new File(uri) as unknown as Blob);
 
     // Any failure (offline, 413, 503, the provider) reads the same to the user: type it instead.
     const body = await apiUpload("/review/transcribe", { form, sessionKey }).catch(() => null);

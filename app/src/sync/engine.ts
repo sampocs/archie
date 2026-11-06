@@ -28,6 +28,8 @@ export type PulledSource = {
   primer_queue_position: number | null;
   primer_snoozed_until: string | null;
   newsletter_kind: string | null;
+  // Absent when pulling from a server older than M6.
+  cards_off?: boolean;
 };
 export type PulledArtifact = {
   id: string;
@@ -40,12 +42,23 @@ export type PulledArtifact = {
 };
 export type PulledCard = {
   id: string;
-  source_id: string;
+  source_id: string | null;
+  // The other origins and the FSRS state are absent when pulling from a server older than M6.
+  topic_primer_id?: string | null;
+  brief_id?: string | null;
   kind: string;
   question: string;
   answer: string;
   created_at: string;
   deleted_at: string | null;
+  fsrs_state?: string;
+  stability?: number | null;
+  difficulty?: number | null;
+  due_at?: string | null;
+  last_review_at?: string | null;
+  reps?: number;
+  lapses?: number;
+  expires_at?: string | null;
 };
 export type PulledTopic = {
   id: string;
@@ -97,8 +110,8 @@ export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;
   removeActions(ids: string[]): Promise<void>;
   // Also sets sources.syncError for that action's source. A rejected add_topic / choose_topics deletes its optimistic
-  // topics; any other rejected topic or topic-primer action, finish_brief, and the source actions in transport's
-  // REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the server copy.
+  // topics; any other rejected topic or topic-primer action, finish_brief, a card action, and the source actions in
+  // transport's REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the server copy.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
   // Upserts rows and saves the position in one transaction.

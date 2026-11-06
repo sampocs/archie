@@ -1,0 +1,183 @@
+interactions:
+- request:
+    body: "{\"max_tokens\":2000,\"messages\":[{\"role\":\"user\",\"content\":\"Story
+      1\\nHeadline: US midterms decide control of Congress today\\nWhat happened:
+      It is Election Day. Voters will decide which party controls Congress for the
+      end of President Trump's second term. Republicans hold narrow majorities now,
+      and polls suggest Democrats could flip the House.\\nWhy it matters: Control
+      of Congress shapes what Trump can pass and how much oversight he faces for his
+      last two years.\\nDetail: Republicans currently hold the House 218\u2013214
+      and the Senate 53\u201347. The president's party usually loses seats in midterms,
+      and recent polls point to Democrats possibly taking the House. The Senate, with
+      35 seats up, looks more like a tossup. Rising consumer prices are top of mind
+      for many voters. There are also 36 governorships on the ballot. Results may
+      not come tonight, since counting could be slow in close races. Courts have so
+      far rejected the Trump administration's arguments about two candidates named
+      Dan Sullivan in Alaska's Senate race, and its bid to set aside 20,000 California
+      mail-in ballots it says were sent by noncitizens.\\n\\nStory 2\\nHeadline: Marvell
+      to buy Lumentum for $115B\\nWhat happened: Chipmaker Marvell agreed to buy Lumentum,
+      which makes lasers and optical hardware that move data between chips and servers.
+      Marvell fell 13% and Lumentum 19% after the announcement.\\nWhy it matters:
+      It shows how much money is chasing AI data center infrastructure, and how nervous
+      some investors are about a bubble.\\nDetail: The deal is valued at $115 billion
+      including debt. That makes it the second-most expensive tech deal ever, behind
+      the SpaceX\u2013xAI merger. It is more than half of Marvell's market value.
+      The purchase gives Marvell another foothold in AI infrastructure. Investors
+      worry about the size of the bet and about a possible AI spending bubble.\\n\\nStory
+      3\\nHeadline: Apple revenue rises, but margins shrink\\nWhat happened: In John
+      Ternus's first earnings report as CEO, Apple's revenue grew 12% to $114.5 billion,
+      beating expectations. The stock slipped after hours because margins are narrowing.\\nWhy
+      it matters: Investors had treated Apple as a safe haven from AI turbulence in
+      Big Tech.\\nDetail: Apple expects 7% to 10% revenue growth over the holiday
+      season. Ternus told analysts margins are shrinking because of high memory costs
+      and expenses tied to Siri AI. Apple also said it is hard to predict when iPhone
+      Duo supply will catch up with demand.\\n\\nStory 4\\nHeadline: Palantir's business
+      sales pass government sales for first time\\nWhat happened: Palantir reported
+      Q3 revenue of $2.31 billion, nearly double last year, and beat estimates. Its
+      US commercial revenue rose 148% to $984 million, passing US government revenue
+      of $953 million.\\nWhy it matters: It suggests companies are adopting AI tools
+      fast enough to rival government demand.\\nDetail: US government revenue, from
+      clients like the Army, ICE and the IRS, rose 96%. Palantir raised its full-year
+      guidance and now expects $8.53 billion in 2026 revenue. The growth came as companies
+      adopted more of its AI tools.\\n\\nStory 5\\nHeadline: Hackers defrost fridges
+      at European supermarkets\\nWhat happened: Hackers attacked fridges and freezers
+      at dozens of supermarkets across seven European countries. Some units reached
+      122\xB0F after the attackers switched them to defrost mode.\\nWhy it matters:
+      It raises fears that AI-enabled hackers could hit critical infrastructure run
+      on digital systems.\\nDetail: Affected countries include Belgium, Estonia, Finland,
+      Ireland, Luxembourg, the Netherlands and Sweden. Belgian firm Sabcobel said
+      hackers hit a digital system that remotely controls the devices. Some fridges
+      need physical changes, not just software patches. Danfoss, a Danish supplier,
+      said its tech was hit here and in a similar French attack last month. The Pentagon
+      is investigating August hacks on military commissary fridges. Forescout counts
+      over 20 attacks on refrigeration systems this year, some linked to Russia-aligned
+      hackers.\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"story_index\":{\"type\":\"integer\"},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"}},\"required\":[\"story_index\",\"question\",\"answer\"],\"additionalProperties\":false}}},\"required\":[\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
+      write a weekly news quiz for a personal learning app: short open-recall cards
+      on the week's most important news stories, so the user remembers what happened
+      and why it matters.\\n\\nYou get numbered stories (headline, what happened,
+      why it matters, detail). Write exactly one card per story, in the order given:
+      one focused question about the core of the story (what happened, or why it matters),
+      never trivia like exact dates or a minor name, and an answer of 1-2 sentences.
+      Give each card the story's number as story_index.\\n\\nWrite in plain, conversational
+      English for a smart reader who is new to the subject. Short sentences. Define
+      any jargon the first time it appears. Prefer concrete examples and rough numbers
+      (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\"}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '5173'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: "{\"model\":\"claude-haiku-5-5\",\"id\":\"msg_011CgkkNLrh2pJM6wkpf5jcc\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"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\"},{\"type\":\"text\",\"text\":\"{\\\"cards\\\":[{\\\"story_index\\\":1,\\\"question\\\":\\\"What
+        is the US midterm election deciding today?\\\",\\\"answer\\\":\\\"It decides
+        which party controls Congress for the last two years of Trump's second term.
+        Republicans hold narrow majorities now, and Democrats could take the House.\\\"},{\\\"story_index\\\":2,\\\"question\\\":\\\"Why
+        is Marvell buying Lumentum, and why did investors react badly?\\\",\\\"answer\\\":\\\"Marvell
+        agreed to buy Lumentum, which makes lasers that move data between chips and
+        servers, for $115 billion including debt. Investors worried it was a huge
+        bet on AI data center gear and possibly an AI bubble, so both stocks fell
+        sharply.\\\"},{\\\"story_index\\\":3,\\\"question\\\":\\\"Why did Apple's
+        stock slip even though its revenue beat expectations?\\\",\\\"answer\\\":\\\"Revenue
+        grew 12% to $114.5 billion, but profit margins (the share of each sale kept
+        as profit) are shrinking. Higher memory costs and AI-related expenses are
+        the main reasons.\\\"},{\\\"story_index\\\":4,\\\"question\\\":\\\"What milestone
+        did Palantir reach in its latest quarter?\\\",\\\"answer\\\":\\\"Its US business
+        sales ($984 million) passed its US government sales ($953 million) for the
+        first time. Companies are adopting its AI software fast enough to rival government
+        demand.\\\"},{\\\"story_index\\\":5,\\\"question\\\":\\\"What did hackers
+        do to supermarket fridges across seven European countries?\\\",\\\"answer\\\":\\\"They
+        remotely switched dozens of fridges and freezers into defrost mode, and some
+        heated up to 122\xB0F. The attack raises fears that AI-enabled hackers could
+        target critical systems run on digital controls.\\\"}]}\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":1901,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":1041,\"output_tokens_details\":{\"thinking_tokens\":530},\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9999000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-06T00:44:10Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1999000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-06T00:44:14Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-06T00:44:08Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11998000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-06T00:44:10Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a560116949b7eae7-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '4989'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 06 Nov 2026 00:44:14 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=5503
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-ea83a7811fff495cf23a5a1b7c1cd3ac-0cf9e804593b5be5-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -69,11 +69,44 @@ class ArtifactKind(StrEnum):
 
 
 class CardKind(StrEnum):
-    """The shape of a spaced-repetition card."""
+    """The shape of a spaced-repetition card; `foundation` cards come from primers, `quiz` cards from briefs."""
 
     CONCEPT = "concept"
     MECHANISM = "mechanism"
     NUMBER = "number"
+    FOUNDATION = "foundation"
+    QUIZ = "quiz"
+
+
+class FsrsState(StrEnum):
+    """A card's FSRS learning state, as the phone's scheduler (`ts-fsrs`) names them."""
+
+    NEW = "new"
+    LEARNING = "learning"
+    REVIEW = "review"
+    RELEARNING = "relearning"
+
+
+class ReviewGrade(StrEnum):
+    """How an answer was graded."""
+
+    GOT_IT = "got_it"
+    PARTLY = "partly"
+    MISSED = "missed"
+
+
+class GradedBy(StrEnum):
+    """Who graded an answer: the model, or the user (offline, after a timeout, or overriding the model)."""
+
+    MODEL = "model"
+    SELF = "self"
+
+
+class CardPreferenceKind(StrEnum):
+    """What the user told Archie about a card: what they care about, or that they don't want cards like it."""
+
+    CARE = "care"
+    DROP = "drop"
 
 
 class SourceState(StrEnum):
@@ -106,6 +139,7 @@ class JobKind(StrEnum):
     TOPIC_PRIMER = "topic_primer"
     CLEAN_TEXT = "clean_text"
     UPDATE_BRIEF = "update_brief"
+    NEWS_QUIZ = "news_quiz"
 
 
 class TopicOrigin(StrEnum):
@@ -246,6 +280,8 @@ class Source(Base):
     primer_queue_position: Mapped[float | None] = mapped_column(sqlalchemy.Double)
     primer_snoozed_until: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     newsletter_kind: Mapped[str | None] = mapped_column(sqlalchemy.String(16))
+    # "No cards for this": the source's cards are retired and analyze/primer write none while it is set.
+    cards_off: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
     # Server only (never pulled): the feed guid the user chose with "Wrong episode?".
     episode_guid: Mapped[str | None] = mapped_column(sqlalchemy.String(1024))
     # Always assigned via changes.next_change_seq() under changes.lock_user_writes(); see changes.py for why.
@@ -396,27 +432,94 @@ class SourceArtifact(Base):
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 
+# Exactly one origin per card. A later origin (e.g. takes) adds its column here and to the migration's CHECK.
+CARD_ORIGIN_CHECK = "num_nonnulls(source_id, topic_primer_id, brief_id) = 1"
+
+
 class Card(Base):
-    """A spaced-repetition question and answer generated from a source's summary artifact."""
+    """A spaced-repetition question and answer, with its FSRS state as the phone's scheduler last wrote it.
+
+    Its origin is a source (cards from the summary, or foundation cards from the source's primer, with `artifact_id`
+    naming that summary or primer version), a topic primer (foundation cards) or a brief (quiz cards).
+    """
 
     __tablename__ = "cards"
-    __table_args__ = (sqlalchemy.Index("ix_cards_user_id_change_seq", "user_id", "change_seq"),)
+    __table_args__ = (
+        sqlalchemy.Index("ix_cards_user_id_change_seq", "user_id", "change_seq"),
+        sqlalchemy.CheckConstraint(CARD_ORIGIN_CHECK, name="ck_cards_one_origin"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
     user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
-    source_id: Mapped[uuid.UUID] = mapped_column(
+    source_id: Mapped[uuid.UUID | None] = mapped_column(
         postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="CASCADE")
     )
-    artifact_id: Mapped[uuid.UUID] = mapped_column(
+    artifact_id: Mapped[uuid.UUID | None] = mapped_column(
         postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("source_artifacts.id")
+    )
+    topic_primer_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("topic_primers.id", ondelete="CASCADE")
+    )
+    brief_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("briefs.id", ondelete="CASCADE")
     )
     kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
     question: Mapped[str] = mapped_column(sqlalchemy.Text)
     answer: Mapped[str] = mapped_column(sqlalchemy.Text)
+    fsrs_state: Mapped[str] = mapped_column(sqlalchemy.String(16), server_default=FsrsState.NEW.value)
+    stability: Mapped[float | None] = mapped_column(sqlalchemy.Double)
+    difficulty: Mapped[float | None] = mapped_column(sqlalchemy.Double)
+    due_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    last_review_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    reps: Mapped[int] = mapped_column(sqlalchemy.Integer, server_default="0")
+    lapses: Mapped[int] = mapped_column(sqlalchemy.Integer, server_default="0")
+    # Quiz cards only: after this they are no longer offered.
+    expires_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class Review(Base):
+    """One graded answer, append-only. The id is made on the phone, so a re-sent review is recognized."""
+
+    __tablename__ = "reviews"
+    __table_args__ = (sqlalchemy.Index("ix_reviews_card_id_reviewed_at", "card_id", "reviewed_at"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    card_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("cards.id", ondelete="CASCADE")
+    )
+    grade: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    graded_by: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    answer: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    missing: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    was_due: Mapped[bool] = mapped_column(sqlalchemy.Boolean)
+    reviewed_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP)
+    # The card's FSRS fields before and after, in the wire's FsrsState shape.
+    state_before: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB)
+    state_after: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB)
+    # Set by "I actually knew it": the review this one overrides.
+    replaces_review_id: Mapped[uuid.UUID | None] = mapped_column(postgresql.UUID(as_uuid=True))
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+
+
+class CardPreference(Base):
+    """What the user said about a card ("What I care about…" or Drop); card generation reads the latest ones."""
+
+    __tablename__ = "card_preferences"
+    __table_args__ = (sqlalchemy.Index("ix_card_preferences_user_id_created_at", "user_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    card_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("cards.id", ondelete="SET NULL")
+    )
+    kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    note: Mapped[str] = mapped_column(sqlalchemy.Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
 
 
 class LlmCall(Base):

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 
 import { readSharedSessionKey } from "@/auth/keychain";
-import { canSaveToCollection, defaultCollectionPick } from "@/capture/collectionChoice";
+import { canSaveToCollection, resolveCollectionPick } from "@/capture/collectionChoice";
 import { CaptureOptions } from "@/capture/CaptureOptions";
 import { CollectionChips } from "@/capture/CollectionChips";
 import { CaptureChoice, CollectionPick, EMPTY_CHOICE } from "@/capture/types";
@@ -50,7 +50,7 @@ export function ShareSheet(props: InitialProps) {
       .then(setLastUsedId);
   }, []);
 
-  const shownPick = choice.collection ?? defaultCollectionPick(collections, lastUsedId);
+  const shownPick = resolveCollectionPick(choice.collection, collections, lastUsedId);
   const canSave = choice.intent === "collection"
     ? canSaveToCollection(shownPick, { asksForName: false })
     : choice.intent !== null;
@@ -129,7 +129,8 @@ function ShareBody({
   collections,
   shownPick,
   canSave,
-  onChange, onSave,
+  onChange,
+  onSave,
   onOpenArchie,
 }: ShareBodyProps) {
   const theme = useTheme();

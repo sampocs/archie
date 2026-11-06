@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Pressable } from "react-native";
 
 import { CaptureOptions } from "@/capture/CaptureOptions";
-import { canSaveToCollection, defaultCollectionPick } from "@/capture/collectionChoice";
+import { canSaveToCollection, resolveCollectionPick } from "@/capture/collectionChoice";
 import { CollectionDropdown } from "@/capture/CollectionDropdown";
 import { CaptureChoice, CollectionPick, EMPTY_CHOICE } from "@/capture/types";
 import { promptCollectionName } from "@/collections/prompts";
@@ -35,7 +35,7 @@ export default function AddScreen() {
   const [choice, setChoice] = useState<CaptureChoice>(EMPTY_CHOICE);
   const collections = useCollectionsData().map(({ id, name }) => ({ id, name }));
   const [lastUsedId, setLastUsedId] = useState<string | null>(null);
-  const shownPick = choice.collection ?? defaultCollectionPick(collections, lastUsedId);
+  const shownPick = resolveCollectionPick(choice.collection, collections, lastUsedId);
   const canSave =
     isHttpUrl(url) &&
     (choice.intent === "collection"

@@ -11,6 +11,16 @@ export function defaultCollectionPick(collections: SharedCollection[], lastUsedI
   return id === null ? { kind: "new", name: "" } : { kind: "existing", id };
 }
 
+/** The chosen pick, unless it names a collection that no longer exists, in which case the default. */
+export function resolveCollectionPick(
+  chosen: CollectionPick | null,
+  collections: SharedCollection[],
+  lastUsedId: string | null,
+): CollectionPick {
+  const stillValid = chosen !== null && (chosen.kind === "new" || collections.some((entry) => entry.id === chosen.id));
+  return stillValid ? chosen : defaultCollectionPick(collections, lastUsedId);
+}
+
 export function collectionPickLabel(pick: CollectionPick, collections: SharedCollection[]): string {
   if (pick.kind === "new") return pick.name.trim() || NEW_COLLECTION_LABEL;
   return collections.find((collection) => collection.id === pick.id)?.name ?? NEW_COLLECTION_LABEL;

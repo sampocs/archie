@@ -6,6 +6,7 @@ import {
   addSource,
   addTopic,
   chooseTopics,
+  dropCard,
   finishBrief,
   finishPrimer,
   finishSource,
@@ -14,10 +15,13 @@ import {
   queuePrimer,
   readLater,
   removeTopic,
+  requestNewsQuiz,
   requestPrimer,
   restoreTopic,
   retrySource,
   returnToInbox,
+  reviewCard,
+  setCardsOff,
   setQueuePosition,
   setSourceTopic,
   snooze,
@@ -37,7 +41,7 @@ function createTables(outboxCheck: string): string {
       processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
       merged_into_id text, sender text, domain text, topic_id text, image_url text, queue_position real,
       read_at text, snoozed_until text, primer_opened_at text, newsletter_kind text, primer_queue_position real,
-      primer_snoozed_until text
+      primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
@@ -559,5 +563,167 @@ describe("finishBrief", () => {
     expect(sourceById(db, "queued")?.state).toBe("queued");
     expect(sourceById(db, "later")?.state).toBe("inbox");
     expect(outboxEntries(db)).toEqual([{ type: "finish_brief", payload: { id: "b1", source_ids: ["covered", "queued"] } }]);
+  });
+});
+
+const seedCard = (db: AppDb, overrides: Partial<typeof schema.cards.$inferInsert>) =>
+  db
+    .insert(schema.cards)
+    .values({ id: "c1", sourceId: "s1", kind: "concept", question: "Q?", answer: "A.", createdAt: "2026-11-01T00:00:00Z", ...overrides })
+    .run();
+
+const cardById = (db: AppDb, id: string) => db.select().from(schema.cards).where(eq(schema.cards.id, id)).get();
+
+describe("review actions", () => {
+  const before = {
+    fsrsState: "new" as const,
+    stability: null,
+    difficulty: null,
+    dueAt: null,
+    lastReviewAt: null,
+    reps: 0,
+    lapses: 0,
+  };
+  const after = {
+    fsrsState: "review" as const,
+    stability: 3.2,
+    difficulty: 4.9,
+    dueAt: "2026-11-08T12:00:00.000Z",
+    lastReviewAt: "2026-11-05T12:00:00.000Z",
+    reps: 1,
+    lapses: 0,
+  };
+
+  it("reviewCard logs the review, schedules the card and sends both states in snake_case", () => {
+    const db = makeTestDb();
+    seedCard(db, {});
+
+    const reviewId = reviewCard(db, {
+      cardId: "c1",
+      grade: "got_it",
+      gradedBy: "model",
+      answer: "my answer",
+      missing: "",
+      wasDue: true,
+      reviewedAt: new Date("2026-11-05T12:00:00Z"),
+      stateBefore: before,
+      stateAfter: after,
+    });
+
+    const review = db.select().from(schema.reviews).all();
+    expect(review).toEqual([
+      {
+        id: reviewId,
+        cardId: "c1",
+        grade: "got_it",
+        gradedBy: "model",
+        answer: "my answer",
+        missing: "",
+        wasDue: 1,
+        reviewedAt: "2026-11-05T12:00:00.000Z",
+        stateBefore: JSON.stringify(before),
+        stateAfter: JSON.stringify(after),
+        replacesReviewId: null,
+      },
+    ]);
+    expect(cardById(db, "c1")).toMatchObject(after);
+    expect(outboxEntries(db)).toEqual([
+      {
+        type: "review_card",
+        payload: {
+          id: "c1",
+          review_id: reviewId,
+          grade: "got_it",
+          graded_by: "model",
+          answer: "my answer",
+          missing: "",
+          was_due: true,
+          reviewed_at: "2026-11-05T12:00:00.000Z",
+          state_before: {
+            fsrs_state: "new", stability: null, difficulty: null, due_at: null, last_review_at: null, reps: 0, lapses: 0,
+          },
+          state_after: {
+            fsrs_state: "review",
+            stability: 3.2,
+            difficulty: 4.9,
+            due_at: "2026-11-08T12:00:00.000Z",
+            last_review_at: "2026-11-05T12:00:00.000Z",
+            reps: 1,
+            lapses: 0,
+          },
+          replaces_review_id: null,
+        },
+      },
+    ]);
+  });
+
+  it("reviewCard stores an early review as not due and sends the review it replaces", () => {
+    const db = makeTestDb();
+    seedCard(db, {});
+
+    reviewCard(db, {
+      cardId: "c1",
+      grade: "partly",
+      gradedBy: "self",
+      answer: null,
+      missing: null,
+      wasDue: false,
+      reviewedAt: new Date("2026-11-05T12:00:00Z"),
+      stateBefore: before,
+      stateAfter: after,
+      replacesReviewId: "r0",
+    });
+
+    expect(db.select().from(schema.reviews).get()).toMatchObject({ wasDue: 0, replacesReviewId: "r0" });
+    expect(outboxEntries(db)[0].payload).toMatchObject({ was_due: false, replaces_review_id: "r0" });
+  });
+
+  it("dropCard deletes the card and sends its id", () => {
+    const db = makeTestDb();
+    seedCard(db, {});
+
+    dropCard(db, "c1");
+
+    expect(cardById(db, "c1")?.deletedAt).not.toBeNull();
+    expect(outboxEntries(db)).toEqual([{ type: "drop_card", payload: { id: "c1" } }]);
+  });
+
+  it("setCardsOff(true) turns the source's cards off and deletes only its live cards", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "s1" });
+    seedSource(db, { id: "s2" });
+    seedCard(db, { id: "live" });
+    seedCard(db, { id: "gone", deletedAt: "2026-11-02T00:00:00Z" });
+    seedCard(db, { id: "other", sourceId: "s2" });
+
+    setCardsOff(db, "s1", true);
+
+    expect(sourceById(db, "s1")?.cardsOff).toBe(1);
+    expect(cardById(db, "live")?.deletedAt).not.toBeNull();
+    expect(cardById(db, "gone")?.deletedAt).toBe("2026-11-02T00:00:00Z");
+    expect(cardById(db, "other")?.deletedAt).toBeNull();
+    expect(outboxEntries(db)).toEqual([{ type: "set_cards_off", payload: { id: "s1", off: true } }]);
+  });
+
+  it("setCardsOff(false) turns cards back on and shows the source processing while analyze re-runs", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "s1", cardsOff: 1, processing: "failed", processingError: "boom" });
+
+    setCardsOff(db, "s1", false);
+
+    expect(sourceById(db, "s1")).toMatchObject({ cardsOff: 0, processing: "processing", processingError: null });
+    expect(outboxEntries(db)).toEqual([{ type: "set_cards_off", payload: { id: "s1", off: false } }]);
+  });
+
+  it("requestNewsQuiz only queues the week's request", () => {
+    const db = makeTestDb();
+    seedSource(db, {});
+    seedCard(db, {});
+
+    requestNewsQuiz(db, "2026-11-01");
+
+    expect(outboxEntries(db)).toEqual([{ type: "request_news_quiz", payload: { week_start: "2026-11-01" } }]);
+    expect(sourceById(db, "s1")?.updatedAt).toBe("2026-11-01T00:00:00Z");
+    expect(cardById(db, "c1")).toMatchObject({ deletedAt: null, fsrsState: "new" });
   });
 });

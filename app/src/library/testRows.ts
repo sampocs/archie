@@ -28,6 +28,7 @@ export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => (
   primerQueuePosition: null,
   primerSnoozedUntil: null,
   newsletterKind: null,
+  cardsOff: 0,
   topic: null,
   summary: null,
   primerCreatedAt: null,

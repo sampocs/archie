@@ -21,6 +21,8 @@ const config: ExpoConfig = {
     "expo-secure-store",
     "expo-apple-authentication",
     "expo-font",
+    ["expo-audio", { microphonePermission: "Archie uses the microphone only while you record an answer to a review card." }],
+    "expo-notifications",
     [
       "expo-splash-screen",
       { image: "./assets/images/splash-icon.png", resizeMode: "contain", backgroundColor: "#F4F2EC" },

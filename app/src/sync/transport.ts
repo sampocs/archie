@@ -49,6 +49,9 @@ const TOPIC_ACTIONS = new Set([
 // Actions whose payload id is a brief: a rejection rewinds and touches no source row.
 const BRIEF_ACTIONS = new Set(["finish_brief"]);
 
+// Actions whose payload id is a card: a rejection re-pulls the server's copy and touches no source row.
+const CARD_ACTIONS = new Set(["review_card", "drop_card"]);
+
 // Source actions whose optimistic edit a rejection must undo by re-pulling the server copy.
 const REWOUND_SOURCE_ACTIONS = new Set([
   "go_deeper",
@@ -56,6 +59,7 @@ const REWOUND_SOURCE_ACTIONS = new Set([
   "queue_primer",
   "request_primer",
   "return_to_inbox",
+  "set_cards_off",
 ]);
 
 export function createDbSyncStore(
@@ -121,10 +125,10 @@ export function createDbSyncStore(
         // position makes the next pull re-send the server's topic or topic primer.
         // Source actions that change state, processing or the primer's queue entry optimistically rewind too, and
         // still surface syncError on the source below. A rejected finish_brief (a brief already closed) re-pulls the brief
-        // and the newsletters it marked briefed.
+        // and the newsletters it marked briefed; a rejected card action re-pulls the card's schedule or undoes its drop.
+        const rowIsNotSource = TOPIC_ACTIONS.has(entry.type) || BRIEF_ACTIONS.has(entry.type) || CARD_ACTIONS.has(entry.type);
         const rewind =
-          TOPIC_ACTIONS.has(entry.type) ||
-          BRIEF_ACTIONS.has(entry.type) ||
+          rowIsNotSource ||
           payload.target === "topic_primer" ||
           payload.target === "source_primer" ||
           REWOUND_SOURCE_ACTIONS.has(entry.type);
@@ -133,7 +137,7 @@ export function createDbSyncStore(
             .set({ position: 0 })
             .where(eq(schema.syncState.id, 1))
             .run();
-          if (TOPIC_ACTIONS.has(entry.type) || BRIEF_ACTIONS.has(entry.type) || payload.target === "topic_primer") {
+          if (rowIsNotSource || payload.target === "topic_primer") {
             return;
           }
         }
@@ -173,8 +177,8 @@ export function createDbSyncStore(
       db.transaction((tx) => {
         if (signedOutSinceStart()) return;
 
-        // A row (source, topic, topic primer or brief) with an unsent local action keeps its local copy; it returns on
-        // a later pull once the push bumps its change_seq. No timestamp comparison: phone and server clocks can't be
+        // A row (source, card, topic, topic primer or brief) with an unsent local action keeps its local copy; it returns
+        // on a later pull once the push bumps its change_seq. No timestamp comparison: phone and server clocks can't be
         // trusted.
         const unsent = new Set(
           tx
@@ -216,6 +220,7 @@ export function createDbSyncStore(
             primerQueuePosition: source.primer_queue_position,
             primerSnoozedUntil: source.primer_snoozed_until,
             newsletterKind: source.newsletter_kind,
+            cardsOff: source.cards_off ? 1 : 0,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })
@@ -239,13 +244,24 @@ export function createDbSyncStore(
         }
 
         for (const card of page.rows.cards) {
+          if (unsent.has(card.id)) continue;
           const values = {
             sourceId: card.source_id,
+            topicPrimerId: card.topic_primer_id ?? null,
+            briefId: card.brief_id ?? null,
             kind: card.kind,
             question: card.question,
             answer: card.answer,
             createdAt: card.created_at,
             deletedAt: card.deleted_at,
+            fsrsState: card.fsrs_state ?? "new",
+            stability: card.stability ?? null,
+            difficulty: card.difficulty ?? null,
+            dueAt: card.due_at ?? null,
+            lastReviewAt: card.last_review_at ?? null,
+            reps: card.reps ?? 0,
+            lapses: card.lapses ?? 0,
+            expiresAt: card.expires_at ?? null,
           };
           tx.insert(schema.cards)
             .values({ id: card.id, ...values })

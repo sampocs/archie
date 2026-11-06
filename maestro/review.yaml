@@ -67,8 +67,10 @@ appId: com.sampocs.archie
       notVisible:
         id: "review-done"
     commands:
+      # The last Drop swaps in the Done screen, which can land after the loop's check; don't fail on that tap.
       - tapOn:
           id: "review-drop"
+          optional: true
 - assertVisible:
     id: "review-done"
 - assertVisible:

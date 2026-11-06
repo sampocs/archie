@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { Tabs } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Text as RNText, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSyncStatus } from "@/sync/useSync";
@@ -16,12 +16,13 @@ type IconName = React.ComponentProps<typeof Ionicons>["name"];
 const TAB_BAR_HEIGHT = 49;
 
 // Today sits in the middle, with every tab the same size; the app still opens on it (see app/index.tsx).
-const TABS: { name: string; title: string; icon: IconName }[] = [
-  { name: "library", title: "Library", icon: "library-outline" },
-  { name: "review", title: "Review", icon: "refresh-circle-outline" },
-  { name: "today", title: "Today", icon: "sunny-outline" },
-  { name: "ask", title: "Ask", icon: "chatbubble-outline" },
-  { name: "settings", title: "Settings", icon: "settings-outline" },
+// The selected tab shows the filled icon and a heavier label, as iOS does; sizes stay put so nothing shifts.
+const TABS: { name: string; title: string; icon: IconName; selectedIcon: IconName }[] = [
+  { name: "library", title: "Library", icon: "library-outline", selectedIcon: "library" },
+  { name: "review", title: "Review", icon: "refresh-circle-outline", selectedIcon: "refresh-circle" },
+  { name: "today", title: "Today", icon: "sunny-outline", selectedIcon: "sunny" },
+  { name: "ask", title: "Ask", icon: "chatbubble-outline", selectedIcon: "chatbubble" },
+  { name: "settings", title: "Settings", icon: "settings-outline", selectedIcon: "settings" },
 ];
 
 // Sits above the (absolutely positioned) tab bar while pushes are failing.
@@ -59,7 +60,6 @@ export default function TabsLayout() {
             // Graphite is the chrome: the active tab is chrome, never a brand color.
             tabBarActiveTintColor: theme.colors.chrome,
             tabBarInactiveTintColor: theme.colors.ink3,
-            tabBarLabelStyle: { fontFamily: fontFamily.medium, fontSize: 10.5 },
             tabBarStyle: { position: "absolute", backgroundColor: "transparent", borderTopColor: theme.colors.line },
             tabBarBackground: () => (
               <BlurView
@@ -77,7 +77,21 @@ export default function TabsLayout() {
               options={{
                 title: tab.title,
                 tabBarButtonTestID: `tab-${tab.name}`,
-                tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size} color={color as string} />,
+                tabBarIcon: ({ focused, color, size }) => (
+                  <Ionicons name={focused ? tab.selectedIcon : tab.icon} size={size} color={color as string} />
+                ),
+                // Same box as the default label (one line, centred); only the weight changes when selected.
+                tabBarLabel: ({ focused, color, children }) => (
+                  <RNText
+                    numberOfLines={1}
+                    style={[
+                      styles.tabLabel,
+                      { color, fontFamily: focused ? fontFamily.semibold : fontFamily.medium },
+                    ]}
+                  >
+                    {children}
+                  </RNText>
+                ),
               }}
             />
           ))}
@@ -87,3 +101,7 @@ export default function TabsLayout() {
     </TabBarInsetContext.Provider>
   );
 }
+
+const styles = StyleSheet.create({
+  tabLabel: { fontSize: 10.5, textAlign: "center", backgroundColor: "transparent" },
+});

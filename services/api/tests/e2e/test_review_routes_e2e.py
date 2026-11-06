@@ -164,6 +164,17 @@ def test_transcription_refuses_long_big_unowned_or_unconfigured_requests(
     assert transcribe(authed, duration_ms=200_000).status_code == 413
     assert transcribe(authed, content=b"0" * 5_000_001).status_code == 413
 
+    # The size is judged from Content-Length before the body is parsed, so even an unauthenticated upload is refused
+    # unread, and a body with no declared length (chunked) is too.
+    anonymous = httpx.Client(base_url=str(authed.base_url))
+    assert transcribe(anonymous, content=b"0" * 5_100_000).status_code == 413
+    chunked = authed.post(
+        "/review/transcribe",
+        headers={"content-type": "multipart/form-data; boundary=x"},
+        content=iter([b"--x--\r\n"]),
+    )
+    assert chunked.status_code == 413
+
     unowned = live_stack.authed(live_stack.sign_in(apple_sub="stranger", is_whitelisted=False))
     assert transcribe(unowned, card=_seed_card(live_stack, user_id=_user_id(unowned))).status_code == 403
 

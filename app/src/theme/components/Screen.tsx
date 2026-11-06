@@ -36,6 +36,8 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarInset = useContext(TabBarInsetContext);
+  // A page sheet has no tab bar, but its last control must still clear the home indicator.
+  const bottomInset = sheet ? insets.bottom : tabBarInset;
 
   // A pinned footer rides above the keyboard; otherwise a typed-in field would hide the screen's submit button.
   // Only footer screens opt in: tab screens sit above the tab bar, which the keyboard's height already includes.
@@ -62,10 +64,10 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
         scrollEventThrottle={onScroll ? SCROLL_EVENT_THROTTLE_MS : undefined}
         contentContainerStyle={{
           padding: theme.spacing.gutterCards,
-          paddingBottom: theme.spacing.gutterCards + tabBarInset,
+          paddingBottom: theme.spacing.gutterCards + bottomInset,
           gap: theme.spacing.section,
         }}
-        scrollIndicatorInsets={{ bottom: tabBarInset }}
+        scrollIndicatorInsets={{ bottom: bottomInset }}
         keyboardShouldPersistTaps="handled"
         // Scrolls a focused field (search, adding a topic) above the keyboard.
         automaticallyAdjustKeyboardInsets

@@ -42,12 +42,12 @@ export function CardsSection({ of }: { of: CardsOf }) {
       right={
         anyReviewable ? (
           <Pressable
-            testID="cards-practise"
+            testID="cards-practice"
             accessibilityRole="button"
             hitSlop={8}
             onPress={() => router.push(`/review/session?mode=${of.kind}&id=${of.id}`)}
           >
-            <Text variant="headline">Practise</Text>
+            <Text variant="headline">Practice</Text>
           </Pressable>
         ) : null
       }

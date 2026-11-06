@@ -19,10 +19,11 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, jobs, models, pipeline, session
+from archie_llm import llm
 from archie_shared import config
 from archie_shared.domains import Domain
 from archie_testing import recording
-from archie_worker import errors, handlers, llm, loop, prompts
+from archie_worker import errors, handlers, loop, prompts
 
 pytestmark = pytest.mark.postgres
 

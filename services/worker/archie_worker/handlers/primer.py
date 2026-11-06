@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import sqlalchemy.orm
 from archie_db import models, pipeline
+from archie_llm import llm
 
-from archie_worker import llm, prompts
+from archie_worker import prompts
 from archie_worker.handlers import _llm_step
 
 MAX_OUTPUT_TOKENS = 6000

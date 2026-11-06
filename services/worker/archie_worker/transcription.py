@@ -16,9 +16,10 @@ from decimal import Decimal
 import httpx
 import sqlalchemy
 from archie_db import models
+from archie_llm import llm, speech
 from archie_shared import config, logging
 
-from archie_worker import content, errors, llm
+from archie_worker import content, errors
 
 CHUNK_SECONDS = 600
 OPENAI_PART_SECONDS = 300
@@ -27,8 +28,6 @@ MAX_AUDIO_BYTES = 600_000_000
 MAX_AUDIO_SECONDS = 6 * 3600
 MIN_WORDS_PER_MINUTE = 100
 MIN_CHECKED_CHUNK_SECONDS = 30
-GROQ_URL = "https://api.groq.com/openai/v1/audio/transcriptions"
-OPENAI_URL = "https://api.openai.com/v1/audio/transcriptions"
 
 # Each read of the download may wait this long; the whole download is bounded by `DOWNLOAD_TIMEOUT_SECONDS`.
 _READ_TIMEOUT_SECONDS = 60
@@ -39,7 +38,6 @@ _FFMPEG_MIN_TIMEOUT_SECONDS = 300
 _FFMPEG_AUDIO_SECONDS_PER_TIMEOUT_SECOND = 4
 _CHUNK_PREFIX = "chunk"
 _AUDIO_MEDIA_TYPE = "audio/mpeg"
-_LANGUAGE = "en"
 _SECONDS_PER_MINUTE = 60
 _HTTP_TOO_MANY_REQUESTS = 429
 _HTTP_CLIENT_ERRORS = range(400, 500)
@@ -214,18 +212,13 @@ def transcribe_groq(*, chunk: AudioChunk, api_key: str, prompt: str) -> list[con
     A 429 raises `RetryLaterError` after Groq's `retry-after`; another 4xx raises `GroqRejectedError`; a 5xx raises
     `httpx.HTTPStatusError` (the loop retries it).
     """
-    response = httpx.post(
-        GROQ_URL,
-        headers={"Authorization": f"Bearer {api_key}"},
-        data={
-            "model": llm.GROQ_WHISPER,
-            "response_format": "verbose_json",
-            "language": _LANGUAGE,
-            "temperature": "0",
-            "prompt": prompt,
-        },
-        files={"file": (chunk.path.name, chunk.path.read_bytes(), _AUDIO_MEDIA_TYPE)},
-        timeout=llm.REQUEST_TIMEOUT_SECONDS,
+    response = speech.post_groq(
+        audio=chunk.path.read_bytes(),
+        filename=chunk.path.name,
+        media_type=_AUDIO_MEDIA_TYPE,
+        api_key=api_key,
+        prompt=prompt,
+        response_format="verbose_json",
     )
 
     if response.status_code == _HTTP_TOO_MANY_REQUESTS:
@@ -278,17 +271,12 @@ def transcribe_openai(
 
     segments: list[content.Segment] = []
     for part in parts:
-        response = httpx.post(
-            OPENAI_URL,
-            headers={"Authorization": f"Bearer {api_key}"},
-            data={
-                "model": llm.OPENAI_TRANSCRIBE,
-                "response_format": "json",
-                "language": _LANGUAGE,
-                "prompt": prompt,
-            },
-            files={"file": (part.path.name, part.path.read_bytes(), _AUDIO_MEDIA_TYPE)},
-            timeout=llm.REQUEST_TIMEOUT_SECONDS,
+        response = speech.post_openai(
+            audio=part.path.read_bytes(),
+            filename=part.path.name,
+            media_type=_AUDIO_MEDIA_TYPE,
+            api_key=api_key,
+            prompt=prompt,
         )
         response.raise_for_status()
         _record(

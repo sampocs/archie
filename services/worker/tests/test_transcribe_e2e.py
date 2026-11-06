@@ -26,9 +26,10 @@ import sqlalchemy
 import sqlalchemy.orm
 import vcr as vcr_module
 from archie_db import changes, models, pipeline, session
+from archie_llm import llm
 from archie_shared import config
 from archie_testing import media, recording
-from archie_worker import content, errors, handlers, llm, loop, transcription
+from archie_worker import content, errors, handlers, loop, transcription
 from archie_worker.content import episode as episode_content
 from archie_worker.handlers import _text
 

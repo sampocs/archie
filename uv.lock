@@ -6,6 +6,7 @@ requires-python = ">=3.13"
 members = [
     "archie-api",
     "archie-db",
+    "archie-llm",
     "archie-shared",
     "archie-testing",
     "archie-worker",
@@ -94,6 +95,7 @@ version = "0.1.0"
 source = { editable = "services/api" }
 dependencies = [
     { name = "archie-db" },
+    { name = "archie-llm" },
     { name = "archie-shared" },
     { name = "fastapi" },
     { name = "lxml" },
@@ -105,6 +107,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "archie-db", editable = "packages/archie-db" },
+    { name = "archie-llm", editable = "packages/archie-llm" },
     { name = "archie-shared", editable = "packages/archie-shared" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "lxml", specifier = ">=6.0" },
@@ -130,6 +133,25 @@ requires-dist = [
     { name = "archie-shared", editable = "packages/archie-shared" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "sqlalchemy", specifier = ">=2.0.36" },
+]
+
+[[package]]
+name = "archie-llm"
+version = "0.1.0"
+source = { editable = "packages/archie-llm" }
+dependencies = [
+    { name = "anthropic" },
+    { name = "archie-db" },
+    { name = "archie-shared" },
+    { name = "httpx" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "anthropic", specifier = ">=2.4" },
+    { name = "archie-db", editable = "packages/archie-db" },
+    { name = "archie-shared", editable = "packages/archie-shared" },
+    { name = "httpx", specifier = ">=0.28.1" },
 ]
 
 [[package]]
@@ -183,6 +205,7 @@ source = { editable = "services/worker" }
 dependencies = [
     { name = "anthropic" },
     { name = "archie-db" },
+    { name = "archie-llm" },
     { name = "archie-shared" },
     { name = "defusedxml" },
     { name = "httpx" },
@@ -195,6 +218,7 @@ dependencies = [
 requires-dist = [
     { name = "anthropic", specifier = ">=2.4" },
     { name = "archie-db", editable = "packages/archie-db" },
+    { name = "archie-llm", editable = "packages/archie-llm" },
     { name = "archie-shared", editable = "packages/archie-shared" },
     { name = "defusedxml", specifier = ">=0.7.1" },
     { name = "httpx", specifier = ">=0.28.1" },

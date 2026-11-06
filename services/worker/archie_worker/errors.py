@@ -21,6 +21,7 @@ class FailureReason(StrEnum):
     YOUTUBE_NEEDS_SETUP = "YouTube transcripts need setup on the server (a Supadata key)."
     NO_CAPTIONS = "This video has no captions."
     VIDEO_UNAVAILABLE = "This video isn't available."
+    PREVIEW_UNAVAILABLE = "Couldn't load a preview for this link."
 
 
 class PermanentJobError(Exception):

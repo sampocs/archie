@@ -100,6 +100,8 @@ _TRUNCATE_TABLES = (
     "source_captures",
     "source_artifacts",
     "cards",
+    "collection_items",
+    "collections",
     "llm_calls",
     "applied_actions",
     "jobs",

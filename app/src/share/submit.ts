@@ -1,7 +1,7 @@
 import { randomUUID } from "expo-crypto";
 
 import { apiFetch, NetworkError, UnauthorizedError } from "@/api/client";
-import type { CaptureChoice } from "@/capture/types";
+import type { CaptureChoice, CollectionPick } from "@/capture/types";
 import type { OutboxEntry, PushResult } from "@/sync/engine";
 
 export type SubmitOutcome = "saved" | "offline" | "signed-out";
@@ -43,15 +43,35 @@ export function buildShareAction(input: ShareInput): OutboxEntry {
   };
 }
 
-/** Posts the action to /sync/push. Throws an Error carrying the server's reason when it rejects the action. */
-export async function submitShare(action: OutboxEntry, sessionKey: string | null): Promise<SubmitOutcome> {
+/** What a collection share pushes: the post, preceded by its new collection when the pick is a new one. */
+export function buildCollectionShareActions(input: { url: string; pick: CollectionPick }): {
+  actions: OutboxEntry[];
+  collectionId: string;
+} {
+  const { url, pick } = input;
+  const collectionId = pick.kind === "existing" ? pick.id : randomUUID();
+  const createActions: OutboxEntry[] =
+    pick.kind === "new"
+      ? [{ id: randomUUID(), type: "create_collection", payload: { id: collectionId, name: pick.name.trim() } }]
+      : [];
+  const addAction: OutboxEntry = {
+    id: randomUUID(),
+    type: "add_collection_item",
+    payload: { id: randomUUID(), collection_id: collectionId, url },
+  };
+
+  return { actions: [...createActions, addAction], collectionId };
+}
+
+/** Posts the actions, in order, to /sync/push. Throws an Error carrying the server's reason when it rejects one. */
+export async function submitShare(actions: OutboxEntry[], sessionKey: string | null): Promise<SubmitOutcome> {
   if (!sessionKey) return "signed-out";
 
   try {
     const response = (await withTimeout(
-      apiFetch("/sync/push", { method: "POST", body: { actions: [action] }, sessionKey }),
+      apiFetch("/sync/push", { method: "POST", body: { actions }, sessionKey }),
     )) as { results: PushResult[] };
-    return outcomeOf(response.results[0]);
+    return outcomeOf(actions.map((_, index) => response.results[index]));
   } catch (error) {
     if (error instanceof UnauthorizedError) return "signed-out";
     if (error instanceof NetworkError) return "offline";
@@ -59,9 +79,11 @@ export async function submitShare(action: OutboxEntry, sessionKey: string | null
   }
 }
 
-function outcomeOf(result: PushResult | undefined): SubmitOutcome {
-  if (result?.result === "applied" || result?.result === "duplicate") return "saved";
-  throw new Error(result?.reason ?? "Archie couldn't accept this share");
+// Saved only when every action went through; otherwise the first failure's reason is what the sheet shows.
+function outcomeOf(results: (PushResult | undefined)[]): SubmitOutcome {
+  const failedIndex = results.findIndex((result) => result?.result !== "applied" && result?.result !== "duplicate");
+  if (failedIndex === -1) return "saved";
+  throw new Error(results[failedIndex]?.reason ?? "Archie couldn't accept this share");
 }
 
 function withTimeout<T>(request: Promise<T>): Promise<T> {
@@ -80,10 +102,17 @@ export function shareDeepLink(input: { url: string; choice: CaptureChoice }): st
   const { url, choice } = input;
   const params = [`url=${encodeShareParam(url)}`];
   if (choice.intent) params.push(`intent=${choice.intent}`);
+  if (choice.intent === "collection") return `share?${[...params, ...collectionParams(choice.collection)].join("&")}`;
   if (choice.reaction) params.push(`reaction=${choice.reaction}`);
   if (choice.note) params.push(`note=${encodeShareParam(choice.note)}`);
   if (choice.queuePrimer) params.push("queue_primer=1");
   return `share?${params.join("&")}`;
+}
+
+function collectionParams(pick: CollectionPick | null): string[] {
+  if (pick?.kind === "existing") return [`collection=${pick.id}`];
+  if (pick?.kind === "new") return [`collection_name=${encodeShareParam(pick.name.trim())}`];
+  return [];
 }
 
 // The extension's native side splits the path on "&" and "=" and then percent-encodes each value again, so a

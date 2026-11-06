@@ -52,6 +52,9 @@ const BRIEF_ACTIONS = new Set(["finish_brief"]);
 // Actions whose payload id is a card: a rejection re-pulls the server's copy and touches no source row.
 const CARD_ACTIONS = new Set(["review_card", "drop_card"]);
 
+// Actions whose payload id is a collection or a saved post: a rejection re-pulls the server's copy and touches no source.
+const COLLECTION_ACTIONS = new Set(["update_collection", "update_collection_item"]);
+
 // Source actions whose optimistic edit a rejection must undo by re-pulling the server copy.
 const REWOUND_SOURCE_ACTIONS = new Set([
   "go_deeper",
@@ -122,12 +125,28 @@ export function createDbSyncStore(
           return;
         }
 
+        // The server never created these, so the optimistic rows would otherwise linger forever.
+        if (entry.type === "create_collection" && payload.id) {
+          tx.delete(schema.collectionItems).where(eq(schema.collectionItems.collectionId, payload.id)).run();
+          tx.delete(schema.collections).where(eq(schema.collections.id, payload.id)).run();
+          return;
+        }
+        if (entry.type === "add_collection_item" && payload.id) {
+          tx.delete(schema.collectionItems).where(eq(schema.collectionItems.id, payload.id)).run();
+          return;
+        }
+
         // A rejection doesn't bump the row's change_seq, so no pull would undo the optimistic edit; rewinding the
         // position makes the next pull re-send the server's topic or topic primer.
         // Source actions that change state, processing or the primer's queue entry optimistically rewind too, and
         // still surface syncError on the source below. A rejected finish_brief (a brief already closed) re-pulls the brief
-        // and the newsletters it marked briefed; a rejected card action re-pulls the card's schedule or undoes its drop.
-        const rowIsNotSource = TOPIC_ACTIONS.has(entry.type) || BRIEF_ACTIONS.has(entry.type) || CARD_ACTIONS.has(entry.type);
+        // and the newsletters it marked briefed; a rejected card action re-pulls the card's schedule or undoes its drop;
+        // a rejected collection edit re-pulls the collection or post.
+        const rowIsNotSource =
+          TOPIC_ACTIONS.has(entry.type) ||
+          BRIEF_ACTIONS.has(entry.type) ||
+          CARD_ACTIONS.has(entry.type) ||
+          COLLECTION_ACTIONS.has(entry.type);
         const rewind =
           rowIsNotSource ||
           payload.target === "topic_primer" ||
@@ -178,9 +197,9 @@ export function createDbSyncStore(
       db.transaction((tx) => {
         if (signedOutSinceStart()) return;
 
-        // A row (source, card, topic, topic primer or brief) with an unsent local action keeps its local copy; it returns
-        // on a later pull once the push bumps its change_seq. No timestamp comparison: phone and server clocks can't be
-        // trusted.
+        // A row (source, card, topic, topic primer, brief, collection or saved post) with an unsent local action keeps
+        // its local copy; it returns on a later pull once the push bumps its change_seq. No timestamp comparison: phone
+        // and server clocks can't be trusted.
         const unsent = new Set(
           tx
             .select()
@@ -321,6 +340,43 @@ export function createDbSyncStore(
           tx.insert(schema.briefs)
             .values({ id: brief.id, ...values })
             .onConflictDoUpdate({ target: schema.briefs.id, set: values })
+            .run();
+        }
+
+        for (const collection of page.rows.collections ?? []) {
+          if (unsent.has(collection.id)) continue;
+          const values = {
+            name: collection.name,
+            position: collection.position,
+            createdAt: collection.created_at,
+            updatedAt: collection.updated_at,
+            deletedAt: collection.deleted_at,
+          };
+          tx.insert(schema.collections)
+            .values({ id: collection.id, ...values })
+            .onConflictDoUpdate({ target: schema.collections.id, set: values })
+            .run();
+        }
+
+        for (const item of page.rows.collection_items ?? []) {
+          if (unsent.has(item.id)) continue;
+          const values = {
+            collectionId: item.collection_id,
+            url: item.url,
+            kind: item.kind,
+            title: item.title,
+            author: item.author,
+            imageUrl: item.image_url,
+            durationSeconds: item.duration_seconds,
+            note: item.note,
+            metadataStatus: item.metadata_status,
+            createdAt: item.created_at,
+            updatedAt: item.updated_at,
+            deletedAt: item.deleted_at,
+          };
+          tx.insert(schema.collectionItems)
+            .values({ id: item.id, ...values })
+            .onConflictDoUpdate({ target: schema.collectionItems.id, set: values })
             .run();
         }
 

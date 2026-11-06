@@ -154,3 +154,34 @@ export const reviewSettings = sqliteTable("review_settings", {
   // Minutes after local midnight.
   reminderMinutes: integer("reminder_minutes").notNull(),
 });
+
+// Collections (Library → Saved): just-for-fun scrapbooks. Their posts live in their own table and are never sources,
+// so no library, search, Today or review query can see them.
+export const collections = sqliteTable("collections", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  // Tile order; a new collection goes at the end.
+  position: real("position").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  deletedAt: text("deleted_at"),
+});
+
+export const collectionItems = sqliteTable("collection_items", {
+  id: text("id").primaryKey(),
+  collectionId: text("collection_id").notNull(),
+  url: text("url").notNull(),
+  // x | youtube | link; "link" until the server classifies it.
+  kind: text("kind").notNull(),
+  // The preview the server fetches once: caption or title, who posted it, thumbnail, a video's length.
+  title: text("title"),
+  author: text("author"),
+  imageUrl: text("image_url"),
+  durationSeconds: integer("duration_seconds"),
+  note: text("note"),
+  // pending | ready | failed
+  metadataStatus: text("metadata_status").notNull().default("pending"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  deletedAt: text("deleted_at"),
+});

@@ -18,7 +18,7 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, models, session
-from archie_llm import speech
+from archie_llm import llm, speech
 from archie_shared import config
 from archie_testing import recording
 from archie_testing.harness import LiveStack
@@ -90,6 +90,21 @@ def test_a_user_without_the_owners_keys_gets_403_and_an_empty_answer_422(live_st
     owned = _seed_card(live_stack, user_id=_user_id(whitelisted))
     assert whitelisted.post("/review/grade", json={"card_id": str(owned.id), "answer": ""}).status_code == 422
     assert _llm_calls(live_stack) == []
+
+
+def test_model_output_that_is_not_valid_json_for_the_schema_is_502(
+    live_stack: LiveStack, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Failure injection: output the schema didn't hold to is the contracted 502, not a 500."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    card = _seed_card(live_stack, user_id=_user_id(authed))
+    monkeypatch.setattr(llm, "complete", lambda engine, **options: llm.Completion(model=llm.HAIKU, text="not json"))
+
+    graded = authed.post("/review/grade", json={"card_id": str(card.id), "answer": "anything"})
+    cared = authed.post(f"/review/cards/{card.id}/care", json={"note": "anything"})
+
+    assert (graded.status_code, cared.status_code) == (502, 502)
+    assert _pulled_card(authed, card.id)["answer"] == ANSWER
 
 
 def test_a_care_note_rewrites_the_answer_and_is_remembered(

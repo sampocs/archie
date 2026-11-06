@@ -7,7 +7,7 @@ export type MakeCardsAction = { kind: "go_deeper" | "cards_on"; subtitle: string
 
 /** Offered on a ready source whose cards are off or that has none; an inbox item goes through go_deeper. */
 export function makeCardsAction(source: SourceRow, cardCount: number): MakeCardsAction | null {
-  // The server rejects both actions until the source is ready.
+  // Offered only on a ready source, so a re-analysis isn't started on a source that is still processing.
   if (source.processing !== "ready") return null;
   if (source.cardsOff !== 1 && cardCount > 0) return null;
 

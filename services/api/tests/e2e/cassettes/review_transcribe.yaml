@@ -1,0 +1,71 @@
+interactions:
+- request:
+    body: "--9d74da41f69e842418a60247d4086540\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-large-v3-turbo\r\n--9d74da41f69e842418a60247d4086540\r\nContent-Disposition:
+      form-data; name=\"response_format\"\r\n\r\njson\r\n--9d74da41f69e842418a60247d4086540\r\nContent-Disposition:
+      form-data; name=\"language\"\r\n\r\nen\r\n--9d74da41f69e842418a60247d4086540\r\nContent-Disposition:
+      form-data; name=\"temperature\"\r\n\r\n0\r\n--9d74da41f69e842418a60247d4086540\r\nContent-Disposition:
+      form-data; name=\"prompt\"\r\n\r\nWhy does the Fed raise rates when inflation
+      is high? Higher rates make borrowing costlier, which slows spending and cools
+      inflation.\r\n--9d74da41f69e842418a60247d4086540\r\nContent-Disposition: form-data;
+      name=\"file\"; filename=\"answer.m4a\"\r\nContent-Type: audio/m4a\r\n\r\n<audio
+      omitted>\r\n--9d74da41f69e842418a60247d4086540--\r\n"
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '51872'
+      content-type:
+      - multipart/form-data; boundary=9d74da41f69e842418a60247d4086540
+      host:
+      - api.groq.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.groq.com/openai/v1/audio/transcriptions
+  response:
+    body:
+      string: '{"text":" The Feds raise rates when inflation is high making borrowing
+        more expensive.","x_groq":{"id":"req_01m6q50y50ewhtrmytah45qc72"}}
+
+        '
+    headers:
+      alt-svc:
+      - h3=":443"; ma=86400
+      cache-control:
+      - private, max-age=0, no-store, no-cache, must-revalidate
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a56011fa6e8313d4-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '138'
+      content-type:
+      - application/json
+      date:
+      - Fri, 06 Nov 2026 00:44:31 GMT
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=15552000
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-groq-region:
+      - msp
+      x-ratelimit-limit-requests:
+      - '2000'
+      x-ratelimit-remaining-requests:
+      - '1999'
+      x-ratelimit-reset-requests:
+      - 43.2s
+    status:
+      code: 200
+      message: OK
+version: 1

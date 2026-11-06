@@ -12,6 +12,7 @@ dependencies = [
   "pyjwt[crypto]>=2.15.1",
   "trafilatura>=2.3.1",
   "lxml>=6.0",
+  "python-multipart>=0.0.20",
 ]
 
 [project.scripts]

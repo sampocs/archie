@@ -1,6 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { Pressable } from "react-native";
 
 import { CaptureOptions } from "@/capture/CaptureOptions";
 import { CaptureChoice, EMPTY_CHOICE } from "@/capture/types";
@@ -43,13 +44,21 @@ export default function AddScreen() {
       queuePrimer: choice.queuePrimer,
     });
     requestSync();
-    setUrl("");
-    setChoice(EMPTY_CHOICE);
-    router.navigate("/library");
+
+    // Save closes the sheet and stays on whatever presented it (Library).
+    router.back();
   }
 
   return (
-    <Screen title="Add">
+    <Screen
+      title="Add"
+      sheet
+      headerRight={
+        <Pressable testID="add-cancel" onPress={() => router.back()} hitSlop={12}>
+          <Text tone="ink2">Cancel</Text>
+        </Pressable>
+      }
+    >
       <Text variant="secondary" tone="ink2">
         Paste a link to save it.
       </Text>

@@ -1,15 +1,9 @@
-import { Ionicons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import * as Network from "expo-network";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Pressable, View } from "react-native";
+import { Pressable } from "react-native";
 
-import { newsletterAddressFrom } from "@/account/newsletterAddress";
-import { apiFetch } from "@/api/client";
-import { useSession } from "@/auth/session";
-import { useSignOut } from "@/context/SignOutContext";
 import { todayBrief } from "@/brief/brief";
 import { BriefPreviewCard } from "@/brief/BriefPreviewCard";
 import { db } from "@/db/client";
@@ -22,7 +16,6 @@ import { dueSummary, shortWeekday } from "@/review/summary";
 import { ReviewStartCard } from "@/review/ui/ReviewStartCard";
 import { useReviewData } from "@/review/useReviewData";
 import { requestSync } from "@/sync/useSync";
-import { Button } from "@/theme/components/Button";
 import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
@@ -45,30 +38,6 @@ export default function TodayScreen() {
   const data = useLibraryData();
   const { data: briefs } = useLiveQuery(db.select().from(schema.briefs));
   const reviewData = useReviewData();
-  const signOut = useSignOut();
-  const session = useSession();
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const [newsletterAddress, setNewsletterAddress] = useState<string | null>(
-    null,
-  );
-
-  // Fetched each time the sheet opens; any failure just hides the row.
-  useEffect(() => {
-    if (!sheetOpen || session.status !== "signedIn") return;
-
-    let cancelled = false;
-    apiFetch("/me", { sessionKey: session.sessionKey })
-      .then((me) => {
-        if (!cancelled) setNewsletterAddress(newsletterAddressFrom(me));
-      })
-      .catch(() => {
-        if (!cancelled) setNewsletterAddress(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [sheetOpen, session.status, session.sessionKey]);
-
   // On a Sunday, ask the server for the week's news quiz once per run; it is only asked for when online.
   useFocusEffect(
     useCallback(() => {
@@ -92,74 +61,14 @@ export default function TodayScreen() {
   const quiz = quizOffer(reviewData, now);
   const isEmpty = upNextItems.length === 0 && brief === null && due.count === 0 && quiz === null;
 
-  const accountButton = (
-    <View
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        gap: theme.spacing.sm,
-      }}
-    >
-      <Text testID="today-date" variant="monoLabel" tone="ink3">
-        {todayDate(now)}
-      </Text>
-      <Pressable
-        testID="account-button"
-        accessibilityLabel="Account"
-        hitSlop={12}
-        onPress={() => setSheetOpen((open) => !open)}
-      >
-        <Ionicons
-          name="person-circle-outline"
-          size={28}
-          color={theme.colors.ink2}
-        />
-      </Pressable>
-    </View>
+  const dateLabel = (
+    <Text testID="today-date" variant="monoLabel" tone="ink3">
+      {todayDate(now)}
+    </Text>
   );
 
   return (
-    <Screen title="Today" headerRight={accountButton}>
-      {/* Inline sheet rather than Alert, which Maestro can't drive reliably. */}
-      {sheetOpen ? (
-        <Card style={{ gap: theme.spacing.sm }}>
-          {newsletterAddress ? (
-            <>
-              <Text variant="kicker" tone="ink2">
-                Newsletter address
-              </Text>
-              <Text testID="newsletter-address" selectable>
-                {newsletterAddress}
-              </Text>
-              <Button
-                testID="newsletter-address-copy"
-                label="Copy"
-                variant="secondary"
-                onPress={() => void Clipboard.setStringAsync(newsletterAddress)}
-              />
-            </>
-          ) : null}
-          <Button
-            testID="removed-topics-link"
-            label="Removed topics"
-            variant="secondary"
-            onPress={() => router.push("/settings/removed-topics")}
-          />
-          <Button
-            testID="review-settings-link"
-            label="Review reminder"
-            variant="secondary"
-            onPress={() => router.push("/settings/review")}
-          />
-          <Button
-            testID="sign-out"
-            label="Sign out"
-            variant="secondary"
-            onPress={signOut}
-          />
-        </Card>
-      ) : null}
-
+    <Screen title="Today" headerRight={dateLabel}>
       {due.count > 0 ? (
         <ReviewStartCard
           testID="today-review"

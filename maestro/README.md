@@ -20,7 +20,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `newsletter_*.yaml` + `run_newsletter.sh` | Log in, deliver a newsletter through `/ingest/email`, Add to queue then Undo (toast), Make review cards from the ••• menu |
 | `brief.yaml` + `run_brief.sh` | Log in, deliver a news newsletter and an essay through `/ingest/email`, wait for the Today brief preview, open the brief, open a story's sources ("Covered by"), back, queue the essay, Done, the preview disappears (real keys, a few cents) |
 | `review.yaml` | Finish an article, its cards reach Today, review a typed answer (graded by Haiku, accepted answer shown), Next, Drop the rest to the Done screen with the Dropped tally (real keys, a few cents) |
-| `sign_out.yaml` | Dev login, Today tab, account button, Sign out, back on the Apple sign-in screen |
+| `sign_out.yaml` | Dev login, Settings tab, Sign out, back on the Apple sign-in screen |
 | `offline_*.yaml` + `run_offline.sh` | Add a link with the backend down ("1 change waiting"), restart it, the change syncs and the title arrives |
 | `share_sheet.yaml` | Safari → Share → Archie opens the share sheet, and a screenshot of it matches `screenshots/share_sheet.png` (text drawn, Cancel on screen) |
 | `login.yaml` | Shared preamble (fresh install + dev login, lands on Library); other flows `runFlow` it, it is not run on its own |

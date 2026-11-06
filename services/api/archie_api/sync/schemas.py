@@ -48,6 +48,10 @@ class ActionType(StrEnum):
     UPDATE_COLLECTION = "update_collection"
     ADD_COLLECTION_ITEM = "add_collection_item"
     UPDATE_COLLECTION_ITEM = "update_collection_item"
+    SAVE_TAKE = "save_take"
+    UPDATE_TAKE = "update_take"
+    RESTORE_TAKE_VERSION = "restore_take_version"
+    RETRY_TAKE_CLEANUP = "retry_take_cleanup"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 
@@ -139,6 +143,8 @@ class CardOut(pydantic.BaseModel):
     source_id: uuid.UUID | None
     topic_primer_id: uuid.UUID | None
     brief_id: uuid.UUID | None
+    take_id: uuid.UUID | None
+    take_version_id: uuid.UUID | None
     kind: str
     question: str
     answer: str
@@ -239,6 +245,37 @@ class CollectionItemOut(pydantic.BaseModel):
     change_seq: int
 
 
+class TakeOut(pydantic.BaseModel):
+    """A take as the phone stores it; its body lives in its versions."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    kind: str
+    title: str
+    current_version: int
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    deleted_at: datetime.datetime | None
+    change_seq: int
+
+
+class TakeVersionOut(pydantic.BaseModel):
+    """One version of a take's body as the phone stores it; `body` is null while Clean it up runs."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    take_id: uuid.UUID
+    version: int
+    body: str | None
+    raw_body: str
+    cleaned: bool
+    clean_failed: bool
+    created_at: datetime.datetime
+    change_seq: int
+
+
 class PulledRows(pydantic.BaseModel):
     """Changed rows by table."""
 
@@ -250,6 +287,8 @@ class PulledRows(pydantic.BaseModel):
     briefs: list[BriefOut]
     collections: list[CollectionOut]
     collection_items: list[CollectionItemOut]
+    takes: list[TakeOut]
+    take_versions: list[TakeVersionOut]
 
 
 class PullResponse(pydantic.BaseModel):

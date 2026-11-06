@@ -26,6 +26,20 @@ class ExtractedText:
     image_url: str | None = None
 
 
+# Longest caption kept for a saved post; a long X thread's first post can run to thousands of characters.
+MAX_PREVIEW_TITLE_LENGTH = 1000
+
+
+@dataclass(frozen=True)
+class LinkPreview:
+    """What a saved post shows: its caption or title, who posted it, a thumbnail, and a video's length."""
+
+    title: str | None
+    author: str | None
+    image_url: str | None
+    duration_seconds: int | None
+
+
 @dataclass(frozen=True)
 class Segment:
     """One timed stretch of speech; `start` is in seconds from the beginning of the source."""

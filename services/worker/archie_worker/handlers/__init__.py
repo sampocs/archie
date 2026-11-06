@@ -9,6 +9,7 @@ from archie_db import changes, models, pipeline
 from archie_worker.handlers import (
     analyze,
     clean_text,
+    fetch_collection_item,
     fetch_content,
     fetch_title,
     file_topic,
@@ -53,6 +54,10 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.CLEAN_TEXT: HandlerSpec(run=clean_text.handle),
     # No failure hook: a failed rewrite leaves the brief's previous content in place.
     models.JobKind.UPDATE_BRIEF: HandlerSpec(run=update_brief.handle),
+    # A saved post's preview; when it gives up the post keeps its URL and shows a neutral tile.
+    models.JobKind.FETCH_COLLECTION_ITEM: HandlerSpec(
+        run=fetch_collection_item.handle, on_final_failure=fetch_collection_item.mark_failed
+    ),
     # No failure hook: a failed quiz only means no quiz this week.
     models.JobKind.NEWS_QUIZ: HandlerSpec(run=news_quiz.handle),
 }

@@ -6,13 +6,15 @@ import type { LibrarySource } from "./join";
 
 export const FAVORITE_PREVIEW_TITLES = 2;
 
+export type StarredSource = LibrarySource & { favoritedAt: string };
+
 export type FavoriteDomain = { domain: DomainName; count: number; newestTitles: string[] };
 
 /** The starred sources of one domain, newest star first. A source with no domain yet (unfiled, or filing failed) counts as Other, as its row's kicker reads. */
-export function domainFavorites(sources: LibrarySource[], domain: DomainName): LibrarySource[] {
+export function domainFavorites(sources: LibrarySource[], domain: DomainName): StarredSource[] {
   return sources
-    .filter((source) => source.favoritedAt !== null && asDomain(source.domain) === domain)
-    .sort((first, second) => (second.favoritedAt ?? "").localeCompare(first.favoritedAt ?? ""));
+    .filter((source): source is StarredSource => source.favoritedAt !== null && asDomain(source.domain) === domain)
+    .sort((first, second) => second.favoritedAt.localeCompare(first.favoritedAt));
 }
 
 /** Saved's Favorites rows: one per domain with stars, biggest first, ties in `DOMAINS` order. */

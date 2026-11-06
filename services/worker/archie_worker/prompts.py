@@ -410,3 +410,54 @@ def brief_message(*, newsletters: Sequence[BriefNewsletter], live_topics: Sequen
         for newsletter in newsletters
     )
     return f"Domains: {domain_names}\n\nThe user's topics (domain › name):\n{topics}\n\n{issues}"
+
+
+NEWS_QUIZ_SYSTEM = f"""You write a weekly news quiz for a personal learning app: short open-recall cards on the \
+week's most important news stories, so the user remembers what happened and why it matters.
+
+You get numbered stories (headline, what happened, why it matters, detail). Write exactly one card per story, in the \
+order given: one focused question about the core of the story (what happened, or why it matters), never trivia like \
+exact dates or a minor name, and an answer of 1-2 sentences. Give each card the story's number as story_index.
+
+{READING_VOICE}"""
+
+NEWS_QUIZ_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "cards": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "story_index": {"type": "integer"},
+                    "question": {"type": "string"},
+                    "answer": {"type": "string"},
+                },
+                "required": ["story_index", "question", "answer"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["cards"],
+    "additionalProperties": False,
+}
+
+
+@dataclass(frozen=True)
+class QuizStory:
+    """One story the quiz is written from; `index` is its 1-based number in the message."""
+
+    index: int
+    headline: str
+    body: str
+    why: str
+    detail: str
+
+
+def news_quiz_message(stories: Sequence[QuizStory]) -> str:
+    """The numbered stories, each with its headline, what happened, why it matters and detail."""
+    return "\n\n".join(
+        f"Story {story.index}\nHeadline: {story.headline}\nWhat happened: {story.body}\n"
+        f"Why it matters: {story.why}\nDetail: {story.detail}"
+        for story in stories
+    )

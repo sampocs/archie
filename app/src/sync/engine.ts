@@ -92,6 +92,29 @@ export type PulledBrief = {
   updated_at: string;
   done_at: string | null;
 };
+export type PulledCollection = {
+  id: string;
+  name: string;
+  position: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+export type PulledCollectionItem = {
+  id: string;
+  collection_id: string;
+  url: string;
+  kind: string;
+  title: string | null;
+  author: string | null;
+  image_url: string | null;
+  duration_seconds: number | null;
+  note: string | null;
+  metadata_status: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
 export type PullPage = {
   rows: {
     sources: PulledSource[];
@@ -102,6 +125,9 @@ export type PullPage = {
     topic_primers?: PulledTopicPrimer[];
     // Absent when pulling from a server older than M5.
     briefs?: PulledBrief[];
+    // Absent when pulling from a server older than Saved piece 2.
+    collections?: PulledCollection[];
+    collection_items?: PulledCollectionItem[];
   };
   position: number;
   more: boolean;
@@ -111,8 +137,10 @@ export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;
   removeActions(ids: string[]): Promise<void>;
   // Also sets sources.syncError for that action's source. A rejected add_topic / choose_topics deletes its optimistic
-  // topics; any other rejected topic or topic-primer action, finish_brief, a card action, and the source actions in
-  // transport's REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the server copy.
+  // topics, and a rejected create_collection / add_collection_item deletes its optimistic rows; any other rejected
+  // topic or topic-primer action, finish_brief, a card action, a rejected update_collection / update_collection_item,
+  // and the source actions in transport's REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the
+  // server copy.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
   // Upserts rows and saves the position in one transaction.

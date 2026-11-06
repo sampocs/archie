@@ -3,6 +3,7 @@ import * as SecureStore from "expo-secure-store";
 import { useSyncExternalStore } from "react";
 
 import { apiFetch } from "@/api/client";
+import { clearSharedCollections } from "@/collections/sharedCollections";
 import { db, seedSyncState } from "@/db/client";
 import * as schema from "@/db/schema";
 
@@ -82,12 +83,16 @@ export async function clearSession(): Promise<void> {
       tx.delete(schema.topics).run();
       tx.delete(schema.topicPrimers).run();
       tx.delete(schema.briefs).run();
+      tx.delete(schema.collections).run();
+      tx.delete(schema.collectionItems).run();
       // The review log goes with the account; review settings stay with the device.
       tx.delete(schema.reviews).run();
       tx.delete(schema.outbox).run();
       tx.delete(schema.syncState).run();
       seedSyncState();
     });
+    // The share extension's copy of the collection names goes too, so the next account never sees them.
+    await clearSharedCollections();
   } finally {
     setState({ status: "signedOut", sessionKey: null });
   }

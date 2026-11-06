@@ -118,6 +118,12 @@ export default function TodayScreen() {
             onPress={() => router.push("/settings/removed-topics")}
           />
           <Button
+            testID="review-settings-link"
+            label="Review reminder"
+            variant="secondary"
+            onPress={() => router.push("/settings/review")}
+          />
+          <Button
             testID="sign-out"
             label="Sign out"
             variant="secondary"

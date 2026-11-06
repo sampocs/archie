@@ -1,4 +1,5 @@
-import { useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
@@ -12,6 +13,8 @@ import { TextField } from "@/theme/components/TextField";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
 
+const HEADER_ADD_SIZE = 36;
+
 type Mode = "list" | "domains";
 
 const MODES: { mode: Mode; label: string }[] = [
@@ -21,6 +24,7 @@ const MODES: { mode: Mode; label: string }[] = [
 
 export default function LibraryScreen() {
   const theme = useTheme();
+  const router = useRouter();
   const data = useLibraryData();
   const params = useLocalSearchParams<{ filter?: string; at?: string }>();
   const [mode, setMode] = useState<Mode>("list");
@@ -38,7 +42,31 @@ export default function LibraryScreen() {
   const showList = mode === "list" || query.trim() !== "";
 
   return (
-    <Screen title="Library">
+    <Screen
+      title="Library"
+      headerRight={
+        // Adding starts here now that the ＋ tab is gone: the same filled chrome circle, opening the add sheet.
+        <Pressable
+          testID="library-add"
+          accessibilityLabel="Add"
+          onPress={() => {
+            haptic("light");
+            router.push("/add");
+          }}
+          hitSlop={8}
+          style={{
+            width: HEADER_ADD_SIZE,
+            height: HEADER_ADD_SIZE,
+            borderRadius: HEADER_ADD_SIZE / 2,
+            backgroundColor: theme.colors.chrome,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Ionicons name="add" size={24} color={theme.colors.onChrome} />
+        </Pressable>
+      }
+    >
       <View style={{ flexDirection: "row", backgroundColor: theme.colors.press, borderRadius: theme.radii.chip, padding: 3 }}>
         {MODES.map((option) => (
           <Pressable

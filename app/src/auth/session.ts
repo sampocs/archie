@@ -85,6 +85,8 @@ export async function clearSession(): Promise<void> {
       tx.delete(schema.briefs).run();
       tx.delete(schema.collections).run();
       tx.delete(schema.collectionItems).run();
+      tx.delete(schema.takes).run();
+      tx.delete(schema.takeVersions).run();
       // The review log goes with the account; review settings stay with the device.
       tx.delete(schema.reviews).run();
       tx.delete(schema.outbox).run();

@@ -2,6 +2,7 @@ import { randomUUID } from "expo-crypto";
 
 import type { Intent, Reaction } from "@/capture/types";
 import { wireState, type FsrsFields, type GradedBy, type ReviewGrade } from "@/review/types";
+import { saveMakesVersion, type TakeKind } from "@/takes/takes";
 import type { DomainName } from "@/topics/domains";
 
 import { and, eq, inArray, isNotNull, isNull, max, min, sql } from "drizzle-orm";
@@ -45,7 +46,11 @@ export type ActionType =
   | "create_collection"
   | "update_collection"
   | "add_collection_item"
-  | "update_collection_item";
+  | "update_collection_item"
+  | "save_take"
+  | "update_take"
+  | "restore_take_version"
+  | "retry_take_cleanup";
 export type PrimerTarget = "source" | "topic_primer";
 // What a snooze applies to: a source, a topic primer, or a source's queued primer.
 export type SnoozeTarget = PrimerTarget | "source_primer";
@@ -649,4 +654,140 @@ export function requestNewsQuiz(db: AppDb, weekStart: string): void {
 /** The answer "What I care about…" rewrote; the server already saved it, so nothing is queued. */
 export function setCardAnswer(db: AppDb, cardId: string, answer: string): void {
   db.update(schema.cards).set({ answer }).where(eq(schema.cards.id, cardId)).run();
+}
+
+export const MAX_TAKE_TITLE_LENGTH = 200;
+
+// Stored as the server stores it (whitespace collapsed), cut by code point so a typed title is never rejected.
+function cleanTakeTitle(title: string): string {
+  const collapsed = title.split(/\s+/).filter(Boolean).join(" ");
+  return Array.from(collapsed).slice(0, MAX_TAKE_TITLE_LENGTH).join("");
+}
+
+function currentTakeVersion(tx: Tx, takeId: string) {
+  const take = tx.select().from(schema.takes).where(eq(schema.takes.id, takeId)).get();
+  if (!take) return undefined;
+  return tx
+    .select()
+    .from(schema.takeVersions)
+    .where(and(eq(schema.takeVersions.takeId, takeId), eq(schema.takeVersions.version, take.currentVersion)))
+    .get();
+}
+
+// The take's next version, as the server will number it; the take then shows it.
+function insertTakeVersion(
+  tx: Tx,
+  input: { takeId: string; versionId: string; body: string | null; rawBody: string; cleaned: boolean; now: string },
+): void {
+  const take = tx.select().from(schema.takes).where(eq(schema.takes.id, input.takeId)).get();
+  if (!take) return;
+  const version = take.currentVersion + 1;
+  tx.insert(schema.takeVersions)
+    .values({
+      id: input.versionId,
+      takeId: input.takeId,
+      version,
+      body: input.body,
+      rawBody: input.rawBody,
+      cleaned: input.cleaned ? 1 : 0,
+      cleanFailed: 0,
+      createdAt: input.now,
+    })
+    .run();
+  tx.update(schema.takes)
+    .set({ currentVersion: version, updatedAt: input.now })
+    .where(eq(schema.takes.id, input.takeId))
+    .run();
+}
+
+/**
+ * Writes a new take (`id: null`) or saves an edit. A new version is made only when the server will make one
+ * (`saveMakesVersion`); the take's old cards stay until the server's new ones replace them. Returns the take's id.
+ */
+export function saveTake(
+  db: AppDb,
+  input: { id: string | null; kind: TakeKind; title: string; body: string; clean: boolean },
+): string {
+  const id = input.id ?? randomUUID();
+  const versionId = randomUUID();
+  const now = new Date().toISOString();
+  const title = cleanTakeTitle(input.title);
+  const body = input.body.trim();
+  db.transaction((tx) => {
+    const existing = tx.select().from(schema.takes).where(eq(schema.takes.id, id)).get();
+    if (existing) {
+      tx.update(schema.takes).set({ kind: input.kind, title, updatedAt: now }).where(eq(schema.takes.id, id)).run();
+    } else {
+      tx.insert(schema.takes)
+        .values({ id, kind: input.kind, title, currentVersion: 0, createdAt: now, updatedAt: now })
+        .run();
+    }
+
+    if (saveMakesVersion(currentTakeVersion(tx, id) ?? null, { body, clean: input.clean })) {
+      insertTakeVersion(tx, {
+        takeId: id,
+        versionId,
+        body: input.clean ? null : body,
+        rawBody: body,
+        cleaned: input.clean,
+        now,
+      });
+    }
+    enqueue(tx, "save_take", { id, version_id: versionId, kind: input.kind, title, body, clean: input.clean });
+  });
+  return id;
+}
+
+export function changeTakeKind(db: AppDb, takeId: string, kind: TakeKind): void {
+  db.transaction((tx) => {
+    tx.update(schema.takes).set({ kind, updatedAt: new Date().toISOString() }).where(eq(schema.takes.id, takeId)).run();
+    enqueue(tx, "update_take", { id: takeId, kind });
+  });
+}
+
+/** Deletes a take and, as the server does, takes its cards out of review. */
+export function deleteTake(db: AppDb, takeId: string): void {
+  const now = new Date().toISOString();
+  db.transaction((tx) => {
+    tx.update(schema.takes).set({ deletedAt: now, updatedAt: now }).where(eq(schema.takes.id, takeId)).run();
+    tx.update(schema.cards)
+      .set({ deletedAt: now })
+      .where(and(eq(schema.cards.takeId, takeId), isNull(schema.cards.deletedAt)))
+      .run();
+    enqueue(tx, "update_take", { id: takeId, deleted: true });
+  });
+}
+
+/** Saves an earlier version again as the newest, exactly as it was (no new cleanup). */
+export function restoreTakeVersion(db: AppDb, takeId: string, version: number): void {
+  const versionId = randomUUID();
+  const now = new Date().toISOString();
+  db.transaction((tx) => {
+    const earlier = tx
+      .select()
+      .from(schema.takeVersions)
+      .where(and(eq(schema.takeVersions.takeId, takeId), eq(schema.takeVersions.version, version)))
+      .get();
+    if (!earlier) return;
+    insertTakeVersion(tx, {
+      takeId,
+      versionId,
+      body: earlier.body ?? earlier.rawBody,
+      rawBody: earlier.rawBody,
+      cleaned: earlier.cleaned === 1,
+      now,
+    });
+    enqueue(tx, "restore_take_version", { id: takeId, version, version_id: versionId });
+  });
+}
+
+/** Try again after Clean it up gave up: the page shows "Cleaning up…" until the cleaned version arrives. */
+export function retryTakeCleanup(db: AppDb, takeId: string, versionId: string): void {
+  db.transaction((tx) => {
+    tx.update(schema.takeVersions)
+      .set({ body: null, cleanFailed: 0 })
+      .where(eq(schema.takeVersions.id, versionId))
+      .run();
+    enqueue(tx, "retry_take_cleanup", { id: takeId, version_id: versionId });
+  });
 }

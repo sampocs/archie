@@ -1,5 +1,5 @@
 import { buildSession, effectiveDue, isDue, orderCards } from "./session";
-import { cardRow, dayAt, NOW, reviewCard, reviewData, sourceRow } from "./testCards";
+import { cardRow, dayAt, NOW, reviewCard, reviewData, sourceRow, takeRow } from "./testCards";
 import type { CardRow } from "./types";
 
 const ids = (cards: { card: CardRow }[]): string[] => cards.map(({ card }) => card.id);
@@ -24,7 +24,7 @@ describe("orderCards", () => {
       reviewCard({ id: "concept-recent", kind: "concept", dueAt: dayAt(-1) }),
       cardRow({ id: "mechanism-new", kind: "mechanism", createdAt: dayAt(-3) }),
       reviewCard({ id: "foundation-recent", kind: "foundation", dueAt: dayAt(-1) }),
-      reviewCard({ id: "other", kind: "take", dueAt: dayAt(-20) }),
+      reviewCard({ id: "other", kind: "mystery", dueAt: dayAt(-20) }),
       reviewCard({ id: "concept-old", kind: "concept", dueAt: dayAt(-5) }),
       reviewCard({ id: "foundation-old", kind: "foundation", dueAt: dayAt(-2) }),
     ];
@@ -93,6 +93,37 @@ describe("buildSession", () => {
   it("card mode: the one card, or none when it isn't reviewable", () => {
     expect(buildSession(data, "card", "in-four-days", NOW)).toEqual([{ card: inFourDays, wasDue: false }]);
     expect(buildSession(data, "card", "not-reviewable", NOW)).toEqual([]);
+  });
+
+  describe("take cards", () => {
+    const takeCard = (id: string, takeId: string, overrides: Partial<CardRow> = {}): CardRow =>
+      cardRow({ id, sourceId: null, takeId, kind: "take", createdAt: dayAt(-4), ...overrides });
+    const takeData = reviewData(
+      [
+        overdue,
+        foundation,
+        reviewCard({ id: "number", kind: "number", dueAt: dayAt(-6) }),
+        takeCard("take-new", "k1"),
+        takeCard("take-later", "k1", { fsrsState: "review", dueAt: dayAt(5) }),
+        takeCard("other-take", "k2"),
+        takeCard("deleted-take", "k3"),
+      ],
+      {
+        sources: [sourceRow({ id: "s1", state: "consumed", primerOpenedAt: dayAt(-3) })],
+        takes: [takeRow({ id: "k1" }), takeRow({ id: "k2" }), takeRow({ id: "k3", deletedAt: dayAt(-1) })],
+      },
+    );
+
+    it("take mode: only that take's reviewable cards", () => {
+      expect(ids(buildSession(takeData, "take", "k1", NOW))).toEqual(["take-new", "take-later"]);
+      expect(buildSession(takeData, "take", "k3", NOW)).toEqual([]);
+      expect(buildSession(takeData, "take", null, NOW)).toEqual([]);
+    });
+
+    it("due mode: take cards sort with concepts, after foundations and before numbers", () => {
+      // The foundation isn't due; the two new take cards waited longer than the overdue concept.
+      expect(ids(buildSession(takeData, "due", null, NOW))).toEqual(["other-take", "take-new", "overdue", "number"]);
+    });
   });
 
   it("quiz mode: open quiz cards by createdAt", () => {

@@ -60,6 +60,9 @@ export type PulledCard = {
   reps?: number;
   lapses?: number;
   expires_at?: string | null;
+  // Absent when pulling from a server older than Saved piece 3.
+  take_id?: string | null;
+  take_version_id?: string | null;
 };
 export type PulledTopic = {
   id: string;
@@ -115,6 +118,25 @@ export type PulledCollectionItem = {
   updated_at: string;
   deleted_at: string | null;
 };
+export type PulledTake = {
+  id: string;
+  kind: string;
+  title: string;
+  current_version: number;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+};
+export type PulledTakeVersion = {
+  id: string;
+  take_id: string;
+  version: number;
+  body: string | null;
+  raw_body: string;
+  cleaned: boolean;
+  clean_failed: boolean;
+  created_at: string;
+};
 export type PullPage = {
   rows: {
     sources: PulledSource[];
@@ -128,6 +150,9 @@ export type PullPage = {
     // Absent when pulling from a server older than Saved piece 2.
     collections?: PulledCollection[];
     collection_items?: PulledCollectionItem[];
+    // Absent when pulling from a server older than Saved piece 3.
+    takes?: PulledTake[];
+    take_versions?: PulledTakeVersion[];
   };
   position: number;
   more: boolean;
@@ -137,10 +162,11 @@ export interface SyncStore {
   pendingActions(limit: number): Promise<OutboxEntry[]>;
   removeActions(ids: string[]): Promise<void>;
   // Also sets sources.syncError for that action's source. A rejected add_topic / choose_topics deletes its optimistic
-  // topics, and a rejected create_collection / add_collection_item deletes its optimistic rows; any other rejected
+  // topics, and a rejected create_collection / add_collection_item deletes its optimistic rows; a rejected save_take /
+  // restore_take_version deletes its optimistic version (and a new take left with none) and rewinds. Any other rejected
   // topic or topic-primer action, finish_brief, a card action, a rejected update_collection / update_collection_item,
-  // and the source actions in transport's REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the
-  // server copy.
+  // update_take / retry_take_cleanup, and the source actions in transport's REWOUND_SOURCE_ACTIONS, rewind the position
+  // so the next pull restores the server copy. No take action touches a source.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
   // Upserts rows and saves the position in one transaction.

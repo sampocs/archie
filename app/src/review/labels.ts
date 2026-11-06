@@ -6,6 +6,7 @@ export const KIND_LABELS: Record<string, string> = {
   mechanism: "Mechanism",
   number: "Rough number",
   quiz: "News",
+  take: "Take",
 };
 
 export const GRADE_LABELS: Record<ReviewGrade, string> = { got_it: "Got it", partly: "Partly", missed: "Missed" };

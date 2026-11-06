@@ -8,7 +8,7 @@ import {
   shortWeekday,
   topicPractice,
 } from "./summary";
-import { cardRow, dayAt, NOW, reviewCard, reviewData, sourceRow, topicRow } from "./testCards";
+import { cardRow, dayAt, NOW, reviewCard, reviewData, sourceRow, takeRow, topicRow } from "./testCards";
 
 describe("minutesFor", () => {
   it.each([
@@ -73,7 +73,7 @@ describe("dayWord and shortWeekday", () => {
 });
 
 describe("cardDueLabel", () => {
-  const data = reviewData([]);
+  const data = reviewData([], { takes: [takeRow({ id: "k1" })] });
 
   it.each([
     ["a new card", cardRow({}), "Due today"],
@@ -84,6 +84,7 @@ describe("cardDueLabel", () => {
     ["a card due in 6 days", reviewCard({ dueAt: dayAt(6, 23) }), "Due Wed"],
     ["a card due in 7 days", reviewCard({ dueAt: dayAt(7, 1) }), "Due in 7 days"],
     ["a card not yet reviewable", cardRow({ sourceId: "s9" }), "After you finish"],
+    ["a new take card, reviewable at once", cardRow({ sourceId: null, takeId: "k1", kind: "take" }), "Due today"],
   ])("%s → %p", (_, card, label) => {
     expect(cardDueLabel(card, data, NOW)).toBe(label);
   });

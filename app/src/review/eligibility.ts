@@ -1,4 +1,5 @@
 import type * as schema from "@/db/schema";
+import type { TakeRow } from "@/takes/takes";
 
 import type { CardRow } from "./types";
 
@@ -11,6 +12,7 @@ export type ReviewData = {
   sourcesById: Map<string, SourceRow>;
   topicPrimersById: Map<string, TopicPrimerRow>;
   topicsById: Map<string, TopicRow>;
+  takesById: Map<string, TakeRow>;
 };
 
 // Where a card came from. An origin this phone doesn't know yet (a newer server's) is never reviewable here.
@@ -18,18 +20,20 @@ export type CardOrigin =
   | { kind: "source"; sourceId: string }
   | { kind: "topicPrimer"; topicPrimerId: string }
   | { kind: "brief"; briefId: string }
+  | { kind: "take"; takeId: string }
   | { kind: "unknown" };
 
 export function cardOrigin(card: CardRow): CardOrigin {
   if (card.sourceId) return { kind: "source", sourceId: card.sourceId };
   if (card.topicPrimerId) return { kind: "topicPrimer", topicPrimerId: card.topicPrimerId };
   if (card.briefId) return { kind: "brief", briefId: card.briefId };
+  if (card.takeId) return { kind: "take", takeId: card.takeId };
   return { kind: "unknown" };
 }
 
 /**
  * A card joins reviews only once you've taken in what it came from: a source's cards once it is consumed, foundation
- * cards once their primer was opened. Quiz cards are answered only in the quiz.
+ * cards once their primer was opened, take cards at once. Quiz cards are answered only in the quiz.
  */
 export function isReviewable(card: CardRow, data: ReviewData): boolean {
   if (card.deletedAt !== null) return false;
@@ -45,6 +49,11 @@ export function isReviewable(card: CardRow, data: ReviewData): boolean {
       if (!primer || primer.openedAt === null) return false;
       const topic = data.topicsById.get(primer.topicId);
       return topic !== undefined && topic.removedAt === null && topic.mergedIntoId === null;
+    }
+    // You wrote what a take card came from, so it is reviewable as soon as it exists, while its take lives.
+    case "take": {
+      const take = data.takesById.get(origin.takeId);
+      return take !== undefined && take.deletedAt === null;
     }
     case "brief":
     case "unknown":
@@ -86,11 +95,13 @@ export function makeReviewData(rows: {
   sources: SourceRow[];
   topicPrimers: TopicPrimerRow[];
   topics: TopicRow[];
+  takes?: TakeRow[];
 }): ReviewData {
   return {
     cards: rows.cards,
     sourcesById: new Map(rows.sources.map((source) => [source.id, source])),
     topicPrimersById: new Map(rows.topicPrimers.map((primer) => [primer.id, primer])),
     topicsById: new Map(rows.topics.map((topic) => [topic.id, topic])),
+    takesById: new Map((rows.takes ?? []).map((take) => [take.id, take])),
   };
 }

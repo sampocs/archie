@@ -2,14 +2,14 @@ import { AHEAD_DAYS } from "./constants";
 import { cardTopicId, isOpenQuiz, isReviewable, type ReviewData } from "./eligibility";
 import type { CardRow } from "./types";
 
-// Foundations first, then concepts and mechanisms, then rough numbers; anything else last. A placeholder order, to be
-// tuned in the eval pass.
-const ORDER_GROUP: Record<string, number> = { foundation: 0, concept: 1, mechanism: 1, number: 2 };
+// Foundations first, then concepts and mechanisms, then rough numbers; anything else last; take cards sit with
+// concepts. A placeholder order, to be tuned in the eval pass.
+const ORDER_GROUP: Record<string, number> = { foundation: 0, concept: 1, mechanism: 1, take: 1, number: 2 };
 const LAST_GROUP = 3;
 const DAY_MS = 86_400_000;
 
-export type SessionMode = "due" | "ahead" | "topic" | "source" | "card" | "quiz";
-export const SESSION_MODES: readonly SessionMode[] = ["due", "ahead", "topic", "source", "card", "quiz"];
+export type SessionMode = "due" | "ahead" | "topic" | "source" | "take" | "card" | "quiz";
+export const SESSION_MODES: readonly SessionMode[] = ["due", "ahead", "topic", "source", "take", "card", "quiz"];
 export type SessionCard = { card: CardRow; wasDue: boolean };
 
 /** New cards are always due; others once their due date has come. */
@@ -53,6 +53,8 @@ export function buildSession(data: ReviewData, mode: SessionMode, id: string | n
         return id !== null && cardTopicId(card, data) === id;
       case "source":
         return id !== null && card.sourceId === id;
+      case "take":
+        return id !== null && card.takeId === id;
       case "card":
         return card.id === id;
     }

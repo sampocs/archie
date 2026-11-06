@@ -77,13 +77,15 @@ The same Finished / Queue flow as the share sheet, for pasting links or searchin
 
 ### Review
 - **Open recall only.** No multiple choice, because it gives away the answer.
-- Answer by **typing or voice**.
-- **Graded on the idea, not the wording**, with three outcomes: *got it / partly / missed*. A fast, typed-output model like Jev looks like the right fit. When it isn't confident, the screen shows the model answer and I grade myself.
+- Answer by **typing or voice**. Voice goes through Groq Whisper with the card as vocabulary; the mic is hidden offline.
+- **Graded on the idea, not the wording**, with three outcomes: *got it / partly / missed*. Grading is Haiku. After 3 seconds, on an error, or offline, the screen shows the model answer and I grade myself.
 - **I can always override** a grade ("actually I knew that").
 - *Partly* and *missed* show a short explanation of what was missing.
 - **Tell Carl**: after any grade, I can say what I actually care about (e.g. "I mainly want to remember which agency is Soviet and which is British; the secret police part matters less"). That **rewrites the card's accepted answer** and informs future card generation.
 - Swiping a card away as "don't care" removes it and teaches Carl what not to generate.
-- **Spaced repetition** (e.g. FSRS) schedules cards from my answers. Fast, correct answers mean I see the card less often.
+- **Spaced repetition** (FSRS) schedules cards from my answers and runs on the phone. Fast, correct answers mean I see the card less often.
+- **Extra practice only brings cards sooner.** Reviewing ahead or practising a topic never pushes a card's due date later.
+- **When cards join reviews**: a source's cards join once it's consumed. Foundation cards come from primers and topic primers and join once the primer is opened. A source with none shows "No cards for this".
 - **Order within a session**: foundation cards from primers first, then mechanisms, then rough numbers. Trivia is avoided.
 - **Keep going past today**: once the due cards are done, I can review ahead or practice a topic or source.
 - **Works offline**: reviews, reading and capture all work without signal, for example on a plane, and sync when I'm back online.
@@ -127,11 +129,11 @@ The goal is to know the water-cooler topics in about 2 minutes, without reading 
 - **A story's page** has a longer detail paragraph and "Covered by": the newsletters that reported it, each opening its item page. Stories are awareness only: they never become library items or cards. Going deeper on a newsletter is the way to keep something.
 - **Done ✓ marks exactly the newsletters shown as briefed** and closes the brief. Anything that arrived while I was reading starts the next one.
 - One LLM call groups, ranks and writes each update; there are no embeddings yet (Search + chat, M7).
-- **Weekly news quiz** (deferred to M6 with cards): a few short cards on the week's stories. They **expire** instead of entering long-term review.
+- **Weekly news quiz**: on Sundays, 5 cards from stories in briefs Done in the last 7 days, offered on Today. They **expire** after 7 days instead of entering long-term review.
 
 ## Notifications
 
-- **One daily notification, for card reviews only**, at a time I choose.
+- **One daily notification, for card reviews only**, at a time I choose: 8:30 PM by default, sent only when cards are due, set in Settings → Review reminder. It is a local notification only.
 - No notifications for Pulse, primers, or reading check-ins.
 
 ## Out of scope for v1

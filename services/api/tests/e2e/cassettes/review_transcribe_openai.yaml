@@ -1,0 +1,73 @@
+interactions:
+- request:
+    body: "--e1790cdfd6c3e5dde3e719e71bbc7b31\r\nContent-Disposition: form-data; name=\"model\"\r\n\r\ngpt-4o-mini-transcribe\r\n--e1790cdfd6c3e5dde3e719e71bbc7b31\r\nContent-Disposition:
+      form-data; name=\"response_format\"\r\n\r\njson\r\n--e1790cdfd6c3e5dde3e719e71bbc7b31\r\nContent-Disposition:
+      form-data; name=\"language\"\r\n\r\nen\r\n--e1790cdfd6c3e5dde3e719e71bbc7b31\r\nContent-Disposition:
+      form-data; name=\"prompt\"\r\n\r\nWhy does the Fed raise rates when inflation
+      is high? Higher rates make borrowing costlier, which slows spending and cools
+      inflation.\r\n--e1790cdfd6c3e5dde3e719e71bbc7b31\r\nContent-Disposition: form-data;
+      name=\"file\"; filename=\"answer.m4a\"\r\nContent-Type: audio/m4a\r\n\r\n<audio
+      omitted>\r\n--e1790cdfd6c3e5dde3e719e71bbc7b31--\r\n"
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      content-length:
+      - '51779'
+      content-type:
+      - multipart/form-data; boundary=e1790cdfd6c3e5dde3e719e71bbc7b31
+      host:
+      - api.openai.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: POST
+    uri: https://api.openai.com/v1/audio/transcriptions
+  response:
+    body:
+      string: '{"text":"The Fed raise rates to cool inflation by making borrowing
+        more expensive.","usage":{"type":"tokens","total_tokens":84,"input_tokens":69,"input_token_details":{"text_tokens":25,"audio_tokens":44},"output_tokens":15}}'
+    headers:
+      access-control-expose-headers:
+      - X-Request-ID
+      - CF-Ray
+      alt-svc:
+      - h3=":443"; ma=86400
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a560196569381090-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '224'
+      content-type:
+      - application/json
+      date:
+      - Fri, 06 Nov 2026 00:49:38 GMT
+      openai-processing-ms:
+      - '1691'
+      openai-version:
+      - '2020-10-01'
+      server:
+      - cloudflare
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      transfer-encoding:
+      - chunked
+      x-content-type-options:
+      - nosniff
+      x-openai-proxy-wasm:
+      - v0.1
+      x-ratelimit-limit-requests:
+      - '5000'
+      x-ratelimit-remaining-requests:
+      - '4999'
+      x-ratelimit-reset-requests:
+      - 12ms
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -15,11 +15,13 @@ type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const TAB_BAR_HEIGHT = 49;
 
+// Today sits in the middle, with every tab the same size; the app still opens on it (see app/index.tsx).
 const TABS: { name: string; title: string; icon: IconName }[] = [
-  { name: "today", title: "Today", icon: "sunny-outline" },
   { name: "library", title: "Library", icon: "library-outline" },
   { name: "review", title: "Review", icon: "refresh-circle-outline" },
+  { name: "today", title: "Today", icon: "sunny-outline" },
   { name: "ask", title: "Ask", icon: "chatbubble-outline" },
+  { name: "settings", title: "Settings", icon: "settings-outline" },
 ];
 
 // Sits above the (absolutely positioned) tab bar while pushes are failing.

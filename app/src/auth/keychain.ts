@@ -13,7 +13,8 @@ export const LEGACY_KEYCHAIN_GROUP = "3W3H65F89G.com.sampocs.archie";
 export const SHARED_OPTIONS: SecureStore.SecureStoreOptions = { accessGroup: SHARED_KEYCHAIN_GROUP };
 export const LEGACY_OPTIONS: SecureStore.SecureStoreOptions = { accessGroup: LEGACY_KEYCHAIN_GROUP };
 
-// What the share extension uses: it never writes the key, and never touches the database.
+// What the share extension uses: it never writes the session key and never touches the database (it reads and
+// writes only the collection items in `@/collections/sharedCollections`).
 export async function readSharedSessionKey(): Promise<string | null> {
   return SecureStore.getItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS);
 }

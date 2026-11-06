@@ -1,14 +1,17 @@
+import type { ReactNode } from "react";
 import { Switch, View } from "react-native";
 
 import { Button } from "@/theme/components/Button";
 import { Text } from "@/theme/components/Text";
 import { TextField } from "@/theme/components/TextField";
 
-import { CaptureChoice, chooseIntent, Intent, Reaction } from "./types";
+import { CaptureChoice, chooseIntent, Destination, Reaction } from "./types";
 
 type CaptureOptionsProps = {
   value: CaptureChoice;
   onChange: (choice: CaptureChoice) => void;
+  /** The destination picker (dropdown in the app, chips in the extension); the third choice shows only with it. */
+  collectionPicker?: ReactNode;
 };
 
 const REACTIONS: { reaction: Reaction; label: string }[] = [
@@ -18,9 +21,9 @@ const REACTIONS: { reaction: Reaction; label: string }[] = [
 ];
 
 // Shared by the app's Add screen and the share extension, so it only uses theme components and react-native.
-export function CaptureOptions({ value, onChange }: CaptureOptionsProps) {
-  const selectIntent = (intent: Intent) =>
-    onChange(chooseIntent(value, intent));
+export function CaptureOptions({ value, onChange, collectionPicker }: CaptureOptionsProps) {
+  const selectIntent = (intent: Destination) =>
+    onChange(chooseIntent(value, intent, value.collection ?? undefined));
 
   return (
     <View style={{ gap: 12 }}>
@@ -36,6 +39,16 @@ export function CaptureOptions({ value, onChange }: CaptureOptionsProps) {
         variant={value.intent === "queue" ? "primary" : "secondary"}
         onPress={() => selectIntent("queue")}
       />
+      {collectionPicker && (
+        <Button
+          testID="intent-collection"
+          label="Save to a collection"
+          variant={value.intent === "collection" ? "primary" : "secondary"}
+          onPress={() => selectIntent("collection")}
+        />
+      )}
+
+      {collectionPicker && value.intent === "collection" && collectionPicker}
 
       {value.intent === "finished" && (
         <View style={{ gap: 12 }}>

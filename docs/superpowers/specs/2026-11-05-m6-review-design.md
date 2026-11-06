@@ -160,8 +160,7 @@ The model and Groq helpers move from `services/worker/archie_worker/llm.py` (and
 
 ## Out of scope
 
-Card editing, a new-card daily limit, FSRS parameter optimisation, review statistics, reviewing take cards (Saved and
-Takes), tuning card/grade prompts (eval pass).
+Card editing, a new-card daily limit, FSRS parameter optimisation, review statistics, tuning card/grade prompts (eval pass). Reviewing take cards shipped in Saved piece 3.
 
 ## Testing
 

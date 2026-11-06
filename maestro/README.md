@@ -15,6 +15,8 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `finish_item.yaml` | Finish an item: it leaves the queue and lands in the finished state |
 | `topic_picker.yaml` | Signs in as `picker-user` (no topics chosen yet), the topic picker appears, pick topics and continue |
 | `today_primer.yaml` | finish an article with "Parts lost me", its queued primer appears in Up next, open it, Mark as done (real keys, a few cents) |
+| `takes.yaml` | Write a take from the Library ＋, open it from Takes, edit it into version 2, see Earlier versions and version 1, delete it |
+| `takes_clean.yaml` | Write a take with Clean it up on (whitelisted, a few cents), see the cleaned take, See what you said, and its cards |
 | `newsletter_*.yaml` + `run_newsletter.sh` | Log in, deliver a newsletter through `/ingest/email`, Add to queue then Undo (toast), Make review cards from the ••• menu |
 | `brief.yaml` + `run_brief.sh` | Log in, deliver a news newsletter and an essay through `/ingest/email`, wait for the Today brief preview, open the brief, open a story's sources ("Covered by"), back, queue the essay, Done, the preview disappears (real keys, a few cents) |
 | `review.yaml` | Finish an article, its cards reach Today, review a typed answer (graded by Haiku, accepted answer shown), Next, Drop the rest to the Done screen with the Dropped tally (real keys, a few cents) |
@@ -32,13 +34,14 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 ## Running
 
 1. Boot an iOS simulator (e.g. iPhone 17 Pro) and install the debug build: `cd app && npx expo run:ios`. Leave Metro running.
-2. `make maestro` with the backend up in another terminal (`make start-local`). Runs `add_link`, `sign_out`, `source_page`, `library_queue`, `library_search`, `favorites`, `collections`, `topics`, `finish_item`, `topic_picker` and `today_primer`.
+2. `make maestro` with the backend up in another terminal (`make start-local`). Runs `add_link`, `sign_out`, `source_page`, `library_queue`, `library_search`, `favorites`, `collections`, `takes`, `topics`, `finish_item`, `topic_picker` and `today_primer`.
    `source_page` and `today_primer` call Anthropic for real, so a run spends a few cents.
    `make maestro-podcast` runs `add_podcast` separately because it spends real API credits.
 3. `make maestro-newsletter` with the backend up (`make start-local`): runs `run_newsletter.sh`, which needs `INGEST_SECRET` and the owner's keys in `.env` and spends a few cents.
 4. `make maestro-brief` with the backend up (`make start-local`): runs `run_brief.sh`, which delivers two newsletters and waits up to 5 minutes for the brief (the worker cleans, analyzes and files them, then writes the brief with Sonnet). Same `.env` needs as above; spends a few cents (Haiku + Sonnet).
 5. `make maestro-review` with the backend up (`make start-local`): runs `review.yaml`, which waits up to 4 minutes for the finished article's cards to reach Today. Needs the owner's keys in `.env`; spends a few cents (analyze, primer, one Haiku grade).
-6. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
+6. `make maestro-takes-clean` with the backend up (`make start-local`): runs `takes_clean.yaml`, which waits up to 2.5 minutes each for the Sonnet cleanup and the Haiku cards. Needs the owner's keys in `.env`; spends a few cents.
+7. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
 
 These targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
 

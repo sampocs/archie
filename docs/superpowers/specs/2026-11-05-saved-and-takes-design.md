@@ -1,6 +1,6 @@
 # Saved and Takes: Favorites, Collections, Takes, and a Library ＋
 
-**Status:** Piece 1 (Nav + Favorites) implemented on `saved-nav-favorites` (plan `docs/superpowers/plans/2026-11-05-saved-nav-favorites.md`); piece 2 (Collections) implemented on `saved-collections` (plan `docs/superpowers/plans/2026-11-05-saved-collections.md`); migration numbers moved to `0008_favorites` and `0009_collections` because M6 took 0007.
+**Status:** Piece 1 (Nav + Favorites) implemented on `saved-nav-favorites` (plan `docs/superpowers/plans/2026-11-05-saved-nav-favorites.md`); piece 2 (Collections) implemented on `saved-collections` (plan `docs/superpowers/plans/2026-11-05-saved-collections.md`); piece 3 (Takes) implemented on `saved-takes` (plan `docs/superpowers/plans/2026-11-05-saved-takes.md`); migration numbers moved to `0008_favorites`, `0009_collections` and `0010_takes` because M6 took 0007.
 
 Three additions and one navigation change, decided in brainstorming on 2026-11-05. Mocks:
 `2026-11-05-saved-and-takes-mocks.html` (screens 01–09). Product background is `2026-10-26-product-scope.md`; where
@@ -120,6 +120,7 @@ take_versions
   body text null,                              -- what the take page shows; null while cleanup is running
   raw_body text not null,                      -- what the owner typed or dictated
   cleaned boolean not null,                    -- Clean it up was on for this version
+  clean_failed boolean not null default false, -- the cleanup ran out of retries; the page offers Try again
   created_at, change_seq
   unique (take_id, version)
 
@@ -127,7 +128,7 @@ cards
   ~ source_id, artifact_id become nullable
   + take_id uuid null fk takes on delete cascade
   + take_version_id uuid null fk take_versions
-  check: exactly one of (source_id, take_id) is set
+  check: exactly one of (source_id, topic_primer_id, brief_id, take_id) is set
 ```
 
 - A take's title and kind live on `takes`, so renaming or changing the kind doesn't make a new version. Only the body
@@ -146,9 +147,10 @@ Each one is applied to the local database right away and has a handler in `servi
 | `update_collection` | id, name?, position?, deleted? | rename, reorder, delete (soft-deletes its items too) |
 | `add_collection_item` | id, collection_id, url, note? | inserts it and queues a `fetch_collection_item` job |
 | `update_collection_item` | id, note?, collection_id?, deleted? | edit note, move or remove |
-| `save_take` | id, kind, title, body, clean (bool) | creates or updates the take; inserts a new `take_versions` row when the body changed (`raw_body` = body; `body` = body, or null with `clean`); queues `clean_take` when `clean`, otherwise `take_cards` |
+| `save_take` | id, version_id, kind, title, body, clean (bool) | creates or updates the take; inserts a new `take_versions` row when the body changed (`raw_body` = body; `body` = body, or null with `clean`); queues `clean_take` when `clean`, otherwise `take_cards` |
 | `update_take` | id, kind?, title?, deleted? | change kind, rename or delete without a new version |
-| `restore_take_version` | take_id, version | copies that version (body, raw_body, cleaned) into a new version without re-cleaning; queues `take_cards` |
+| `restore_take_version` | id (the take), version_id, version | copies that version (body, raw_body, cleaned) into a new version without re-cleaning; queues `take_cards` |
+| `retry_take_cleanup` | id, version_id | re-queues `clean_take` for a version whose cleanup failed |
 
 Client-made ids (like `add_source`) let a just-saved item show up offline. A collection item saved to an unknown or
 deleted collection is rejected.

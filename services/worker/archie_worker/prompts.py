@@ -1,5 +1,5 @@
-"""Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic`, `clean_text` and
-`update_brief` steps.
+"""Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic`, `clean_text`,
+`update_brief` and `clean_take` steps.
 
 Bump the matching version whenever a prompt or the schema changes in a way that alters output: it is stored
 on every artifact, so old versions stay attributable. A brief is rewritten on every newsletter and keeps no
@@ -15,7 +15,7 @@ from enum import StrEnum
 from typing import Any
 
 import pydantic
-from archie_db import card_rows, models
+from archie_db import card_rows, models, takes
 from archie_shared import logging
 from archie_shared.domains import Domain
 
@@ -336,6 +336,30 @@ def clean_text_message(*, title: str | None, paragraphs: Sequence[str]) -> str:
     """The newsletter's subject, then its paragraphs numbered from 1 as `[n] paragraph`, blank-line separated."""
     numbered = "\n\n".join(f"[{number}] {paragraph}" for number, paragraph in enumerate(paragraphs, start=1))
     return f"Subject: {title or '(none)'}\n\n<email>\n{numbered}\n</email>"
+
+
+CLEAN_TAKE_SYSTEM = f"""You turn the user's own dictated or typed notes into a short take for a personal learning \
+app. A take is something the user thinks (an opinion) or the case they make for something (a talking point), in their \
+own words.
+
+Rewrite the notes as markdown:
+- First the thesis, in one plain sentence with no heading.
+- Then a "## Main points" heading and 2-5 bullets, one per point the user makes.
+- Only when the notes answer an objection, end with a heading naming it (for example ## When they say "it's just a \
+casino") and the user's answer in a short paragraph.
+
+Keep only what the user said. Never add a fact, number, name, example or argument that isn't in the notes, never \
+define a term they didn't define, and never make a claim stronger or weaker than they made it: keep their hedges ("I \
+think", "maybe", "roughly") and their stance. Keep their numbers as they gave them. Drop filler ("ok so", "like", "you \
+know") and repetition. Answer with the take's markdown only.
+
+The voice below shapes how sentences read; it never licenses adding definitions, examples or numbers.
+{READING_VOICE}"""
+
+
+def clean_take_message(*, kind: models.TakeKind, title: str, raw_body: str) -> str:
+    """The take's kind and title, then the user's raw notes."""
+    return f"Kind: {takes.KIND_NAMES[kind]}\nTitle: {title}\n\n<notes>\n{raw_body}\n</notes>"
 
 
 # Each news newsletter's text is cut to this many characters in the brief's one call.

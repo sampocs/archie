@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect } from "react";
 
+import { saveToCollection } from "@/collections/saveToCollection";
 import { addSource } from "@/db/actions";
 import { db } from "@/db/client";
-import { sharedSourceFromParams, type ShareParams } from "@/share/deepLink";
+import { sharedCollectionItemFromParams, sharedSourceFromParams, type ShareParams } from "@/share/deepLink";
 import { requestSync } from "@/sync/useSync";
 
 // Target of archie://share?url=…&intent=…, opened by the share extension when it can't reach the backend.
@@ -14,8 +15,12 @@ export default function ShareScreen() {
 
   useEffect(() => {
     async function save(): Promise<void> {
+      const sharedItem = sharedCollectionItemFromParams(params);
       const shared = sharedSourceFromParams(params);
-      if (shared) {
+      if (sharedItem) {
+        saveToCollection(sharedItem);
+        requestSync();
+      } else if (shared) {
         await addSource(db, shared);
         requestSync();
       }

@@ -15,8 +15,9 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, jobs, models, session, user_topics
+from archie_llm import llm
 from archie_testing import recording
-from archie_worker import handlers, llm, loop, prompts
+from archie_worker import handlers, loop, prompts
 from archie_worker.handlers import topic_primer
 
 pytestmark = pytest.mark.postgres

@@ -32,6 +32,7 @@ class LoggerName(StrEnum):
     API = auto()
     WORKER = auto()
     DB = auto()
+    LLM = auto()
 
 
 def configure(*, level: int = logging.INFO) -> None:

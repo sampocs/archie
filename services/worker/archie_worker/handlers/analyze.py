@@ -13,8 +13,9 @@ from typing import Any
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, models, pipeline, user_topics
+from archie_llm import llm
 
-from archie_worker import llm, prompts, timestamps
+from archie_worker import prompts, timestamps
 from archie_worker.handlers import _llm_step
 
 MAX_OUTPUT_TOKENS = 8000

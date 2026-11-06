@@ -1,0 +1,130 @@
+interactions:
+- request:
+    body: '{"max_tokens":1500,"messages":[{"role":"user","content":"Question: Why
+      does the Fed raise rates when inflation is high?\nAccepted answer: Higher rates
+      make borrowing costlier, which slows spending and cools inflation.\nAnswer:
+      ''to make loans expensive so people spend less''"}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"grade":{"type":"string","enum":["got_it","partly","missed"]},"missing":{"type":"string"},"confident":{"type":"boolean"}},"required":["grade","missing","confident"],"additionalProperties":false}}},"system":"You
+      grade a typed or dictated recall answer to a spaced-repetition flashcard.\n\nJudge
+      the IDEA, not the wording. Be lenient on phrasing, word order, typos, missing
+      punctuation, dictation errors and terseness. Be strict on the core idea: the
+      answer must contain the essential point(s) of the accepted answer and must not
+      contradict them.\n\nGrades:\n- got_it: the answer carries the core idea of the
+      accepted answer, in any words. Minor omitted detail is fine.\n- partly: the
+      answer is correct as far as it goes but misses an essential part of the idea
+      (for example gives what but not why, or only one of several required parts),
+      or is too vague to show real understanding.\n- missed: the answer is wrong,
+      contradicts the accepted answer, is off-topic, or is blank / \"I don''t know\".\n\nNumbers:
+      right if within roughly the precision of the accepted answer (about 5% unless
+      the card says \"roughly\"/\"about\", then about 15%). A wrong order of magnitude
+      is missed.\n\n`missing`: for partly and missed, ONE short sentence (under 20
+      words) saying what the answer lacked or got wrong, addressed to the learner
+      without quoting the whole accepted answer. Empty string for got_it.\n\n`confident`:
+      false only if you genuinely cannot tell whether the answer matches the idea
+      (ambiguous wording, answer might be right under another reading, or the accepted
+      answer itself is unclear). Otherwise true. Do not mark a clear miss or a clear
+      match as not confident.\n\nExample\nQuestion: Why does a regular fridge stay
+      cold when the door is closed?\nAccepted answer: The insulated door seal traps
+      cold air, and the compressor only runs to remove the small amount of heat that
+      leaks in.\nAnswer: \"cuz the seal keeps the cold in and the motor kicks on once
+      in a while\"\nGrade: got_it (the seal and the intermittent compressor are the
+      core idea; wording is casual).\nAnswer: \"The compressor keeps running.\"\nGrade:
+      partly, missing \"It doesn''t say the insulated seal is what keeps heat out.\"\n","thinking":{"type":"disabled"}}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '2614'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '10'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CgkkPgXfNpPXEQpNgMWo6","type":"message","role":"assistant","content":[{"type":"text","text":"{\"grade\":\"got_it\",\"missing\":\"\",\"confident\":true}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1013,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":21,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-06T00:44:28Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-06T00:44:28Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-06T00:44:26Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '12000000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-06T00:44:28Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a56011dbb81f3c9c-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '602'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 06 Nov 2026 00:44:28 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=1348
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-f4728d191a435666bfea1a1d19ad210f-0ccfec01ffcba144-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -50,7 +50,9 @@ export function useGrader({ card, wasDue, sessionKey, onGraded }: GraderArgs) {
   const submitted = useRef(false);
   useEffect(() => {
     mounted.current = true;
-    const controller = abort.current;
+    // A fresh controller per mount: a remount (Fast Refresh) must not reuse the one the last cleanup aborted.
+    const controller = new AbortController();
+    abort.current = controller;
     return () => {
       mounted.current = false;
       // Leaving the card mid-grade cancels the request rather than letting it run to its timeout.

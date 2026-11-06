@@ -8,6 +8,7 @@ from archie_db import changes, models, pipeline
 
 from archie_worker.handlers import (
     analyze,
+    clean_take,
     clean_text,
     fetch_collection_item,
     fetch_content,
@@ -61,6 +62,8 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     ),
     # No failure hook: a failed quiz only means no quiz this week.
     models.JobKind.NEWS_QUIZ: HandlerSpec(run=news_quiz.handle),
+    # When it gives up the take shows its raw text with Try again, and still gets its cards.
+    models.JobKind.CLEAN_TAKE: HandlerSpec(run=clean_take.handle, on_final_failure=clean_take.mark_failed),
     # No failure hook: a take without cards still reads fine.
     models.JobKind.TAKE_CARDS: HandlerSpec(run=take_cards.handle),
 }

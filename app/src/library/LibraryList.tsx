@@ -312,7 +312,8 @@ function LibraryItem(props: { source: LibrarySource; trailing?: ReactNode; filte
           {source.syncError}
         </Text>
       ) : null}
-      <ProcessingLine source={source} />
+      {/* The status tag already says Processing; the line below only adds a failure or an unsupported reason. */}
+      {statusTag(source) === "Processing" ? null : <ProcessingLine source={source} />}
     </View>
   );
 }

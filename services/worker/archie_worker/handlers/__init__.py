@@ -12,6 +12,7 @@ from archie_worker.handlers import (
     fetch_content,
     fetch_title,
     file_topic,
+    news_quiz,
     primer,
     topic_primer,
     transcribe,
@@ -52,4 +53,6 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.CLEAN_TEXT: HandlerSpec(run=clean_text.handle),
     # No failure hook: a failed rewrite leaves the brief's previous content in place.
     models.JobKind.UPDATE_BRIEF: HandlerSpec(run=update_brief.handle),
+    # No failure hook: a failed quiz only means no quiz this week.
+    models.JobKind.NEWS_QUIZ: HandlerSpec(run=news_quiz.handle),
 }

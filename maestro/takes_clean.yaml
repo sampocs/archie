@@ -44,7 +44,7 @@ appId: com.sampocs.archie
     notVisible:
       id: "take-editor"
     timeout: 5000
-- tapOn: "Maestro clean take"
+- tapOn: ".*Maestro clean take.*"
 - assertVisible:
     id: "take-page"
 # The cleanup is one Sonnet call; the page shows the raw text under "Cleaning up…" until the next pull brings it

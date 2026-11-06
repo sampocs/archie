@@ -1,7 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
-import { deleteSource, goDeeper, queuePrimer, setRead, setSourceTopic } from "@/db/actions";
+import { deleteSource, goDeeper, queuePrimer, setCardsOff, setRead, setSourceTopic } from "@/db/actions";
 import { db } from "@/db/client";
 import type * as schema from "@/db/schema";
 import { requestSync } from "@/sync/useSync";
@@ -10,22 +10,24 @@ import { MenuSheet, type MenuItem } from "@/ui/MenuSheet";
 import { SnoozeSheet } from "@/ui/SnoozeSheet";
 import { TopicChooserSheet } from "@/ui/TopicChooserSheet";
 
+import { makeCardsAction } from "./cardsMenu";
 import { EpisodesSheet } from "./EpisodesSheet";
 
 type SourceRow = typeof schema.sources.$inferSelect;
-type ItemMenuProps = { source: SourceRow; visible: boolean; onClose: () => void };
+type ItemMenuProps = { source: SourceRow; cardCount: number; visible: boolean; onClose: () => void };
 type Panel = "topic" | "snooze" | "episodes" | null;
 
 /**
  * The ••• menu, grouped by how often each is used: [Remind me later…, Mark as read/unread]
- * [Queue the primer, Make review cards, Change topic, Wrong episode?] [Delete]; and the sheets its entries open.
+ * [Queue the primer, Make review cards, No cards for this, Change topic, Wrong episode?] [Delete]; and the sheets its entries open.
  */
-export function ItemMenu({ source, visible, onClose }: ItemMenuProps) {
+export function ItemMenu({ source, cardCount, visible, onClose }: ItemMenuProps) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>(null);
   const inInbox = source.state === "inbox" || source.state === "briefed";
   const isRead = source.readAt !== null;
   const primerQueued = source.primerQueuePosition !== null;
+  const makeCards = makeCardsAction(source, cardCount);
 
   const items: MenuItem[] = [
     { testID: "menu-snooze", label: "Remind me later…", onPress: () => setPanel("snooze") },
@@ -52,15 +54,29 @@ export function ItemMenu({ source, visible, onClose }: ItemMenuProps) {
         requestSync();
       },
     },
-    // The server rejects go_deeper until the source is ready.
-    ...(inInbox && source.processing === "ready"
+    ...(makeCards
       ? [
           {
             testID: "menu-review-cards",
             label: "Make review cards",
-            subtitle: "Marks it done and writes a primer",
+            subtitle: makeCards.subtitle,
             onPress: () => {
-              goDeeper(db, source.id);
+              if (makeCards.kind === "go_deeper") goDeeper(db, source.id);
+              else setCardsOff(db, source.id, false);
+              haptic("success");
+              requestSync();
+            },
+          },
+        ]
+      : []),
+    ...(source.cardsOff === 0
+      ? [
+          {
+            testID: "menu-cards-off",
+            label: "No cards for this",
+            subtitle: "Removes its cards and makes no more",
+            onPress: () => {
+              setCardsOff(db, source.id, true);
               haptic("success");
               requestSync();
             },

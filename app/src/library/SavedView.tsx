@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 
+import { useCollectionsData } from "@/collections/useCollectionsData";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { slugify } from "@/topics/topicName";
@@ -8,26 +9,30 @@ import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
 
 import { favoriteDomains } from "./favorites";
+import { CollectionsSection } from "./CollectionsSection";
 import type { LibraryData } from "./join";
 
 const DOMAIN_DOT = 10;
 
-/** Library's Saved mode: the starred items, one row per domain (collections arrive in a later piece). */
+/** Library's Saved mode: starred items by domain, then collections. */
 export function SavedView({ data }: { data: LibraryData }) {
   const theme = useTheme();
   const router = useRouter();
   const groups = favoriteDomains(data.sources);
+  const collections = useCollectionsData();
   const total = groups.reduce((sum, group) => sum + group.count, 0);
 
   return (
     <View testID="saved-view" style={{ gap: theme.spacing.md }}>
-      {groups.length === 0 ? (
+      {groups.length === 0 && collections.length === 0 ? (
         <View style={{ alignItems: "center", paddingVertical: theme.spacing.xl }}>
           <Text testID="saved-empty" tone="ink2" style={{ textAlign: "center" }}>
             Star items to keep them here, or save something just for fun to a collection.
           </Text>
         </View>
-      ) : (
+      ) : null}
+
+      {groups.length > 0 ? (
         <GroupedList testID="saved-favorites" title={`Favorites · ${total}`}>
           {groups.map((group) => (
             <Pressable
@@ -50,7 +55,9 @@ export function SavedView({ data }: { data: LibraryData }) {
             </Pressable>
           ))}
         </GroupedList>
-      )}
+      ) : null}
+
+      <CollectionsSection />
     </View>
   );
 }

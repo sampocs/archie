@@ -12,8 +12,9 @@ from dataclasses import dataclass
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, models, user_topics
+from archie_llm import llm
 
-from archie_worker import llm, prompts
+from archie_worker import keys, prompts
 
 MAX_OUTPUT_TOKENS = 6000
 MAX_SOURCE_TITLES = 30
@@ -107,7 +108,7 @@ def _prepare(db: sqlalchemy.orm.Session, job: models.Job) -> _PrimerRun | None:
     if has_current_primer:
         return None
 
-    api_key = llm.api_key_for(db.get_one(models.User, topic.user_id))
+    api_key = keys.anthropic_key_for(db.get_one(models.User, topic.user_id))
 
     titles = db.scalars(
         sqlalchemy.select(models.Source.title)

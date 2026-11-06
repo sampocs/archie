@@ -19,10 +19,11 @@ import anthropic
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import models, pipeline
+from archie_llm import llm
 from archie_shared import logging
 from sqlalchemy.dialects import postgresql
 
-from archie_worker import content, corrections, llm, transcription
+from archie_worker import content, corrections, keys, transcription
 from archie_worker.content import episode as episode_content
 from archie_worker.handlers import _text
 
@@ -68,8 +69,8 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
 def _prepare(db: sqlalchemy.orm.Session, *, job: models.Job, source: models.Source) -> _Run:
     """Check the keys, read the episode and the finished chunks, and commit so no transaction stays open."""
     user = db.get_one(models.User, source.user_id)
-    keys = transcription.keys_for(user)
-    anthropic_api_key = llm.api_key_for(user)
+    transcription_keys = transcription.keys_for(user)
+    anthropic_api_key = keys.anthropic_key_for(user)
 
     finished_chunks = frozenset(
         db.scalars(
@@ -78,7 +79,7 @@ def _prepare(db: sqlalchemy.orm.Session, *, job: models.Job, source: models.Sour
     )
     run = _Run(
         source_id=source.id,
-        keys=keys,
+        keys=transcription_keys,
         anthropic_api_key=anthropic_api_key,
         episode=episode_content.PodcastEpisode.from_payload(job.payload[episode_content.EPISODE_KEY]),
         finished_chunks=finished_chunks,

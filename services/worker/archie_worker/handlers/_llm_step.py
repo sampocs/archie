@@ -14,8 +14,9 @@ from typing import Any
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, models, pipeline
+from archie_llm import llm
 
-from archie_worker import llm, prompts
+from archie_worker import keys, prompts
 
 
 @dataclass(frozen=True)
@@ -41,7 +42,7 @@ def prepare_run(db: sqlalchemy.orm.Session, job: models.Job, *, step: models.Job
     if source is None or source.deleted_at is not None:
         return None
 
-    api_key = llm.api_key_for(db.get_one(models.User, source.user_id))
+    api_key = keys.anthropic_key_for(db.get_one(models.User, source.user_id))
 
     text_artifact = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT)
     if text_artifact is None:

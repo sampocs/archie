@@ -1,7 +1,8 @@
 """`analyze`: summarize a source's text and, when it teaches something, make review cards from it.
 
 Each run writes the next summary version. The previous version's cards are soft-deleted and the new
-version's inserted, so the cards always come from the current summary.
+version's inserted, so the summary cards always come from the current summary. The primer's foundation cards are
+left alone, and no cards are written while the user has cards off for the source.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ from typing import Any
 
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, models, pipeline, user_topics
+from archie_db import card_rows, changes, models, pipeline, user_topics
 from archie_llm import llm
 
 from archie_worker import prompts, timestamps
@@ -51,8 +52,10 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         prompt_version=prompts.ANALYZE_PROMPT_VERSION,
     )
     _retire_cards_before(db, source_id=source.id, current_artifact_id=summary.id)
-    # A newsletter gets cards only once the user went deeper (it is then consumed); other sources always may.
-    wants_cards = run.kind != models.SourceKind.NEWSLETTER or source.state == models.SourceState.CONSUMED
+    # A newsletter gets cards only once the user went deeper (it is then consumed); other sources always may, unless
+    # the user turned cards off for this one (read after the lock, so a change during the call counts).
+    is_card_worthy = run.kind != models.SourceKind.NEWSLETTER or source.state == models.SourceState.CONSUMED
+    wants_cards = is_card_worthy and not source.cards_off
     if analysis["is_educational"] and wants_cards:
         _insert_cards(db, source=source, artifact_id=summary.id, cards=analysis["cards"])
 
@@ -73,18 +76,12 @@ def _clean_timestamps(analysis: dict[str, Any]) -> None:
 
 def _retire_cards_before(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID, current_artifact_id: uuid.UUID) -> None:
     """Soft-delete the source's live cards from earlier summary versions."""
-    db.execute(
-        sqlalchemy.update(models.Card)
-        .where(
-            models.Card.source_id == source_id,
-            models.Card.artifact_id != current_artifact_id,
-            models.Card.deleted_at.is_(None),
-        )
-        .values(
-            deleted_at=sqlalchemy.func.now(),
-            updated_at=sqlalchemy.func.now(),
-            change_seq=changes.next_change_seq(),
-        )
+    # Foundation cards belong to the primer and are retired only when it is rewritten.
+    card_rows.retire_cards(
+        db,
+        models.Card.source_id == source_id,
+        models.Card.artifact_id != current_artifact_id,
+        models.Card.kind != models.CardKind.FOUNDATION.value,
     )
 
 

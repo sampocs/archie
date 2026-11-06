@@ -5,6 +5,8 @@ Cloud hosts are blocked by YouTube, so production uses Supadata; a residential I
 
 from __future__ import annotations
 
+import json
+import re
 import time
 from typing import Any
 
@@ -12,7 +14,7 @@ import httpx
 import youtube_transcript_api
 from archie_shared import logging
 
-from archie_worker import errors
+from archie_worker import content, errors
 from archie_worker.content import Segment
 from archie_worker.handlers import fetch_title as title_page
 
@@ -74,6 +76,27 @@ def fetch_title(*, video_id: str) -> str | None:
         return None
 
     return title_page.extract_title(page=page)
+
+
+# The watch page embeds its player response as JSON; the first match is the video's own (later ones are suggestions).
+_LENGTH_SECONDS = re.compile(r'"lengthSeconds":"(\d+)"')
+_OWNER_CHANNEL_NAME = re.compile(r'"ownerChannelName":"((?:[^"\\]|\\.)*)"')
+
+
+def fetch_preview(*, video_id: str) -> content.LinkPreview:
+    """The watch page's title, channel and length, with the standard thumbnail; raises if the page can't be fetched."""
+    page = title_page.fetch_page(
+        url=WATCH_URL.format(video_id=video_id), timeout_seconds=_PAGE_TIMEOUT_SECONDS, max_bytes=_PAGE_MAX_BYTES
+    )
+    length = _LENGTH_SECONDS.search(page)
+    owner = _OWNER_CHANNEL_NAME.search(page)
+    return content.LinkPreview(
+        title=title_page.extract_title(page=page),
+        # The channel name is a JSON string, so its escapes (&, \") decode as JSON does.
+        author=content.strip_nul(json.loads(f'"{owner.group(1)}"')) if owner else None,
+        image_url=thumbnail_url(video_id),
+        duration_seconds=int(length.group(1)) if length else None,
+    )
 
 
 def _fetch_supadata(*, video_id: str, api_key: str) -> list[Segment]:

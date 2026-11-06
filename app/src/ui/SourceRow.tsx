@@ -30,7 +30,7 @@ export function SourceRow({ source, end, meta, testID, onPress }: SourceRowProps
         circle: source.kind === "x",
         unread: statusTag(source) === "Unread",
       }}
-      kicker={{ domain: source.domain }}
+      kicker={{ domain: source.domain, starred: source.favoritedAt !== null }}
       title={source.title ?? source.url}
       meta={meta ?? sourceMeta(source)}
       end={end}

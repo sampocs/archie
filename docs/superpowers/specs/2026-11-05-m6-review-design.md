@@ -1,5 +1,7 @@
 # M6 Review: cards, grading and spaced repetition
 
+**Status:** Implemented on `m6-review` (plan `docs/superpowers/plans/2026-11-05-m6-review.md`).
+
 Do the daily reviews on the phone, including offline, and keep the things you consume. The owner approved the mocks
 in `2026-11-05-m6-review-mocks.html` (01 Today/answer/graded, 02 timed out/offline, 03 done/keep going, 04 item
 cards/quiz/reminder) with the changes below. Product background: "Review" in `2026-10-26-product-scope.md`; where

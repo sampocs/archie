@@ -12,6 +12,12 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
   Railway, then `railway config apply`. Railway doesn't read `.railway/` during deploys, so an
   unapplied edit changes nothing. `npm install` at the repo root first, so the CLI can load the SDK.
 
+## M6
+
+- The API now calls Anthropic, Groq and OpenAI directly (grading, transcription, card rewrites); the `archie`
+  service already has the keys.
+- The app needs a new native build for the microphone and notifications: `scripts/install_ios.sh`.
+
 ## Not in code
 
 - **Secrets and the owner's email.** The repo is public, so these are `preserve()` in

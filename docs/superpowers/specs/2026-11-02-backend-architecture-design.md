@@ -72,10 +72,12 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - source↔source links
 - **cards:**
   - question and answer
-  - the source it came from and the source position (timestamp or section)
-  - FSRS state: stability, difficulty, due date, reps, lapses
-  - suspended flag
-- **reviews:** an append-only log of every review: card, grade, reviewed_at, and the scheduler state before and after.
+  - its origin: a source, a topic primer or a brief (quiz cards), and the source position (timestamp or section)
+  - FSRS state: stability, difficulty, due date, reps, lapses, written by the phone
+  - `expires_at` (quiz cards); there is no suspended flag, Drop soft-deletes the card
+- **reviews:** an append-only log of every review: card, grade, reviewed_at, and the scheduler state before and after. The latest `reviewed_at` wins the card's state; reviews are never pulled to the phone.
+- **card_preferences:** the "what I care about" and "not this" notes that steer card generation (the last 20 are used).
+- `sources.cards_off`: the owner turned cards off for this source.
 - **chunks:** passages of the transcript or text, with an embedding (`vector(1536)`) and a full-text `tsvector`. These are what search and chat search over.
 - **jobs:**
   - the step and the source it belongs to
@@ -156,7 +158,14 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
 - It covers every ready newsletter still in the inbox, with no window. Essays go in unchanged, with their summary's gist as the pitch. News newsletters go into **one Sonnet call** (Opus as fallback) that splits them into stories, groups them by domain, ranks them and writes them. A pydantic model validates the output.
 - Post-processing drops source ids the model invented, orders domains by their top story and stories by importance, and keeps at most 10 stories (the rest become "Also happening" lines). A failed update leaves the previous content in place.
 - **`finish_brief`** (an outbox action) marks the newsletters the phone showed as briefed, closes the brief, and enqueues a new `update_brief` if others remain.
-- The weekly news quiz is deferred to M6 with cards.
+- The weekly news quiz is the `news_quiz` job; see "Review" below.
+
+## Review
+
+- **The phone schedules.** It runs FSRS (`ts-fsrs`) and pushes `review_card`, `drop_card` and `set_cards_off` actions; the server logs reviews and stores the card state.
+- **API routes** grade a typed answer (Haiku), transcribe a voice answer (Groq Whisper, OpenAI as fallback) and rewrite a card from a "what I care about" note.
+- **`news_quiz`** is a worker job the phone requests on Sundays (`request_news_quiz`); it writes 5 expiring quiz cards from recent briefs.
+- **`packages/archie-llm`** holds the model calls shared by the worker and the API.
 
 ## Running it
 

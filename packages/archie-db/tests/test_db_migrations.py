@@ -192,3 +192,68 @@ def test_0007_keeps_existing_cards_and_enforces_one_origin(test_database_url: st
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
     engine.dispose()
+
+
+def test_0010_keeps_existing_cards_and_allows_exactly_one_origin_including_a_take(test_database_url: str) -> None:
+    """A scheduled source card survives 0010 unchanged; a take card is allowed; one with a source and a take isn't."""
+    migrate.downgrade(test_database_url)
+    migrate.upgrade(test_database_url, "0009")
+    engine = session.engine_for(test_database_url)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, change_seq) "
+                "SELECT '00000000-0000-0000-0000-000000000001', id, 'https://example.com/a', "
+                "'https://example.com/a', 'article', 'consumed', 'finished', nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO cards (id, user_id, source_id, kind, question, answer, fsrs_state, stability, reps, "
+                "change_seq) SELECT '00000000-0000-0000-0000-000000000002', user_id, id, 'concept', 'Q?', 'A.', "
+                "'review', 3.5, 2, nextval('change_seq') FROM sources"
+            )
+        )
+
+    migrate.upgrade(test_database_url)
+
+    with engine.connect() as connection:
+        card = connection.execute(
+            sqlalchemy.text("SELECT source_id, fsrs_state, stability, reps, take_id, take_version_id FROM cards")
+        ).one()
+    assert (str(card.source_id), card.fsrs_state, card.stability, card.reps) == (
+        "00000000-0000-0000-0000-000000000001",
+        "review",
+        3.5,
+        2,
+    )
+    assert (card.take_id, card.take_version_id) == (None, None)
+
+    with engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO takes (id, user_id, kind, title, current_version, change_seq) "
+                "SELECT '00000000-0000-0000-0000-000000000003', id, 'opinion', 'T', 1, nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO cards (id, user_id, take_id, kind, question, answer, change_seq) "
+                "SELECT gen_random_uuid(), user_id, id, 'take', 'Q?', 'A.', nextval('change_seq') FROM takes"
+            )
+        )
+
+    # A source and a take on one card breaks the one-origin CHECK.
+    with pytest.raises(sqlalchemy.exc.IntegrityError), engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO cards (id, user_id, source_id, take_id, kind, question, answer, change_seq) "
+                "SELECT gen_random_uuid(), takes.user_id, sources.id, takes.id, 'take', 'Q?', 'A.', "
+                "nextval('change_seq') FROM takes, sources"
+            )
+        )
+
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
+    engine.dispose()

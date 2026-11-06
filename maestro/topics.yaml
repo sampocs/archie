@@ -24,9 +24,7 @@ appId: com.sampocs.archie
 - assertNotVisible:
     id: "topic-chip-monetary-plumbing"
 - tapOn:
-    id: "tab-today"
-- tapOn:
-    id: "account-button"
+    id: "tab-settings"
 - tapOn:
     id: "removed-topics-link"
 # The owner's three removed starter topics stay listed, so the screen is never empty here.

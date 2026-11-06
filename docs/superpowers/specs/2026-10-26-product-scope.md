@@ -60,7 +60,7 @@ Every source the user consumes goes through:
 
 ## Screens
 
-Tab bar: **Today · Library · Review · Carl**
+Tab bar: **Library · Review · Today · Ask · Settings**, every tab the same size, with Today in the middle; the app opens on Today. Settings holds the newsletter address, the review reminder, removed topics and sign-out.
 
 ### Today
 - **Pulse brief** (see below): a preview card that opens the brief

@@ -17,6 +17,9 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
 - The API now calls Anthropic, Groq and OpenAI directly (grading, transcription, card rewrites); the `archie`
   service already has the keys.
 - The app needs a new native build for the microphone and notifications: `scripts/install_ios.sh`.
+- **Release order: server first, then the phone build right away.** An older phone build can't store pulled cards
+  without a `source_id` (topic-primer foundation cards and quiz cards), so its pulls stop until the new build is
+  installed (phone migration 0007 re-pulls everything). An older server refuses the new review actions with a 422.
 
 ## Not in code
 

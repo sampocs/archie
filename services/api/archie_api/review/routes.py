@@ -10,7 +10,7 @@ import uuid
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated, Any, TypeVar
 
 import anthropic
 import fastapi
@@ -60,6 +60,8 @@ class _BoundedUploadRoute(APIRoute):
 
         return handle_bounded
 
+
+_Output = TypeVar("_Output", bound=pydantic.BaseModel)
 
 router = fastapi.APIRouter(prefix="/review", tags=["review"])
 _upload_router = fastapi.APIRouter(tags=["review"], route_class=_BoundedUploadRoute)
@@ -130,8 +132,9 @@ def grade(
     # No transaction is held during the model call.
     db.commit()
 
-    completion = _complete_or_502(
+    verdict = _complete_or_502(
         engine,
+        output=_Verdict,
         api_key=api_key,
         context=context,
         models=llm.GRADE_MODELS,
@@ -143,7 +146,6 @@ def grade(
         timeout_seconds=GRADE_TIMEOUT_SECONDS,
         failure="grading failed",
     )
-    verdict = _Verdict.model_validate_json(completion.text)
     missing = "" if verdict.grade == models.ReviewGrade.GOT_IT else verdict.missing
     return GradeView(grade=verdict.grade, missing=missing)
 
@@ -209,8 +211,9 @@ def care(
     # No transaction is held during the model call.
     db.commit()
 
-    completion = _complete_or_502(
+    rewritten = _complete_or_502(
         engine,
+        output=_CareAnswer,
         api_key=api_key,
         context=context,
         models=llm.CARE_MODELS,
@@ -220,7 +223,6 @@ def care(
         json_schema=prompts.CARE_SCHEMA,
         failure="rewrite failed",
     )
-    rewritten = _CareAnswer.model_validate_json(completion.text)
 
     # The card may have been dropped while the model worked, so it is read again under the user's write lock.
     changes.lock_user_writes(db, user.id)
@@ -272,11 +274,15 @@ def _engine(db: orm.Session) -> sqlalchemy.Engine:
     return engine
 
 
-def _complete_or_502(engine: sqlalchemy.Engine, *, failure: str, **options: Any) -> llm.Completion:
-    """`llm.complete`, with any provider or output failure turned into a 502: the phone falls back on any failure."""
+def _complete_or_502(engine: sqlalchemy.Engine, *, output: type[_Output], failure: str, **options: Any) -> _Output:
+    """`llm.complete` parsed as `output`, with any provider, output or validation failure turned into a 502.
+
+    The phone falls back on any failure, so output the schema didn't hold to is the same 502 as a provider error.
+    """
     try:
-        return llm.complete(engine, **options)
-    except (anthropic.APIError, llm.ModelOutputError) as error:
+        completion = llm.complete(engine, **options)
+        return output.model_validate_json(completion.text)
+    except (anthropic.APIError, llm.ModelOutputError, pydantic.ValidationError) as error:
         _logger.warning("%s: %r", failure, error)
         raise fastapi.HTTPException(status_code=502, detail=failure) from error
 

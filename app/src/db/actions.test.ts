@@ -420,6 +420,15 @@ describe("goDeeper", () => {
     expect(sourceById(db, "unread")?.readAt).not.toBeNull();
   });
 
+  it("turns cards back on, as the server's go_deeper does", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "off", cardsOff: 1 });
+
+    goDeeper(db, "off");
+
+    expect(sourceById(db, "off")?.cardsOff).toBe(0);
+  });
+
   it("clears a snooze", () => {
     const db = makeTestDb();
     seedSource(db, { id: "snoozed", snoozedUntil: "2099-01-01T00:00:00Z" });

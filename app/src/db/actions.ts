@@ -300,6 +300,8 @@ export function goDeeper(db: AppDb, sourceId: string): void {
       state: "consumed",
       processing: "processing",
       snoozedUntil: null,
+      // The server's go_deeper turns cards back on, so the phone shows the same before the next pull.
+      cardsOff: 0,
       readAt: sql`coalesce(${schema.sources.readAt}, ${now})`,
     });
     enqueue(tx, "go_deeper", { id: sourceId });

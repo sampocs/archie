@@ -4,7 +4,7 @@ appId: com.sampocs.archie
 # Two queued links, newest on top; dragging the top row's handle down swaps them; a swipe snoozes the new top row.
 - runFlow: login.yaml
 - tapOn:
-    id: "tab-add"
+    id: "library-add"
 # The first tap right after login is sometimes swallowed while the screen settles.
 - runFlow:
     when:
@@ -12,7 +12,7 @@ appId: com.sampocs.archie
         id: "add-url"
     commands:
       - tapOn:
-          id: "tab-add"
+          id: "library-add"
 - extendedWaitUntil:
     visible:
       id: "add-url"
@@ -25,7 +25,7 @@ appId: com.sampocs.archie
 - tapOn:
     id: "add-save"
 - tapOn:
-    id: "tab-add"
+    id: "library-add"
 - extendedWaitUntil:
     visible:
       id: "add-url"

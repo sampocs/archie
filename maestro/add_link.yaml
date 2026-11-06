@@ -2,7 +2,7 @@ appId: com.sampocs.archie
 ---
 - runFlow: login.yaml
 - tapOn:
-    id: "tab-add"
+    id: "library-add"
 # The first tap right after login is sometimes swallowed while the screen settles.
 - runFlow:
     when:
@@ -10,7 +10,7 @@ appId: com.sampocs.archie
         id: "add-url"
     commands:
       - tapOn:
-          id: "tab-add"
+          id: "library-add"
 - extendedWaitUntil:
     visible:
       id: "add-url"

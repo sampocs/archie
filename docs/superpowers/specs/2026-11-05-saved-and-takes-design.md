@@ -1,5 +1,7 @@
 # Saved and Takes: Favorites, Collections, Takes, and a Library ＋
 
+**Status:** Piece 1 (Nav + Favorites) implemented on `saved-nav-favorites` (plan `docs/superpowers/plans/2026-11-05-saved-nav-favorites.md`); migration numbers moved to `0008_favorites` because M6 took 0007.
+
 Three additions and one navigation change, decided in brainstorming on 2026-11-05. Mocks:
 `2026-11-05-saved-and-takes-mocks.html` (screens 01–09). Product background is `2026-10-26-product-scope.md`; where
 the two differ, this spec wins and the scope doc is updated when each piece ships.

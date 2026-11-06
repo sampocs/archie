@@ -114,7 +114,7 @@ def retry_source(db: orm.Session, *, user: models.User, payload: dict[str, objec
 
 def _validate_add_source(db: orm.Session, *, payload: _AddSourcePayload) -> str | None:
     """The reason this add_source can't be applied, or None."""
-    url_reason = _validate_url(payload.url)
+    url_reason = validate_url(payload.url)
     if url_reason is not None:
         return url_reason
 
@@ -141,7 +141,8 @@ def _validate_add_source(db: orm.Session, *, payload: _AddSourcePayload) -> str 
     return None
 
 
-def _validate_url(url: str) -> str | None:
+def validate_url(url: str) -> str | None:
+    """Why `url` can't be stored (too long, not http(s), unparseable), or None."""
     if len(url) > MAX_URL_LENGTH:
         return f"url is longer than {MAX_URL_LENGTH} characters"
 

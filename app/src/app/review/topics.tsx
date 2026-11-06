@@ -11,23 +11,23 @@ import { slugify } from "@/topics/topicName";
 import { GroupedList } from "@/ui/GroupedList";
 import { Kicker } from "@/ui/Kicker";
 
-export default function PractiseTopicScreen() {
+export default function PracticeTopicScreen() {
   const theme = useTheme();
   const router = useRouter();
   const topics = topicPractice(useReviewData());
 
   return (
-    <Screen title="Practise a topic" onBack={router.back}>
+    <Screen title="Practice a topic" onBack={router.back}>
       {topics.length === 0 ? (
-        <Text testID="practise-empty" tone="ink2">
-          No topics have cards to practise yet.
+        <Text testID="practice-empty" tone="ink2">
+          No topics have cards to practice yet.
         </Text>
       ) : (
         <GroupedList>
           {topics.map(({ topic, count }) => (
             <Pressable
               key={topic.id}
-              testID={`practise-topic-${slugify(topic.name)}`}
+              testID={`practice-topic-${slugify(topic.name)}`}
               accessibilityRole="button"
               onPress={() => router.push({ pathname: "/review/session", params: { mode: "topic", id: topic.id } })}
               style={{

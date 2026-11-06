@@ -26,7 +26,7 @@ export function KeepGoing({ aheadCount, aheadBy, onAhead, onTopic }: KeepGoingPr
         </Pressable>
       ) : null}
       <Pressable testID="keep-going-topic" accessibilityRole="button" onPress={onTopic} style={rowStyle}>
-        <Text>Practise a topic ›</Text>
+        <Text>Practice a topic ›</Text>
       </Pressable>
     </GroupedList>
   );

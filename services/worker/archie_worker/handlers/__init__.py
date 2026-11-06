@@ -15,6 +15,7 @@ from archie_worker.handlers import (
     file_topic,
     news_quiz,
     primer,
+    take_cards,
     topic_primer,
     transcribe,
     update_brief,
@@ -60,4 +61,6 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     ),
     # No failure hook: a failed quiz only means no quiz this week.
     models.JobKind.NEWS_QUIZ: HandlerSpec(run=news_quiz.handle),
+    # No failure hook: a take without cards still reads fine.
+    models.JobKind.TAKE_CARDS: HandlerSpec(run=take_cards.handle),
 }

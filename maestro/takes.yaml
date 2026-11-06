@@ -43,7 +43,7 @@ appId: com.sampocs.archie
     timeout: 5000
 - tapOn:
     id: "library-mode-takes"
-- tapOn: "Maestro takes flow"
+- tapOn: ".*Maestro takes flow.*"
 - assertVisible:
     id: "take-page"
 - assertVisible:
@@ -87,5 +87,5 @@ appId: com.sampocs.archie
     id: "take-menu-delete"
 - tapOn: "Delete"
 - extendedWaitUntil:
-    notVisible: "Maestro takes flow"
+    notVisible: ".*Maestro takes flow.*"
     timeout: 5000

@@ -1,11 +1,19 @@
-import type { Intent, Reaction } from "@/capture/types";
+import type { CollectionPick, Intent, Reaction } from "@/capture/types";
 
 import { decodeShareParam } from "./submit";
 
 const INTENTS: readonly string[] = ["finished", "queue"] satisfies Intent[];
 const REACTIONS: readonly string[] = ["easy", "mostly", "lost"] satisfies Reaction[];
 
-export type ShareParams = { url?: string; intent?: string; reaction?: string; note?: string; queue_primer?: string };
+export type ShareParams = {
+  url?: string;
+  intent?: string;
+  reaction?: string;
+  note?: string;
+  queue_primer?: string;
+  collection?: string;
+  collection_name?: string;
+};
 
 export type SharedSource = {
   url: string;
@@ -30,4 +38,15 @@ export function sharedSourceFromParams(params: ShareParams): SharedSource | null
     note: isFinished && note ? decodeShareParam(note) : null,
     queuePrimer: !isFinished && queuePrimer === "1",
   };
+}
+
+/** A link to save into a collection (`intent=collection`): an existing collection's id, or a new one's name. */
+export function sharedCollectionItemFromParams(params: ShareParams): { url: string; pick: CollectionPick } | null {
+  const { url, intent, collection, collection_name: collectionName } = params;
+  if (!url || intent !== "collection") return null;
+
+  const name = collectionName ? decodeShareParam(collectionName).trim() : "";
+  if (collection && !name) return { url: decodeShareParam(url), pick: { kind: "existing", id: collection } };
+  if (name && !collection) return { url: decodeShareParam(url), pick: { kind: "new", name } };
+  return null;
 }

@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import { ScrollView, View } from "react-native";
 
 import { readSharedSessionKey } from "@/auth/keychain";
+import { canSaveToCollection, resolveCollectionPick } from "@/capture/collectionChoice";
 import { CaptureOptions } from "@/capture/CaptureOptions";
-import { CaptureChoice, EMPTY_CHOICE } from "@/capture/types";
+import { CollectionChips } from "@/capture/CollectionChips";
+import { CaptureChoice, CollectionPick, EMPTY_CHOICE } from "@/capture/types";
+import { readLastCollectionId, readSharedCollections, writeLastCollectionId } from "@/collections/sharedCollections";
+import type { SharedCollection } from "@/collections/sharedCollectionsFormat";
 import { Button } from "@/theme/components/Button";
 import { Text } from "@/theme/components/Text";
 import { FontScalingContext } from "@/theme/fontScaling";
@@ -13,7 +17,7 @@ import { fontAssets } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 
 import { resolveShare } from "./resolveShare";
-import { buildShareAction, shareDeepLink, submitShare } from "./submit";
+import { buildCollectionShareActions, buildShareAction, shareDeepLink, submitShare } from "./submit";
 
 type Phase =
   | { name: "editing" }
@@ -28,11 +32,28 @@ export function ShareSheet(props: InitialProps) {
   const theme = useTheme();
   const { url, title, capture } = resolveShare(props);
   const [choice, setChoice] = useState<CaptureChoice>(EMPTY_CHOICE);
+  const [collections, setCollections] = useState<SharedCollection[]>([]);
+  const [lastUsedId, setLastUsedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>({ name: "editing" });
 
   // Wait for Geist (or its failure) before drawing, as the root layout does, so the sheet doesn't
   // flash the system font.
   const [fontsLoaded, fontError] = useFonts(fontAssets);
+
+  // The app mirrors its collection list into the shared Keychain; unreadable means no collections yet.
+  useEffect(() => {
+    readSharedCollections()
+      .catch(() => [])
+      .then(setCollections);
+    readLastCollectionId()
+      .catch(() => null)
+      .then(setLastUsedId);
+  }, []);
+
+  const shownPick = resolveCollectionPick(choice.collection, collections, lastUsedId);
+  const canSave = choice.intent === "collection"
+    ? canSaveToCollection(shownPick, { asksForName: false })
+    : choice.intent !== null;
 
   useEffect(() => {
     if (phase.name !== "saved") return;
@@ -41,11 +62,20 @@ export function ShareSheet(props: InitialProps) {
   }, [phase.name]);
 
   async function save(): Promise<void> {
-    if (!url || !choice.intent) return;
+    if (!url || !choice.intent || !canSave) return;
     setPhase({ name: "saving" });
 
     try {
-      const outcome = await submitShare(buildShareAction({ url, choice, capture }), await readSharedSessionKey());
+      const sessionKey = await readSharedSessionKey();
+      if (choice.intent === "collection") {
+        const { actions, collectionId } = buildCollectionShareActions({ url, pick: shownPick });
+        const collectionOutcome = await submitShare(actions, sessionKey);
+        if (collectionOutcome === "saved") void writeLastCollectionId(collectionId).catch(() => undefined);
+        setPhase(collectionOutcome === "saved" ? { name: "saved" } : { name: "unreachable" });
+        return;
+      }
+
+      const outcome = await submitShare([buildShareAction({ url, choice, capture })], sessionKey);
       setPhase(outcome === "saved" ? { name: "saved" } : { name: "unreachable" });
     } catch (error) {
       setPhase({ name: "rejected", reason: error instanceof Error ? error.message : String(error) });
@@ -62,10 +92,10 @@ export function ShareSheet(props: InitialProps) {
       >
         {url ? (
           <ShareBody
-            {...{ url, title, choice, phase }}
+            {...{ url, title, choice, phase, collections, shownPick, canSave }}
             onChange={setChoice}
             onSave={save}
-            onOpenArchie={() => openHostApp(shareDeepLink({ url, choice }))}
+            onOpenArchie={() => openHostApp(shareDeepLink({ url, choice: { ...choice, collection: shownPick } }))}
           />
         ) : (
           <View style={{ gap: theme.spacing.lg }}>
@@ -83,12 +113,26 @@ type ShareBodyProps = {
   title: string | null;
   choice: CaptureChoice;
   phase: Phase;
+  collections: SharedCollection[];
+  shownPick: CollectionPick;
+  canSave: boolean;
   onChange: (choice: CaptureChoice) => void;
   onSave: () => void;
   onOpenArchie: () => void;
 };
 
-function ShareBody({ url, title, choice, phase, onChange, onSave, onOpenArchie }: ShareBodyProps) {
+function ShareBody({
+  url,
+  title,
+  choice,
+  phase,
+  collections,
+  shownPick,
+  canSave,
+  onChange,
+  onSave,
+  onOpenArchie,
+}: ShareBodyProps) {
   const theme = useTheme();
 
   if (phase.name === "saved") {
@@ -126,7 +170,17 @@ function ShareBody({ url, title, choice, phase, onChange, onSave, onOpenArchie }
       </View>
 
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: theme.spacing.lg }}>
-        <CaptureOptions value={choice} onChange={onChange} />
+        <CaptureOptions
+          value={choice}
+          onChange={onChange}
+          collectionPicker={
+            <CollectionChips
+              collections={collections}
+              pick={shownPick}
+              onPick={(collection) => onChange({ ...choice, collection })}
+            />
+          }
+        />
       </ScrollView>
 
       {phase.name === "rejected" && (
@@ -134,7 +188,7 @@ function ShareBody({ url, title, choice, phase, onChange, onSave, onOpenArchie }
           {phase.reason}
         </Text>
       )}
-      <Button label={busy ? "Saving…" : "Save"} disabled={busy || !choice.intent} onPress={onSave} />
+      <Button label={busy ? "Saving…" : "Save"} disabled={busy || !canSave} onPress={onSave} />
       <Button label="Cancel" variant="secondary" onPress={close} />
     </>
   );

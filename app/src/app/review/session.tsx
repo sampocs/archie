@@ -19,7 +19,7 @@ import { DoneView } from "@/review/session/DoneView";
 import { GradedCard, GradingCard } from "@/review/session/GradedCard";
 import { QuestionCard } from "@/review/session/QuestionCard";
 import { SelfGradeCard } from "@/review/session/SelfGradeCard";
-import { appendTranscript, isOffline, nextLiveIndex, sessionModeOf } from "@/review/sessionFlow";
+import { appendTranscript, isOffline, micVisible, nextLiveIndex, sessionModeOf } from "@/review/sessionFlow";
 import { gradedCount, tallyOf, type TallyEntry } from "@/review/tally";
 import type { CardRow, ReviewGrade } from "@/review/types";
 import { useGrader } from "@/review/useGrader";
@@ -224,7 +224,7 @@ function CardStep({ card, wasDue, data, sessionKey, online, onGraded, onNext, on
           onChangeText={setAnswer}
           onSubmit={() => void submit(answer)}
           onDrop={onDrop}
-          showMic={online}
+          showMic={micVisible(online, recorder.status)}
           micStatus={recorder.status}
           onMic={recorder.toggle}
         />

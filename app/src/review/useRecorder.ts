@@ -45,8 +45,14 @@ export function useRecorder({ cardId, sessionKey, onText, onError }: RecorderArg
       mounted.current = false;
       clearTimeout(stopTimer.current);
       if (statusRef.current === "recording") void recorder.stop().catch(() => {});
+      void leaveRecordingMode();
     };
   }, [recorder]);
+
+  // Back to playback routing, so other sounds don't come out of the earpiece. Best effort: nothing to tell the user.
+  function leaveRecordingMode(): Promise<void> {
+    return setAudioModeAsync({ allowsRecording: false }).catch(() => {});
+  }
 
   async function start(): Promise<void> {
     const permission = await AudioModule.requestRecordingPermissionsAsync();
@@ -57,11 +63,14 @@ export function useRecorder({ cardId, sessionKey, onText, onError }: RecorderArg
 
     await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
     await recorder.prepareToRecordAsync();
-    if (!mounted.current) return;
+    if (!mounted.current) {
+      await leaveRecordingMode();
+      return;
+    }
     recorder.record();
     startedAt.current = Date.now();
     moveTo("recording");
-    stopTimer.current = setTimeout(() => void stop(), MAX_RECORDING_MS);
+    stopTimer.current = setTimeout(() => runStop(), MAX_RECORDING_MS);
   }
 
   async function stop(): Promise<void> {
@@ -70,7 +79,6 @@ export function useRecorder({ cardId, sessionKey, onText, onError }: RecorderArg
     moveTo("transcribing");
 
     await recorder.stop();
-    // Back to playback routing, so other sounds don't come out of the earpiece.
     await setAudioModeAsync({ allowsRecording: false });
     const text = await transcribe(recorder.uri, uploadDurationMs(Date.now() - startedAt.current));
 
@@ -93,22 +101,31 @@ export function useRecorder({ cardId, sessionKey, onText, onError }: RecorderArg
     return typeof text === "string" ? text : null;
   }
 
+  // The auto-stop timer and the tap share this boundary: a recorder that fails to stop must not strand "transcribing".
+  function runStop(): Promise<void> {
+    return stop().catch(() => {
+      moveTo("idle");
+      if (mounted.current) callbacks.current.onError(TRANSCRIBE_FAILED_MESSAGE);
+    });
+  }
+
   function toggle(): void {
     if (statusRef.current === "transcribing" || starting.current) return;
     const recording = statusRef.current === "recording";
     // A second tap while the permission prompt is up must not start a second recording.
     starting.current = !recording;
-    const action = recording ? stop() : start();
-
     // A recorder that fails to start or stop leaves the box as it was; the user can still type.
-    void action
-      .catch(() => {
-        moveTo("idle");
-        if (mounted.current) callbacks.current.onError(TRANSCRIBE_FAILED_MESSAGE);
-      })
-      .finally(() => {
-        if (!recording) starting.current = false;
-      });
+    const action = recording
+      ? runStop()
+      : start()
+          .catch(() => {
+            moveTo("idle");
+            if (mounted.current) callbacks.current.onError(TRANSCRIBE_FAILED_MESSAGE);
+          })
+          .finally(() => {
+            starting.current = false;
+          });
+    void action;
   }
 
   return { status, toggle };

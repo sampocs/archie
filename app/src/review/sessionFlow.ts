@@ -42,20 +42,25 @@ export function parseVerdict(body: unknown): Verdict | null {
 }
 
 /**
- * Runs the grading call, aborting it after `timeoutMs`. Null on timeout, failure or a malformed body; a response
- * that lands after the timeout is ignored, since the session has already moved to self-grading.
+ * Runs the grading call, aborting it after `timeoutMs` or when `outer` aborts (the card was left). Null on timeout,
+ * abort, failure or a malformed body; a response that lands after either is ignored, since the session has already
+ * moved on.
  */
 export async function gradeWithin(
   call: (signal: AbortSignal) => Promise<unknown>,
   timeoutMs: number,
+  outer?: AbortSignal,
 ): Promise<Verdict | null> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const timeout = new Promise<null>((resolve) => {
-    timer = setTimeout(() => {
+    const giveUp = (): void => {
       controller.abort();
       resolve(null);
-    }, timeoutMs);
+    };
+    timer = setTimeout(giveUp, timeoutMs);
+    if (outer?.aborted) giveUp();
+    else outer?.addEventListener("abort", giveUp, { once: true });
   });
   const attempt = call(controller.signal).then(parseVerdict, () => null);
 
@@ -64,6 +69,14 @@ export async function gradeWithin(
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Whether the 🎙 button shows. Offline it is hidden only while idle: a recording or transcription already under way
+ * keeps its button, so the user can still stop it if the network drops mid-answer.
+ */
+export function micVisible(online: boolean, status: "idle" | "recording" | "transcribing"): boolean {
+  return online || status !== "idle";
 }
 
 /** The review a grade records: the model's missing line only for partly/missed, never for a self-grade. */

@@ -6,6 +6,7 @@ describe("chooseIntent", () => {
     reaction: "easy" as const,
     note: "good",
     queuePrimer: true,
+    collection: null,
   };
 
   it("clears reaction, note and queuePrimer when the intent changes", () => {

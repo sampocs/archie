@@ -25,12 +25,14 @@ type ScreenProps = {
   // Pinned between the header and the scrolling content, e.g. a reading-progress bar.
   subheader?: ReactNode;
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  // Presented as a modal sheet: the sheet already sits below the status bar, so no top safe-area inset.
+  sheet?: boolean;
 };
 
 // Enough scroll events for a smooth progress bar without re-rendering on every frame.
 const SCROLL_EVENT_THROTTLE_MS = 32;
 
-export function Screen({ title, children, headerRight, onBack, footer, subheader, onScroll }: ScreenProps) {
+export function Screen({ title, children, headerRight, onBack, footer, subheader, onScroll, sheet }: ScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarInset = useContext(TabBarInsetContext);
@@ -41,7 +43,7 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
     <KeyboardAvoidingView
       behavior="padding"
       enabled={footer !== undefined}
-      style={[styles.root, { backgroundColor: theme.colors.bg, paddingTop: insets.top }]}
+      style={[styles.root, { backgroundColor: theme.colors.bg, paddingTop: sheet ? theme.spacing.md : insets.top }]}
     >
       <View style={[styles.header, { paddingHorizontal: theme.spacing.gutterText }]}>
         <View style={styles.titleGroup}>

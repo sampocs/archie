@@ -14,12 +14,10 @@ import { useTheme } from "@/theme/useTheme";
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const TAB_BAR_HEIGHT = 49;
-const ADD_BUTTON_SIZE = 46;
 
 const TABS: { name: string; title: string; icon: IconName }[] = [
   { name: "today", title: "Today", icon: "sunny-outline" },
   { name: "library", title: "Library", icon: "library-outline" },
-  { name: "add", title: "", icon: "add" },
   { name: "review", title: "Review", icon: "refresh-circle-outline" },
   { name: "ask", title: "Ask", icon: "chatbubble-outline" },
 ];
@@ -42,26 +40,6 @@ function SyncStatusLine() {
           Offline · {waiting} {waiting === 1 ? "change" : "changes"} waiting
         </Text>
       </View>
-    </View>
-  );
-}
-
-// The middle tab: a filled chrome circle (inverts in dark mode) with the + in the on-chrome color, no label.
-function AddCircle() {
-  const theme = useTheme();
-
-  return (
-    <View
-      style={{
-        width: ADD_BUTTON_SIZE,
-        height: ADD_BUTTON_SIZE,
-        borderRadius: ADD_BUTTON_SIZE / 2,
-        backgroundColor: theme.colors.chrome,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Ionicons name="add" size={30} color={theme.colors.onChrome} />
     </View>
   );
 }
@@ -97,9 +75,7 @@ export default function TabsLayout() {
               options={{
                 title: tab.title,
                 tabBarButtonTestID: `tab-${tab.name}`,
-                ...(tab.name === "add"
-                  ? { tabBarLabel: () => null, tabBarIcon: () => <AddCircle />, tabBarAccessibilityLabel: "Add" }
-                  : { tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size} color={color as string} /> }),
+                tabBarIcon: ({ color, size }) => <Ionicons name={tab.icon} size={size} color={color as string} />,
               }}
             />
           ))}

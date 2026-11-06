@@ -54,10 +54,13 @@ appId: com.sampocs.archie
 # The row's title becomes "Example Domain" once fetched and its meta has no host, so match the row by id.
 - assertVisible:
     id: "favorite-row-.*"
+# A swipe from the row element doesn't open it on this page (the gesture never reaches the swipeable), so swipe the
+# first row by screen position.
+- waitForAnimationToEnd
 - swipe:
-    from:
-      id: "favorite-row-.*"
-    direction: LEFT
+    start: "80%, 24%"
+    end: "10%, 24%"
+    duration: 800
 - tapOn:
     id: "favorite-unstar-.*"
 - assertVisible: "No favorites in Other yet."

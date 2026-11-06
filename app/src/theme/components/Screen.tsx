@@ -71,8 +71,6 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
         keyboardShouldPersistTaps="handled"
         // Dragging the page puts the keyboard away, so controls under it (like the take editor's switch) are reachable.
         keyboardDismissMode="on-drag"
-        // Dragging the page puts the keyboard away, so controls under it (like the take editor's switch) are reachable.
-        keyboardDismissMode="on-drag"
         // Scrolls a focused field (search, adding a topic) above the keyboard.
         automaticallyAdjustKeyboardInsets
       >

@@ -14,15 +14,22 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Any
 
-from archie_db import models
+import pydantic
+from archie_db import card_rows, models
+from archie_shared import logging
 from archie_shared.domains import Domain
 
 from archie_worker import content, timestamps
 
 ANALYZE_PROMPT_VERSION = "analyze-v2"
-PRIMER_PROMPT_VERSION = "primer-v1"
-TOPIC_PRIMER_PROMPT_VERSION = "topic-primer-v1"
+PRIMER_PROMPT_VERSION = "primer-v2"
+TOPIC_PRIMER_PROMPT_VERSION = "topic-primer-v2"
 CLEAN_TEXT_PROMPT_VERSION = "clean-text-v1"
+
+# A primer's foundation cards beyond this many are dropped.
+MAX_FOUNDATION_CARDS = 3
+
+_logger = logging.get_logger(logging.LoggerName.WORKER, "prompts")
 
 # The model never sees more than this many characters of the source's text; timed text carries markers, so it gets more.
 MAX_TEXT_CHARACTERS = 200_000
@@ -76,12 +83,20 @@ segment gets cards for that segment; still 3-5. When is_educational is false, ca
 
 {READING_VOICE}"""
 
+FOUNDATION_CARDS_INSTRUCTIONS = """After the primer, add 2-3 foundation review cards: the background ideas this primer \
+teaches that are worth remembering on their own (a core concept, how something works, a rough number). Each is one \
+focused open-recall question, never a compound one, and an answer of 1-3 sentences. Write them after the primer's \
+last line as a JSON array of {"question": "...", "answer": "..."} objects between <foundation_cards> and \
+</foundation_cards>, with nothing after the closing tag."""
+
 PRIMER_SYSTEM = f"""You write primers for a personal learning app. A primer gives the background a source assumes its \
 reader already has, so the source is easy to follow. It is not a summary of the source.
 
 Read the text, work out which concepts, players, history, and numbers the author takes for granted, and explain those. \
 Write for a smart beginner: friendly, no assumed jargon, a 5-8 minute read (roughly 900-1400 words). Use markdown with \
 short sections and a title. Don't reveal the source's own conclusions or story beats.
+
+{FOUNDATION_CARDS_INSTRUCTIONS}
 
 {READING_VOICE}"""
 
@@ -94,7 +109,77 @@ The user lists the titles of their own sources on the topic. Use them only to de
 material to summarize. Write for a smart beginner: friendly, no assumed jargon, a 5-8 minute read (roughly 900-1400 \
 words). Use markdown with short sections and a title.
 
+{FOUNDATION_CARDS_INSTRUCTIONS}
+
 {READING_VOICE}"""
+
+
+class FoundationCard(pydantic.BaseModel):
+    """One foundation card the model wrote after a primer."""
+
+    question: str = pydantic.Field(min_length=1)
+    answer: str = pydantic.Field(min_length=1)
+
+
+@dataclass(frozen=True)
+class PrimerOutput:
+    """A primer's markdown, with the foundation cards written after it split off."""
+
+    markdown: str
+    foundation_cards: list[FoundationCard]
+
+
+_FOUNDATION_CARDS_OPEN = "<foundation_cards>"
+_FOUNDATION_CARDS_CLOSE = "</foundation_cards>"
+_FOUNDATION_CARDS: pydantic.TypeAdapter[list[FoundationCard]] = pydantic.TypeAdapter(list[FoundationCard])
+
+
+def split_primer_output(text: str) -> PrimerOutput:
+    """The primer's markdown and the foundation cards written after it.
+
+    The block is the LAST opening tag with a closing tag after it: a tag quoted earlier in the primer stays in the
+    markdown, and any text the model adds after the closing tag is dropped. A primer without such a block (older
+    recordings, or a model that left it out) keeps its text whole and has no cards; a malformed block costs the
+    cards, never the primer.
+    """
+    open_index = text.rfind(_FOUNDATION_CARDS_OPEN)
+    if open_index == -1:
+        return PrimerOutput(markdown=text, foundation_cards=[])
+
+    cards_start = open_index + len(_FOUNDATION_CARDS_OPEN)
+    close_index = text.find(_FOUNDATION_CARDS_CLOSE, cards_start)
+    if close_index == -1:
+        return PrimerOutput(markdown=text, foundation_cards=[])
+
+    markdown = text[:open_index].rstrip()
+    try:
+        cards = _FOUNDATION_CARDS.validate_json(text[cards_start:close_index])
+    except pydantic.ValidationError:
+        _logger.warning("Dropped a malformed foundation cards block")
+        return PrimerOutput(markdown=markdown, foundation_cards=[])
+    return PrimerOutput(markdown=markdown, foundation_cards=cards[:MAX_FOUNDATION_CARDS])
+
+
+def preferences_block(notes: Sequence[card_rows.PreferenceNote]) -> str:
+    """The user's latest card preferences as a block appended to a card-writing step's message; "" when there are none.
+
+    `notes` keep their order, so the newest stays first as `card_rows.recent_preferences` returns them.
+    """
+    if not notes:
+        return ""
+
+    lines = [
+        f"- cares about: {note.note}"
+        if note.kind == models.CardPreferenceKind.CARE
+        else f"- doesn't want cards like: {note.note}"
+        for note in notes
+    ]
+    joined = "\n".join(lines)
+    return (
+        "\n\n<card_preferences>\nWhat the user told Archie about earlier review cards; follow it when writing cards:\n"
+        f"{joined}\n</card_preferences>"
+    )
+
 
 CARD_KINDS = [models.CardKind.CONCEPT.value, models.CardKind.MECHANISM.value, models.CardKind.NUMBER.value]
 
@@ -410,3 +495,54 @@ def brief_message(*, newsletters: Sequence[BriefNewsletter], live_topics: Sequen
         for newsletter in newsletters
     )
     return f"Domains: {domain_names}\n\nThe user's topics (domain › name):\n{topics}\n\n{issues}"
+
+
+NEWS_QUIZ_SYSTEM = f"""You write a weekly news quiz for a personal learning app: short open-recall cards on the \
+week's most important news stories, so the user remembers what happened and why it matters.
+
+You get numbered stories (headline, what happened, why it matters, detail). Write exactly one card per story, in the \
+order given: one focused question about the core of the story (what happened, or why it matters), never trivia like \
+exact dates or a minor name, and an answer of 1-2 sentences. Give each card the story's number as story_index.
+
+{READING_VOICE}"""
+
+NEWS_QUIZ_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "cards": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "story_index": {"type": "integer"},
+                    "question": {"type": "string"},
+                    "answer": {"type": "string"},
+                },
+                "required": ["story_index", "question", "answer"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["cards"],
+    "additionalProperties": False,
+}
+
+
+@dataclass(frozen=True)
+class QuizStory:
+    """One story the quiz is written from; `index` is its 1-based number in the message."""
+
+    index: int
+    headline: str
+    body: str
+    why: str
+    detail: str
+
+
+def news_quiz_message(stories: Sequence[QuizStory]) -> str:
+    """The numbered stories, each with its headline, what happened, why it matters and detail."""
+    return "\n\n".join(
+        f"Story {story.index}\nHeadline: {story.headline}\nWhat happened: {story.body}\n"
+        f"Why it matters: {story.why}\nDetail: {story.detail}"
+        for story in stories
+    )

@@ -187,10 +187,16 @@ interactions:
       history, and numbers the author takes for granted, and explain those. Write
       for a smart beginner: friendly, no assumed jargon, a 5-8 minute read (roughly
       900-1400 words). Use markdown with short sections and a title. Don't reveal
-      the source's own conclusions or story beats.\\n\\nWrite in plain, conversational
-      English for a smart reader who is new to the subject. Short sentences. Define
-      any jargon the first time it appears. Prefer concrete examples and rough numbers
-      (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\"}"
+      the source's own conclusions or story beats.\\n\\nAfter the primer, add 2-3
+      foundation review cards: the background ideas this primer teaches that are worth
+      remembering on their own (a core concept, how something works, a rough number).
+      Each is one focused open-recall question, never a compound one, and an answer
+      of 1-3 sentences. Write them after the primer's last line as a JSON array of
+      {\\\"question\\\": \\\"...\\\", \\\"answer\\\": \\\"...\\\"} objects between
+      <foundation_cards> and </foundation_cards>, with nothing after the closing tag.\\n\\nWrite
+      in plain, conversational English for a smart reader who is new to the subject.
+      Short sentences. Define any jargon the first time it appears. Prefer concrete
+      examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\"}"
     headers:
       accept:
       - application/json
@@ -201,7 +207,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '14885'
+      - '15371'
       content-type:
       - application/json
       host:
@@ -232,148 +238,166 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-sonnet-5-5","id":"msg_011CggtTAXtFy5owXhN3GN2B","type":"message","role":"assistant","content":[{"type":"text","text":"#
-        Primer: Background for \"How to Do Great Work\"\n\n## What this essay is,
-        and who wrote it\n\nPaul Graham is a programmer, essayist, and investor. In
-        2005 he co-founded Y Combinator, a startup \"accelerator.\" It funds very
-        young companies and coaches the founders. Companies that came through it include
-        Airbnb, Dropbox, and Stripe. Over about two decades Graham watched thousands
-        of ambitious people try to build something new, and he has written plainly
-        about it ever since.\n\nThis essay is a piece of advice, not a research paper.
-        It''s a personal synthesis, so expect confident claims drawn from observation
-        and from reading about famous people, not from experiments. You''re getting
-        one smart person''s pattern-matching. That is useful, but it isn''t proof.\n\n##
-        The setup: \"the intersection\"\n\nGraham opens with an idea from set theory.
-        If you gather several lists and keep only the items that appear on all of
-        them, you get their *intersection*. Picture lists of tips from painters, physicists,
-        novelists, and mathematicians. The intersection is whatever advice holds true
-        in every field.\n\nHe asks whether that overlap would be empty, or would just
-        say \"work hard.\" His claim is that it has a real structure. The rest of
-        the essay is his attempt to describe it.\n\nHe also states a premise early:
-        the advice assumes you''re *very ambitious*. It isn''t aimed at someone who
-        wants a comfortable career. It''s aimed at someone who wants to do work that
-        other people in the field remember.\n\n## Terms and ideas worth knowing\n\n**\"Great
-        work.\"** The essay doesn''t define this tightly. Think of work that changes
-        a field, such as a major scientific discovery, a landmark book, or a new kind
-        of company. Keep that scale in mind and the advice will make more sense.\n\n**The
-        frontier of knowledge.** Any field has a body of settled knowledge and an
-        edge where questions are still open. Researchers call that edge the *frontier*.
-        The essay''s central picture is that you learn enough to reach the edge, and
-        then you look for unexplored spots there.\n\n**Fractal.** A fractal is a shape
-        that stays complex however closely you zoom in. A coastline is the standard
-        example. From a plane it looks like a smooth curve, but on foot it''s all
-        inlets and rocks, and each inlet has smaller ones. Graham uses this as a metaphor
-        for knowledge. From far away a subject looks finished. Up close it''s full
-        of gaps, and some of those gaps open into whole new areas. He calls such an
-        opening a \"bud,\" like a new branch growing from a stem.\n\n**Natural selection.**
-        Graham mentions Darwin''s theory as an example of a discovery nobody could
-        have planned in advance. The theory explains how species change over time
-        because individuals that fit their environment tend to leave more offspring.
-        You don''t need more than that here. The point is that Darwin couldn''t have
-        said as a child, \"I will discover natural selection.\"\n\n**Aptitude vs.
-        interest.** *Aptitude* means a natural knack, meaning you pick something up
-        faster than most people. *Interest* means you find it absorbing. The essay
-        says you need both, and it treats them as separate things.\n\n## Metaphors
-        you''ll meet\n\nThe essay borrows several images, and knowing them helps.\n\n-
-        **Sailing.** Graham uses a long sailing metaphor. A sailboat doesn''t go straight
-        to its goal. Wind, currents, and hidden rocks (*shoals*) force the sailor
-        to adjust constantly. He calls his strategy \"staying upwind.\" In sailing,
-        if you stay on the upwind side of your target, you keep the option to move
-        toward it from any direction. If you drift downwind, you lose options. The
-        essay applies this to careers: keep your options open instead of committing
-        to a fixed plan.\n- **Invariants.** In programming and math, an *invariant*
-        is something you keep true while everything else changes. Here it means a
-        few rules you hold to, such as \"stay excited\" and \"stay ambitious,\" instead
-        of a step-by-step plan.\n- **Activation energy.** In chemistry this is the
-        push a reaction needs to get started, even when the reaction releases energy
-        afterward. Graham uses it for the way starting a task feels harder than continuing
-        it.\n- **Engine and rudder.** The engine pushes you forward and the rudder
-        steers. He says curiosity does both.\n\n## A few background points the author
-        assumes\n\n**How schooling works.** The essay criticizes education systems
-        for asking teenagers to pick a track early. Examples are choosing a university
-        major, selecting exam subjects, or applying to a specialized program. Graham''s
-        point is that most people can''t know at 16 or 18 what a field is really like.
-        If you haven''t seen this firsthand, the complaint may seem odd. In the US,
-        students usually choose a major in their first or second year of college.
-        In many other countries the choice comes earlier and is harder to reverse.\n\n**What
-        mathematicians actually do.** Graham says high school math is very different
-        from real mathematics. In school you learn known procedures and apply them.
-        Professional mathematicians spend their time proving new statements and working
-        on unsolved problems. The contrast is meant to show that you can''t judge
-        a field from the school version of it.\n\n**Two kinds of procrastination.**
-        He distinguishes putting off today''s work from putting off an entire life
-        project for years. You don''t need prior knowledge for this, but notice that
-        he thinks the second kind is more serious and harder to spot.\n\n**Biography
-        as evidence.** He often says \"when you read biographies of people who''ve
-        done great work.\" His evidence comes largely from the life stories of famous
-        scientists, artists, and founders. That means his sample is people who succeeded
-        and became well known. Keep that in mind, because it leaves out people who
-        followed the same habits and didn''t get far. It''s a fair caveat to hold
-        while reading, not a reason to dismiss him.\n\n## The endnotes\n\nThe numbers
-        in square brackets, like [1] and [2], point to endnotes. The text you''ve
-        been given doesn''t include them. The main essay still reads fine on its own.\n\n##
-        What to watch for as you read\n\nHere are some questions to hold in mind:\n\n1.
-        **Where is the advice general, and where is it specific?** Graham claims it
-        applies to any field. Test that against fields you know.\n2. **What does he
-        treat as obvious, and what does he argue for?** He argues for following your
-        interests. He mostly just asserts that hard work is necessary, comparing the
-        evidence to the evidence that people die.\n3. **How much of the advice is
-        about psychology?** Much of it concerns motivation, such as tricking yourself
-        into starting, keeping excitement alive, and avoiding distraction, and less
-        of it concerns technique.\n4. **What would count as a counterexample?** For
-        instance, are there people who planned their careers carefully and still did
-        great work? Notice how he handles that case when he says planning works only
-        for goals \"you can describe in advance.\"\n\nRead it as a long, opinionated
-        field guide. You don''t have to agree with all of it, but you''ll get more
-        from it if you notice which claims he''s treating as settled and which he''s
-        offering as his best guess."}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":4446,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2207,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-sonnet-5-5","id":"msg_011CgkkVfvc4WGtGzeQvHNSP","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQS8QwKEAgTGAI4AUIIdGhpbmtpbmcSDKuXA1pjrdKdWMDtQBoME0oV6cJyzj7rnNlZIjCbPim6y4TMAaZdyhjfjt//dR+X9/QJYbk69Fz2o+j8rAomLd0GlaQhTx0MdO6tQ68qjgwzOlihS3345s5Sn2aM+ovRwa9wF6JP+DMSnYxL3haOf9dOIYYQZde1CrYytta/XgwPS1MDSK4nOvOrK7YBMTINbHhdF4XCUK465CsIYEQQ+c6ay/ndPEVEsHB49egk4C923WC4SQ3PENIEHJB7Y9zNWiKGY2ki3EyopRGOX+a6DLAg8hzBrdEWb8MzbaQr+pZRgPaoLto7dww2/7wTZaxctGuaZPqucoSVRgDyUtl169FvN/EQdyr92lCQAmzqfFUhpmqRDIAIiyOGNVLDx7VkPtkQ26h0/f5BPOwoy3AQ/0k9l6KL3DAMQpOwJJhiEvkh6PGTa/sHOhEB+HSeTtcztZAE+f9eKyNvh+rBbXTMfdjLUgbnyJnBizZsuE8mk5m3a6s2qwmE+zCUjj2yWgF1kjyy9bLKIQb/xPghxFM9GEXZfugiiRUwhN+k1MRcZUG+EIYH8cijb2Jj2hSDjd23Oej+D0pZxFxfbYMQno948j+Pz8HezTLsXzDQFLfXMfNEbyT3AdT9H16Y7+Srhikng4Io1plPbIUAFnb3F44VCQeC1B9xIVfkmmqYiwylES1/UAed+6BjZflTEcMaLNKlyg3FtcYNqgqrd0sb3vKqYAaWzzAw7NYp74I1CyFf8almhcUFgXgfEVnyFIWfkdf43ij0fD+3u80l71qam57Gl8f4btRhVEz35q0DhVh8RroNuWP6P3E3GWXI9eNtG0tCiv/Qx6Id7WcY6d6CwHoyDf8R9ihUZSsnVeIsyvd7ugweWquE7pNavsww5UuxMlCm0WgM80MAC+CMprQNn8VdrHDuIaVbKOnXfQrHUNS438oaK4GslHUU+GVM4xAR29/igVvpnjQxduDKkeldMcilb+SDPeYzF4/gFkspSxdM22xg8uBRhNu4KT07t9O6LXK3I74Me4VNlBIxWwSOd4v42kxof9QAX0xit6XoqkH70BD9yQL7Ua15aA8AevsJo17pbqsWXW5bf0WMNnP3ml+Lb/s2UkVIPh72IsQCeaeQ/aLvvcYtqQnRfY2OMKO1Yl0u9mQH00cWEHmYSYccVUKgfczqKbCYymKdYqADS9uPARPOdZ7hUMxW9BWxoAsE6hWz47wUvf35oyieRnngm6dzJJwpPJAVXo+Bm4dDCeE96QT1qYkAG4IrMr7Jh6yu7c6HuuYwI5aThn+Ad6RGw00w+TKW3v5oJsU5DAIhlda8wyp5W0RpHJyLANERHxQU8IxyDkUqIIdZXrYyvUXBeOYN38X9LXJRVRyhBox40RaBm8H8q0UOkC220asTOYeRMFUF22thhYr6R9FSenMynfwjoiJxYGtvbVX7v85vS370Po3maCEPGHoIuTDndWyjKBCvbPSlery88w/IwHcp5EOlA7CjJ2eNA3RQLMteBL5D8gyZZavmQkONdHrBZu9EBv/hOB47k7ZOu/Yne47vr+RLN6BMTnuN5+Z+Uppb5zDUGv4kyaPL8wO5HjQBYEWh1hnv9nN9B/cIISumyFWm15//xqUvP33NK6Cf1HVvp+84MaQ/Kb2liBQPX0y+/3tRw3VHBqzDuBuep1hSXJM01N5AjmYPWzVsU0l/WAKeNXQOtaGX1TeQC9+2j3djCo5V8cUTLb5F+Vc/cjwmvnZ+zasqOidO8hpl1Xs2BSCi51v8VbMX6yJ2HvbpWCUStJKIDhsgSTiFAPtTsxDsbzwYsSCnzRy45sKbM905vtWSjWz0D98E4DDQ2CjKQcgMyIJIPp1/AxQ43uQ7WHhaoaU1QVYQl6FRQ/KzCP87vabc6ETs2+0mS3WBStdx+y1Tq2yxMGd2vvEK/nC21Ek2kv618jl3Lh7Hj24C6ZO+ZBY2ASUKYsDQ88ZO/N/jg2dHKKW7HMeB6BLqgeYtcec6B2wrIXzD53ucpa1d39n0LKkMcdnP7tX5Wex4bFlrtcywS6vw8K7JWWetT5liOlbR2n7xh2JALb7v8ES68oGjiZkJzcBLCl3auqZ6FJuHwW0JwPREhloCJ6Zws8IJBAdDIxUTY4Zmrl2YcsNBpZjE5eJIUnw05rule9sumjs0+UehlGC4IRgB"},{"type":"text","text":"#
+        Background for \"How to Do Great Work\"\n\nThis essay is a long list of advice.
+        It leans on a few borrowed ideas from math, chemistry, sailing, and the history
+        of science. Knowing them up front makes it read much more easily.\n\n## Who
+        is writing, and what kind of essay is this?\n\nPaul Graham is a programmer
+        turned investor and essayist. He co-founded Y Combinator, a well-known startup
+        \"accelerator.\" It funds young companies and coaches their founders. Over
+        about 20 years he has watched thousands of ambitious people try to build something
+        new. He also writes short, informal essays on work, ideas, and how people
+        succeed.\n\nThis one is a **synthesis**. He gathered the techniques that people
+        in many fields (painting, physics, writing, business) have used to do outstanding
+        work. Then he asked which ones show up everywhere. In math, the overlap of
+        several sets is called their **intersection**. So when he says he''s looking
+        for \"the intersection,\" he means the advice that holds across all those
+        fields, not the quirks of any one.\n\nNotice also that the advice is aimed
+        at a specific reader: someone \"very ambitious.\" It isn''t a guide to being
+        comfortably productive. It''s about work that people later call great.\n\n##
+        The \"frontier of knowledge\" and fractals\n\nTwo ideas carry a lot of weight
+        in the first half.\n\n**The frontier of knowledge.** Picture everything humans
+        know as a territory. Inside it is settled, well-mapped material, like what
+        you learn in a textbook. Outside it is the unknown. The border between them
+        is the **frontier**, where nobody yet knows the answers. Researchers, inventors,
+        and artists doing new work operate there. Getting to a frontier takes years
+        of study, because you first have to learn what''s already known.\n\n**Fractals.**
+        A fractal is a shape that has detail at every zoom level. The classic example
+        is a coastline. From space it looks like a smooth curve. Zoom in and it''s
+        jagged. Zoom in more and each jagged piece is jagged too. The essay uses this
+        as a picture of knowledge. From far away, a field looks finished, with smooth
+        edges. Up close, the edges are full of gaps and open questions. A \"fractal
+        bud,\" a phrase from the essay, is like a new little branch sprouting from
+        the edge. It''s a small crack that turns out to open into a whole new area.\n\nYou
+        don''t need any more math than that. It''s just a metaphor for \"the closer
+        you look, the more unfinished it turns out to be.\"\n\n## Aptitude, interest,
+        and two kinds of ambition\n\nThe essay separates a few things people often
+        blur together:\n\n- **Aptitude:** a natural knack. You pick up some skills
+        faster than others.\n- **Interest:** how much you care about a subject, and
+        whether you stay curious about it.\n- **Ambition:** the desire to achieve
+        something big.\n\nThe essay says ambition can come before you have any interest
+        in a particular subject (\"I want to do something important, I just don''t
+        know what yet\"). It can also grow out of a subject (\"I love this, and now
+        I want to push it as far as it goes\"). That split matters later, because
+        the first kind makes choosing a direction harder.\n\n## Why \"figuring out
+        what to work on\" is its own problem\n\nMost schools run on **tracks**. You
+        choose a subject, take a fixed sequence of courses, and move toward a degree
+        and a career. The system assumes you know early what suits you. The essay''s
+        complaint is that a teenager can''t really know what a job feels like from
+        the outside. A related point: some future jobs don''t exist yet. For example,
+        nobody in 1990 trained to be a mobile app developer.\n\nWhen the essay says
+        an ambitious person \"will often read to the system as an instance of breakage,\"
+        it means someone who switches fields or doesn''t fit the track can look like
+        a malfunction, even if they''re doing something sensible.\n\n## Natural selection
+        as an example\n\nThe essay says you \"can''t discover natural selection\"
+        by planning to. Natural selection is Charles Darwin''s 1800s theory of how
+        species change over time. Individuals with traits that help them survive and
+        reproduce pass those traits on, so populations gradually shift. Darwin didn''t
+        set out with that goal on a schedule. He collected observations over years,
+        including a long sea voyage, and the idea emerged. The essay uses this as
+        a case where the achievement couldn''t have been described in advance. Compare
+        that to a goal like \"win a gold medal,\" where the target is clear from the
+        start.\n\n## Sailing language\n\nGraham leans on sailing metaphors, so here
+        are the terms:\n\n- **Upwind:** sailing toward the direction the wind comes
+        from. It''s harder, and sailors do it by choosing angles that keep their options
+        open. The essay''s phrase \"staying upwind\" is about keeping yourself well
+        placed so you can reach many destinations. Think of a sailor who wants to
+        keep the *ability* to get anywhere, rather than picking one spot and sailing
+        straight at it.\n- **Headwinds:** winds blowing against you.\n- **Currents:**
+        water flows that push the boat off course.\n- **Shoals:** hidden shallow areas
+        that can wreck a boat.\n- **Rudder:** the steering part of a boat. The essay
+        says curiosity is both \"engine\" and \"rudder,\" meaning it both powers you
+        and steers you.\n\nThe point of the metaphor is simply that even when you''re
+        motivated, doing the work has its own skills, like sailing does.\n\n## \"Invariants\"\n\nIn
+        math and programming, an **invariant** is something that stays true no matter
+        what else changes. The essay contrasts this with having a plan. A plan is
+        a fixed list of steps. An invariant is more like a rule you keep holding to
+        while the steps change. The essay''s examples of invariants are things like
+        \"keep doing something excitingly ambitious\" and \"keep your options open.\"\n\n##
+        Activation energy\n\nThis is a term from chemistry. Many reactions need a
+        push of energy to get started, even if they release energy afterward. A match
+        won''t light until you strike it, but once it''s burning it keeps going. The
+        essay borrows this for work. Starting can feel much harder than continuing,
+        even though the effort of *continuing* is lower.\n\n## Diminishing returns\n\nThis
+        is an economics idea. Early on, each extra unit of effort gives you a lot.
+        Eventually each extra unit gives less and less. Think of studying: the first
+        hour of a day is productive, while the tenth hour (when you''re exhausted)
+        gets you very little. The essay says some kinds of work hit that point sooner
+        than others.\n\n## Other phrases that may trip you up\n\n- **\"A tincture
+        of strangeness\":** a *tincture* is a small amount of something that adds
+        a noticeable flavor. So: just a hint of oddness.\n- **\"Affected\":** fake
+        or put-on. To \"manufacture\" strangeness would be affected, meaning you''d
+        be faking it.\n- **\"Eminent frauds\":** well-known people who aren''t actually
+        good at what they''re known for.\n- **\"Empirical evidence on the scale of
+        the evidence for mortality\":** a joke. *Empirical* means based on observation.
+        Everyone who has ever lived has died, which is about as well-supported as
+        a claim gets. Graham is saying the evidence that great work takes hard effort
+        is overwhelming.\n- **\"Excitingly ambitious\":** his shorthand for a project
+        that makes you eager *and* feels like a stretch.\n\n## What to keep in mind
+        while reading\n\nThe essay is a set of rules of thumb, not a scientific study.
+        The examples come from biographies and Graham''s own observation, so the claims
+        are best read as informed opinion. Also notice the *tone*: he often says \"probably\"
+        and \"usually,\" and he sometimes offers advice that seems to contradict itself
+        (be bold but don''t over-plan; lie to yourself, but only in certain cases).
+        Those tensions are part of the point.\n\n<foundation_cards>\n[\n  {\"question\":
+        \"In the ''frontier of knowledge'' metaphor, why is the fractal (coastline)
+        image used?\", \"answer\": \"A coastline looks smooth from far away but is
+        jagged at every zoom level. Likewise, a field looks finished from a distance,
+        but up close its edges are full of gaps and open questions.\"},\n  {\"question\":
+        \"What is ''activation energy,'' and how does it apply to starting work?\",
+        \"answer\": \"It''s a chemistry term for the initial push a reaction needs
+        to get going, even though it''s easier to keep going once started. Applied
+        to work, starting often feels harder than continuing.\"},\n  {\"question\":
+        \"What does ''diminishing returns'' mean?\", \"answer\": \"Each extra unit
+        of effort produces less benefit than the one before. For example, the tenth
+        hour of studying while exhausted yields much less than the first hour.\"}\n]\n</foundation_cards>"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":4597,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":3092,"output_tokens_details":{"thinking_tokens":374},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '9998000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-03T23:47:46Z'
+      - '2026-11-06T00:45:48Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '1999000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-03T23:48:06Z'
+      - '2026-11-06T00:46:15Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-03T23:47:46Z'
+      - '2026-11-06T00:45:48Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11997000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-03T23:47:46Z'
+      - '2026-11-06T00:45:48Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a54f4414de309652-ORD
+      - a56013d76ecf0011-ORD
       connection:
       - keep-alive
       content-length:
-      - '7721'
+      - '11449'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Tue, 03 Nov 2026 23:48:06 GMT
+      - Fri, 06 Nov 2026 00:46:15 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=20344
+      - x-originResponse;dur=27259
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-8c2b6aaba82abb35597c43664f08c85b-5c04a4c97d0e89c9-01
+      - 00-72d99cbca3daa98f30950c66b7304252-00e856f1b34f12e8-01
       transfer-encoding:
       - chunked
       vary:

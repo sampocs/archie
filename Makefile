@@ -89,7 +89,7 @@ MAESTRO_PATH := /opt/homebrew/opt/openjdk@17/bin:$(HOME)/.maestro/bin:$(PATH)
 
 # Empty the local development database's synced data so a flow never sees leftovers from an earlier run.
 reset-local-data: db-up
-	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, briefs, topic_primers, topics, sources, sessions, users RESTART IDENTITY CASCADE"
+	@docker compose exec -T postgres psql -q -U archie archie -c "TRUNCATE applied_actions, jobs, card_preferences, reviews, cards, briefs, topic_primers, topics, sources, sessions, users RESTART IDENTITY CASCADE"
 
 # The flows that only need a running backend (`make start-local` in another terminal).
 # source_page and today_primer call Anthropic for real, so a run spends a few cents.
@@ -108,8 +108,13 @@ maestro-newsletter: reset-local-data
 maestro-brief: reset-local-data
 	@maestro/run_brief.sh
 
+# Finishes an article, reviews its cards on the phone, grades a typed answer, drops the rest.
+# Spends a few cents (analyze, primer, one grade); run it on purpose.
+maestro-review: reset-local-data
+	@PATH="$(MAESTRO_PATH)" maestro test maestro/review.yaml
+
 # Starts and stops the backend itself, to take the phone offline mid-flow.
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-brief maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-brief maestro-review maestro-offline

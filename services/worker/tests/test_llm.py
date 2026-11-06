@@ -24,9 +24,10 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import changes, jobs, models, session
+from archie_llm import llm
 from archie_shared import config
 from archie_testing import recording
-from archie_worker import errors, llm
+from archie_worker import errors, keys
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 
@@ -153,7 +154,7 @@ def test_record_audio_call_stores_an_audio_cost_row(engine: sqlalchemy.Engine, c
 def test_user_without_the_owners_keys_needs_their_own() -> None:
     """A non-whitelisted user's job fails for good, telling them to add their own key."""
     with pytest.raises(errors.PermanentJobError) as raised:
-        llm.api_key_for(models.User(apple_sub="sub", is_whitelisted=False))
+        keys.anthropic_key_for(models.User(apple_sub="sub", is_whitelisted=False))
 
     assert raised.value.reason == errors.FailureReason.NEEDS_API_KEY
 
@@ -162,7 +163,7 @@ def test_whitelisted_user_gets_the_owners_key(monkeypatch: pytest.MonkeyPatch) -
     """A whitelisted user's calls are paid by the configured key."""
     monkeypatch.setenv(config.ANTHROPIC_API_KEY_ENV, "owner-key")
 
-    assert llm.api_key_for(models.User(apple_sub="sub", is_whitelisted=True)) == "owner-key"
+    assert keys.anthropic_key_for(models.User(apple_sub="sub", is_whitelisted=True)) == "owner-key"
 
 
 @pytest.mark.postgres
@@ -191,6 +192,57 @@ def test_primary_answer_is_returned_and_costed(
         context.job_id,
         models.JobKind.ANALYZE.value,
     )
+
+
+@pytest.mark.postgres
+def test_call_without_a_job_or_fallback_records_a_null_job(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette
+) -> None:
+    """An API call (no job, one model) is answered by that model and costed with no job on the record."""
+    api_context = llm.CallContext(user_id=context.user_id, source_id=None, job_id=None, step=llm.GRADE_STEP)
+
+    with cassette("llm_ok"):
+        completion = _complete(engine, api_context, llm.ModelPair(primary=llm.HAIKU), max_tokens=ENOUGH_TOKENS)
+
+    assert completion.model == llm.HAIKU
+    assert completion.text.strip().lower().startswith("ok")
+    [call] = _calls(engine)
+    assert (call.job_id, call.source_id, call.step) == (None, None, llm.GRADE_STEP)
+
+
+@pytest.mark.postgres
+def test_thinking_and_timeout_are_sent_only_when_given(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`thinking` reaches the request only when passed, and `timeout_seconds` sets the client's timeout."""
+    # Replay ignores what is sent, so watch the real outgoing arguments.
+    sent: list[dict[str, Any]] = []
+    real_create = anthropic.resources.messages.Messages.create
+
+    def spy_create(self: Any, **kwargs: Any) -> Any:
+        sent.append({**kwargs, "client_timeout": self._client.timeout})
+        return real_create(self, **kwargs)
+
+    monkeypatch.setattr(anthropic.resources.messages.Messages, "create", spy_create)
+
+    for thinking, timeout_seconds in ((llm.THINKING_DISABLED, 3.0), (None, llm.REQUEST_TIMEOUT_SECONDS)):
+        with cassette("llm_ok"):
+            llm.complete(
+                engine,
+                api_key=os.environ[config.ANTHROPIC_API_KEY_ENV],
+                context=context,
+                models=llm.ModelPair(primary=llm.HAIKU),
+                system=SYSTEM_PROMPT,
+                user_message=USER_MESSAGE,
+                max_tokens=ENOUGH_TOKENS,
+                thinking=thinking,
+                timeout_seconds=timeout_seconds,
+            )
+
+    with_thinking, without_thinking = sent
+    assert with_thinking["thinking"] == {"type": "disabled"}
+    assert "thinking" not in without_thinking
+    assert (with_thinking["client_timeout"], without_thinking["client_timeout"]) == (3.0, llm.REQUEST_TIMEOUT_SECONDS)
 
 
 @pytest.mark.postgres

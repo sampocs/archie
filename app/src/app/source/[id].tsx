@@ -6,6 +6,7 @@ import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { db } from "@/db/client";
 import { readLater, returnToInbox } from "@/db/actions";
 import * as schema from "@/db/schema";
+import { CardsSection } from "@/item/CardsSection";
 import { FullEmailSheet } from "@/item/FullEmailSheet";
 import { ItemActions } from "@/item/ItemActions";
 import { ItemBadgeLine } from "@/item/ItemBadgeLine";
@@ -100,14 +101,14 @@ export default function SourceScreen() {
         {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
         {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
         <NoteSection reaction={source.reaction} note={source.note} />
-        {source.state === "consumed" && cards.length > 0 ? <CardsSection cards={cards} /> : null}
+        <CardsSection sourceId={source.id} />
         <FinishSheet
           sourceId={source.id}
           primerWords={primerWords}
           visible={finishOpen}
           onClose={() => setFinishOpen(false)}
         />
-        <ItemMenu source={source} visible={menuOpen} onClose={() => setMenuOpen(false)} />
+        <ItemMenu source={source} cardCount={cards.length} visible={menuOpen} onClose={() => setMenuOpen(false)} />
         <FullEmailSheet sourceId={source.id} visible={emailOpen} onClose={() => setEmailOpen(false)} />
       </Screen>
       {/* Undo sends the reverse action rather than cancelling the first, which may already have synced. */}
@@ -245,22 +246,6 @@ function NoteSection({ reaction, note }: { reaction: string | null; note: string
       <SectionTitle>Your note</SectionTitle>
       {reaction ? <Text>{REACTION_LABELS[reaction] ?? reaction}</Text> : null}
       {note ? <Text tone="ink2">{note}</Text> : null}
-    </View>
-  );
-}
-
-function CardsSection({ cards }: { cards: (typeof schema.cards.$inferSelect)[] }) {
-  const theme = useTheme();
-
-  return (
-    <View style={{ gap: theme.spacing.md }}>
-      <SectionTitle>Cards from this</SectionTitle>
-      {cards.map((card) => (
-        <Card key={card.id} testID={`card-${card.id}`} style={{ gap: theme.spacing.sm }}>
-          <Text variant="headline">{card.question}</Text>
-          <Text tone="ink2">{card.answer}</Text>
-        </Card>
-      ))}
     </View>
   );
 }

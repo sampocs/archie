@@ -1,0 +1,1242 @@
+[
+ {
+  "id": 0,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6523250418249518,
+  "cost": 0.0001189,
+  "in": 1084,
+  "out": 21
+ },
+ {
+  "id": 1,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6416675408836454,
+  "cost": 0.000117,
+  "in": 1065,
+  "out": 21
+ },
+ {
+  "id": 2,
+  "grade": "partly",
+  "missing": "It doesn't mention that the president's party typically loses seats as a result, or that economic conditions like rising prices can amplify the effect.",
+  "confident": true,
+  "seconds": 0.7887615000363439,
+  "cost": 0.0001365,
+  "in": 1055,
+  "out": 62
+ },
+ {
+  "id": 3,
+  "grade": "missed",
+  "missing": "The answer attributes the loss to lower turnout and third-party voting, but the core idea is voters using the midterm to register approval or frustration with the sitting president.",
+  "confident": true,
+  "seconds": 1.1479023329447955,
+  "cost": 0.0001421,
+  "in": 1071,
+  "out": 70
+ },
+ {
+  "id": 4,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0338470828719437,
+  "cost": 0.0001235,
+  "in": 1130,
+  "out": 21
+ },
+ {
+  "id": 5,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.34649729100056,
+  "cost": 0.0001208,
+  "in": 1103,
+  "out": 21
+ },
+ {
+  "id": 6,
+  "grade": "partly",
+  "missing": "It doesn't explain why the deal matters for AI: owning more AI infrastructure, and the bubble concerns over its size.",
+  "confident": true,
+  "seconds": 1.4039952920284122,
+  "cost": 0.000139,
+  "in": 1090,
+  "out": 60
+ },
+ {
+  "id": 7,
+  "grade": "missed",
+  "missing": "Lumentum makes optical lasers and hardware for data links, not memory chips or GPUs, and the deal is about AI data-center infrastructure.",
+  "confident": true,
+  "seconds": 0.7845597909763455,
+  "cost": 0.000144,
+  "in": 1100,
+  "out": 68
+ },
+ {
+  "id": 8,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7537156669422984,
+  "cost": 0.0001186,
+  "in": 1081,
+  "out": 21
+ },
+ {
+  "id": 9,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7599465409293771,
+  "cost": 0.0001176,
+  "in": 1071,
+  "out": 21
+ },
+ {
+  "id": 10,
+  "grade": "partly",
+  "missing": "It doesn't mention that some units needed physical fixes beyond software patches, so the attack persisted until both were addressed.",
+  "confident": true,
+  "seconds": 1.3593925409950316,
+  "cost": 0.0001352,
+  "in": 1062,
+  "out": 58
+ },
+ {
+  "id": 11,
+  "grade": "missed",
+  "missing": "The answer describes a power surge, but the accepted answer says hackers remotely switched the fridges into defrost mode through the digital control system.",
+  "confident": true,
+  "seconds": 1.6732079999055713,
+  "cost": 0.0001379,
+  "in": 1064,
+  "out": 63
+ },
+ {
+  "id": 12,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.2578414999879897,
+  "cost": 0.000121,
+  "in": 1105,
+  "out": 21
+ },
+ {
+  "id": 13,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.221995625179261,
+  "cost": 0.0001189,
+  "in": 1084,
+  "out": 21
+ },
+ {
+  "id": 14,
+  "grade": "partly",
+  "missing": "It doesn't say that US government revenue is roughly equal to commercial, so the split is about even.",
+  "confident": true,
+  "seconds": 1.1608503330498934,
+  "cost": 0.0001331,
+  "in": 1081,
+  "out": 50
+ },
+ {
+  "id": 15,
+  "grade": "missed",
+  "missing": "The split is wrong: government and US commercial revenue were roughly equal (about $953M vs $984M), not three to one.",
+  "confident": true,
+  "seconds": 1.3157130000181496,
+  "cost": 0.0001377,
+  "in": 1087,
+  "out": 58
+ },
+ {
+  "id": 16,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6304164167959243,
+  "cost": 0.0001161,
+  "in": 1056,
+  "out": 21
+ },
+ {
+  "id": 17,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.9580952499527484,
+  "cost": 0.0001154,
+  "in": 1049,
+  "out": 21
+ },
+ {
+  "id": 18,
+  "grade": "partly",
+  "missing": "You didn't mention that inclusive time covers the functions it calls, or define self time at all.",
+  "confident": true,
+  "seconds": 0.808372916886583,
+  "cost": 0.000128,
+  "in": 1040,
+  "out": 48
+ },
+ {
+  "id": 19,
+  "grade": "missed",
+  "missing": "Self time is the time in the function's own code excluding callees, and inclusive time includes callees; your answer redefines them as I/O wait versus CPU time.",
+  "confident": true,
+  "seconds": 1.2177602499723434,
+  "cost": 0.0001396,
+  "in": 1051,
+  "out": 69
+ },
+ {
+  "id": 20,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7600716250017285,
+  "cost": 0.000121,
+  "in": 1105,
+  "out": 21
+ },
+ {
+  "id": 21,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0403168750926852,
+  "cost": 0.0001188,
+  "in": 1083,
+  "out": 21
+ },
+ {
+  "id": 22,
+  "grade": "partly",
+  "missing": "It doesn't explain that the LLM only checks syntax and local logic, and that waste only shows up at production scale under real load.",
+  "confident": true,
+  "seconds": 0.8223301658872515,
+  "cost": 0.0001356,
+  "in": 1061,
+  "out": 59
+ },
+ {
+  "id": 23,
+  "grade": "missed",
+  "missing": "The answer blames training data, but the accepted idea is that an LLM only checks syntax and local logic and cannot see runtime environment or production load.",
+  "confident": true,
+  "seconds": 0.8222653749398887,
+  "cost": 0.0001403,
+  "in": 1078,
+  "out": 65
+ },
+ {
+  "id": 24,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.3055442909244448,
+  "cost": 0.0001217,
+  "in": 1112,
+  "out": 21
+ },
+ {
+  "id": 25,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7056658749934286,
+  "cost": 0.00012,
+  "in": 1095,
+  "out": 21
+ },
+ {
+  "id": 26,
+  "grade": "partly",
+  "missing": "It doesn't explain why the catalog is needed: LLMs have no memory of past bugs, and sharing findings avoids rediscovering the same bug.",
+  "confident": true,
+  "seconds": 1.3234372499864548,
+  "cost": 0.0001426,
+  "in": 1081,
+  "out": 69
+ },
+ {
+  "id": 27,
+  "grade": "missed",
+  "missing": "The answer gives a cost-caching reason, but misses that LLMs are stateless and the catalog supplies remembered anti-patterns injected into prompts to share findings across teams.",
+  "confident": true,
+  "seconds": 0.9217123331036419,
+  "cost": 0.0001478,
+  "in": 1093,
+  "out": 77
+ },
+ {
+  "id": 28,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.2820088330190629,
+  "cost": 0.0001179,
+  "in": 1074,
+  "out": 21
+ },
+ {
+  "id": 29,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.1197627088986337,
+  "cost": 0.0001166,
+  "in": 1061,
+  "out": 21
+ },
+ {
+  "id": 30,
+  "grade": "partly",
+  "missing": "You gave the 46% CPU share but left out the fix and how much faster it was (about 22 times faster with a precomputed lookup table).",
+  "confident": true,
+  "seconds": 0.8786254171282053,
+  "cost": 0.0001367,
+  "in": 1052,
+  "out": 63
+ },
+ {
+  "id": 31,
+  "grade": "missed",
+  "missing": "The regex used 46% of CPU, not about 5%, and the fix was about 22 times faster, not twice as fast.",
+  "confident": true,
+  "seconds": 0.8617936668451875,
+  "cost": 0.0001352,
+  "in": 1062,
+  "out": 58
+ },
+ {
+  "id": 32,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0176240419968963,
+  "cost": 0.0001197,
+  "in": 1092,
+  "out": 21
+ },
+ {
+  "id": 33,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.5979242089670151,
+  "cost": 0.0001178,
+  "in": 1073,
+  "out": 21
+ },
+ {
+  "id": 34,
+  "grade": "partly",
+  "missing": "It omits the second half: prefix rules keep the analysis focused on application code the developer can actually fix.",
+  "confident": true,
+  "seconds": 0.9059147499501705,
+  "cost": 0.0001323,
+  "in": 1063,
+  "out": 52
+ },
+ {
+  "id": 35,
+  "grade": "missed",
+  "missing": "The answer misses the point: prefix rules keep analysis focused on fixable application code, not reduce file size.",
+  "confident": true,
+  "seconds": 1.1482832501642406,
+  "cost": 0.0001334,
+  "in": 1064,
+  "out": 54
+ },
+ {
+  "id": 36,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.075238874880597,
+  "cost": 0.0001202,
+  "in": 1097,
+  "out": 21
+ },
+ {
+  "id": 37,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0621546669863164,
+  "cost": 0.0001176,
+  "in": 1071,
+  "out": 21
+ },
+ {
+  "id": 38,
+  "grade": "partly",
+  "missing": "It omits why people quit early: the early growth looks flat, so the compounding curve is underrated before it takes off.",
+  "confident": true,
+  "seconds": 0.9877124580089003,
+  "cost": 0.000134,
+  "in": 1065,
+  "out": 55
+ },
+ {
+  "id": 39,
+  "grade": "missed",
+  "missing": "The answer is about burnout and sleep, but the accepted idea is that small daily work compounds over time and early progress looks flat, so people quit too soon.",
+  "confident": true,
+  "seconds": 0.8472382910549641,
+  "cost": 0.0001411,
+  "in": 1071,
+  "out": 68
+ },
+ {
+  "id": 40,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6544264580588788,
+  "cost": 0.0001207,
+  "in": 1102,
+  "out": 21
+ },
+ {
+  "id": 41,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.154875708045438,
+  "cost": 0.0001181,
+  "in": 1076,
+  "out": 21
+ },
+ {
+  "id": 42,
+  "grade": "partly",
+  "missing": "It omits the step of noticing the gaps in knowledge and the step of exploring the promising gaps.",
+  "confident": true,
+  "seconds": 0.7632105001248419,
+  "cost": 0.0001321,
+  "in": 1061,
+  "out": 52
+ },
+ {
+  "id": 43,
+  "grade": "missed",
+  "missing": "The four steps listed don't match the accepted answer; the steps are choosing a field, learning to its frontier, noticing gaps, and exploring promising gaps.",
+  "confident": true,
+  "seconds": 1.161992791108787,
+  "cost": 0.0001424,
+  "in": 1069,
+  "out": 71
+ },
+ {
+  "id": 44,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6825858328957111,
+  "cost": 0.0001193,
+  "in": 1088,
+  "out": 21
+ },
+ {
+  "id": 45,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.9348219169769436,
+  "cost": 0.0001186,
+  "in": 1081,
+  "out": 21
+ },
+ {
+  "id": 46,
+  "grade": "partly",
+  "missing": "It captures that models constrain perception, but misses that people ignore the clues where the model conflicts with reality, which is why the new idea is hard to see.",
+  "confident": true,
+  "seconds": 0.9581157912034541,
+  "cost": 0.0001386,
+  "in": 1056,
+  "out": 66
+ },
+ {
+  "id": 47,
+  "grade": "missed",
+  "missing": "Your answer is about social fear of being wrong, but the card is about how a broken mental model blinds people to clues that conflict with reality.",
+  "confident": true,
+  "seconds": 1.38906045909971,
+  "cost": 0.0001383,
+  "in": 1073,
+  "out": 62
+ },
+ {
+  "id": 48,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.781869666883722,
+  "cost": 0.0001181,
+  "in": 1076,
+  "out": 21
+ },
+ {
+  "id": 49,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0886679170653224,
+  "cost": 0.0001159,
+  "in": 1054,
+  "out": 21
+ },
+ {
+  "id": 50,
+  "grade": "partly",
+  "missing": "It leaves out keeping your future options open, and that the approach suits discoveries you cannot plan in advance.",
+  "confident": true,
+  "seconds": 1.4986062499228865,
+  "cost": 0.0001316,
+  "in": 1046,
+  "out": 54
+ },
+ {
+  "id": 51,
+  "grade": "missed",
+  "missing": "Staying upwind means keeping future options open and picking the most interesting next step at each stage, not chasing popular trends or tailwinds.",
+  "confident": true,
+  "seconds": 1.1094247500877827,
+  "cost": 0.0001374,
+  "in": 1059,
+  "out": 63
+ },
+ {
+  "id": 52,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6298099160194397,
+  "cost": 0.0001176,
+  "in": 1071,
+  "out": 21
+ },
+ {
+  "id": 53,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.078056416939944,
+  "cost": 0.0001153,
+  "in": 1048,
+  "out": 21
+ },
+ {
+  "id": 54,
+  "grade": "missed",
+  "missing": "The accepted figure is about four or five hours a day, not eight; the card also notes grouping those hours into contiguous blocks.",
+  "confident": true,
+  "seconds": 0.7717745830304921,
+  "cost": 0.0001339,
+  "in": 1039,
+  "out": 60
+ },
+ {
+  "id": 55,
+  "grade": "missed",
+  "missing": "The accepted figure is about four or five hours a day, not twelve, and the answer omits the advice about contiguous blocks.",
+  "confident": true,
+  "seconds": 0.8519117918331176,
+  "cost": 0.000134,
+  "in": 1045,
+  "out": 59
+ },
+ {
+  "id": 56,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.719745249953121,
+  "cost": 0.0001208,
+  "in": 1103,
+  "out": 21
+ },
+ {
+  "id": 57,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7902770410291851,
+  "cost": 0.0001188,
+  "in": 1083,
+  "out": 21
+ },
+ {
+  "id": 58,
+  "grade": "partly",
+  "missing": "It doesn't mention that the control is remote and covert, or what the attacker can access, such as files, keystrokes, passwords, or the webcam.",
+  "confident": true,
+  "seconds": 0.8333532498218119,
+  "cost": 0.0001397,
+  "in": 1067,
+  "out": 66
+ },
+ {
+  "id": 59,
+  "grade": "missed",
+  "missing": "A RAT is not ransomware; it is malware that gives an attacker covert remote control of your computer, letting them see files, keystrokes, passwords and the webcam.",
+  "confident": true,
+  "seconds": 1.3572081250604242,
+  "cost": 0.0001437,
+  "in": 1072,
+  "out": 73
+ },
+ {
+  "id": 60,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.3204184169881046,
+  "cost": 0.0001224,
+  "in": 1119,
+  "out": 21
+ },
+ {
+  "id": 61,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0603709160350263,
+  "cost": 0.0001212,
+  "in": 1107,
+  "out": 21
+ },
+ {
+  "id": 62,
+  "grade": "partly",
+  "missing": "It doesn't explain why tricking is needed: a RAT can't install itself on an uncompromised machine, and people won't knowingly install spyware.",
+  "confident": true,
+  "seconds": 2.2588103329762816,
+  "cost": 0.0001409,
+  "in": 1074,
+  "out": 67
+ },
+ {
+  "id": 63,
+  "grade": "missed",
+  "missing": "The answer's cost reasoning misses the key point: a RAT can't install itself without prior compromise, and victims won't knowingly install it, so attackers must trick them into running it.",
+  "confident": true,
+  "seconds": 1.2946955000516027,
+  "cost": 0.0001481,
+  "in": 1101,
+  "out": 76
+ },
+ {
+  "id": 64,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.1720051250886172,
+  "cost": 0.0001231,
+  "in": 1126,
+  "out": 21
+ },
+ {
+  "id": 65,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.089070999994874,
+  "cost": 0.0001203,
+  "in": 1098,
+  "out": 21
+ },
+ {
+  "id": 66,
+  "grade": "partly",
+  "missing": "It misses that the seller's own knowledge and marketing, not just how buyers use it, decide intent, and that selling to likely criminals counts as facilitating crime.",
+  "confident": true,
+  "seconds": 1.4781845000106841,
+  "cost": 0.0001436,
+  "in": 1076,
+  "out": 72
+ },
+ {
+  "id": 67,
+  "grade": "missed",
+  "missing": "The answer says the law bans all such software and that intent only affects sentencing, but the accepted answer says intent determines liability since many such tools are legal.",
+  "confident": true,
+  "seconds": 1.1884438330307603,
+  "cost": 0.0001421,
+  "in": 1091,
+  "out": 66
+ },
+ {
+  "id": 68,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0098767499439418,
+  "cost": 0.0001187,
+  "in": 1082,
+  "out": 21
+ },
+ {
+  "id": 69,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.3627121669705957,
+  "cost": 0.0001165,
+  "in": 1060,
+  "out": 21
+ },
+ {
+  "id": 70,
+  "grade": "missed",
+  "missing": "The figure is hundreds of thousands at minimum, not tens of thousands; the FBI counted over 500,000 infected computers.",
+  "confident": true,
+  "seconds": 0.912676207954064,
+  "cost": 0.0001366,
+  "in": 1056,
+  "out": 62
+ },
+ {
+  "id": 71,
+  "grade": "missed",
+  "missing": "The answer gives about five million computers in the US alone, but the accepted figure is over 500,000 worldwide, rising past a million by May 2014.",
+  "confident": true,
+  "seconds": 1.0770056250039488,
+  "cost": 0.0001387,
+  "in": 1057,
+  "out": 66
+ },
+ {
+  "id": 72,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7081142920069396,
+  "cost": 0.0001186,
+  "in": 1081,
+  "out": 21
+ },
+ {
+  "id": 73,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0923418328166008,
+  "cost": 0.0001168,
+  "in": 1063,
+  "out": 21
+ },
+ {
+  "id": 74,
+  "grade": "partly",
+  "missing": "It doesn't say the rate is for overnight lending between banks, or how it ripples out to mortgages, loans, and savings.",
+  "confident": true,
+  "seconds": 1.0800290000624955,
+  "cost": 0.0001346,
+  "in": 1046,
+  "out": 60
+ },
+ {
+  "id": 75,
+  "grade": "missed",
+  "missing": "The Fed's policy rate is the overnight interbank lending benchmark set by the Federal Reserve, not the Treasury's 10-year bond yield.",
+  "confident": true,
+  "seconds": 0.9600947911385447,
+  "cost": 0.0001404,
+  "in": 1054,
+  "out": 70
+ },
+ {
+  "id": 76,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6369883331935853,
+  "cost": 0.0001161,
+  "in": 1056,
+  "out": 21
+ },
+ {
+  "id": 77,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.2621720829047263,
+  "cost": 0.000115,
+  "in": 1045,
+  "out": 21
+ },
+ {
+  "id": 78,
+  "grade": "partly",
+  "missing": "It gives what core inflation excludes but not why central banks watch it, the underlying price trend.",
+  "confident": true,
+  "seconds": 0.7934944999869913,
+  "cost": 0.0001283,
+  "in": 1038,
+  "out": 49
+ },
+ {
+  "id": 79,
+  "grade": "missed",
+  "missing": "Core inflation excludes food and energy prices; it is not about cities or housing costs, and the underlying-trend purpose is absent.",
+  "confident": true,
+  "seconds": 0.8720207079313695,
+  "cost": 0.0001352,
+  "in": 1042,
+  "out": 62
+ },
+ {
+  "id": 80,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.3439970000181347,
+  "cost": 0.000119,
+  "in": 1085,
+  "out": 21
+ },
+ {
+  "id": 81,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.1433001251425594,
+  "cost": 0.0001183,
+  "in": 1078,
+  "out": 21
+ },
+ {
+  "id": 82,
+  "grade": "partly",
+  "missing": "It doesn't explain the mechanism (slower borrowing and spending) or why cutting too early risks inflation rebounding, so the Fed waits for clear progress.",
+  "confident": true,
+  "seconds": 0.8446770838927478,
+  "cost": 0.0001419,
+  "in": 1054,
+  "out": 73
+ },
+ {
+  "id": 83,
+  "grade": "missed",
+  "missing": "The answer misses the core idea: high rates cool borrowing and spending to bring inflation down, and cutting too early risks a rebound.",
+  "confident": true,
+  "seconds": 0.8911901670508087,
+  "cost": 0.000138,
+  "in": 1065,
+  "out": 63
+ },
+ {
+  "id": 84,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7119127078913152,
+  "cost": 0.0001121,
+  "in": 1016,
+  "out": 21
+ },
+ {
+  "id": 85,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6601000421214849,
+  "cost": 0.0001117,
+  "in": 1012,
+  "out": 21
+ },
+ {
+  "id": 86,
+  "grade": "missed",
+  "missing": "The Fed's target is about 2% per year, not 3%.",
+  "confident": true,
+  "seconds": 1.0649312089663,
+  "cost": 0.0001214,
+  "in": 1019,
+  "out": 39
+ },
+ {
+  "id": 87,
+  "grade": "missed",
+  "missing": "The Fed targets about 2% annual inflation, not zero; it views a modest positive rate as consistent with stable prices.",
+  "confident": true,
+  "seconds": 0.7507455421146005,
+  "cost": 0.0001318,
+  "in": 1023,
+  "out": 59
+ },
+ {
+  "id": 88,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.011365125188604,
+  "cost": 0.0001207,
+  "in": 1102,
+  "out": 21
+ },
+ {
+  "id": 89,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6756580418441445,
+  "cost": 0.0001193,
+  "in": 1088,
+  "out": 21
+ },
+ {
+  "id": 90,
+  "grade": "partly",
+  "missing": "It captures staying on course, but misses that interest also drives you to work harder than diligence alone.",
+  "confident": true,
+  "seconds": 0.7481658749748021,
+  "cost": 0.0001317,
+  "in": 1072,
+  "out": 49
+ },
+ {
+  "id": 91,
+  "grade": "missed",
+  "missing": "The answer says interest makes you less intelligent and ignore criticism, which contradicts the idea that genuine interest keeps you on a path you care about so outside pulls lose their hold.",
+  "confident": true,
+  "seconds": 1.4753354580607265,
+  "cost": 0.0001474,
+  "in": 1084,
+  "out": 78
+ },
+ {
+  "id": 92,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.2743054169695824,
+  "cost": 0.0001189,
+  "in": 1084,
+  "out": 21
+ },
+ {
+  "id": 93,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.8438543749507517,
+  "cost": 0.0001177,
+  "in": 1072,
+  "out": 21
+ },
+ {
+  "id": 94,
+  "grade": "partly",
+  "missing": "You capture keeping options open, but miss the idea of not planning far ahead and choosing what seems most interesting at each step.",
+  "confident": true,
+  "seconds": 0.9429533339571208,
+  "cost": 0.0001338,
+  "in": 1048,
+  "out": 58
+ },
+ {
+  "id": 95,
+  "grade": "missed",
+  "missing": "Staying upwind means keeping options open and following what seems most interesting at each step, not following established leaders.",
+  "confident": true,
+  "seconds": 0.8727295000571758,
+  "cost": 0.0001324,
+  "in": 1064,
+  "out": 52
+ },
+ {
+  "id": 96,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7689804590772837,
+  "cost": 0.0001183,
+  "in": 1078,
+  "out": 21
+ },
+ {
+  "id": 97,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.5976044170092791,
+  "cost": 0.0001177,
+  "in": 1072,
+  "out": 21
+ },
+ {
+  "id": 98,
+  "grade": "partly",
+  "missing": "It doesn't explain why per-project procrastination goes unnoticed, namely that it looks like real work and so doesn't set off alarms.",
+  "confident": true,
+  "seconds": 0.7258947910740972,
+  "cost": 0.0001376,
+  "in": 1056,
+  "out": 64
+ },
+ {
+  "id": 99,
+  "grade": "missed",
+  "missing": "Your answer is about who sets deadlines, but the accepted answer says per-project delay looks like real work, so it goes unnoticed, and big projects can be left undone for years.",
+  "confident": true,
+  "seconds": 1.4312691669911146,
+  "cost": 0.0001442,
+  "in": 1067,
+  "out": 75
+ },
+ {
+  "id": 100,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.2819097919855267,
+  "cost": 0.0001214,
+  "in": 1109,
+  "out": 21
+ },
+ {
+  "id": 101,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.6778648749459535,
+  "cost": 0.0001204,
+  "in": 1099,
+  "out": 21
+ },
+ {
+  "id": 102,
+  "grade": "partly",
+  "missing": "It gives the frontier as the edge of known knowledge but leaves out why it matters: the gaps there are where new discoveries come from, so you must learn enough to reach it.",
+  "confident": true,
+  "seconds": 0.9352582499850541,
+  "cost": 0.0001443,
+  "in": 1073,
+  "out": 74
+ },
+ {
+  "id": 103,
+  "grade": "missed",
+  "missing": "The frontier is the edge of known knowledge, not a boundary between companies or funding; it's where new discoveries come from.",
+  "confident": true,
+  "seconds": 1.0889679579995573,
+  "cost": 0.0001367,
+  "in": 1077,
+  "out": 58
+ },
+ {
+  "id": 104,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0318372920155525,
+  "cost": 0.0001163,
+  "in": 1058,
+  "out": 21
+ },
+ {
+  "id": 105,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7191689170431346,
+  "cost": 0.0001153,
+  "in": 1048,
+  "out": 21
+ },
+ {
+  "id": 106,
+  "grade": "missed",
+  "missing": "The accepted answer is about four or five hours a day, not around two; the answer is well below the stated range.",
+  "confident": true,
+  "seconds": 1.070109250023961,
+  "cost": 0.0001292,
+  "in": 1037,
+  "out": 51
+ },
+ {
+  "id": 107,
+  "grade": "missed",
+  "missing": "The accepted answer says the hardest work is sustainable for only about four or five hours a day, not ten to twelve.",
+  "confident": true,
+  "seconds": 0.8078892920166254,
+  "cost": 0.0001321,
+  "in": 1041,
+  "out": 56
+ },
+ {
+  "id": 108,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.2978014999534935,
+  "cost": 0.000118,
+  "in": 1075,
+  "out": 21
+ },
+ {
+  "id": 109,
+  "grade": "partly",
+  "missing": "The CPU share should be about 46%, and the speedup about 22 times, with the fix described as a precomputed lookup table.",
+  "confident": true,
+  "seconds": 1.3839828341733664,
+  "cost": 0.0001356,
+  "in": 1061,
+  "out": 59
+ },
+ {
+  "id": 110,
+  "grade": "partly",
+  "missing": "You gave the duration but missed Graham's point about arranging those hours in contiguous blocks, since interruptions make hard tasks easier to avoid.",
+  "confident": true,
+  "seconds": 0.7965340001974255,
+  "cost": 0.0001376,
+  "in": 1036,
+  "out": 68
+ },
+ {
+  "id": 111,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7065895409323275,
+  "cost": 0.0001157,
+  "in": 1052,
+  "out": 21
+ },
+ {
+  "id": 112,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 0.7610934160184115,
+  "cost": 0.0001121,
+  "in": 1016,
+  "out": 21
+ },
+ {
+  "id": 113,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.1397967911325395,
+  "cost": 0.0001141,
+  "in": 1036,
+  "out": 21
+ },
+ {
+  "id": 114,
+  "grade": "missed",
+  "missing": "The answer misses the main idea that voters use midterms to express approval or frustration with the sitting president, which costs his party seats.",
+  "confident": true,
+  "seconds": 0.7792690829373896,
+  "cost": 0.0001348,
+  "in": 1053,
+  "out": 59
+ },
+ {
+  "id": 115,
+  "grade": "partly",
+  "missing": "The answer names memory leaks but not the core reason: the model only checks syntax and local logic and cannot see the runtime environment, call stack, or production load.",
+  "confident": true,
+  "seconds": 0.8493748749606311,
+  "cost": 0.0001403,
+  "in": 1063,
+  "out": 68
+ },
+ {
+  "id": 116,
+  "grade": "partly",
+  "missing": "It doesn't mention that the attacker takes remote control of the computer, or that it runs without the victim knowing.",
+  "confident": true,
+  "seconds": 0.8743012088816613,
+  "cost": 0.0001332,
+  "in": 1057,
+  "out": 55
+ },
+ {
+  "id": 117,
+  "grade": "partly",
+  "missing": "You named only two of the four steps; you left out learning enough to reach the frontier and noticing the gaps where knowledge is incomplete.",
+  "confident": true,
+  "seconds": 0.9869525001849979,
+  "cost": 0.0001371,
+  "in": 1056,
+  "out": 63
+ },
+ {
+  "id": 118,
+  "grade": "missed",
+  "missing": "No answer was given, so the deal and its relevance to AI are not addressed.",
+  "confident": true,
+  "seconds": 0.9673073750454932,
+  "cost": 0.0001283,
+  "in": 1063,
+  "out": 44
+ },
+ {
+  "id": 119,
+  "grade": "missed",
+  "missing": "Blank or 'I don't know' gives no answer; the LLM is stateless and the catalog supplies remembered anti-patterns so findings are shared across teams.",
+  "confident": true,
+  "seconds": 1.1471148750279099,
+  "cost": 0.0001423,
+  "in": 1063,
+  "out": 72
+ },
+ {
+  "id": 120,
+  "grade": "missed",
+  "missing": "You gave no answer; the idea is that broken models hide clues about conflicts with reality, which people tend to ignore.",
+  "confident": true,
+  "seconds": 0.8535603329073638,
+  "cost": 0.0001337,
+  "in": 1052,
+  "out": 57
+ },
+ {
+  "id": 121,
+  "grade": "missed",
+  "missing": "Your answer doesn't address the question; it only says you forgot, so no idea about intent or the legal reasoning is given.",
+  "confident": true,
+  "seconds": 1.391183374915272,
+  "cost": 0.0001358,
+  "in": 1068,
+  "out": 58
+ },
+ {
+  "id": 122,
+  "grade": "missed",
+  "missing": "You gave no answer; core inflation is price changes excluding volatile food and energy, watched for the underlying price trend.",
+  "confident": true,
+  "seconds": 1.1630332921631634,
+  "cost": 0.000131,
+  "in": 1025,
+  "out": 57
+ },
+ {
+  "id": 123,
+  "grade": "missed",
+  "missing": "The answer is too vague and doesn't address why per-project procrastination is more dangerous, such as looking like real work and going unnoticed.",
+  "confident": true,
+  "seconds": 1.3711966660339385,
+  "cost": 0.0001366,
+  "in": 1051,
+  "out": 63
+ }
+]

@@ -12,6 +12,15 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
   Railway, then `railway config apply`. Railway doesn't read `.railway/` during deploys, so an
   unapplied edit changes nothing. `npm install` at the repo root first, so the CLI can load the SDK.
 
+## M6
+
+- The API now calls Anthropic, Groq and OpenAI directly (grading, transcription, card rewrites); the `archie`
+  service already has the keys.
+- The app needs a new native build for the microphone and notifications: `scripts/install_ios.sh`.
+- **Release order: server first, then the phone build right away.** An older phone build can't store pulled cards
+  without a `source_id` (topic-primer foundation cards and quiz cards), so its pulls stop until the new build is
+  installed (phone migration 0007 re-pulls everything). An older server refuses the new review actions with a 422.
+
 ## Not in code
 
 - **Secrets and the owner's email.** The repo is public, so these are `preserve()` in

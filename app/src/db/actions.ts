@@ -1,6 +1,7 @@
 import { randomUUID } from "expo-crypto";
 
 import type { Intent, Reaction } from "@/capture/types";
+import { wireState, type FsrsFields, type GradedBy, type ReviewGrade } from "@/review/types";
 import type { DomainName } from "@/topics/domains";
 
 import { and, eq, inArray, isNotNull, isNull, min, sql } from "drizzle-orm";
@@ -35,13 +36,29 @@ export type ActionType =
   | "request_topic_primer"
   | "choose_topics"
   | "choose_episode"
-  | "finish_brief";
+  | "finish_brief"
+  | "review_card"
+  | "drop_card"
+  | "set_cards_off"
+  | "request_news_quiz";
 export type PrimerTarget = "source" | "topic_primer";
 // What a snooze applies to: a source, a topic primer, or a source's queued primer.
 export type SnoozeTarget = PrimerTarget | "source_primer";
 // Which queue entry a move repositions: the source itself or its queued primer.
 export type QueueTarget = "source" | "source_primer";
 export type ChosenTopic = { domain: DomainName; name: string; origin: "starter" | "user" };
+export type ReviewInput = {
+  cardId: string;
+  grade: ReviewGrade;
+  gradedBy: GradedBy;
+  answer: string | null;
+  missing: string | null;
+  wasDue: boolean;
+  reviewedAt: Date;
+  stateBefore: FsrsFields;
+  stateAfter: FsrsFields;
+  replacesReviewId?: string | null;
+};
 
 type Tx = Parameters<Parameters<AppDb["transaction"]>[0]>[0];
 
@@ -283,6 +300,8 @@ export function goDeeper(db: AppDb, sourceId: string): void {
       state: "consumed",
       processing: "processing",
       snoozedUntil: null,
+      // The server's go_deeper turns cards back on, so the phone shows the same before the next pull.
+      cardsOff: 0,
       readAt: sql`coalesce(${schema.sources.readAt}, ${now})`,
     });
     enqueue(tx, "go_deeper", { id: sourceId });
@@ -440,4 +459,76 @@ export function finishBrief(db: AppDb, briefId: string): void {
       .run();
     enqueue(tx, "finish_brief", { id: briefId, source_ids: sourceIds });
   });
+}
+
+/** Logs a graded answer and schedules the card at once (offline too); the server keeps the latest review's state. */
+export function reviewCard(db: AppDb, input: ReviewInput): string {
+  const reviewId = randomUUID();
+  const reviewedAt = input.reviewedAt.toISOString();
+  db.transaction((tx) => {
+    tx.insert(schema.reviews)
+      .values({
+        id: reviewId,
+        cardId: input.cardId,
+        grade: input.grade,
+        gradedBy: input.gradedBy,
+        answer: input.answer,
+        missing: input.missing,
+        wasDue: input.wasDue ? 1 : 0,
+        reviewedAt,
+        stateBefore: JSON.stringify(input.stateBefore),
+        stateAfter: JSON.stringify(input.stateAfter),
+        replacesReviewId: input.replacesReviewId ?? null,
+      })
+      .run();
+    tx.update(schema.cards).set(input.stateAfter).where(eq(schema.cards.id, input.cardId)).run();
+    enqueue(tx, "review_card", {
+      id: input.cardId,
+      review_id: reviewId,
+      grade: input.grade,
+      graded_by: input.gradedBy,
+      answer: input.answer,
+      missing: input.missing,
+      was_due: input.wasDue,
+      reviewed_at: reviewedAt,
+      state_before: wireState(input.stateBefore),
+      state_after: wireState(input.stateAfter),
+      replaces_review_id: input.replacesReviewId ?? null,
+    });
+  });
+  return reviewId;
+}
+
+/** Drop (in review) and Remove (on the item page): the card goes, and the server saves a "not this" preference. */
+export function dropCard(db: AppDb, cardId: string): void {
+  db.transaction((tx) => {
+    tx.update(schema.cards).set({ deletedAt: new Date().toISOString() }).where(eq(schema.cards.id, cardId)).run();
+    enqueue(tx, "drop_card", { id: cardId });
+  });
+}
+
+/** "No cards for this" retires the source's cards; turning cards back on re-runs analyze, as the server does. */
+export function setCardsOff(db: AppDb, sourceId: string, off: boolean): void {
+  db.transaction((tx) => {
+    if (off) {
+      updateSource(tx, sourceId, { cardsOff: 1 });
+      tx.update(schema.cards)
+        .set({ deletedAt: new Date().toISOString() })
+        .where(and(eq(schema.cards.sourceId, sourceId), isNull(schema.cards.deletedAt)))
+        .run();
+    } else {
+      updateSource(tx, sourceId, { cardsOff: 0, processing: "processing", processingError: null });
+    }
+    enqueue(tx, "set_cards_off", { id: sourceId, off });
+  });
+}
+
+/** Sent when Today opens on a Sunday online; the server makes the week's quiz once, if a brief was Done. */
+export function requestNewsQuiz(db: AppDb, weekStart: string): void {
+  db.transaction((tx) => enqueue(tx, "request_news_quiz", { week_start: weekStart }));
+}
+
+/** The answer "What I care about…" rewrote; the server already saved it, so nothing is queued. */
+export function setCardAnswer(db: AppDb, cardId: string, answer: string): void {
+  db.update(schema.cards).set({ answer }).where(eq(schema.cards.id, cardId)).run();
 }

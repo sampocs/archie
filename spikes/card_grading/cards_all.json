@@ -1,0 +1,164 @@
+[
+ {
+  "source": "ingest_morning_brew",
+  "kind": "mechanism",
+  "question": "Why do midterm elections often hurt the president's party?",
+  "answer": "Voters often use midterms to register approval or frustration with the sitting president, and the president's party usually loses House and Senate seats as a result. Rising prices and a weak economy can make this effect stronger."
+ },
+ {
+  "source": "ingest_morning_brew",
+  "kind": "concept",
+  "question": "What does Marvell's Lumentum deal involve, and why does it matter for AI?",
+  "answer": "Lumentum makes lasers and optical hardware that carry data between chips and servers inside data centers. Buying it helps Marvell own more of the infrastructure AI depends on, but the size of the deal raises concerns about an AI spending bubble."
+ },
+ {
+  "source": "ingest_morning_brew",
+  "kind": "mechanism",
+  "question": "How can hackers make supermarket fridges overheat?",
+  "answer": "Hackers broke into the digital system that remotely controls the fridges and switched them into defrost mode. Some units also needed physical fixes beyond software patches, so the attack kept working until both were addressed."
+ },
+ {
+  "source": "ingest_morning_brew",
+  "kind": "number",
+  "question": "What is the approximate scale of Palantir's government versus commercial revenue split in its latest quarter?",
+  "answer": "Palantir's total quarterly revenue was about $2.31 billion. US commercial revenue reached about $984 million, roughly equal to the $953 million from US government contracts, so the two segments are now about even."
+ },
+ {
+  "source": "ingest_substack",
+  "kind": "concept",
+  "question": "What is the difference between inclusive time and self time in a profiler?",
+  "answer": "Inclusive time is the total time a function spends running, including every function it calls. Self time is only the time spent in the function's own code, not in anything it calls."
+ },
+ {
+  "source": "ingest_substack",
+  "kind": "mechanism",
+  "question": "Why does an LLM alone often miss performance problems in code it writes?",
+  "answer": "An LLM checks syntax and local logic, so the code compiles and passes unit tests. It cannot see the runtime environment, the full call stack, or how often a function runs under production load, so waste only shows up at scale."
+ },
+ {
+  "source": "ingest_substack",
+  "kind": "mechanism",
+  "question": "Why does Netflix pair a stateless LLM with a Pattern Catalog?",
+  "answer": "LLMs start every prompt with no memory of past bugs. The catalog is a shared store of known anti-patterns that gets injected into prompts, so one team's findings can help every other team and the same bug is not rediscovered repeatedly."
+ },
+ {
+  "source": "ingest_substack",
+  "kind": "number",
+  "question": "How much CPU did a per-request regex sanitizer use in one Netflix service, and how much faster was the fix?",
+  "answer": "The regex used 46% of the service's CPU time. The agent replaced it with a precomputed lookup table, which ran about 22 times faster."
+ },
+ {
+  "source": "ingest_substack",
+  "kind": "mechanism",
+  "question": "Why do strict package prefix rules help an agent analyze a profile?",
+  "answer": "Without them, the model spends effort on JVM garbage collection, kernel calls, and third-party framework overhead that developers cannot change. Prefix rules keep the analysis on the application code they can actually fix."
+ },
+ {
+  "source": "pipeline_article",
+  "kind": "mechanism",
+  "question": "Why does Graham say consistent daily work matters more than bursts of effort?",
+  "answer": "Work compounds. A small daily amount adds up over years, such as a page a day becoming a book a year. Early exponential growth looks flat, so people underrate it and quit before the curve takes off."
+ },
+ {
+  "source": "pipeline_article",
+  "kind": "concept",
+  "question": "What are the four steps Graham gives for doing great work?",
+  "answer": "Choose a field you have aptitude and interest in, learn enough to reach its frontier, notice the gaps where knowledge is incomplete, and explore the promising gaps. The second and fourth steps require hard work."
+ },
+ {
+  "source": "pipeline_article",
+  "kind": "mechanism",
+  "question": "Why does a broken mental model make new ideas hard to see?",
+  "answer": "People see the world through models that both help and constrain them. Breaks in those models leave clues where they conflict with reality, but people tend to ignore those clues. Fixing a broken model makes the new idea look obvious afterward."
+ },
+ {
+  "source": "pipeline_article",
+  "kind": "concept",
+  "question": "What does it mean to stay upwind when choosing work?",
+  "answer": "Instead of making a fixed plan and executing it, at each stage do whatever seems most interesting and keeps your future options best. This suits discoveries you cannot describe in advance."
+ },
+ {
+  "source": "pipeline_article",
+  "kind": "number",
+  "question": "According to Graham, how long might some of the hardest work be sustainable per day?",
+  "answer": "About four or five hours a day. Graham suggests arranging those hours in contiguous blocks, because interruptions make hard tasks easier to avoid."
+ },
+ {
+  "source": "pipeline_podcast_apple",
+  "kind": "concept",
+  "question": "What is a remote access trojan (RAT)?",
+  "answer": "A RAT is malware that lets an attacker take remote control of a victim's computer without the victim knowing. It works like legitimate remote-support software, but it runs silently and the attacker can see files, keystrokes, passwords, and the webcam."
+ },
+ {
+  "source": "pipeline_podcast_apple",
+  "kind": "mechanism",
+  "question": "Why did RAT operators rely on social engineering instead of infecting computers directly?",
+  "answer": "A RAT cannot install itself on a machine that is not already compromised, and almost no one knowingly installs spyware. Attackers therefore trick the victim into running it, using fake photos, fake delivery emails, pirated software, or infected USB sticks."
+ },
+ {
+  "source": "pipeline_podcast_apple",
+  "kind": "mechanism",
+  "question": "Why does intent decide whether selling a tool like Blackshades is illegal?",
+  "answer": "Many monitoring tools are legal, so courts look at what the seller knew and what the buyers were likely to do. Selling a tool to people who will use it for crimes, or marketing it as a cover for spying, counts as clear intent to facilitate crime."
+ },
+ {
+  "source": "pipeline_podcast_apple",
+  "kind": "number",
+  "question": "Roughly how many computers did the FBI count as infected by Blackshades?",
+  "answer": "The FBI counted over 500,000 infected computers in more than 100 countries. The source also reports that by May 2014 the total had reached over a million worldwide, so the exact figure depends on the count used."
+ },
+ {
+  "source": "pipeline_youtube",
+  "kind": "concept",
+  "question": "What is the Fed's policy interest rate?",
+  "answer": "It is the benchmark rate the Federal Reserve sets for overnight lending between banks. Changes to it ripple out to mortgages, car loans, savings, and business borrowing across the economy."
+ },
+ {
+  "source": "pipeline_youtube",
+  "kind": "concept",
+  "question": "What is core inflation and why do central banks watch it?",
+  "answer": "Core inflation measures price changes while excluding food and energy, which swing a lot from month to month. Central banks watch it to see the underlying trend in prices."
+ },
+ {
+  "source": "pipeline_youtube",
+  "kind": "mechanism",
+  "question": "Why would the Fed keep rates high even after it has stopped raising them?",
+  "answer": "High rates slow borrowing and spending, which cools demand and eventually brings prices down. Cutting too early can let inflation rebound, so the Fed waits until inflation is clearly falling."
+ },
+ {
+  "source": "pipeline_youtube",
+  "kind": "number",
+  "question": "What inflation rate does the Fed target?",
+  "answer": "The Fed targets about 2% inflation per year. It treats this level as consistent with stable prices and a healthy economy."
+ },
+ {
+  "source": "analyze_greatwork",
+  "kind": "mechanism",
+  "question": "Why does Graham say that following your interests makes you resistant to pressures like fashion, money, and other people's wishes?",
+  "answer": "Because genuine interest keeps you on a path you care about, so outside pulls have less hold on you. If you're interested in the work, you're not astray. Interest also drives you to work harder than diligence alone."
+ },
+ {
+  "source": "analyze_greatwork",
+  "kind": "concept",
+  "question": "What does 'staying upwind' mean in Graham's essay?",
+  "answer": "It means not planning too far ahead. At each stage you do whatever seems most interesting and keeps the best options open for the future. The approach is like a sailor reading the wind rather than following a fixed route."
+ },
+ {
+  "source": "analyze_greatwork",
+  "kind": "mechanism",
+  "question": "Why is per-project procrastination more dangerous than per-day procrastination?",
+  "answer": "Per-project procrastination often looks like real work, since you are busy with other tasks, so it doesn't set off alarms. Delaying a big project for years can leave a lot undone."
+ },
+ {
+  "source": "analyze_greatwork",
+  "kind": "concept",
+  "question": "What is the 'frontier of knowledge' in Graham's recipe, and why does it matter?",
+  "answer": "The frontier is the edge where known knowledge stops. From a distance it looks smooth, but up close it is full of gaps. Those gaps are where new discoveries come from, which is why you need to learn enough to reach the frontier."
+ },
+ {
+  "source": "analyze_greatwork",
+  "kind": "number",
+  "question": "About how many hours a day can you sustain the hardest kinds of work?",
+  "answer": "Graham suggests that some of the hardest types of work may only be sustainable for four or five hours a day. Past that point, fatigue leads to diminishing returns."
+ }
+]

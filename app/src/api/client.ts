@@ -18,7 +18,7 @@ export class UnauthorizedError extends Error {}
 export class ClientError extends Error {}
 export class NetworkError extends Error {}
 
-type FetchInit = { method?: string; body?: unknown; sessionKey: string | null };
+type FetchInit = { method?: string; body?: unknown; sessionKey: string | null; signal?: AbortSignal };
 
 export async function apiFetch(path: string, init: FetchInit): Promise<unknown> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -28,8 +28,23 @@ export async function apiFetch(path: string, init: FetchInit): Promise<unknown> 
     method: init.method ?? "GET",
     headers,
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    signal: init.signal,
   });
+  return responseBody(response, path);
+}
 
+/** A multipart POST (e.g. recorded audio); fetch sets the multipart content type and boundary itself. */
+export async function apiUpload(
+  path: string,
+  init: { form: FormData; sessionKey: string | null; signal?: AbortSignal },
+): Promise<unknown> {
+  const headers: Record<string, string> = {};
+  if (init.sessionKey) headers.Authorization = `Bearer ${init.sessionKey}`;
+  const response = await fetchOrThrow(`${API_URL}${path}`, { method: "POST", headers, body: init.form, signal: init.signal });
+  return responseBody(response, path);
+}
+
+async function responseBody(response: Response, path: string): Promise<unknown> {
   if (response.status === 401) throw new UnauthorizedError(`401 from ${path}`);
   if (response.status >= 500) throw new NetworkError(`${response.status} from ${path}`);
   if (!response.ok) throw new ClientError(`${response.status} from ${path}`);
@@ -37,6 +52,7 @@ export async function apiFetch(path: string, init: FetchInit): Promise<unknown> 
   return response.status === 204 ? null : response.json();
 }
 
+// An aborted fetch rejects here too, so a cancelled call surfaces as NetworkError.
 async function fetchOrThrow(url: string, init: RequestInit): Promise<Response> {
   try {
     return await fetch(url, init);

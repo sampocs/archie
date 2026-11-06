@@ -31,6 +31,7 @@ export const sources = sqliteTable("sources", {
   primerQueuePosition: real("primer_queue_position"),
   primerSnoozedUntil: text("primer_snoozed_until"),
   newsletterKind: text("newsletter_kind"),
+  cardsOff: integer("cards_off").notNull().default(0),
 });
 
 export const artifacts = sqliteTable("artifacts", {
@@ -46,12 +47,26 @@ export const artifacts = sqliteTable("artifacts", {
 
 export const cards = sqliteTable("cards", {
   id: text("id").primaryKey(),
-  sourceId: text("source_id").notNull(),
+  // Exactly one origin is set: a source (its summary's cards, or foundation cards from its primer), a topic primer
+  // (foundation cards) or a brief (quiz cards). Later origins add their own column; see review/eligibility.ts.
+  sourceId: text("source_id"),
+  topicPrimerId: text("topic_primer_id"),
+  briefId: text("brief_id"),
   kind: text("kind").notNull(),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
   createdAt: text("created_at").notNull(),
   deletedAt: text("deleted_at"),
+  // FSRS state; the phone schedules and the server stores what it last sent.
+  fsrsState: text("fsrs_state").notNull().default("new"),
+  stability: real("stability"),
+  difficulty: real("difficulty"),
+  dueAt: text("due_at"),
+  lastReviewAt: text("last_review_at"),
+  reps: integer("reps").notNull().default(0),
+  lapses: integer("lapses").notNull().default(0),
+  // Quiz cards only.
+  expiresAt: text("expires_at"),
 });
 
 export const topics = sqliteTable("topics", {
@@ -111,4 +126,29 @@ export const briefs = sqliteTable("briefs", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
   doneAt: text("done_at"),
+});
+
+// The phone's own review log; reviews are pushed but never pulled. "I actually knew it" reads the replaced
+// review's stateBefore from here.
+export const reviews = sqliteTable("reviews", {
+  id: text("id").primaryKey(),
+  cardId: text("card_id").notNull(),
+  grade: text("grade").notNull(),
+  gradedBy: text("graded_by").notNull(),
+  answer: text("answer"),
+  missing: text("missing"),
+  wasDue: integer("was_due").notNull(),
+  reviewedAt: text("reviewed_at").notNull(),
+  // JSON-encoded FsrsFields (review/types.ts).
+  stateBefore: text("state_before").notNull(),
+  stateAfter: text("state_after").notNull(),
+  replacesReviewId: text("replaces_review_id"),
+});
+
+// Phone only, one row (id 1) once the user changes anything; absent means the defaults.
+export const reviewSettings = sqliteTable("review_settings", {
+  id: integer("id").primaryKey(),
+  reminderEnabled: integer("reminder_enabled").notNull(),
+  // Minutes after local midnight.
+  reminderMinutes: integer("reminder_minutes").notNull(),
 });

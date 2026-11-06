@@ -1,0 +1,81 @@
+# Review: a finished article's cards reach Today, a typed answer is graded, Next, Drop through to Done.
+# Needs the owner's keys in .env (a few cents: analyze, the primer and one Haiku grade); local backend only;
+# run it through `make maestro-review`.
+appId: com.sampocs.archie
+---
+- runFlow: login.yaml
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "tab-add"
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "tab-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://paulgraham.com/greatwork.html"
+- tapOn: "Paste a link to save it."
+# Finished: the source is consumed at once, so its cards are reviewable as soon as analyze writes them.
+- tapOn:
+    id: "intent-finished"
+- tapOn:
+    id: "add-save"
+- tapOn:
+    id: "tab-today"
+- extendedWaitUntil:
+    visible:
+      id: "today-review"
+    timeout: 240000
+- tapOn:
+    id: "today-review"
+- assertVisible:
+    id: "review-question"
+- tapOn:
+    id: "review-answer-input"
+- inputText: "Work hard on something you find deeply interesting and keep at it"
+- tapOn:
+    id: "review-submit"
+# Graded by the local backend's Haiku call (about a second; the phone gives up after 3 s).
+- extendedWaitUntil:
+    visible:
+      id: "review-verdict"
+    timeout: 15000
+- assertVisible:
+    id: "review-accepted-answer"
+- tapOn:
+    id: "review-next"
+# Drop the rest to reach the Done screen.
+- repeat:
+    while:
+      notVisible:
+        id: "review-done"
+    commands:
+      # The last Drop swaps in the Done screen, which can land after the loop's check; don't fail on that tap.
+      - tapOn:
+          id: "review-drop"
+          optional: true
+- assertVisible:
+    id: "review-done"
+- assertVisible:
+    id: "tally-dropped"
+- tapOn:
+    id: "done-back-today"
+- assertNotVisible:
+    id: "today-review"

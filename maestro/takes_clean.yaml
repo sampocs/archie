@@ -51,12 +51,10 @@ appId: com.sampocs.archie
 # (follow-up pulls at 2/5/10 s after the save, then the 60 s poll).
 - extendedWaitUntil:
     visible:
-      id: "take-see-raw"
+      id: "take-origin"
     timeout: 150000
-- assertVisible:
-    id: "take-origin"
-- tapOn:
-    id: "take-see-raw"
+# "See what you said ›" is a nested text, so iOS exposes it by its words, not its testID.
+- tapOn: "See what you said ›"
 - assertVisible:
     id: "take-raw-text"
     text: ".*stablecoins did like 10 trillion.*"

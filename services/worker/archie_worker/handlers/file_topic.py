@@ -17,10 +17,11 @@ from typing import Any
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import briefs, changes, models, pipeline, user_topics
+from archie_llm import llm
 from archie_shared import config, domains
 from archie_shared.domains import Domain
 
-from archie_worker import llm, prompts
+from archie_worker import keys, prompts
 
 MAX_OUTPUT_TOKENS = 400
 
@@ -141,7 +142,7 @@ def _prepare(db: sqlalchemy.orm.Session, job: models.Job) -> _FilingRun | None:
         return None
 
     # Checked before reading topics so a user without a key fails at once (PermanentJobError, no hook).
-    api_key = llm.api_key_for(user)
+    api_key = keys.anthropic_key_for(user)
     kind = models.SourceKind(source.kind)
     run = _FilingRun(
         source_id=source.id,

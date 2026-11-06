@@ -39,6 +39,10 @@ class ActionType(StrEnum):
     CHOOSE_TOPICS = "choose_topics"
     CHOOSE_EPISODE = "choose_episode"
     FINISH_BRIEF = "finish_brief"
+    REVIEW_CARD = "review_card"
+    DROP_CARD = "drop_card"
+    SET_CARDS_OFF = "set_cards_off"
+    REQUEST_NEWS_QUIZ = "request_news_quiz"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 
@@ -98,6 +102,7 @@ class SourceOut(pydantic.BaseModel):
     primer_queue_position: float | None
     primer_snoozed_until: datetime.datetime | None
     newsletter_kind: str | None
+    cards_off: bool
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None
@@ -120,15 +125,25 @@ class ArtifactOut(pydantic.BaseModel):
 
 
 class CardOut(pydantic.BaseModel):
-    """A spaced-repetition card as the phone stores it."""
+    """A spaced-repetition card as the phone stores it, with the FSRS state its scheduler last wrote."""
 
     model_config = pydantic.ConfigDict(from_attributes=True)
 
     id: uuid.UUID
-    source_id: uuid.UUID
+    source_id: uuid.UUID | None
+    topic_primer_id: uuid.UUID | None
+    brief_id: uuid.UUID | None
     kind: str
     question: str
     answer: str
+    fsrs_state: str
+    stability: float | None
+    difficulty: float | None
+    due_at: datetime.datetime | None
+    last_review_at: datetime.datetime | None
+    reps: int
+    lapses: int
+    expires_at: datetime.datetime | None
     created_at: datetime.datetime
     deleted_at: datetime.datetime | None
     change_seq: int

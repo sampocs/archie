@@ -1,0 +1,63 @@
+// Row factories for review logic tests: our own rows, filled with neutral defaults. Sources, topics and topic primers
+// come from the Library's factories (their rows carry a few joined fields the review code ignores).
+import { sourceRow, topicPrimerRow, topicRow } from "@/library/testRows";
+
+import { makeReviewData, type ReviewData } from "./eligibility";
+import type { CardRow } from "./types";
+
+export { sourceRow, topicPrimerRow, topicRow };
+
+// Thursday Nov 5 2026, noon in the test zone (America/New_York).
+export const NOW = new Date(2026, 10, 5, 12, 0);
+
+/** A date `days` whole days after NOW at the given local time, as an ISO string. */
+export function dayAt(days: number, hour = 12, minute = 0): string {
+  return new Date(2026, 10, 5 + days, hour, minute).toISOString();
+}
+
+export const cardRow = (overrides: Partial<CardRow>): CardRow => ({
+  id: "c1",
+  sourceId: "s1",
+  topicPrimerId: null,
+  briefId: null,
+  kind: "concept",
+  question: "Q?",
+  answer: "A.",
+  createdAt: "2026-11-01T00:00:00Z",
+  deletedAt: null,
+  fsrsState: "new",
+  stability: null,
+  difficulty: null,
+  dueAt: null,
+  lastReviewAt: null,
+  reps: 0,
+  lapses: 0,
+  expiresAt: null,
+  ...overrides,
+});
+
+/** A card already in review, due at `dueAt`. */
+export const reviewCard = (overrides: Partial<CardRow> & { dueAt: string }): CardRow =>
+  cardRow({
+    fsrsState: "review",
+    stability: 10,
+    difficulty: 5,
+    lastReviewAt: "2026-10-20T16:00:00Z",
+    reps: 3,
+    ...overrides,
+  });
+
+/** Review data where source s1 is consumed with its primer opened, and topic t1 has an opened primer p1. */
+export function reviewData(
+  cards: CardRow[],
+  rows: Partial<Pick<Parameters<typeof makeReviewData>[0], "sources" | "topicPrimers" | "topics">> = {},
+): ReviewData {
+  return makeReviewData({
+    cards,
+    sources: rows.sources ?? [
+      sourceRow({ id: "s1", state: "consumed", primerOpenedAt: "2026-11-02T00:00:00Z", topicId: "t1", domain: "AI" }),
+    ],
+    topicPrimers: rows.topicPrimers ?? [topicPrimerRow({ id: "p1", topicId: "t1", openedAt: "2026-11-03T00:00:00Z" })],
+    topics: rows.topics ?? [topicRow({ id: "t1" })],
+  });
+}

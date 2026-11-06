@@ -11,6 +11,7 @@ after deleting a cassette (about a dollar-cent each; needs ANTHROPIC_API_KEY in 
 from __future__ import annotations
 
 import contextlib
+import json
 import pathlib
 import uuid
 from collections.abc import Callable, Iterator
@@ -18,11 +19,12 @@ from collections.abc import Callable, Iterator
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, jobs, models, pipeline, session
+from archie_db import card_rows, changes, jobs, models, pipeline, session
+from archie_llm import llm
 from archie_shared import config
 from archie_shared.domains import Domain
 from archie_testing import recording
-from archie_worker import errors, handlers, llm, loop, prompts
+from archie_worker import errors, handlers, loop, prompts
 
 pytestmark = pytest.mark.postgres
 
@@ -38,6 +40,9 @@ INVALID_API_KEY = "sk-ant-invalid"
 
 MIN_CARDS = 3
 MAX_CARDS = 5
+MIN_FOUNDATION_CARDS = 2
+CARE_NOTE = "how incentives shape what people work on"
+DROP_QUESTION = "What year did Paul Graham write this essay?"
 
 
 @pytest.fixture(autouse=True)
@@ -140,8 +145,9 @@ def test_analyze_and_primer_together_make_the_source_ready(engine: sqlalchemy.En
     [primer] = _artifacts(engine, source_id, models.ArtifactKind.PRIMER)
     assert primer.is_current
     assert primer.model == llm.SONNET
-    assert primer.prompt_version == prompts.PRIMER_PROMPT_VERSION
+    assert primer.prompt_version == prompts.PRIMER_PROMPT_VERSION == "primer-v2"
     assert primer.content["markdown"].strip().startswith("#")
+    assert "<foundation_cards>" not in primer.content["markdown"]
 
     source = _source(engine, source_id)
     assert source.processing == models.ProcessingStatus.READY.value
@@ -422,6 +428,198 @@ def test_model_text_caps_untimed_text() -> None:
     assert text.count("§") == 200_000
 
 
+def test_a_primer_writes_two_or_three_foundation_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """The primer's foundation cards are stored on the source, tied to the primer artifact, and cut from its text."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT)
+    _enqueue(engine, source_id, models.JobKind.PRIMER)
+
+    with replay("primer_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    [primer] = _artifacts(engine, source_id, models.ArtifactKind.PRIMER)
+    assert primer.prompt_version == "primer-v2"
+    assert "<foundation_cards>" not in primer.content["markdown"]
+    assert "</foundation_cards>" not in primer.content["markdown"]
+
+    cards = _live_cards(engine, source_id)
+    assert MIN_FOUNDATION_CARDS <= len(cards) <= prompts.MAX_FOUNDATION_CARDS
+    assert all(card.kind == models.CardKind.FOUNDATION.value for card in cards)
+    assert all(card.artifact_id == primer.id and card.question.strip() and card.answer.strip() for card in cards)
+    assert len({card.change_seq for card in cards}) == len(cards)
+
+
+def test_a_rewritten_primer_replaces_only_its_foundation_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """A second primer retires the first one's foundation cards and adds its own; the summary's cards stay."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE, models.JobKind.PRIMER)
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    with replay("primer_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    summary_cards = {card.id: card.change_seq for card in _live_cards(engine, source_id, foundation=False)}
+    first_foundation = {card.id: card.change_seq for card in _live_cards(engine, source_id, foundation=True)}
+
+    _enqueue(engine, source_id, models.JobKind.PRIMER)
+    with replay("primer_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    _first, second = _artifacts(engine, source_id, models.ArtifactKind.PRIMER)
+    retired = [card for card in _cards(engine, source_id) if card.id in first_foundation]
+    assert all(card.deleted_at is not None and card.change_seq > first_foundation[card.id] for card in retired)
+    live_foundation = _live_cards(engine, source_id, foundation=True)
+    assert MIN_FOUNDATION_CARDS <= len(live_foundation) <= prompts.MAX_FOUNDATION_CARDS
+    assert all(card.artifact_id == second.id for card in live_foundation)
+    assert {card.id: card.change_seq for card in _live_cards(engine, source_id, foundation=False)} == summary_cards
+
+
+def test_reanalyzing_keeps_the_primers_foundation_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """A re-run analyze replaces only the summary's cards: foundation cards belong to the primer."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE, models.JobKind.PRIMER)
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    with replay("primer_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    first_summary_cards = {card.id for card in _live_cards(engine, source_id, foundation=False)}
+    foundation = {card.id: card.change_seq for card in _live_cards(engine, source_id, foundation=True)}
+
+    _enqueue(engine, source_id, models.JobKind.ANALYZE)
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert {card.id: card.change_seq for card in _live_cards(engine, source_id, foundation=True)} == foundation
+    live_summary_cards = {card.id for card in _live_cards(engine, source_id, foundation=False)}
+    assert MIN_CARDS <= len(live_summary_cards) <= MAX_CARDS
+    assert live_summary_cards.isdisjoint(first_summary_cards)
+
+
+def test_a_source_with_cards_off_gets_its_summary_and_primer_but_no_cards(
+    engine: sqlalchemy.Engine, replay: Replay
+) -> None:
+    """While the user has cards off, analyze writes no summary cards and the primer no foundation cards."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT)
+    with sqlalchemy.orm.Session(engine) as db:
+        db.get_one(models.Source, source_id).cards_off = True
+        db.commit()
+    _enqueue(engine, source_id, models.JobKind.ANALYZE, models.JobKind.PRIMER)
+
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    with replay("primer_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    [summary] = _artifacts(engine, source_id, models.ArtifactKind.SUMMARY)
+    assert summary.content["is_educational"] is True
+    [_primer] = _artifacts(engine, source_id, models.ArtifactKind.PRIMER)
+    assert _cards(engine, source_id) == []
+
+
+def test_card_steps_tell_the_model_the_users_card_preferences(
+    engine: sqlalchemy.Engine, replay: Replay, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Analyze and primer both send the user's latest care and drop notes with the source's text."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT)
+    _add_preferences(engine, source_id)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE, models.JobKind.PRIMER)
+    sent_messages: list[str] = []
+    real_complete = llm.complete
+
+    def recording_complete(*args: object, **kwargs: object) -> llm.Completion:
+        sent_messages.append(str(kwargs["user_message"]))
+        return real_complete(*args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(llm, "complete", recording_complete)
+
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    with replay("primer_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert len(sent_messages) == 2
+    for message in sent_messages:
+        assert "</text>\n\n<card_preferences>" in message
+        assert f"- cares about: {CARE_NOTE}" in message
+        assert f"- doesn't want cards like: {DROP_QUESTION}" in message
+
+
+def test_split_primer_output_cuts_the_cards_block_and_caps_it() -> None:
+    """A valid block leaves the primer's markdown and at most three cards."""
+    cards = [{"question": f"Q{index}?", "answer": f"A{index}."} for index in range(4)]
+    text = f"# Primer\n\nBody.\n\n<foundation_cards>{json.dumps(cards)}</foundation_cards>\n"
+
+    output = prompts.split_primer_output(text)
+
+    assert output.markdown == "# Primer\n\nBody."
+    assert [(card.question, card.answer) for card in output.foundation_cards] == [
+        ("Q0?", "A0."),
+        ("Q1?", "A1."),
+        ("Q2?", "A2."),
+    ]
+
+
+def test_split_primer_output_keeps_a_tag_mentioned_mid_text_before_the_real_block() -> None:
+    """The block is the last opening tag, so an earlier mention stays in the markdown with the body after it."""
+    cards = [{"question": "Q?", "answer": "A."}]
+    body = "# P\n\nWe use a <foundation_cards> tag here.\n\nMore body."
+    text = f"{body}\n\n<foundation_cards>{json.dumps(cards)}</foundation_cards>"
+
+    output = prompts.split_primer_output(text)
+
+    assert output.markdown == body
+    assert [(card.question, card.answer) for card in output.foundation_cards] == [("Q?", "A.")]
+
+
+def test_split_primer_output_drops_text_after_the_closing_tag() -> None:
+    """Chatter after the block neither hides the cards nor leaves the raw tag in the markdown."""
+    cards = [{"question": "Q?", "answer": "A."}]
+    text = f"# P\n\nBody.\n\n<foundation_cards>{json.dumps(cards)}</foundation_cards>\n\nHope this helps!"
+
+    output = prompts.split_primer_output(text)
+
+    assert output.markdown == "# P\n\nBody."
+    assert [(card.question, card.answer) for card in output.foundation_cards] == [("Q?", "A.")]
+
+
+def test_split_primer_output_keeps_a_primer_without_cards_whole() -> None:
+    """An older recording, or a model that left the block out, keeps all its text and has no cards."""
+    text = "# Primer\n\nBody with <foundation_cards> mentioned mid-text.\n\nMore."
+
+    output = prompts.split_primer_output(text)
+
+    assert output == prompts.PrimerOutput(markdown=text, foundation_cards=[])
+
+
+@pytest.mark.parametrize(
+    "block",
+    ['[{"question": "Q?", "answer": "A."', '[{"question": "", "answer": "A."}]', '{"question": "Q?"}'],
+    ids=["broken-json", "empty-question", "not-a-list"],
+)
+def test_split_primer_output_drops_a_malformed_block(block: str) -> None:
+    """A malformed block costs the cards, never the primer."""
+    output = prompts.split_primer_output(f"# Primer\n\nBody.\n<foundation_cards>{block}</foundation_cards>")
+
+    assert output == prompts.PrimerOutput(markdown="# Primer\n\nBody.", foundation_cards=[])
+
+
+def test_preferences_block_is_empty_without_notes() -> None:
+    """A user who said nothing about cards adds nothing to the message."""
+    assert prompts.preferences_block([]) == ""
+
+
+def test_preferences_block_lists_each_note_in_order() -> None:
+    """Care notes and dropped questions each get their own line, in the order given."""
+    block = prompts.preferences_block(
+        [
+            card_rows.PreferenceNote(kind=models.CardPreferenceKind.CARE, note=CARE_NOTE),
+            card_rows.PreferenceNote(kind=models.CardPreferenceKind.DROP, note=DROP_QUESTION),
+        ]
+    )
+
+    assert block.startswith("\n\n<card_preferences>\n")
+    expected_lines = f"- cares about: {CARE_NOTE}\n- doesn't want cards like: {DROP_QUESTION}"
+    assert block.endswith(f"{expected_lines}\n</card_preferences>")
+
+
 def _add_source(
     engine: sqlalchemy.Engine,
     *,
@@ -476,6 +674,15 @@ def _choose_topics(engine: sqlalchemy.Engine, source_id: uuid.UUID, *, filed_dom
         db.commit()
 
 
+def _add_preferences(engine: sqlalchemy.Engine, source_id: uuid.UUID) -> None:
+    """A care note and a dropped card's question for the source's user."""
+    with sqlalchemy.orm.Session(engine) as db:
+        user_id = db.get_one(models.Source, source_id).user_id
+        db.add(models.CardPreference(user_id=user_id, kind=models.CardPreferenceKind.CARE.value, note=CARE_NOTE))
+        db.add(models.CardPreference(user_id=user_id, kind=models.CardPreferenceKind.DROP.value, note=DROP_QUESTION))
+        db.commit()
+
+
 def _enqueue(engine: sqlalchemy.Engine, source_id: uuid.UUID, *steps: models.JobKind) -> None:
     with sqlalchemy.orm.Session(engine) as db:
         source = db.get_one(models.Source, source_id)
@@ -511,6 +718,16 @@ def _artifacts(
 def _cards(engine: sqlalchemy.Engine, source_id: uuid.UUID) -> list[models.Card]:
     with sqlalchemy.orm.Session(engine) as db:
         return list(db.scalars(sqlalchemy.select(models.Card).where(models.Card.source_id == source_id)))
+
+
+def _live_cards(
+    engine: sqlalchemy.Engine, source_id: uuid.UUID, *, foundation: bool | None = None
+) -> list[models.Card]:
+    """The source's live cards; only foundation cards (True) or only the summary's (False) when asked."""
+    live = [card for card in _cards(engine, source_id) if card.deleted_at is None]
+    if foundation is None:
+        return live
+    return [card for card in live if (card.kind == models.CardKind.FOUNDATION.value) == foundation]
 
 
 def _llm_calls(engine: sqlalchemy.Engine) -> list[models.LlmCall]:

@@ -1,0 +1,82 @@
+[
+ {
+  "id": 2,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.0587529591284692,
+  "cost": 0.003928,
+  "in": 872,
+  "out": 22
+ },
+ {
+  "id": 10,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.6051456250716,
+  "cost": 0.003956,
+  "in": 879,
+  "out": 22
+ },
+ {
+  "id": 38,
+  "grade": "partly",
+  "missing": "You described steady accumulation but missed compounding: early exponential growth looks flat, so people quit too soon.",
+  "confident": true,
+  "seconds": 2.633745916886255,
+  "cost": 0.006728,
+  "in": 882,
+  "out": 160
+ },
+ {
+  "id": 90,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 2.0597754998598248,
+  "cost": 0.005896,
+  "in": 889,
+  "out": 117
+ },
+ {
+  "id": 109,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 2.4325185420457274,
+  "cost": 0.005492,
+  "in": 878,
+  "out": 99
+ },
+ {
+  "id": 110,
+  "grade": "got_it",
+  "missing": "",
+  "confident": true,
+  "seconds": 1.7575420420616865,
+  "cost": 0.004992,
+  "in": 853,
+  "out": 79
+ },
+ {
+  "id": 114,
+  "grade": "missed",
+  "missing": "The core reason is voters using midterms as a referendum on the president; the economy only amplifies it.",
+  "confident": true,
+  "seconds": 1.4372359588742256,
+  "cost": 0.0045,
+  "in": 870,
+  "out": 51
+ },
+ {
+  "id": 115,
+  "grade": "missed",
+  "missing": "The point is that LLMs lack runtime context (call stack, production load frequency), not specifically memory leaks.",
+  "confident": true,
+  "seconds": 1.9054518749471754,
+  "cost": 0.00464,
+  "in": 880,
+  "out": 56
+ }
+]

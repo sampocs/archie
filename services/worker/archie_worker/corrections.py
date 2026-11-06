@@ -17,9 +17,10 @@ from dataclasses import dataclass
 from typing import Any
 
 import sqlalchemy
+from archie_llm import llm
 from archie_shared import logging
 
-from archie_worker import content, llm
+from archie_worker import content
 from archie_worker.content import episode as episode_content
 
 MAX_OUTPUT_TOKENS = 16000

@@ -2,7 +2,7 @@
 
 Archie is a personal "second brain": it turns the podcasts, articles, videos and newsletters a user
 shares into summaries, primers and spaced-repetition cards, on an iPhone app that works offline.
-This repo holds the Python backend (a uv workspace: `packages/` libraries, `services/` deployables:
+This repo holds the Python backend (a uv workspace: `packages/` libraries (`archie-llm` is the model layer shared by the worker and the API), `services/` deployables:
 the FastAPI `api` and the background `worker`), the Expo app in `app/`, Maestro flows in `maestro/`,
 and product/engineering docs in `docs/`. `spikes/` is reference-only throwaway code.
 
@@ -20,7 +20,7 @@ truth); how it's built lives in `docs/superpowers/specs/2026-11-02-backend-archi
 - `make migrate-local` — apply migrations to the local dev database
 - `make start-local` — API + worker together, as the container runs them
 - `make reset-local-data` — empty the local dev database's synced data
-- `make maestro` / `make maestro-offline` — Maestro flows on the booted simulator (see `maestro/README.md`); `make maestro-podcast` runs the podcast flow, which spends real API credits; `make maestro-newsletter` delivers a newsletter through the ingest endpoint
+- `make maestro` / `make maestro-offline` — Maestro flows on the booted simulator (see `maestro/README.md`); `make maestro-podcast` runs the podcast flow, which spends real API credits; `make maestro-newsletter` delivers a newsletter through the ingest endpoint; `make maestro-review` runs the review flow, which spends a few cents
 - `cd app && npm test` / `npm run typecheck` — app jest suite / `tsc --noEmit`
 - Re-recording a cassette: delete it, then `uv run pytest <test file> --record-mode=once -m postgres` with
   `TEST_DATABASE_URL` set (as `make test-db` does). Anthropic cassettes cost a few cents and need `ANTHROPIC_API_KEY`

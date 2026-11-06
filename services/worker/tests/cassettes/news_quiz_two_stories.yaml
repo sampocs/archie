@@ -1,0 +1,129 @@
+interactions:
+- request:
+    body: '{"max_tokens":2000,"messages":[{"role":"user","content":"Story 1\nHeadline:
+      Fed holds rates steady\nWhat happened: The Federal Reserve kept its benchmark
+      rate unchanged, citing sticky inflation and a firm job market.\nWhy it matters:
+      It shapes what comes next.\nDetail: The Federal Reserve kept its benchmark rate
+      unchanged, citing sticky inflation and a firm job market.\n\nStory 2\nHeadline:
+      Chipmaker unveils new AI accelerator\nWhat happened: A major chipmaker announced
+      an accelerator it says trains large models twice as fast as its last one.\nWhy
+      it matters: It shapes what comes next.\nDetail: A major chipmaker announced
+      an accelerator it says trains large models twice as fast as its last one."}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"cards":{"type":"array","items":{"type":"object","properties":{"story_index":{"type":"integer"},"question":{"type":"string"},"answer":{"type":"string"}},"required":["story_index","question","answer"],"additionalProperties":false}}},"required":["cards"],"additionalProperties":false}}},"system":"You
+      write a weekly news quiz for a personal learning app: short open-recall cards
+      on the week''s most important news stories, so the user remembers what happened
+      and why it matters.\n\nYou get numbered stories (headline, what happened, why
+      it matters, detail). Write exactly one card per story, in the order given: one
+      focused question about the core of the story (what happened, or why it matters),
+      never trivia like exact dates or a minor name, and an answer of 1-2 sentences.
+      Give each card the story''s number as story_index.\n\nWrite in plain, conversational
+      English for a smart reader who is new to the subject. Short sentences. Define
+      any jargon the first time it appears. Prefer concrete examples and rough numbers
+      (\"~1 GW\", not \"1.07 GW\")."}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '1869'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-haiku-5-5","id":"msg_011CgkkNko6ystLye8MRvzuS","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSwQsKEAgTGAI4AUIIdGhpbmtpbmcSDOqbnYgaJcfTHEoRqRoMRVGnEtJDPit85BA8IjCujwfOR9RXXaZpyaSt64lop7kGpzbsCCrWBZ78qIgT/G/vy2QRQR8MP8Is5LVwg80q3gr61cbkINhHGHY4HArLodGLzBVejofABqFdPxY41g2ruYFG4S+HmF7yFUr9PVOuVAffJfhY+vZ8jbn13kbFcrqAUuctY5Nnzk3xOEqW0Peh6MxyVbxxoQj7lHUjpLKF1N4qGZQezNronGe68hwOS69GnJ/w80kMqRX/LE9IU2HSO+mrHXlX4MCJvCjldCR6VfLm7Aj6y3fVkFb+3kINkEZZXePCopWgAX+VGjGD0h6UHFIdwTpe8lN3XkL3aGvHMbtka9wR3o5mkEjIgmaZ334q5fdKXaI7YT5fxQ6pTNXlLUiGW5ozwmNdb2yiO6K6qlluovuxv46MfM/qCqt13LEIYXoVdQ5qEL/RiXvsF0wkvJ43ekTI2e2/KmtCkUEMfNtJOLtqNgJ3/heXTR2wCDShxfvXESsMzGXGjrzHKia3BPgH1CCm8mOBNM1a9Eh0qom8dsRoAMp1CkPBevz3ers5+0bJcXPQNRZnZs0bPdnUlve+WE/a8uTtHVV4wdpFvc/iKaAf7Tos7ghDW/8ALBjSTt8wrJUOmNQzo5wwVYdRN5zsJof22hT73xHNlRd/wDIVgjKhK6630/eEEaBI3XYZhWMNLTDwzF8jRz0LZhyWlGJcJWPmZ3vIPKyKjAMV1m3wmNMhJ0dDt+/cJ87E0umZBXTn10zFrk0/5cs2H7PO2+CV7Zzsksf2oISvgxPhPVNXi39VjJW0gQ3pIcuu5lgydVJ0cpLM6OIeREGhGTuEQT9d5ER8PkjAlJUw3ke6L9POjH9Km05vW1FCcHy8N4taXvVwTiVaqUk33sOM6VzDyCDpI+bmAAjA43tlrxcyZqSGvLtCa4c+bwOlUwdOPf69iybvK9VeUj0tECTucQC+KTapehneoIhBXogxXR+5oTU/uh6LeJuBMAI4dww7V82xXhxvQU1B7njDSFhIJ1Aw8KSTx5PdP5Ai8ixR7PmbiczNUYZJvsbLQXqqsXisbtNstB5llpavj3sseb3wDfceY6GBvUl7sfZrTWvgJzkVPVIX1BVPFZRbUUdqh716vhKi4lv7fg3VLReFdUhrYv/Hgx0l1i9G3IRdBkcvHxI5Sc/Mjc/PXYZ7zZC1h71EktQsD3bda7qCoIZ3T/qJV2fygS83Z2NObE4mxl8nENL9e/ScyFyqn66Jktx3qzgsm0XXWLOOB47oN3Al2ONx0CdWnGQjMyu5huRuxD0lwxgZ/d1lYBvH0JzHiEmJhhwgBa7bBt9L6Cdp3SgO/E4aZ21e+Pc/3IomEKrTVAZwsQTfvxc4N7G2FJ8n5eAOOBMxFPuIvGLnrM3kcmMzQIz5PYAFwUjwu/v6mD3UAL2DnEYljdrN5hU+o8qIv7qZ0KCGOsP51SRV1aTjJYehkoglOORfxYVtEvKxFHhZs6k08QwMhp9g8zKLjSr08FAqcuMQMMYXoogn6mg1uRr8X4ws58QOGwEzuU/PPKVIcOddr9CZnQc6Ms7nvOXpD62XJBJaue07RcqEJjqTE6f/V+6kkF5HQMQCHvFzXvvn4/93VXHDxONZ8uMYkkQm9RSG+P+azcFu4nGWi6khtc0gNP2Z8jW94bUj1CKwo6W0HAioHRxWZTOyA8wa3b0+4ztVSf2NJyiRByad/UBW1wcUFqPNyR/FyfQ3Bi0loEgIojUfG+aCUbJRqqRF/rtzQPsH5nufFbF1Vk6gD5kVnVH93kPAYBheTibaaJff8eOtmdvM0Ofvxb6NsFXbTiM6qY/OwPN/nI33mE0t2d4GmOR6y1BO7B7pHRW/06E6i5dZiM4aeExIHhrKZc/gU4mT8N4LR2mdDO8SgFfFLJKjsNFzAGpo+MkYAQ=="},{"type":"text","text":"{\"cards\":[{\"story_index\":1,\"question\":\"Why
+        did the Federal Reserve leave its benchmark interest rate unchanged, and what
+        does that rate do?\",\"answer\":\"The benchmark rate is the main interest
+        rate the Fed sets, and it affects borrowing costs across the economy. The
+        Fed held it steady because inflation (prices rising) is stuck above its target
+        and the job market is still strong.\"},{\"story_index\":2,\"question\":\"What
+        did the chipmaker announce, and what does it claim the chip can do?\",\"answer\":\"The
+        chipmaker unveiled a new AI accelerator, a specialized chip that speeds up
+        AI computing. The company says it trains large AI models twice as fast as
+        its previous chip.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":774,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":536,"output_tokens_details":{"thinking_tokens":305},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-06T00:44:15Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1999000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-06T00:44:17Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-06T00:44:14Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11999000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-06T00:44:15Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a560118d3da2de7e-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '3263'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Fri, 06 Nov 2026 00:44:17 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=3317
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-87424573df037a6fc4063755edaa5ce6-3dba28a6784b415f-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

@@ -11,6 +11,7 @@ import { clearSession, useSession } from "@/auth/session";
 import { SignOutContext } from "@/context/SignOutContext";
 import { db, seedSyncState, useDbMigrations } from "@/db/client";
 import * as schema from "@/db/schema";
+import { ReminderRoot } from "@/review/ReminderRoot";
 import { SyncRoot } from "@/sync/SyncRoot";
 import { fontAssets } from "@/theme/type";
 
@@ -38,6 +39,7 @@ export default function RootLayout() {
       {session.status === "signedIn" && (
         <SyncRoot sessionKey={session.sessionKey} onUnauthorized={() => void clearSession()} />
       )}
+      {session.status === "signedIn" && <ReminderRoot />}
       <AppStack />
     </GestureHandlerRootView>
   );
@@ -93,6 +95,9 @@ function AppStack() {
           <Stack.Screen name="brief" />
           <Stack.Screen name="brief/story/[index]" />
           <Stack.Screen name="settings/removed-topics" />
+          <Stack.Screen name="settings/review" />
+          <Stack.Screen name="review/session" />
+          <Stack.Screen name="review/topics" />
           <Stack.Screen name="share" />
           <Stack.Screen name="topic-picker" />
         </Stack.Protected>

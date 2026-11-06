@@ -24,8 +24,9 @@ from typing import Any
 import sqlalchemy
 import sqlalchemy.orm
 from archie_db import briefs, changes, models, pipeline, user_topics
+from archie_llm import llm
 
-from archie_worker import brief_content, content, llm, prompts
+from archie_worker import brief_content, content, keys, prompts
 
 MAX_OUTPUT_TOKENS = 32000
 
@@ -178,7 +179,7 @@ def _news_call(*, user: models.User, news: Sequence[_NewsInput], topics: Sequenc
     ]
     return _NewsCall(
         context=llm.CallContext(user_id=user.id, source_id=None, job_id=job_id, step=models.JobKind.UPDATE_BRIEF),
-        api_key=llm.api_key_for(user),
+        api_key=keys.anthropic_key_for(user),
         user_message=prompts.brief_message(newsletters=newsletters, live_topics=topics),
     )
 

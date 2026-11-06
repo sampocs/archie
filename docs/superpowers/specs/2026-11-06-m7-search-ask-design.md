@@ -28,8 +28,9 @@ takes are now indexed, searchable and askable.
   Consecutive blocks with the same label are shown as one labelled section.
 - **Make a card** is the only thing an answer turns into: Haiku drafts one card from the answer, the owner edits it
   in a sheet, and Save adds it to Review. The card's origin is the conversation (a fifth card origin).
-- **Ask about this** sits on source pages, source primers, topic primers and take pages. It starts a chat tied to that
-  item: the item's title, summary and the owner's note go into the system prompt, and that item's passages get a
+- **Ask about this** is an entry in the ••• menu of source pages, topic pages (asking about the topic primer) and take
+  pages; there is no button on the page itself, and the primer screen gets nothing (its source's menu covers it). It
+  starts a chat tied to that item: the item's title, summary and the owner's note go into the system prompt, and that item's passages get a
   boost in search.
 - **Whitelisted only for anything that spends keys.** Chat, card drafts and query embeddings use the owner's keys.
   A non-whitelisted account sees an Ask tab that says Ask isn't available on this account; its search is keyword
@@ -132,8 +133,9 @@ takes are now indexed, searchable and askable.
   "Search the web" and a send button.
 - **Under each answer:** "Make a card" (mock 04). It opens a bottom sheet with the drafted question and answer in
   editable fields; Save adds the card and shows a toast "Card added to Review".
-- **Ask about this** (mock 05): a secondary button on the source page, the primer screen, the topic primer and the
-  take page. It opens a new chat screen with an "About: <title>" chip above the composer.
+- **Ask about this** (mock 05): an "Ask about this" row in the ••• menu (`app/src/item/ItemMenu.tsx` on the source
+  page, and the existing menus on the topic and take pages). It opens a new chat screen with an "About: <title>" chip
+  above the composer.
 - **Review:** a conversation card's kicker reads "FROM ASK" with the about item's domain colour when there is one
   (else Other).
 

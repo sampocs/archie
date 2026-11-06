@@ -38,3 +38,7 @@ SPOTIFY_SHOW_URL = "https://open.spotify.com/show/4rOoJ6Egrf8K2IrywzwOMk"
 # with no feedUrl, so no RSS can contain the episode. Found by searching `"The Dark Side Of" site:open.spotify.com`;
 # the episode is the season-trailer "New Season! Introducing The Dark Side Of: The 90s!" (2020-06-14).
 SPOTIFY_EXCLUSIVE_EPISODE_URL: str | None = "https://open.spotify.com/episode/0inIb18yUwTeNb1FVRqwIH"
+
+# A public X post with a native video, for `fetch_collection_item`'s preview test (cassette `collection_x_video.yaml`).
+# Found on 2026-11-05 from @NFL's timeline; fxtwitter returned a video thumbnail and length for it.
+X_VIDEO_POST_URL = "https://x.com/NFL/status/2118529649387225218"

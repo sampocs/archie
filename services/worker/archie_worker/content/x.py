@@ -40,6 +40,55 @@ def fetch_thread(*, post_id: str) -> content.ExtractedText:
     return _single_post_text(data=_get_json(url=VXTWITTER_STATUS_URL.format(post_id=post_id)))
 
 
+def fetch_post_preview(*, post_id: str) -> content.LinkPreview:
+    """The shared post's caption, @handle, first video thumbnail or photo, and a video's length.
+
+    fxtwitter with retries, then vxtwitter's single post; raises if both fail (the job retries). A post with no media
+    of its own shows its quoted post's.
+    """
+    try:
+        return _thread_preview(data=_get_json_with_retries(url=FXTWITTER_THREAD_URL.format(post_id=post_id)))
+    except (httpx.HTTPError, ValueError, KeyError) as error:
+        _logger.warning("fxtwitter preview failed for post %s (%r); trying vxtwitter", post_id, error)
+
+    return _single_post_preview(data=_get_json(url=VXTWITTER_STATUS_URL.format(post_id=post_id)))
+
+
+def _thread_preview(*, data: dict[str, Any]) -> content.LinkPreview:
+    post = data["status"]
+    quote = post.get("quote") or {}
+    media = post.get("media") or quote.get("media") or {}
+    videos = media.get("videos") or []
+    photos = media.get("photos") or []
+
+    video = videos[0] if videos else None
+    image_url = video.get("thumbnail_url") if video else (photos[0]["url"] if photos else None)
+    duration = video.get("duration") if video else None
+    return content.LinkPreview(
+        title=_caption(post["text"]),
+        author=f"@{post['author']['screen_name']}",
+        image_url=image_url,
+        duration_seconds=round(duration) if duration else None,
+    )
+
+
+def _single_post_preview(*, data: dict[str, Any]) -> content.LinkPreview:
+    media = data.get("media_extended") or (data.get("qrt") or {}).get("media_extended") or []
+    first = media[0] if media else None
+    duration_millis = first.get("duration_millis") if first else None
+    return content.LinkPreview(
+        title=_caption(data["text"]),
+        author=f"@{data['user_screen_name']}",
+        image_url=(first.get("thumbnail_url") or first.get("url")) if first else None,
+        duration_seconds=round(duration_millis / 1000) if duration_millis else None,
+    )
+
+
+def _caption(text: str) -> str | None:
+    caption = content.strip_nul(text).strip()
+    return caption[: content.MAX_PREVIEW_TITLE_LENGTH] or None
+
+
 def thread_text(*, data: dict[str, Any]) -> content.ExtractedText:
     """The text of an fxtwitter `/2/thread` response: the shared post's author's posts, in thread order.
 

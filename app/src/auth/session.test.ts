@@ -38,11 +38,15 @@ jest.mock("@/db/client", () => {
 import { db } from "@/db/client";
 import * as SecureStore from "expo-secure-store";
 
+import { LAST_COLLECTION_KEY, SHARED_COLLECTIONS_KEY } from "@/collections/sharedCollections";
+
 import { KEYCHAIN_KEY, LEGACY_KEYCHAIN_GROUP, SHARED_KEYCHAIN_GROUP } from "./keychain";
 import { clearSession, getSessionKey, migrateSessionKeyToSharedGroup, setSessionKey } from "./session";
 
 const SHARED_SLOT = `${SHARED_KEYCHAIN_GROUP}/${KEYCHAIN_KEY}`;
 const LEGACY_SLOT = `${LEGACY_KEYCHAIN_GROUP}/${KEYCHAIN_KEY}`;
+const COLLECTIONS_SLOT = `${SHARED_KEYCHAIN_GROUP}/${SHARED_COLLECTIONS_KEY}`;
+const LAST_COLLECTION_SLOT = `${SHARED_KEYCHAIN_GROUP}/${LAST_COLLECTION_KEY}`;
 
 describe("shared Keychain group", () => {
   beforeEach(() => {
@@ -117,6 +121,10 @@ describe("clearSession", () => {
     db.insert(schema.cards).values({ id: "c1", sourceId: "s1", kind: "qa", question: "q", answer: "a", createdAt: "x" }).run();
     db.insert(schema.topics).values({ id: "t1", domain: "AI", name: "Evals", origin: "user", createdAt: "x", updatedAt: "x" }).run();
     db.insert(schema.topicPrimers).values({ id: "p1", topicId: "t1", version: 1, isCurrent: 1, content: "{}", createdAt: "x" }).run();
+    db.insert(schema.collections).values({ id: "col1", name: "Bears hype", position: 0, createdAt: "x", updatedAt: "x" }).run();
+    db.insert(schema.collectionItems).values({ id: "i1", collectionId: "col1", url: "u", kind: "x", createdAt: "x", updatedAt: "x" }).run();
+    mockKeychain.set(COLLECTIONS_SLOT, '[{"id":"col1","name":"Bears hype"}]');
+    mockKeychain.set(LAST_COLLECTION_SLOT, "col1");
   });
 
   it("bumps the epoch, revokes the session with the current key, then deletes the keychain item and wipes", async () => {
@@ -125,14 +133,19 @@ describe("clearSession", () => {
     await clearSession();
 
     expect(getSessionEpoch()).toBe(before + 1);
-    expect(mockCalls).toEqual(["/auth/logout:key-1", "keychain-delete", "keychain-delete"]);
+    expect(mockCalls).toEqual(["/auth/logout:key-1", "keychain-delete", "keychain-delete", "keychain-delete", "keychain-delete"]);
     expect(mockKeychain.has(SHARED_SLOT)).toBe(false);
+    // The share extension's collection list and last pick go with the account.
+    expect(mockKeychain.has(COLLECTIONS_SLOT)).toBe(false);
+    expect(mockKeychain.has(LAST_COLLECTION_SLOT)).toBe(false);
     expect(db.select().from(schema.sources).all()).toEqual([]);
     expect(db.select().from(schema.artifacts).all()).toEqual([]);
     expect(db.select().from(schema.cards).all()).toEqual([]);
     // Topics too: the next account's picker gate reads an empty local topics table.
     expect(db.select().from(schema.topics).all()).toEqual([]);
     expect(db.select().from(schema.topicPrimers).all()).toEqual([]);
+    expect(db.select().from(schema.collections).all()).toEqual([]);
+    expect(db.select().from(schema.collectionItems).all()).toEqual([]);
     expect(db.select().from(schema.syncState).get()).toMatchObject({ position: 0 });
   });
 

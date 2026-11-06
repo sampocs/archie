@@ -4,7 +4,7 @@ import type { Intent, Reaction } from "@/capture/types";
 import { wireState, type FsrsFields, type GradedBy, type ReviewGrade } from "@/review/types";
 import type { DomainName } from "@/topics/domains";
 
-import { and, eq, inArray, isNotNull, isNull, min, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, max, min, sql } from "drizzle-orm";
 import type { SQLiteUpdateSetSource } from "drizzle-orm/sqlite-core";
 
 import type { AppDb } from "./client";
@@ -41,7 +41,11 @@ export type ActionType =
   | "drop_card"
   | "set_cards_off"
   | "request_news_quiz"
-  | "set_favorite";
+  | "set_favorite"
+  | "create_collection"
+  | "update_collection"
+  | "add_collection_item"
+  | "update_collection_item";
 export type PrimerTarget = "source" | "topic_primer";
 // What a snooze applies to: a source, a topic primer, or a source's queued primer.
 export type SnoozeTarget = PrimerTarget | "source_primer";
@@ -530,6 +534,108 @@ export function setFavorite(db: AppDb, sourceId: string, favorited: boolean): vo
     const favoritedAt = favorited ? sql`coalesce(${schema.sources.favoritedAt}, ${new Date().toISOString()})` : null;
     updateSource(tx, sourceId, { favoritedAt });
     enqueue(tx, "set_favorite", { id: sourceId, favorited });
+  });
+}
+
+export const MAX_COLLECTION_NAME_LENGTH = 100;
+
+// Stored as the server stores it (whitespace collapsed), and cut to its limit so a typed name is never rejected.
+function cleanCollectionName(name: string): string {
+  return name.split(/\s+/).filter(Boolean).join(" ").slice(0, MAX_COLLECTION_NAME_LENGTH);
+}
+
+// A new collection goes after the last live one, as on the server.
+function endCollectionPosition(tx: Tx): number {
+  const last = tx
+    .select({ highest: max(schema.collections.position) })
+    .from(schema.collections)
+    .where(isNull(schema.collections.deletedAt))
+    .get()?.highest;
+  return last == null ? 0 : last + 1;
+}
+
+function updateCollectionItem(tx: Tx, itemId: string, values: SQLiteUpdateSetSource<typeof schema.collectionItems>): void {
+  tx.update(schema.collectionItems)
+    .set({ ...values, updatedAt: new Date().toISOString() })
+    .where(eq(schema.collectionItems.id, itemId))
+    .run();
+}
+
+/** Makes an empty collection at the end of the list; returns its id. */
+export function createCollection(db: AppDb, name: string): string {
+  const id = randomUUID();
+  const now = new Date().toISOString();
+  const cleaned = cleanCollectionName(name);
+  db.transaction((tx) => {
+    tx.insert(schema.collections)
+      .values({ id, name: cleaned, position: endCollectionPosition(tx), createdAt: now, updatedAt: now })
+      .run();
+    enqueue(tx, "create_collection", { id, name: cleaned });
+  });
+  return id;
+}
+
+export function renameCollection(db: AppDb, collectionId: string, name: string): void {
+  const cleaned = cleanCollectionName(name);
+  db.transaction((tx) => {
+    tx.update(schema.collections)
+      .set({ name: cleaned, updatedAt: new Date().toISOString() })
+      .where(eq(schema.collections.id, collectionId))
+      .run();
+    enqueue(tx, "update_collection", { id: collectionId, name: cleaned });
+  });
+}
+
+/** Deletes a collection and, as the server does, every post in it. */
+export function deleteCollection(db: AppDb, collectionId: string): void {
+  const now = new Date().toISOString();
+  db.transaction((tx) => {
+    tx.update(schema.collections)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(eq(schema.collections.id, collectionId))
+      .run();
+    tx.update(schema.collectionItems)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(and(eq(schema.collectionItems.collectionId, collectionId), isNull(schema.collectionItems.deletedAt)))
+      .run();
+    enqueue(tx, "update_collection", { id: collectionId, deleted: true });
+  });
+}
+
+/** Saves a link into a collection (never as a source); the server fills in its preview. Returns the post's id. */
+export function addCollectionItem(db: AppDb, input: { collectionId: string; url: string }): string {
+  const id = randomUUID();
+  const now = new Date().toISOString();
+  db.transaction((tx) => {
+    // "link" until the pulled row carries the server's x / youtube / link, as addSource does for sources.
+    tx.insert(schema.collectionItems)
+      .values({ id, collectionId: input.collectionId, url: input.url, kind: "link", createdAt: now, updatedAt: now })
+      .run();
+    enqueue(tx, "add_collection_item", { id, collection_id: input.collectionId, url: input.url });
+  });
+  return id;
+}
+
+/** A blank note clears it. */
+export function editCollectionItemNote(db: AppDb, itemId: string, note: string): void {
+  const cleaned = note.trim() || null;
+  db.transaction((tx) => {
+    updateCollectionItem(tx, itemId, { note: cleaned });
+    enqueue(tx, "update_collection_item", { id: itemId, note: cleaned });
+  });
+}
+
+export function moveCollectionItem(db: AppDb, itemId: string, collectionId: string): void {
+  db.transaction((tx) => {
+    updateCollectionItem(tx, itemId, { collectionId });
+    enqueue(tx, "update_collection_item", { id: itemId, collection_id: collectionId });
+  });
+}
+
+export function removeCollectionItem(db: AppDb, itemId: string): void {
+  db.transaction((tx) => {
+    updateCollectionItem(tx, itemId, { deletedAt: new Date().toISOString() });
+    enqueue(tx, "update_collection_item", { id: itemId, deleted: true });
   });
 }
 

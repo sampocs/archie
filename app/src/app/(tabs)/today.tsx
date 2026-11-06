@@ -216,7 +216,7 @@ export default function TodayScreen() {
 
       {isEmpty ? (
         <Text testID="today-empty" tone="ink2">
-          Nothing waiting. Tap ＋ to add a link, or share one to Archie.
+          Nothing waiting. Add a link with ＋ in Library, or share one to Archie.
         </Text>
       ) : null}
     </Screen>

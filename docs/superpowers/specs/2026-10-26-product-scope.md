@@ -60,7 +60,7 @@ Every source the user consumes goes through:
 
 ## Screens
 
-Tab bar: **Today · Library · ＋ · Review · Carl**
+Tab bar: **Today · Library · Review · Carl**
 
 ### Today
 - **Pulse brief** (see below): a preview card that opens the brief
@@ -68,12 +68,14 @@ Tab bar: **Today · Library · ＋ · Review · Carl**
 - **Up next**: the top of my queue
 
 ### Library
+- A four-way control under the title, **All · Domains · Saved · Takes**; search and filters belong to All.
 - One list of everything: queued, in progress, consumed, inbox, and primers. Search bar on top. Filters for status, type, and domain/topic.
 - **Item page**: gist, key ideas, numbers (timestamped), my reaction or notes, a primer section collapsed as "Background you might need," related items, the cards it produced, and an "Ask Carl about this" bar.
-- **Domains view**: a toggle at the top of Library showing domains → topics, each with its items.
+- **Domains view**: the Domains segment, showing domains → topics, each with its items.
+- **Saved**: Favorites, a ★ on any library item (item page navbar, a gold ★ on its row), grouped by domain on Saved, each domain's favorites newest star first, swipe to unstar. Takes is a placeholder until takes ship.
 
 ### ＋ (Add)
-The same Finished / Queue flow as the share sheet, for pasting links or searching books and podcasts by hand.
+The ＋ in the Library header opens the add sheet: the same Finished / Queue flow as the share sheet.
 
 ### Review
 - **Open recall only.** No multiple choice, because it gives away the answer.

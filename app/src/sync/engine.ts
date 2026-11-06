@@ -30,6 +30,7 @@ export type PulledSource = {
   newsletter_kind: string | null;
   // Absent when pulling from a server older than M6.
   cards_off?: boolean;
+  favorited_at?: string | null;
 };
 export type PulledArtifact = {
   id: string;

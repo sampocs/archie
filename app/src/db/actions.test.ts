@@ -22,6 +22,7 @@ import {
   returnToInbox,
   reviewCard,
   setCardsOff,
+  setFavorite,
   setQueuePosition,
   setSourceTopic,
   snooze,
@@ -41,7 +42,7 @@ function createTables(outboxCheck: string): string {
       processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
       merged_into_id text, sender text, domain text, topic_id text, image_url text, queue_position real,
       read_at text, snoozed_until text, primer_opened_at text, newsletter_kind text, primer_queue_position real,
-      primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL
+      primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL, favorited_at text
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
@@ -734,5 +735,36 @@ describe("review actions", () => {
     expect(outboxEntries(db)).toEqual([{ type: "request_news_quiz", payload: { week_start: "2026-11-01" } }]);
     expect(sourceById(db, "s1")?.updatedAt).toBe("2026-11-01T00:00:00Z");
     expect(cardById(db, "c1")).toMatchObject({ deletedAt: null, fsrsState: "new" });
+  });
+});
+
+describe("setFavorite", () => {
+  it("stars a source with the current time and queues set_favorite", () => {
+    const db = makeTestDb();
+    seedSource(db, {});
+
+    setFavorite(db, "s1", true);
+
+    expect(sourceById(db, "s1")?.favoritedAt).not.toBeNull();
+    expect(outboxEntries(db)).toEqual([{ type: "set_favorite", payload: { id: "s1", favorited: true } }]);
+  });
+
+  it("unstarring clears the star and changes nothing else", () => {
+    const db = makeTestDb();
+    seedSource(db, { favoritedAt: "2026-11-03T00:00:00Z", state: "queued", queuePosition: 2 });
+
+    setFavorite(db, "s1", false);
+
+    expect(sourceById(db, "s1")).toMatchObject({ favoritedAt: null, state: "queued", queuePosition: 2 });
+    expect(outboxEntries(db)).toEqual([{ type: "set_favorite", payload: { id: "s1", favorited: false } }]);
+  });
+
+  it("starring an already-starred source keeps its first star time", () => {
+    const db = makeTestDb();
+    seedSource(db, { favoritedAt: "2026-11-03T00:00:00Z" });
+
+    setFavorite(db, "s1", true);
+
+    expect(sourceById(db, "s1")?.favoritedAt).toBe("2026-11-03T00:00:00Z");
   });
 });

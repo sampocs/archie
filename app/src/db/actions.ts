@@ -40,7 +40,8 @@ export type ActionType =
   | "review_card"
   | "drop_card"
   | "set_cards_off"
-  | "request_news_quiz";
+  | "request_news_quiz"
+  | "set_favorite";
 export type PrimerTarget = "source" | "topic_primer";
 // What a snooze applies to: a source, a topic primer, or a source's queued primer.
 export type SnoozeTarget = PrimerTarget | "source_primer";
@@ -520,6 +521,15 @@ export function setCardsOff(db: AppDb, sourceId: string, off: boolean): void {
       updateSource(tx, sourceId, { cardsOff: 0, processing: "processing", processingError: null });
     }
     enqueue(tx, "set_cards_off", { id: sourceId, off });
+  });
+}
+
+/** Stars or unstars a source; starring again keeps the first star's time, as the server does. */
+export function setFavorite(db: AppDb, sourceId: string, favorited: boolean): void {
+  db.transaction((tx) => {
+    const favoritedAt = favorited ? sql`coalesce(${schema.sources.favoritedAt}, ${new Date().toISOString()})` : null;
+    updateSource(tx, sourceId, { favoritedAt });
+    enqueue(tx, "set_favorite", { id: sourceId, favorited });
   });
 }
 

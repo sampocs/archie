@@ -16,14 +16,14 @@ appId: com.sampocs.archie
     visible: "Library"
     timeout: 15000
 - tapOn:
-    id: "tab-add"
+    id: "library-add"
 - runFlow:
     when:
       notVisible:
         id: "add-url"
     commands:
       - tapOn:
-          id: "tab-add"
+          id: "library-add"
 - extendedWaitUntil:
     visible:
       id: "add-url"

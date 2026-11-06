@@ -12,12 +12,14 @@ type SourceRowProps = {
   source: LibrarySource;
   end?: ReactNode;
   meta?: string;
+  /** Appended to the kicker, e.g. the topic name on the favorites page. */
+  kickerSuffix?: string;
   testID?: string;
   onPress?: () => void;
 };
 
 /** An `ItemRow` for a source; tapping opens its page unless `onPress` says otherwise. */
-export function SourceRow({ source, end, meta, testID, onPress }: SourceRowProps) {
+export function SourceRow({ source, end, meta, kickerSuffix, testID, onPress }: SourceRowProps) {
   const router = useRouter();
 
   return (
@@ -30,7 +32,7 @@ export function SourceRow({ source, end, meta, testID, onPress }: SourceRowProps
         circle: source.kind === "x",
         unread: statusTag(source) === "Unread",
       }}
-      kicker={{ domain: source.domain }}
+      kicker={{ domain: source.domain, suffix: kickerSuffix, starred: source.favoritedAt !== null }}
       title={source.title ?? source.url}
       meta={meta ?? sourceMeta(source)}
       end={end}

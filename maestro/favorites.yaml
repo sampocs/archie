@@ -1,0 +1,71 @@
+appId: com.sampocs.archie
+---
+# Star an item from its page, find it under Library → Saved → its domain, then unstar it there with a swipe.
+# The dev test user isn't whitelisted, so the source never gets a domain and is grouped under Other.
+- runFlow: login.yaml
+- tapOn:
+    id: "library-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "library-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+# A path no other flow uses: `make maestro` keeps one user's data across flows, and library_queue also adds example.com.
+- inputText: "https://example.com/favorites-flow"
+- tapOn:
+    id: "intent-queue"
+- tapOn:
+    id: "add-save"
+# Save closes the sheet and stays on Library; wait for the sheet to go (its field holds the same text), then open the
+# new row (its title is the URL: example.com has no page there).
+- extendedWaitUntil:
+    notVisible:
+      id: "add-url"
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      text: ".*favorites-flow.*"
+    timeout: 10000
+- tapOn:
+    text: ".*favorites-flow.*"
+- tapOn:
+    id: "item-favorite"
+- assertVisible:
+    id: "item-byline"
+    text: ".*★ Favorite.*"
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "library-mode-saved"
+- assertVisible:
+    id: "saved-favorites"
+- tapOn:
+    id: "favorites-domain-other"
+- assertVisible:
+    id: "favorites-page"
+# The row's title becomes "Example Domain" once fetched and its meta has no host, so match the row by id.
+- assertVisible:
+    id: "favorite-row-.*"
+# A swipe from the row element doesn't open it on this page (the gesture never reaches the swipeable), so swipe the
+# first row by screen position.
+- waitForAnimationToEnd
+- swipe:
+    start: "80%, 24%"
+    end: "10%, 24%"
+    duration: 800
+- tapOn:
+    id: "favorite-unstar-.*"
+- assertVisible: "No favorites in Other yet."
+- tapOn:
+    id: "screen-back"
+- assertVisible:
+    id: "saved-empty"

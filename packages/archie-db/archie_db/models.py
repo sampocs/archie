@@ -282,6 +282,8 @@ class Source(Base):
     newsletter_kind: Mapped[str | None] = mapped_column(sqlalchemy.String(16))
     # "No cards for this": the source's cards are retired and analyze/primer write none while it is set.
     cards_off: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
+    # When the user starred it; null = not starred. Starring changes nothing else about the source.
+    favorited_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     # Server only (never pulled): the feed guid the user chose with "Wrong episode?".
     episode_guid: Mapped[str | None] = mapped_column(sqlalchemy.String(1024))
     # Always assigned via changes.next_change_seq() under changes.lock_user_writes(); see changes.py for why.

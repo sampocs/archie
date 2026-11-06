@@ -96,7 +96,7 @@ class CallContext:
     source_id: uuid.UUID | None
     # None for calls that belong to no job, such as the API's.
     job_id: int | None
-    # A `JobKind` value, or a sub-step name such as `CORRECTIONS_STEP`.
+    # A `JobKind` value, or a sub-step name such as `CORRECTIONS_STEP` or `GRADE_STEP`.
     step: str
 
 
@@ -141,6 +141,10 @@ def complete(
     A service failure is a 5xx/529 answer or a connection error; a failure of the fallback is re-raised for the worker
     loop to retry, as is any other API error (a 4xx would fail the fallback the same way). Every answered call is
     recorded.
+
+    `models.fallback` is optional: a pair without one tries only the primary. `thinking` holds extended-thinking
+    options (e.g. `THINKING_DISABLED`), passed to `messages.create` only when given. `timeout_seconds` is the
+    Anthropic client timeout, `REQUEST_TIMEOUT_SECONDS` by default.
     """
     # No SDK retries: the worker loop owns retrying, so a failed call is not silently billed twice.
     client = anthropic.Anthropic(api_key=api_key, max_retries=0, timeout=timeout_seconds)

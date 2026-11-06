@@ -72,10 +72,10 @@ Tab bar: **Today · Library · Review · Carl**
 - One list of everything: queued, in progress, consumed, inbox, and primers. Search bar on top. Filters for status, type, and domain/topic.
 - **Item page**: gist, key ideas, numbers (timestamped), my reaction or notes, a primer section collapsed as "Background you might need," related items, the cards it produced, and an "Ask Carl about this" bar.
 - **Domains view**: the Domains segment, showing domains → topics, each with its items.
-- **Saved**: Favorites, a ★ on any library item (item page navbar, a gold ★ on its row), grouped by domain on Saved, each domain's favorites newest star first, swipe to unstar. Takes is a placeholder until takes ship.
+- **Saved**: Favorites, a ★ on any library item (item page navbar, a gold ★ on its row), grouped by domain on Saved, each domain's favorites newest star first, swipe to unstar. **Collections**: just-for-fun scrapbooks saved from the add sheet's or share sheet's "Save to a collection" (a dropdown preselected to the last one used, ＋ New collection…), shown under Saved as tiles with a mosaic of the newest thumbnails and "N saved" (long-press to rename or delete). A collection page is a feed of posts (thumbnail, who posted it, where it's from, date saved, caption, note) that open the original; posts never appear in All, Domains, search, Today, Pulse, Ask or the pipeline. Takes is a placeholder until takes ship.
 
 ### ＋ (Add)
-The ＋ in the Library header opens the add sheet: the same Finished / Queue flow as the share sheet.
+The ＋ in the Library header opens the add sheet: the same Finished / Queue flow as the share sheet, plus a third choice, **Save to a collection**.
 
 ### Review
 - **Open recall only.** No multiple choice, because it gives away the answer.

@@ -1,0 +1,57 @@
+appId: com.sampocs.archie
+---
+# Star an item from its page, find it under Library → Saved → its domain, then unstar it there with a swipe.
+# The dev test user isn't whitelisted, so the source never gets a domain and is grouped under Other.
+- runFlow: login.yaml
+- tapOn:
+    id: "library-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "library-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://example.com/"
+- tapOn:
+    id: "intent-queue"
+- tapOn:
+    id: "add-save"
+# Save closes the sheet and stays on Library; open the new row.
+- tapOn:
+    text: ".*example\\.com.*"
+- tapOn:
+    id: "item-favorite"
+- assertVisible:
+    id: "item-byline"
+    text: ".*★ Favorite.*"
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "library-mode-saved"
+- assertVisible:
+    id: "saved-favorites"
+- tapOn:
+    id: "favorites-domain-other"
+- assertVisible:
+    id: "favorites-page"
+- assertVisible:
+    text: ".*example\\.com.*"
+- swipe:
+    from:
+      text: ".*example\\.com.*"
+    direction: LEFT
+- tapOn:
+    id: "favorite-unstar-.*"
+- assertVisible: "No favorites in Other yet."
+- tapOn:
+    id: "screen-back"
+- assertVisible:
+    id: "saved-empty"

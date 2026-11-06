@@ -21,6 +21,8 @@ appId: com.sampocs.archie
     id: "add-url"
 # A path and a name no other flow uses: `make maestro` keeps one user's data across flows.
 - inputText: "https://example.com/collections-flow"
+# Dismiss the keyboard: it covers Save.
+- tapOn: "Paste a link to save it."
 - tapOn:
     id: "intent-collection"
 # No collections yet, so the dropdown reads "New collection…" and Save asks for the name.
@@ -43,9 +45,12 @@ appId: com.sampocs.archie
     id: "library-mode-saved"
 - assertVisible:
     id: "saved-collections"
-- tapOn: "Maestro scrapbook"
-- assertVisible:
-    id: "collection-page"
+- tapOn:
+    id: "collection-tile-.*"
+- extendedWaitUntil:
+    visible:
+      id: "collection-page"
+    timeout: 5000
 - assertVisible:
     id: "collection-kicker"
     text: "(?i).*1 saved.*"

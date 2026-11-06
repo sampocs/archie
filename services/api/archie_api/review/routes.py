@@ -7,6 +7,7 @@ call: the card is read into locals and committed first, as the worker's handlers
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Annotated, Any
@@ -19,6 +20,7 @@ import sqlalchemy
 from archie_db import card_rows, changes, models
 from archie_llm import llm, speech
 from archie_shared import config, logging
+from fastapi.routing import APIRoute
 from sqlalchemy import orm
 
 from archie_api import deps
@@ -29,6 +31,7 @@ GRADE_MAX_TOKENS = 1500
 GRADE_TIMEOUT_SECONDS = 10
 CARE_MAX_TOKENS = 1500
 MAX_AUDIO_BYTES = 5_000_000
+MULTIPART_OVERHEAD_BYTES = 64_000
 MAX_AUDIO_MS = 125_000
 MAX_PROMPT_CHARACTERS = 800
 
@@ -37,7 +40,29 @@ _AUDIO_MEDIA_TYPE = "audio/m4a"
 _NEEDS_KEY = "needs your own API key"
 _MILLISECONDS_PER_SECOND = 1000
 
+
+class _BoundedUploadRoute(APIRoute):
+    """A route that refuses a request whose declared size is missing or too big before its body is parsed.
+
+    Starlette spools a whole multipart body to disk while parsing it, and does so before any dependency runs, so the
+    size has to be judged from `Content-Length` here, ahead of the form parsing, not from the bytes read afterwards.
+    """
+
+    def get_route_handler(self) -> Callable[[fastapi.Request], Coroutine[Any, Any, fastapi.Response]]:
+        """Wrap the stock handler with the size check."""
+        handle = super().get_route_handler()
+
+        async def handle_bounded(request: fastapi.Request) -> fastapi.Response:
+            declared = request.headers.get("content-length", "")
+            if not declared.isdigit() or int(declared) > MAX_AUDIO_BYTES + MULTIPART_OVERHEAD_BYTES:
+                raise fastapi.HTTPException(status_code=413, detail="recording too large")
+            return await handle(request)
+
+        return handle_bounded
+
+
 router = fastapi.APIRouter(prefix="/review", tags=["review"])
+_upload_router = fastapi.APIRouter(tags=["review"], route_class=_BoundedUploadRoute)
 _logger = logging.get_logger(logging.LoggerName.API, "review")
 
 
@@ -123,7 +148,7 @@ def grade(
     return GradeView(grade=verdict.grade, missing=missing)
 
 
-@router.post("/transcribe")
+@_upload_router.post("/transcribe")
 def transcribe(
     card_id: Annotated[uuid.UUID, fastapi.Form()],
     duration_ms: Annotated[int, fastapi.Form(ge=1)],
@@ -135,6 +160,7 @@ def transcribe(
     if duration_ms > MAX_AUDIO_MS:
         raise fastapi.HTTPException(status_code=413, detail="recording too long")
 
+    # A backstop: the route class already judged the declared size, which a client can understate.
     audio_bytes = audio.file.read(MAX_AUDIO_BYTES + 1)
     if len(audio_bytes) > MAX_AUDIO_BYTES:
         raise fastapi.HTTPException(status_code=413, detail="recording too large")
@@ -160,6 +186,10 @@ def transcribe(
         audio_seconds=Decimal(duration_ms) / _MILLISECONDS_PER_SECOND,
     )
     return TranscriptView(text=text)
+
+
+# Included once the route is declared (include copies the routes present now); the prefix applies here.
+router.include_router(_upload_router)
 
 
 @router.post("/cards/{card_id}/care")

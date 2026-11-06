@@ -123,6 +123,8 @@ describe("clearSession", () => {
     db.insert(schema.topicPrimers).values({ id: "p1", topicId: "t1", version: 1, isCurrent: 1, content: "{}", createdAt: "x" }).run();
     db.insert(schema.collections).values({ id: "col1", name: "Bears hype", position: 0, createdAt: "x", updatedAt: "x" }).run();
     db.insert(schema.collectionItems).values({ id: "i1", collectionId: "col1", url: "u", kind: "x", createdAt: "x", updatedAt: "x" }).run();
+    db.insert(schema.takes).values({ id: "k1", kind: "opinion", title: "T", currentVersion: 1, createdAt: "x", updatedAt: "x" }).run();
+    db.insert(schema.takeVersions).values({ id: "v1", takeId: "k1", version: 1, body: "b", rawBody: "b", cleaned: 0, createdAt: "x" }).run();
     mockKeychain.set(COLLECTIONS_SLOT, '[{"id":"col1","name":"Bears hype"}]');
     mockKeychain.set(LAST_COLLECTION_SLOT, "col1");
   });
@@ -146,6 +148,8 @@ describe("clearSession", () => {
     expect(db.select().from(schema.topicPrimers).all()).toEqual([]);
     expect(db.select().from(schema.collections).all()).toEqual([]);
     expect(db.select().from(schema.collectionItems).all()).toEqual([]);
+    expect(db.select().from(schema.takes).all()).toEqual([]);
+    expect(db.select().from(schema.takeVersions).all()).toEqual([]);
     expect(db.select().from(schema.syncState).get()).toMatchObject({ position: 0 });
   });
 

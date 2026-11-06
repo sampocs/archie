@@ -93,6 +93,9 @@ function AppStack() {
           <Stack.Screen name="brief" />
           <Stack.Screen name="brief/story/[index]" />
           <Stack.Screen name="settings/removed-topics" />
+          <Stack.Screen name="settings/review" />
+          <Stack.Screen name="review/session" />
+          <Stack.Screen name="review/topics" />
           <Stack.Screen name="share" />
           <Stack.Screen name="topic-picker" />
         </Stack.Protected>

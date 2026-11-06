@@ -1,7 +1,7 @@
 import * as Clipboard from "expo-clipboard";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Pressable } from "react-native";
+import { Keyboard, Pressable } from "react-native";
 
 import { CaptureOptions } from "@/capture/CaptureOptions";
 import { canSaveToCollection, resolveCollectionPick } from "@/capture/collectionChoice";
@@ -115,7 +115,11 @@ export default function AddScreen() {
       <Button testID="add-paste" label="Paste" variant="secondary" onPress={paste} />
       <CaptureOptions
         value={choice}
-        onChange={setChoice}
+        onChange={(next) => {
+          // Picking how to save means the link is in: drop the keyboard so Save (below the options) isn't hidden.
+          Keyboard.dismiss();
+          setChoice(next);
+        }}
         collectionPicker={
           <CollectionDropdown
             collections={collections}

@@ -197,9 +197,9 @@ export function createDbSyncStore(
       db.transaction((tx) => {
         if (signedOutSinceStart()) return;
 
-        // A row (source, card, topic, topic primer, brief, collection or saved post) with an unsent local action keeps its local copy; it returns
-        // on a later pull once the push bumps its change_seq. No timestamp comparison: phone and server clocks can't be
-        // trusted.
+        // A row (source, card, topic, topic primer, brief, collection or saved post) with an unsent local action keeps
+        // its local copy; it returns on a later pull once the push bumps its change_seq. No timestamp comparison: phone
+        // and server clocks can't be trusted.
         const unsent = new Set(
           tx
             .select()

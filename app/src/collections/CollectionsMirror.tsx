@@ -11,6 +11,8 @@ import { useCollectionsData } from "./useCollectionsData";
 export function CollectionsMirror() {
   const collections = useCollectionsData();
   const lastWritten = useRef<string | null>(null);
+  // Writes run one after another so the last list always lands last (the first live result is an empty list).
+  const chain = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     const list = collections.map(({ id, name }) => ({ id, name }));
@@ -20,9 +22,11 @@ export function CollectionsMirror() {
     lastWritten.current = encoded;
     // A failed write: the share sheet then shows the last list it saw; forgetting what was written lets the next
     // change retry.
-    writeSharedCollections(list).catch(() => {
-      if (lastWritten.current === encoded) lastWritten.current = null;
-    });
+    chain.current = chain.current
+      .then(() => writeSharedCollections(list))
+      .catch(() => {
+        if (lastWritten.current === encoded) lastWritten.current = null;
+      });
   }, [collections]);
 
   return null;

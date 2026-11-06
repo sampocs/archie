@@ -3,14 +3,14 @@ appId: com.sampocs.archie
 # Free: no summary is needed, only a queued link to finish.
 - runFlow: login.yaml
 - tapOn:
-    id: "tab-add"
+    id: "library-add"
 - runFlow:
     when:
       notVisible:
         id: "add-url"
     commands:
       - tapOn:
-          id: "tab-add"
+          id: "library-add"
 - extendedWaitUntil:
     visible:
       id: "add-url"

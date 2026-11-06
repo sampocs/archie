@@ -92,6 +92,7 @@ function AppStack() {
           <Stack.Screen name="source/[id]" />
           <Stack.Screen name="primer/[id]" />
           <Stack.Screen name="topic/[id]" />
+          <Stack.Screen name="favorites/[domain]" />
           <Stack.Screen name="brief" />
           <Stack.Screen name="brief/story/[index]" />
           <Stack.Screen name="settings/removed-topics" />
@@ -100,6 +101,7 @@ function AppStack() {
           <Stack.Screen name="review/topics" />
           <Stack.Screen name="share" />
           <Stack.Screen name="topic-picker" />
+          <Stack.Screen name="add" options={{ presentation: "modal" }} />
         </Stack.Protected>
       </Stack>
     </SignOutContext.Provider>

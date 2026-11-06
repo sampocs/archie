@@ -17,7 +17,7 @@ appId: com.sampocs.archie
     visible: "Library"
     timeout: 15000
 - tapOn:
-    id: "tab-add"
+    id: "library-add"
 # The first tap right after login is sometimes swallowed while the screen settles.
 - runFlow:
     when:
@@ -25,7 +25,7 @@ appId: com.sampocs.archie
         id: "add-url"
     commands:
       - tapOn:
-          id: "tab-add"
+          id: "library-add"
 - extendedWaitUntil:
     visible:
       id: "add-url"

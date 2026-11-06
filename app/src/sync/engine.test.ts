@@ -10,6 +10,7 @@ import {
   returnToInbox,
   reviewCard,
   setCardsOff,
+  setFavorite,
   snooze,
 } from "@/db/actions";
 
@@ -648,6 +649,66 @@ describe("database SyncStore", () => {
       syncError: "source is not failed",
     });
   });
+
+  it("stores a pulled source's favorited_at, and a missing one as null", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: { sources: [pulledSource({ favorited_at: "2026-11-03T00:00:00Z" })], artifacts: [], cards: [] },
+      position: 1,
+      more: false,
+    });
+    expect(sourceRow(db)?.favoritedAt).toBe("2026-11-03T00:00:00Z");
+
+    await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 2, more: false });
+    expect(sourceRow(db)?.favoritedAt).toBeNull();
+  });
+
+  it("a re-pull of a source with an unsent set_favorite keeps the local star", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 1, more: false });
+    setFavorite(db, "s1", true);
+
+    await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 2, more: false });
+
+    expect(sourceRow(db)?.favoritedAt).not.toBeNull();
+  });
+
+  it("a rejected set_favorite rewinds the position and surfaces syncError on the source", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 5, more: false });
+    setFavorite(db, "s1", true);
+    const entry = db.select().from(schema.outbox).get()!;
+
+    await store.rejectAction(entry.id, "source not found");
+
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)?.syncError).toBe("source not found");
+  });
+
+  // 0008 only adds a column; the test guards against a generated table rebuild that drops or mis-copies rows.
+  it("the 0008_favorites migration keeps existing sources, unstarred", () => {
+    const sqlite = new Database(":memory:");
+    const sqlByKey = migrations.migrations as Record<string, string>;
+    const runMigration = (idx: number) => {
+      for (const statement of sqlByKey[`m${String(idx).padStart(4, "0")}`].split("--> statement-breakpoint")) {
+        if (statement.trim()) sqlite.exec(statement);
+      }
+    };
+    const favoritesIdx = migrations.journal.entries.find((entry) => entry.tag === "0008_favorites")!.idx;
+    for (let idx = 0; idx < favoritesIdx; idx++) runMigration(idx);
+    sqlite
+      .prepare(
+        "INSERT INTO sources (id, url, kind, state, intent, created_at, updated_at, domain, cards_off) " +
+          "VALUES ('s1', 'https://example.com/a', 'article', 'queued', 'queue', 'x', 'x', 'AI', 1)",
+      )
+      .run();
+
+    runMigration(favoritesIdx);
+
+    expect(sqlite.prepare("SELECT * FROM sources").all()).toEqual([
+      expect.objectContaining({ id: "s1", state: "queued", domain: "AI", cards_off: 1, favorited_at: null }),
+    ]);
+  });
 });
 
 const pulledTopic = (overrides: Partial<PulledTopic>): PulledTopic => ({
@@ -910,7 +971,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;

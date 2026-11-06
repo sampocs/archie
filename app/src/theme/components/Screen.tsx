@@ -25,15 +25,19 @@ type ScreenProps = {
   // Pinned between the header and the scrolling content, e.g. a reading-progress bar.
   subheader?: ReactNode;
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  // Presented as a modal sheet: the sheet already sits below the status bar, so no top safe-area inset.
+  sheet?: boolean;
 };
 
 // Enough scroll events for a smooth progress bar without re-rendering on every frame.
 const SCROLL_EVENT_THROTTLE_MS = 32;
 
-export function Screen({ title, children, headerRight, onBack, footer, subheader, onScroll }: ScreenProps) {
+export function Screen({ title, children, headerRight, onBack, footer, subheader, onScroll, sheet }: ScreenProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const tabBarInset = useContext(TabBarInsetContext);
+  // A page sheet has no tab bar, but its last control must still clear the home indicator.
+  const bottomInset = sheet ? insets.bottom : tabBarInset;
 
   // A pinned footer rides above the keyboard; otherwise a typed-in field would hide the screen's submit button.
   // Only footer screens opt in: tab screens sit above the tab bar, which the keyboard's height already includes.
@@ -41,7 +45,7 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
     <KeyboardAvoidingView
       behavior="padding"
       enabled={footer !== undefined}
-      style={[styles.root, { backgroundColor: theme.colors.bg, paddingTop: insets.top }]}
+      style={[styles.root, { backgroundColor: theme.colors.bg, paddingTop: sheet ? theme.spacing.md : insets.top }]}
     >
       <View style={[styles.header, { paddingHorizontal: theme.spacing.gutterText }]}>
         <View style={styles.titleGroup}>
@@ -60,10 +64,10 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
         scrollEventThrottle={onScroll ? SCROLL_EVENT_THROTTLE_MS : undefined}
         contentContainerStyle={{
           padding: theme.spacing.gutterCards,
-          paddingBottom: theme.spacing.gutterCards + tabBarInset,
+          paddingBottom: theme.spacing.gutterCards + bottomInset,
           gap: theme.spacing.section,
         }}
-        scrollIndicatorInsets={{ bottom: tabBarInset }}
+        scrollIndicatorInsets={{ bottom: bottomInset }}
         keyboardShouldPersistTaps="handled"
         // Scrolls a focused field (search, adding a topic) above the keyboard.
         automaticallyAdjustKeyboardInsets

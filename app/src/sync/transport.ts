@@ -60,6 +60,7 @@ const REWOUND_SOURCE_ACTIONS = new Set([
   "request_primer",
   "return_to_inbox",
   "set_cards_off",
+  "set_favorite",
 ]);
 
 export function createDbSyncStore(
@@ -221,6 +222,7 @@ export function createDbSyncStore(
             primerSnoozedUntil: source.primer_snoozed_until,
             newsletterKind: source.newsletter_kind,
             cardsOff: source.cards_off ? 1 : 0,
+            favoritedAt: source.favorited_at ?? null,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })

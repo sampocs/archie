@@ -43,6 +43,7 @@ class ActionType(StrEnum):
     DROP_CARD = "drop_card"
     SET_CARDS_OFF = "set_cards_off"
     REQUEST_NEWS_QUIZ = "request_news_quiz"
+    SET_FAVORITE = "set_favorite"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 
@@ -103,6 +104,7 @@ class SourceOut(pydantic.BaseModel):
     primer_snoozed_until: datetime.datetime | None
     newsletter_kind: str | None
     cards_off: bool
+    favorited_at: datetime.datetime | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None

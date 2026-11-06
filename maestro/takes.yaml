@@ -1,0 +1,91 @@
+appId: com.sampocs.archie
+---
+# Write a take from the add sheet, open it from Library → Takes, edit it into version 2, see Earlier versions and
+# version 1, then delete the take.
+- runFlow: login.yaml
+- tapOn:
+    id: "library-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "library-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-write-take"
+    timeout: 5000
+- tapOn:
+    id: "add-write-take"
+- extendedWaitUntil:
+    visible:
+      id: "take-editor"
+    timeout: 5000
+- tapOn:
+    id: "editor-kind-opinion"
+- tapOn:
+    id: "editor-title"
+# A title no other flow uses: `make maestro` keeps one user's data across flows.
+- inputText: "Maestro takes flow"
+- tapOn:
+    id: "editor-body"
+- inputText: "Juniors learn by overhearing. Remote work takes that away."
+- assertVisible:
+    id: "editor-hint"
+    text: "Saving makes version 1 and writes this take's cards."
+- tapOn:
+    id: "editor-save"
+- extendedWaitUntil:
+    notVisible:
+      id: "take-editor"
+    timeout: 5000
+- tapOn:
+    id: "library-mode-takes"
+- tapOn: "Maestro takes flow"
+- assertVisible:
+    id: "take-page"
+- assertVisible:
+    id: "take-meta"
+    text: "(?i).*version 1.*"
+- assertNotVisible:
+    id: "take-versions"
+- tapOn:
+    id: "take-edit"
+- extendedWaitUntil:
+    visible:
+      id: "take-editor"
+    timeout: 5000
+- tapOn:
+    id: "editor-body"
+- inputText: " Mentors can't see their work."
+- tapOn:
+    id: "editor-save"
+- extendedWaitUntil:
+    notVisible:
+      id: "take-editor"
+    timeout: 5000
+- assertVisible:
+    id: "take-meta"
+    text: "(?i).*updated.*version 2.*"
+- assertVisible:
+    id: "take-versions"
+- tapOn:
+    id: "take-versions"
+- tapOn:
+    id: "take-version-1"
+- assertVisible:
+    id: "version-page"
+- assertVisible:
+    id: "version-restore"
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "take-more"
+- tapOn:
+    id: "take-menu-delete"
+- tapOn: "Delete"
+- extendedWaitUntil:
+    notVisible: "Maestro takes flow"
+    timeout: 5000

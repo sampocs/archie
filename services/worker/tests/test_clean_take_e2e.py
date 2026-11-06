@@ -238,3 +238,54 @@ def test_a_version_that_already_has_a_body_is_left_alone(engine: sqlalchemy.Engi
     assert (after.body, after.change_seq) == ("Already written.", before.change_seq)
     assert _kinds_and_statuses(engine) == [(models.JobKind.CLEAN_TAKE, models.JobStatus.DONE)]
     assert _llm_calls(engine) == []
+
+
+def test_a_blank_completion_writes_nothing_and_retries(
+    engine: sqlalchemy.Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Whitespace-only model text must not become an empty body (which would read as cleaned) or queue cards."""
+    user_id = _add_user(engine)
+    ids = _add_take(engine, user_id=user_id, raw_body=RAMBLE)
+    version_id = ids.version_ids[0]
+    monkeypatch.setattr(llm, "complete", lambda *args, **kwargs: llm.Completion(model=llm.SONNET, text="  \n"))
+
+    loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    version = _version(engine, version_id)
+    assert version.body is None
+    assert not version.clean_failed
+    # Re-queued for another attempt, not done, and no cards were queued for a take with no body.
+    [clean_job] = _jobs(engine)
+    assert (clean_job.kind, clean_job.status) == (models.JobKind.CLEAN_TAKE, models.JobStatus.QUEUED)
+    assert clean_job.attempts == 1
+
+
+def test_a_body_written_during_the_model_call_is_not_overwritten(
+    engine: sqlalchemy.Engine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The handler re-checks under the user lock, so a write that lands mid-call wins and queues no cards."""
+    user_id = _add_user(engine)
+    ids = _add_take(engine, user_id=user_id, raw_body=RAMBLE)
+    version_id = ids.version_ids[0]
+    seq_after_write: list[int] = []
+
+    def complete_after_a_concurrent_write(*args: object, **kwargs: object) -> llm.Completion:
+        # Stands in for the failure hook or a duplicate job committing from another session while the call runs.
+        with sqlalchemy.orm.Session(engine) as other:
+            changes.lock_user_writes(other, user_id)
+            written = other.get_one(models.TakeVersion, version_id)
+            written.body = "Written meanwhile."
+            takes.mark_changed(written)
+            other.commit()
+            seq_after_write.append(written.change_seq)
+        return llm.Completion(model=llm.SONNET, text="## Main points\n- Overwrites it.")
+
+    monkeypatch.setattr(llm, "complete", complete_after_a_concurrent_write)
+
+    loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    version = _version(engine, version_id)
+    assert version.body == "Written meanwhile."
+    # An overwrite by clean_take would have bumped the seq past the concurrent write's.
+    assert version.change_seq == seq_after_write[0]
+    assert models.JobKind.TAKE_CARDS not in [job.kind for job in _jobs(engine)]

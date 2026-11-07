@@ -91,7 +91,7 @@ def test_an_article_page_becomes_a_text_artifact_and_queues_analysis(engine: sql
     assert source.image_url is None
     assert source.processing == models.ProcessingStatus.PROCESSING
     assert source.change_seq > seq_before
-    assert _queued_kinds(engine) == [models.JobKind.ANALYZE, models.JobKind.PRIMER]
+    assert _queued_kinds(engine) == [models.JobKind.EMBED, models.JobKind.ANALYZE, models.JobKind.PRIMER]
     assert _job(engine, models.JobKind.FETCH_CONTENT).status == models.JobStatus.DONE
 
 
@@ -134,7 +134,7 @@ def test_a_capture_is_cleaned_and_used_without_any_request(engine: sqlalchemy.En
     text = _only_artifact(engine, source_id).content["text"]
     assert text == f"{body}\n{caption}\n{caption}"
     assert _source(engine, source_id).title == "Captured title"
-    assert _queued_kinds(engine) == [models.JobKind.ANALYZE, models.JobKind.PRIMER]
+    assert _queued_kinds(engine) == [models.JobKind.EMBED, models.JobKind.ANALYZE, models.JobKind.PRIMER]
 
 
 def test_a_page_with_too_little_text_fails_the_job_once_and_the_source(
@@ -182,7 +182,7 @@ def test_an_x_thread_keeps_every_post_of_the_author_in_order(engine: sqlalchemy.
         _source(engine, source_id).title
         == '@sama: looking up at the stars with extra awe tonight. "thy sea is so great and my boa'
     )
-    assert _queued_kinds(engine) == [models.JobKind.ANALYZE, models.JobKind.PRIMER]
+    assert _queued_kinds(engine) == [models.JobKind.EMBED, models.JobKind.ANALYZE, models.JobKind.PRIMER]
 
 
 def test_an_x_article_is_stored_with_its_title_and_body(engine: sqlalchemy.Engine, replay: Replay) -> None:

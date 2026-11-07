@@ -108,6 +108,7 @@ def test_an_episode_is_transcribed_corrected_and_queued_for_analysis(engine: sql
     transcribe_job, *next_jobs = _jobs(engine)
     assert transcribe_job.status == models.JobStatus.DONE.value
     assert [(job.kind, job.status) for job in next_jobs] == [
+        (models.JobKind.EMBED.value, models.JobStatus.QUEUED.value),
         (models.JobKind.ANALYZE.value, models.JobStatus.QUEUED.value),
         (models.JobKind.PRIMER.value, models.JobStatus.QUEUED.value),
     ]

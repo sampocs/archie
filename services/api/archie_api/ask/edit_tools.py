@@ -57,7 +57,8 @@ READ_ITEM_TOOL: dict[str, Any] = {
         "Read the exact current content of something the owner can edit: a source's summary or primer (id: the "
         "source id), a topic primer (id: a topic primer id or the topic id), one of the owner's takes (id: the take "
         "id) or a review card (id: the card id). Call it before proposing an edit and copy text from it exactly. "
-        "`pending` is an edit you already proposed in this chat that the owner hasn't applied: build on it."
+        "`pending` is an edit you already proposed in this chat, against this version, that the owner hasn't applied: "
+        "build on it."
     ),
     "input_schema": _object(
         {"kind": {"type": "string", "enum": [kind.value for kind in models.EditTarget]}, "id": {"type": "string"}}
@@ -457,10 +458,15 @@ def _proposal(
 def _pending_after(
     db: sqlalchemy.orm.Session, *, context: ToolContext, target: versions.Target
 ) -> dict[str, Any] | None:
-    """The newest still-proposed edit of `target` in this chat: from this answer first, else from earlier ones."""
+    """The newest still-proposed edit of `target` in this chat, from this answer first, else from earlier ones.
+
+    It counts only while it was made against the target's current version: once the target moved on (the owner edited
+    it, Review rewrote the card, Archie regenerated it), building on it would drop the newer version's content.
+    """
+    current_version = versions.current(db, target=target).version
     for proposal in reversed(context.pending):
         if proposal.target == target:
-            return proposal.after
+            return proposal.after if proposal.base_version == current_version else None
     stored = db.scalars(
         sqlalchemy.select(models.EditProposal)
         .where(
@@ -472,7 +478,9 @@ def _pending_after(
         .order_by(models.EditProposal.created_at.desc())
         .limit(1)
     ).first()
-    return stored.after if stored is not None else None
+    if stored is None or stored.base_version != current_version:
+        return None
+    return stored.after
 
 
 def _card_origin(db: sqlalchemy.orm.Session, *, item: _CardOriginIn) -> sqlalchemy.ColumnElement[bool]:

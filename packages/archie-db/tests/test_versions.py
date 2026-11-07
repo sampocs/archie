@@ -281,6 +281,7 @@ def test_a_card_gets_versions_one_and_two_on_its_first_change(db: sqlalchemy.orm
         (2, "They compound over decades.", "chat_edit"),
         (3, "They compound.", "restore"),
     ]
+    assert rows[0].created_at == card.created_at
     db.refresh(card)
     assert (card.version, card.answer, card.fsrs_state, card.reps) == (3, "They compound.", "review", 3)
 

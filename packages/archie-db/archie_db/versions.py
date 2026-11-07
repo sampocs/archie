@@ -17,6 +17,7 @@ card as it was) and version 2 together. Every function that writes expects the c
 
 from __future__ import annotations
 
+import datetime
 import uuid
 from dataclasses import dataclass
 from typing import Any
@@ -331,6 +332,8 @@ def _write_card(
             answer=card.answer,
             origin=models.VersionOrigin.ARCHIE,
             instruction=None,
+            # The version is the card as it was, so it dates from when the card was made.
+            created_at=card.created_at,
         )
 
     # Only the words change: the card keeps its schedule and its review history.
@@ -360,18 +363,20 @@ def _add_card_version(
     answer: str,
     origin: models.VersionOrigin,
     instruction: str | None,
+    created_at: datetime.datetime | None = None,
 ) -> None:
-    db.add(
-        models.CardVersion(
-            id=uuid.uuid4(),
-            user_id=card.user_id,
-            card_id=card.id,
-            version=card.version,
-            question=question,
-            answer=answer,
-            origin=origin.value,
-            instruction=instruction,
-            change_seq=changes.next_change_seq(),
-        )
+    version_row = models.CardVersion(
+        id=uuid.uuid4(),
+        user_id=card.user_id,
+        card_id=card.id,
+        version=card.version,
+        question=question,
+        answer=answer,
+        origin=origin.value,
+        instruction=instruction,
+        change_seq=changes.next_change_seq(),
     )
+    if created_at is not None:
+        version_row.created_at = created_at
+    db.add(version_row)
     db.flush()

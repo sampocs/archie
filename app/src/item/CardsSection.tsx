@@ -1,8 +1,10 @@
 import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { dropCard } from "@/db/actions";
 import { db } from "@/db/client";
+import { VersionsSheet } from "@/edits/VersionsSheet";
 import { isReviewable } from "@/review/eligibility";
 import { KIND_LABELS } from "@/review/labels";
 import { orderCards } from "@/review/session";
@@ -14,6 +16,7 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
+import { Toast } from "@/ui/Toast";
 import { useNow } from "@/ui/useNow";
 
 export type CardsOf = { kind: "source"; id: string } | { kind: "take"; id: string };
@@ -28,6 +31,9 @@ export function CardsSection({ of }: { of: CardsOf }) {
   const router = useRouter();
   const data = useReviewData();
   const now = useNow();
+  const [versionsOf, setVersionsOf] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const hideToast = useCallback(() => setToast(null), []);
   const cards = orderCards(
     data.cards.filter((card) => (of.kind === "source" ? card.sourceId === of.id : card.takeId === of.id)),
   );
@@ -36,6 +42,7 @@ export function CardsSection({ of }: { of: CardsOf }) {
   const anyReviewable = cards.some((card) => isReviewable(card, data));
 
   return (
+    <>
     <GroupedList
       testID="cards-section"
       title={`Cards from this · ${cards.length}`}
@@ -60,6 +67,17 @@ export function CardsSection({ of }: { of: CardsOf }) {
           <SwipeRow
             key={card.id}
             actions={[
+              ...(card.version > 1
+                ? [
+                    {
+                      key: "versions",
+                      label: "Versions",
+                      tone: "neutral" as const,
+                      testID: `card-versions-${index}`,
+                      onPress: () => setVersionsOf(card.id),
+                    },
+                  ]
+                : []),
               {
                 key: "remove",
                 label: "Remove",
@@ -82,12 +100,20 @@ export function CardsSection({ of }: { of: CardsOf }) {
               <Text>{card.question}</Text>
               {/* A take card's kind label ("Take") adds nothing on the take's own page. */}
               <Text variant="secondary" tone="ink3">
-                {of.kind === "take" ? due : `${KIND_LABELS[card.kind] ?? card.kind} · ${due}`}
+                {`${of.kind === "take" ? due : `${KIND_LABELS[card.kind] ?? card.kind} · ${due}`}${card.version > 1 ? " · Edited" : ""}`}
               </Text>
             </Pressable>
           </SwipeRow>
         );
       })}
     </GroupedList>
+    <VersionsSheet
+      target={versionsOf ? { kind: "card", id: versionsOf } : null}
+      visible={versionsOf !== null}
+      onClose={() => setVersionsOf(null)}
+      onRestored={(version) => setToast(`Restored version ${version}`)}
+    />
+    {toast ? <Toast message={toast} onHide={hideToast} /> : null}
+    </>
   );
 }

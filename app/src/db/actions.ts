@@ -678,7 +678,7 @@ function currentTakeVersion(tx: Tx, takeId: string) {
 // The take's next version, as the server will number it; the take then shows it.
 function insertTakeVersion(
   tx: Tx,
-  input: { takeId: string; versionId: string; body: string | null; rawBody: string; cleaned: boolean; now: string },
+  input: { takeId: string; versionId: string; body: string | null; rawBody: string; cleaned: boolean; origin: string; now: string },
 ): void {
   const take = tx.select().from(schema.takes).where(eq(schema.takes.id, input.takeId)).get();
   if (!take) return;
@@ -692,6 +692,7 @@ function insertTakeVersion(
       rawBody: input.rawBody,
       cleaned: input.cleaned ? 1 : 0,
       cleanFailed: 0,
+      origin: input.origin,
       createdAt: input.now,
     })
     .run();
@@ -731,6 +732,7 @@ export function saveTake(
         body: input.clean ? null : body,
         rawBody: body,
         cleaned: input.clean,
+        origin: "owner",
         now,
       });
     }
@@ -788,6 +790,7 @@ export function restoreTakeVersion(db: AppDb, takeId: string, version: number): 
       body: earlier.body ?? earlier.rawBody,
       rawBody: earlier.rawBody,
       cleaned: earlier.cleaned === 1,
+      origin: "restore",
       now,
     });
     enqueue(tx, "restore_take_version", { id: takeId, version, version_id: versionId });

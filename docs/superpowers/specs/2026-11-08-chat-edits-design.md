@@ -1,6 +1,6 @@
 # Edits through chat
 
-**Status:** designed 2026-11-08 from the owner's binding decisions (what chat can edit, versions for everything,
+**Status:** implemented on branch `chat-edits` (Maestro flow `edit.yaml`); designed 2026-11-08 from the owner's binding decisions (what chat can edit, versions for everything,
 confirm-to-apply with Undo, owner edits never silently overwritten, whitelist and models as M7); the technical
 choices below were deferred to this spec. Plan: `docs/superpowers/plans/2026-11-08-chat-edits.md`. Product background
 is `2026-10-26-product-scope.md` ("Carl (chat)": "Edit through chat … Edits create a new version, so the original is

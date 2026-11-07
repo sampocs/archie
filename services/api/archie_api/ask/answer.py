@@ -3,7 +3,7 @@
 The server runs up to `MAX_ROUNDS` model requests: `search_library` (run here, results returned as citable
 `search_result` blocks) and Anthropic's web search tool (run by Anthropic). Text streams as `delta` events; each
 finished text block becomes a `block` carrying its paragraph's label, sent when the paragraph closes; a tool run shows
-as `searching`. Uncited text the model writes before a tool call (announcing its search) is streamed but not saved.
+as `searching`. Uncited paragraphs the model writes before a tool call (announcing its search) are streamed but not saved.
 The answer is stored when the stream ends — complete only if the model finished its turn (`end_turn` or a stop
 sequence), else failed with whatever text arrived: a refusal, a cut-off (`max_tokens`), no answer within `MAX_ROUNDS`,
 an API or database error, or the phone hanging up mid-answer. Every model round, finished or not, is recorded in
@@ -178,9 +178,12 @@ def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progre
         if response.stop_reason != "tool_use" or not tool_uses:
             raise AnswerIncompleteError(f"the model stopped on {response.stop_reason}")
 
-        # Uncited text before a tool call announces the search ("Let me search your library"); it isn't the answer.
-        for block in progress.blocks[round_start:]:
-            block.dropped = not block.segment.citations
+        # An uncited paragraph before a tool call announces the search ("Let me search your library"); it isn't the
+        # answer. A cited paragraph is kept whole, including the uncited fragments citations cut it into.
+        announced = progress.blocks[round_start:]
+        dropped = citations.uncited_paragraphs_dropped([block.segment for block in announced])
+        for block, is_dropped in zip(announced, dropped, strict=True):
+            block.dropped = is_dropped
         messages.append({"role": "assistant", "content": response.content})
         results = [
             _search_library(engine, request=request, tool_use=tool_use, passages=passages) for tool_use in tool_uses

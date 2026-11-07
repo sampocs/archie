@@ -3065,7 +3065,8 @@ MAX_ANSWER_CHARACTERS = 2000
 PROPOSED = "shown to the owner with Apply and Discard; nothing has changed yet"
 _CLIP_CHARACTERS = 80
 
-_TEXT_KINDS = frozenset({models.EditTarget.PRIMER, models.EditTarget.TOPIC_PRIMER, models.EditTarget.TAKE})
+# A tuple, not a set: the tool schema's enum lists them, and a stable order keeps the request stable.
+_TEXT_KINDS = (models.EditTarget.PRIMER, models.EditTarget.TOPIC_PRIMER, models.EditTarget.TAKE)
 _NULLABLE_STRING: dict[str, Any] = {"anyOf": [{"type": "string"}, {"type": "null"}]}
 _DESCRIPTION: dict[str, Any] = {"type": "string", "description": "One short line telling the owner what changes."}
 
@@ -3965,3 +3966,1012 @@ Claude-Session: https://claude.ai/code/session_01XcYDkHG569wyzZcbNoxSyL"
 
 Then, in the `chat-edits` worktree: `git merge chat-edits-e5`.
 
+### Task 6: App: the proposal card in the chat (diff, Apply, Undo, Discard)  (tier: most capable)
+
+**Files:**
+- Create: `app/src/edits/diff.ts`, `app/src/edits/diff.test.ts`, `app/src/edits/proposalState.ts`, `app/src/edits/proposalState.test.ts`, `app/src/edits/useProposals.ts`, `app/src/edits/EditProposalCard.tsx`
+- Modify: `app/src/ask/types.ts` (`AskEvent`), `app/src/ask/stream.ts` (`EVENT_TYPES`), `app/src/ask/sections.ts`, `app/src/ask/sections.test.ts`, `app/src/ask/AnswerView.tsx`, `app/src/app/ask/[id].tsx`
+
+**Interfaces:**
+- Consumes (Task 3): `@/edits/types` (`EditProposalWire`, `ProposalView`, `viewOfRow`, `viewOfWire`, `EditTargetKind`, `EditStatus`), `@/edits/content` (`parseContent`, `editLines`), `@/edits/useTargetVersions`, `@/edits/api` (`sendEditAction`, `isConflict`); `schema.editProposals`. The SSE events `editing` / `edit` (Global Constraints).
+- Produces: `lineDiff(before: string[], after: string[]): DiffLine[]`, `foldUnchanged(lines: DiffLine[], context?: number): ShownLine[]`; `shownStatus(proposal, currentVersion): EditStatus`, `KICKERS`, `STATUS_LINES`, `targetHref(kind, id): string`; `useConversationProposals(conversationId): Map<string, ProposalView[]>`, `useProposalRow(id): ProposalView | null`; `<EditProposalCard proposal ready online onToast />`; `LiveAnswer.proposals: EditProposalWire[]`, `LiveAnswer.editing: boolean`; `AnswerView` props `editing?: boolean`, `children?: ReactNode`.
+- Depends on: Tasks 1-3
+- Review: yes (the stale rule and which actions the card offers in each state).
+
+- [ ] **Step 1: Worktree.** Inside the `chat-edits` worktree: `git gtr new chat-edits-e6 --from-current --yes`; work in `git gtr go chat-edits-e6`; symlink `app/node_modules` (Global Constraints).
+
+- [ ] **Step 2: Write the failing tests.** `app/src/edits/diff.test.ts`:
+
+```ts
+import { foldUnchanged, lineDiff } from "./diff";
+
+describe("lineDiff", () => {
+  it("marks a removed line and keeps the rest in order", () => {
+    expect(lineDiff(["Gist", "g", "Key ideas", "• a", "• b", "• c"], ["Gist", "g", "Key ideas", "• a", "• c"])).toEqual([
+      { kind: "same", text: "Gist" },
+      { kind: "same", text: "g" },
+      { kind: "same", text: "Key ideas" },
+      { kind: "same", text: "• a" },
+      { kind: "removed", text: "• b" },
+      { kind: "same", text: "• c" },
+    ]);
+  });
+
+  it("shows a changed line as the old one removed, then the new one added", () => {
+    expect(lineDiff(["Question: Q?", "Answer: A."], ["Question: Q?", "Answer: B."])).toEqual([
+      { kind: "same", text: "Question: Q?" },
+      { kind: "removed", text: "Answer: A." },
+      { kind: "added", text: "Answer: B." },
+    ]);
+  });
+
+  it("handles an empty side", () => {
+    expect(lineDiff([], ["x"])).toEqual([{ kind: "added", text: "x" }]);
+    expect(lineDiff(["x"], [])).toEqual([{ kind: "removed", text: "x" }]);
+  });
+});
+
+describe("foldUnchanged", () => {
+  it("keeps one line of context around a change and folds the rest into counted gaps", () => {
+    const lines = lineDiff(["1", "2", "3", "4", "5", "6", "7"], ["1", "2", "3", "4x", "5", "6", "7"]);
+    expect(foldUnchanged(lines)).toEqual([
+      { kind: "gap", count: 2 },
+      { kind: "same", text: "3" },
+      { kind: "removed", text: "4" },
+      { kind: "added", text: "4x" },
+      { kind: "same", text: "5" },
+      { kind: "gap", count: 2 },
+    ]);
+  });
+
+  it("folds an unchanged text into one gap", () => {
+    expect(foldUnchanged(lineDiff(["a", "b"], ["a", "b"]))).toEqual([{ kind: "gap", count: 2 }]);
+  });
+});
+```
+
+`app/src/edits/proposalState.test.ts`:
+
+```ts
+import { shownStatus, targetHref } from "./proposalState";
+
+describe("shownStatus", () => {
+  it("shows a proposal as stale once this phone's copy of the target moved past its base version", () => {
+    expect(shownStatus({ status: "proposed", baseVersion: 1 }, 1)).toBe("proposed");
+    expect(shownStatus({ status: "proposed", baseVersion: 1 }, 2)).toBe("stale");
+  });
+
+  it("trusts the server's status otherwise, and waits while the target hasn't loaded", () => {
+    expect(shownStatus({ status: "proposed", baseVersion: 1 }, null)).toBe("proposed");
+    expect(shownStatus({ status: "applied", baseVersion: 1 }, 2)).toBe("applied");
+    expect(shownStatus({ status: "undone", baseVersion: 1 }, 3)).toBe("undone");
+  });
+});
+
+it("opens each kind's own page", () => {
+  expect(["summary", "primer", "topic_primer", "take", "card"].map((kind) => targetHref(kind as never, "x"))).toEqual([
+    "/source/x",
+    "/primer/x",
+    "/topic/x",
+    "/take/x",
+    "/review/session?mode=card&id=x",
+  ]);
+});
+```
+
+Add to `app/src/ask/sections.test.ts`:
+
+```ts
+  it("an editing event shows the drafting line and an edit event adds its proposal once", () => {
+    const wire = {
+      id: "p1",
+      target_kind: "summary" as const,
+      target_id: "s1",
+      title: "Index funds",
+      description: "Drop the fees idea",
+      base_version: 1,
+      before: {},
+      after: {},
+      status: "proposed" as const,
+    };
+    const drafting = applyEvent(EMPTY_LIVE, { type: "editing", target_kind: null });
+    expect(drafting.editing).toBe(true);
+
+    const proposed = applyEvent(applyEvent(drafting, { type: "edit", ...wire }), { type: "edit", ...wire });
+    expect(proposed.proposals).toEqual([wire]);
+    expect(proposed.editing).toBe(false);
+    expect(liveView(proposed).editing).toBe(false);
+  });
+```
+
+and update the existing `liveView` expectation (`{ sections: [], streamingText: "It buys bonds.", searching: null }`) to include `editing: false`.
+
+Run `cd app && npx jest src/edits src/ask` → FAIL.
+
+- [ ] **Step 3: `app/src/edits/diff.ts`:**
+
+```ts
+export type DiffLine = { kind: "same" | "removed" | "added"; text: string };
+export type ShownLine = DiffLine | { kind: "gap"; count: number };
+
+/** `before` and `after` compared line by line (longest common subsequence): kept, removed and added, in order. */
+export function lineDiff(before: string[], after: string[]): DiffLine[] {
+  // common[i][j]: how many lines before[i..] and after[j..] share, in order.
+  const common = Array.from({ length: before.length + 1 }, () => new Array<number>(after.length + 1).fill(0));
+  for (let i = before.length - 1; i >= 0; i--) {
+    for (let j = after.length - 1; j >= 0; j--) {
+      common[i][j] = before[i] === after[j] ? common[i + 1][j + 1] + 1 : Math.max(common[i + 1][j], common[i][j + 1]);
+    }
+  }
+
+  // Walk the table; on a tie the removal comes first, so a changed line reads old-then-new.
+  const lines: DiffLine[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < before.length && j < after.length) {
+    if (before[i] === after[j]) {
+      lines.push({ kind: "same", text: before[i] });
+      i++;
+      j++;
+    } else if (common[i + 1][j] >= common[i][j + 1]) {
+      lines.push({ kind: "removed", text: before[i] });
+      i++;
+    } else {
+      lines.push({ kind: "added", text: after[j] });
+      j++;
+    }
+  }
+  return [
+    ...lines,
+    ...before.slice(i).map((text) => ({ kind: "removed" as const, text })),
+    ...after.slice(j).map((text) => ({ kind: "added" as const, text })),
+  ];
+}
+
+/** Unchanged runs folded into counted gaps, keeping `context` unchanged lines on each side of a change. */
+export function foldUnchanged(lines: DiffLine[], context = 1): ShownLine[] {
+  const changed = lines.map((line) => line.kind !== "same");
+  const shown: ShownLine[] = [];
+  lines.forEach((line, index) => {
+    const nearChange = changed.slice(Math.max(0, index - context), index + context + 1).some(Boolean);
+    if (nearChange) {
+      shown.push(line);
+      return;
+    }
+    const last = shown.at(-1);
+    if (last && last.kind === "gap") last.count += 1;
+    else shown.push({ kind: "gap", count: 1 });
+  });
+  return shown;
+}
+```
+
+- [ ] **Step 4: `app/src/edits/proposalState.ts`:**
+
+```ts
+import type { EditStatus, EditTargetKind, ProposalView } from "./types";
+
+export const KICKERS: Record<EditTargetKind, string> = {
+  summary: "Edit · Summary",
+  primer: "Edit · Primer",
+  topic_primer: "Edit · Topic primer",
+  take: "Edit · Take",
+  card: "Edit · Card",
+};
+
+export const STATUS_LINES: Record<Exclude<EditStatus, "proposed">, string> = {
+  applied: "Applied",
+  undone: "Undone",
+  discarded: "Discarded",
+  stale: "Changed since you asked. Ask again to redo it.",
+  superseded: "Replaced by a newer suggestion",
+};
+
+export const NETWORK_FAILED = "Couldn't reach Archie. Try again.";
+export const UNDO_CONFLICT = "This was changed since. Use Earlier versions to go back.";
+
+/**
+ * The status the card shows. A proposal whose target this phone already holds at a newer version can't apply, so it
+ * reads as stale before Apply is tapped; while the target hasn't loaded (null) it stays as the server said.
+ */
+export function shownStatus(proposal: Pick<ProposalView, "status" | "baseVersion">, currentVersion: number | null): EditStatus {
+  if (proposal.status !== "proposed" || currentVersion === null) return proposal.status;
+  return currentVersion === proposal.baseVersion ? "proposed" : "stale";
+}
+
+/** Where tapping a proposal's title goes: the item's own page, or the card in Review. */
+export function targetHref(kind: EditTargetKind, id: string): string {
+  switch (kind) {
+    case "summary":
+      return `/source/${id}`;
+    case "primer":
+      return `/primer/${id}`;
+    case "topic_primer":
+      return `/topic/${id}`;
+    case "take":
+      return `/take/${id}`;
+    case "card":
+      return `/review/session?mode=card&id=${id}`;
+  }
+}
+```
+
+- [ ] **Step 5: Stream events.** In `app/src/ask/types.ts` add to `AskEvent` (importing `type EditProposalWire` from `@/edits/types`):
+
+```ts
+  | { type: "editing"; target_kind: string | null }
+  | ({ type: "edit" } & EditProposalWire)
+```
+
+In `app/src/ask/stream.ts`, `EVENT_TYPES` gains `"editing"` and `"edit"`. In `app/src/ask/sections.ts`: `LiveAnswer` gains `proposals: EditProposalWire[]` and `editing: boolean`; `EMPTY_LIVE` gets `proposals: [], editing: false`; in `applyEvent`, `delta`, `done` and `error` also set `editing: false`, and add
+
+```ts
+    case "editing":
+      return { ...live, editing: true, searching: null };
+    case "edit": {
+      const { type: _type, ...wire } = event;
+      // A repeated event (a retried read of the stream) replaces the proposal rather than adding it twice.
+      return { ...live, editing: false, proposals: [...live.proposals.filter((proposal) => proposal.id !== wire.id), wire] };
+    }
+```
+
+`liveView` returns `editing: live.editing` as well. `endOfStream`'s failed branch also sets `editing: false`.
+
+- [ ] **Step 6: `app/src/edits/useProposals.ts`:**
+
+```ts
+import { asc, eq } from "drizzle-orm";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import { useMemo } from "react";
+
+import { db } from "@/db/client";
+import * as schema from "@/db/schema";
+
+import { viewOfRow, type ProposalView } from "./types";
+
+/** The chat's stored proposals, grouped by the answer that made them, in the order they were made. */
+export function useConversationProposals(conversationId: string): Map<string, ProposalView[]> {
+  const { data } = useLiveQuery(
+    db
+      .select()
+      .from(schema.editProposals)
+      .where(eq(schema.editProposals.conversationId, conversationId))
+      .orderBy(asc(schema.editProposals.createdAt)),
+    [conversationId],
+  );
+  return useMemo(() => {
+    const byMessage = new Map<string, ProposalView[]>();
+    for (const row of data) {
+      const view = viewOfRow(row);
+      if (view) byMessage.set(row.messageId, [...(byMessage.get(row.messageId) ?? []), view]);
+    }
+    return byMessage;
+  }, [data]);
+}
+
+/** One proposal's stored row, once the phone has it (after a pull, or right after Apply / Undo / Discard). */
+export function useProposalRow(id: string): ProposalView | null {
+  const { data } = useLiveQuery(db.select().from(schema.editProposals).where(eq(schema.editProposals.id, id)), [id]);
+  return useMemo(() => (data[0] ? viewOfRow(data[0]) : null), [data]);
+}
+```
+
+- [ ] **Step 7: `app/src/edits/EditProposalCard.tsx`:**
+
+```tsx
+import { useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import { Pressable, View } from "react-native";
+
+import { UnauthorizedError } from "@/api/client";
+import { clearSession, useSession } from "@/auth/session";
+import { requestSync } from "@/sync/useSync";
+import { Button } from "@/theme/components/Button";
+import { Card } from "@/theme/components/Card";
+import { Text } from "@/theme/components/Text";
+import { useTheme } from "@/theme/useTheme";
+import { haptic } from "@/ui/haptics";
+
+import { isConflict, sendEditAction, type EditAction } from "./api";
+import { editLines, parseContent } from "./content";
+import { foldUnchanged, lineDiff, type ShownLine } from "./diff";
+import { KICKERS, NETWORK_FAILED, STATUS_LINES, shownStatus, targetHref, UNDO_CONFLICT } from "./proposalState";
+import type { ProposalView } from "./types";
+import { useProposalRow } from "./useProposals";
+import { useTargetVersions } from "./useTargetVersions";
+
+type EditProposalCardProps = {
+  proposal: ProposalView;
+  // False while the answer is still streaming: the proposal is stored only when the answer is.
+  ready: boolean;
+  online: boolean;
+  onToast: (message: string) => void;
+};
+
+/** One edit Ask proposed: what changes, as a diff, with Apply / Discard, then Applied · Undo or how it ended. */
+export function EditProposalCard({ proposal: streamed, ready, online, onToast }: EditProposalCardProps) {
+  const theme = useTheme();
+  const router = useRouter();
+  const { sessionKey } = useSession();
+  const [busy, setBusy] = useState(false);
+
+  // The stored row wins once the phone has it: it carries what Apply, Undo or Discard did.
+  const proposal = useProposalRow(streamed.id) ?? streamed;
+  const { current } = useTargetVersions(proposal.targetKind, proposal.targetId);
+  const status = shownStatus(proposal, current);
+  const lines = useMemo(() => {
+    const kind = proposal.targetKind;
+    const before = editLines(kind, parseContent(kind, proposal.before));
+    return foldUnchanged(lineDiff(before, editLines(kind, parseContent(kind, proposal.after))));
+  }, [proposal.targetKind, proposal.before, proposal.after]);
+
+  function act(action: EditAction): void {
+    if (!sessionKey || busy) return;
+    setBusy(true);
+    sendEditAction({ proposalId: proposal.id, action, sessionKey })
+      .then(() => haptic("success"))
+      .catch((error) => {
+        if (error instanceof UnauthorizedError) void clearSession();
+        // Any other 409 means the server already moved the proposal on; the sync below brings its state.
+        if (action === "undo" && isConflict(error)) onToast(UNDO_CONFLICT);
+        else if (!isConflict(error)) onToast(NETWORK_FAILED);
+      })
+      .finally(() => {
+        setBusy(false);
+        requestSync();
+      });
+  }
+
+  const id = proposal.id;
+  return (
+    <Card testID={`edit-proposal-${id}`} style={{ gap: theme.spacing.sm }}>
+      <Text variant="kicker" tone="ink2">
+        {KICKERS[proposal.targetKind]}
+      </Text>
+      <Pressable testID={`edit-title-${id}`} hitSlop={8} onPress={() => router.push(targetHref(proposal.targetKind, proposal.targetId))}>
+        <Text variant="headline">{`${proposal.title} ›`}</Text>
+      </Pressable>
+      <Text tone="ink2">{proposal.description}</Text>
+      <View testID={`edit-diff-${id}`} style={{ gap: theme.spacing.xs }}>
+        {lines.map((line, index) => (
+          <DiffRow key={index} line={line} />
+        ))}
+      </View>
+      {status === "proposed" ? (
+        online ? (
+          <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
+            <View style={{ flex: 1 }}>
+              <Button testID={`edit-apply-${id}`} label="Apply" disabled={!ready || busy} onPress={() => act("apply")} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button
+                testID={`edit-discard-${id}`}
+                variant="secondary"
+                label="Discard"
+                disabled={!ready || busy}
+                onPress={() => act("discard")}
+              />
+            </View>
+          </View>
+        ) : (
+          <Text testID={`edit-status-${id}`} tone="ink3">
+            Needs a connection
+          </Text>
+        )
+      ) : (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md }}>
+          <Text testID={`edit-status-${id}`} tone="ink2">
+            {STATUS_LINES[status]}
+          </Text>
+          {status === "applied" && online ? (
+            <Pressable testID={`edit-undo-${id}`} hitSlop={8} disabled={busy} onPress={() => act("undo")}>
+              <Text variant="headline">Undo</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      )}
+    </Card>
+  );
+}
+
+function DiffRow({ line }: { line: ShownLine }) {
+  const theme = useTheme();
+  if (line.kind === "gap") {
+    return (
+      <Text variant="secondary" tone="ink3">
+        {`⋯ ${line.count} unchanged`}
+      </Text>
+    );
+  }
+  if (line.kind === "same") return <Text tone="ink2">{line.text}</Text>;
+
+  const removed = line.kind === "removed";
+  return (
+    <Text
+      style={{
+        color: removed ? theme.signals.missed : theme.signals.gotIt,
+        textDecorationLine: removed ? "line-through" : "none",
+      }}
+    >
+      {`${removed ? "−" : "+"} ${line.text}`}
+    </Text>
+  );
+}
+```
+
+(Check `Text`'s `tone` values in `app/src/theme/components/Text.tsx` — `ink`, `ink2`, `ink3` are used elsewhere — and that `Card` forwards `testID`; it spreads `ViewProps`, so it does.)
+
+- [ ] **Step 8: Wire the chat.** In `app/src/ask/AnswerView.tsx`: add props `editing?: boolean` and `children?: ReactNode` (import `type ReactNode` from `react`); after the streaming text render
+
+```tsx
+      {editing ? (
+        <Text testID="chat-editing" tone="ink3">
+          Drafting an edit…
+        </Text>
+      ) : null}
+      {children}
+```
+
+before the `searching` line. In `app/src/app/ask/[id].tsx`: `const proposals = useConversationProposals(params.id);`; give each stored `AnswerView` the children
+
+```tsx
+                {(proposals.get(message.id) ?? []).map((proposal) => (
+                  <EditProposalCard key={proposal.id} proposal={proposal} ready online={online} onToast={setToast} />
+                ))}
+```
+
+and the pending `AnswerView` the children
+
+```tsx
+                {pending.live.proposals.map((wire) => (
+                  <EditProposalCard
+                    key={wire.id}
+                    proposal={viewOfWire(wire)}
+                    ready={pending.live.messageId !== null}
+                    online={online}
+                    onToast={setToast}
+                  />
+                ))}
+```
+
+(`{...liveView(pending.live)}` already passes `editing`.) Import `EditProposalCard`, `useConversationProposals` and `viewOfWire`.
+
+- [ ] **Step 9: Run.** `cd app && npm run typecheck && npx jest` → PASS.
+
+- [ ] **Step 10: Commit and merge back.**
+
+```bash
+git add app/src/edits app/src/ask app/src/app/ask
+git commit -m "App: edit proposals in the chat, with a line diff, Apply, Discard and Undo
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01XcYDkHG569wyzZcbNoxSyL"
+```
+
+Then, in the `chat-edits` worktree: `git merge chat-edits-e6`.
+
+### Task 7: App: the versions sheet and its entry points (source and topic menus, card rows, take versions)  (tier: standard)
+
+**Files:**
+- Create: `app/src/edits/VersionsSheet.tsx`, `app/src/edits/VersionPreview.tsx`, `app/src/edits/versionRows.ts`, `app/src/edits/versionRows.test.ts`
+- Modify: `app/src/item/ItemMenu.tsx`, `app/src/app/source/[id].tsx`, `app/src/topics/TopicMenu.tsx`, `app/src/app/topic/[id].tsx`, `app/src/item/CardsSection.tsx`, `app/src/app/take/[id].tsx` (`EarlierVersions` rows), `app/src/takes/versionView.ts`, `app/src/takes/versionView.test.ts`, `app/src/db/actions.ts` (`insertTakeVersion` origin)
+
+**Interfaces:**
+- Consumes (Task 3): `useTargetVersions`, `VersionEntry`, `originLabel`, `restoreVersion`, `isConflict`, `summaryAsMarkdown`, `EditTargetKind`, the `origin` / `version` columns.
+- Produces: `<VersionsSheet target={{ kind, id } | null} visible onClose onRestored={(version: number) => void} />`; `versionRowTitle(entry, now): string` ("Version 3 · Nov 8"), `versionRowDetail(entry): string` ("Edited in Ask · Drop the jargon"), `sheetTitle(kind): string`; `ItemMenu` props `summaryVersions: number`, `primerVersions: number`, `onOpenVersions: (kind: "summary" | "primer") => void`; `TopicMenu` prop `onPrimerVersions?: () => void`.
+- Depends on: Tasks 1-3
+- Review: no.
+
+- [ ] **Step 1: Worktree.** Inside the `chat-edits` worktree: `git gtr new chat-edits-e7 --from-current --yes`; work in `git gtr go chat-edits-e7`; symlink `app/node_modules`.
+
+- [ ] **Step 2: Write the failing tests.** `app/src/edits/versionRows.test.ts`:
+
+```ts
+import { sheetTitle, versionRowDetail, versionRowTitle } from "./versionRows";
+
+const entry = (overrides: object) => ({
+  version: 3,
+  createdAt: new Date(2026, 10, 8).toISOString(),
+  origin: "chat_edit" as const,
+  instruction: "Drop the jargon",
+  content: null,
+  current: true,
+  ...overrides,
+});
+
+describe("version rows", () => {
+  it("titles a row by its number and date", () => {
+    expect(versionRowTitle(entry({}), new Date(2026, 10, 9))).toBe("Version 3 · Nov 8");
+  });
+
+  it("says how a version was made, with the edit's description when there is one", () => {
+    expect(versionRowDetail(entry({}))).toBe("Edited in Ask · Drop the jargon");
+    expect(versionRowDetail(entry({ origin: "archie", instruction: null }))).toBe("Archie");
+    expect(versionRowDetail(entry({ origin: "care", instruction: "rates matter" }))).toBe(
+      "Rewritten from your note · rates matter",
+    );
+  });
+
+  it("names each kind's sheet", () => {
+    expect(["summary", "primer", "topic_primer", "card", "take"].map((kind) => sheetTitle(kind as never))).toEqual([
+      "Summary versions",
+      "Primer versions",
+      "Primer versions",
+      "Card versions",
+      "Earlier versions",
+    ]);
+  });
+});
+```
+
+In `app/src/takes/versionView.test.ts`, add to `describe("versionKicker")`:
+
+```ts
+  it("adds how the version was made when it wasn't the owner's own save", () => {
+    const now = new Date(2026, 10, 5);
+    const createdAt = new Date(2026, 10, 2).toISOString();
+    expect(versionKicker({ version: 3, createdAt, origin: "chat_edit" }, now)).toBe("Version 3 · Nov 2 · Edited in Ask");
+    expect(versionKicker({ version: 3, createdAt, origin: "owner" }, now)).toBe("Version 3 · Nov 2");
+  });
+```
+
+Run `cd app && npx jest src/edits/versionRows src/takes/versionView` → FAIL.
+
+- [ ] **Step 3: `app/src/edits/versionRows.ts`:**
+
+```ts
+import { takeDate } from "@/takes/takes";
+
+import type { EditTargetKind } from "./types";
+import { originLabel, type VersionEntry } from "./versions";
+
+const SHEET_TITLES: Record<EditTargetKind, string> = {
+  summary: "Summary versions",
+  primer: "Primer versions",
+  topic_primer: "Primer versions",
+  card: "Card versions",
+  take: "Earlier versions",
+};
+
+export function sheetTitle(kind: EditTargetKind): string {
+  return SHEET_TITLES[kind];
+}
+
+/** "Version 3 · Nov 8". */
+export function versionRowTitle(entry: Pick<VersionEntry, "version" | "createdAt">, now: Date): string {
+  return `Version ${entry.version} · ${takeDate(entry.createdAt, now)}`;
+}
+
+/** How the version was made, then the edit's description or the care note: "Edited in Ask · Drop the jargon". */
+export function versionRowDetail(entry: Pick<VersionEntry, "origin" | "instruction">): string {
+  const label = originLabel(entry.origin);
+  return entry.instruction ? `${label} · ${entry.instruction}` : label;
+}
+```
+
+(If `takes/takes.ts` imports anything native, move `takeDate` to a pure module first; it is a pure date formatter today.) In `app/src/takes/versionView.ts`, `versionKicker` takes `Pick<TakeVersionRow, "version" | "createdAt"> & { origin?: string }` and returns `Version N · <date>`, plus ` · ${originLabel(origin)}` when `origin` is set and isn't `"owner"` (import `originLabel` from `@/edits/versions`).
+
+- [ ] **Step 4: `app/src/edits/VersionPreview.tsx`:**
+
+```tsx
+import { View } from "react-native";
+
+import { Text } from "@/theme/components/Text";
+import { useTheme } from "@/theme/useTheme";
+import { Markdown } from "@/ui/Markdown";
+
+import { summaryAsMarkdown, type CardShape, type EditContent, type MarkdownShape, type SummaryShape } from "./content";
+import type { EditTargetKind } from "./types";
+
+/** One version's content, read-only: a summary as its sections, markdown rendered, a card's question and answer. */
+export function VersionPreview({ kind, content }: { kind: EditTargetKind; content: EditContent | null }) {
+  const theme = useTheme();
+  if (content === null) return <Text tone="ink3">This version can't be shown.</Text>;
+  if (kind === "card") {
+    const card = content as CardShape;
+    return (
+      <View style={{ gap: theme.spacing.sm }}>
+        <Text variant="kicker" tone="ink2">
+          Question
+        </Text>
+        <Text>{card.question}</Text>
+        <Text variant="kicker" tone="ink2">
+          Answer
+        </Text>
+        <Text>{card.answer}</Text>
+      </View>
+    );
+  }
+  const markdown = kind === "summary" ? summaryAsMarkdown(content as SummaryShape) : (content as MarkdownShape).markdown;
+  return <Markdown text={markdown} />;
+}
+```
+
+- [ ] **Step 5: `app/src/edits/VersionsSheet.tsx`:**
+
+```tsx
+import * as Network from "expo-network";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, View } from "react-native";
+
+import { UnauthorizedError } from "@/api/client";
+import { clearSession, useSession } from "@/auth/session";
+import { requestSync } from "@/sync/useSync";
+import { Button } from "@/theme/components/Button";
+import { Text } from "@/theme/components/Text";
+import { useTheme } from "@/theme/useTheme";
+import { BottomSheet } from "@/ui/BottomSheet";
+import { haptic } from "@/ui/haptics";
+import { useNow } from "@/ui/useNow";
+
+import { restoreVersion } from "./api";
+import type { EditTargetKind } from "./types";
+import { useTargetVersions } from "./useTargetVersions";
+import { VersionPreview } from "./VersionPreview";
+import { sheetTitle, versionRowDetail, versionRowTitle } from "./versionRows";
+
+type VersionsSheetProps = {
+  target: { kind: EditTargetKind; id: string } | null;
+  visible: boolean;
+  onClose: () => void;
+  // Called with the version that was copied; the page shows "Restored version N".
+  onRestored: (version: number) => void;
+};
+
+const MAX_SHEET_HEIGHT = 560;
+
+/** A target's versions, newest first; tap one to read it and restore it as the newest version. */
+export function VersionsSheet({ target, visible, onClose, onRestored }: VersionsSheetProps) {
+  const theme = useTheme();
+  const now = useNow();
+  const { sessionKey } = useSession();
+  const network = Network.useNetworkState();
+  const online = network.isConnected !== false && network.isInternetReachable !== false;
+  const { entries } = useTargetVersions(target?.kind ?? null, target?.id ?? null);
+  const [shown, setShown] = useState<number | null>(null);
+  const [restoring, setRestoring] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  // Each opening starts at the list.
+  useEffect(() => {
+    if (visible) {
+      setShown(null);
+      setFailed(false);
+    }
+  }, [visible]);
+
+  if (!target) return null;
+  const entry = entries.find((candidate) => candidate.version === shown) ?? null;
+
+  function restore(version: number): void {
+    if (!target || !sessionKey) return;
+    setRestoring(true);
+    setFailed(false);
+    restoreVersion({ targetKind: target.kind, targetId: target.id, version, sessionKey })
+      .then(() => {
+        haptic("success");
+        requestSync();
+        onClose();
+        onRestored(version);
+      })
+      .catch((error) => {
+        if (error instanceof UnauthorizedError) void clearSession();
+        setFailed(true);
+      })
+      .finally(() => setRestoring(false));
+  }
+
+  return (
+    <BottomSheet testID="versions-sheet" visible={visible} onClose={onClose}>
+      <Text variant="headline">{sheetTitle(target.kind)}</Text>
+      <ScrollView style={{ maxHeight: MAX_SHEET_HEIGHT }} contentContainerStyle={{ gap: theme.spacing.md }}>
+        {entry ? (
+          <View testID="version-preview" style={{ gap: theme.spacing.md }}>
+            <Text variant="secondary" tone="ink3">
+              {`${versionRowTitle(entry, now)} · ${versionRowDetail(entry)}`}
+            </Text>
+            <VersionPreview kind={target.kind} content={entry.content} />
+          </View>
+        ) : (
+          entries.map((candidate) => (
+            <Pressable
+              key={candidate.version}
+              testID={`version-row-${candidate.version}`}
+              onPress={() => setShown(candidate.version)}
+              style={{ gap: theme.spacing.xs }}
+            >
+              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                <Text>{versionRowTitle(candidate, now)}</Text>
+                {candidate.current ? (
+                  <Text testID={`version-current-${candidate.version}`} variant="secondary" tone="ink2">
+                    Current
+                  </Text>
+                ) : null}
+              </View>
+              <Text variant="secondary" tone="ink3">
+                {versionRowDetail(candidate)}
+              </Text>
+            </Pressable>
+          ))
+        )}
+      </ScrollView>
+      {entry ? (
+        <View style={{ gap: theme.spacing.sm }}>
+          {entry.current ? null : online ? (
+            <Button
+              testID="version-restore"
+              label="Restore this version"
+              disabled={restoring}
+              onPress={() => restore(entry.version)}
+            />
+          ) : (
+            <Text testID="version-offline" tone="ink3">
+              Restoring needs a connection
+            </Text>
+          )}
+          {failed ? <Text tone="ink2">Couldn't reach Archie. Try again.</Text> : null}
+          <Button testID="version-back" variant="secondary" label="Back" onPress={() => setShown(null)} />
+        </View>
+      ) : null}
+    </BottomSheet>
+  );
+}
+```
+
+- [ ] **Step 6: Source page entries.** `app/src/item/ItemMenu.tsx`: add props `summaryVersions: number`, `primerVersions: number`, `onOpenVersions: (kind: "summary" | "primer") => void`; after the `menu-change-topic` item insert
+
+```tsx
+    ...(summaryVersions > 1
+      ? [{ testID: "menu-summary-versions", label: "Summary versions", onPress: () => onOpenVersions("summary") }]
+      : []),
+    ...(primerVersions > 1
+      ? [{ testID: "menu-primer-versions", label: "Primer versions", onPress: () => onOpenVersions("primer") }]
+      : []),
+```
+
+and add them to the doc comment's group list. In `app/src/app/source/[id].tsx`: `const summaryVersions = useTargetVersions("summary", id).entries.length;` and the same for `"primer"`; `const [versionsOf, setVersionsOf] = useState<"summary" | "primer" | null>(null);` and `const [restoredToast, setRestoredToast] = useState<string | null>(null);`; pass the new props to `ItemMenu` (`onOpenVersions={setVersionsOf}`); render
+
+```tsx
+        <VersionsSheet
+          target={versionsOf ? { kind: versionsOf, id: source.id } : null}
+          visible={versionsOf !== null}
+          onClose={() => setVersionsOf(null)}
+          onRestored={(version) => setRestoredToast(`Restored version ${version}`)}
+        />
+```
+
+inside the `Screen`, and next to the existing toast `{restoredToast ? <Toast message={restoredToast} onHide={hideRestoredToast} /> : null}` with a stable `hideRestoredToast = useCallback(() => setRestoredToast(null), [])`. (MenuSheet runs an item's `onPress` after it has dismissed, so two modals are never up at once — as `TakeMenus` relies on.)
+
+- [ ] **Step 7: Topic page entry.** `app/src/topics/TopicMenu.tsx`: add prop `onPrimerVersions?: () => void` and, after the Ask row, `...(onPrimerVersions ? [{ label: "Primer versions", testID: "topic-menu-primer-versions", onPress: onPrimerVersions }] : [])`. In `app/src/app/topic/[id].tsx`: `const primerVersions = useTargetVersions("topic_primer", id).entries.length;`, a `versionsOpen` state, pass `onPrimerVersions={primerVersions > 1 ? () => setVersionsOpen(true) : undefined}` to `TopicMenu`, and render `<VersionsSheet target={{ kind: "topic_primer", id }} visible={versionsOpen} onClose={() => setVersionsOpen(false)} onRestored={(version) => setToast(\`Restored version ${version}\`)} />` with a `Toast` the same way as the source page (wrap the `Screen` in a `<View style={{ flex: 1 }}>` so the toast pins to the screen, as the source page does).
+
+- [ ] **Step 8: Card rows.** In `app/src/item/CardsSection.tsx`, add the sheet state, a Versions swipe action on edited cards and " · Edited" in their subtitle:
+
+```tsx
+  const [versionsOf, setVersionsOf] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const hideToast = useCallback(() => setToast(null), []);
+```
+
+```tsx
+          <SwipeRow
+            key={card.id}
+            actions={[
+              ...(card.version > 1
+                ? [
+                    {
+                      key: "versions",
+                      label: "Versions",
+                      tone: "neutral" as const,
+                      testID: `card-versions-${index}`,
+                      onPress: () => setVersionsOf(card.id),
+                    },
+                  ]
+                : []),
+              {
+                key: "remove",
+                label: "Remove",
+                tone: "missed",
+                testID: `card-remove-${index}`,
+                onPress: () => {
+                  dropCard(db, card.id);
+                  requestSync();
+                  haptic("success");
+                },
+              },
+            ]}
+          >
+```
+
+```tsx
+              <Text variant="secondary" tone="ink3">
+                {`${of.kind === "take" ? due : `${KIND_LABELS[card.kind] ?? card.kind} · ${due}`}${card.version > 1 ? " · Edited" : ""}`}
+              </Text>
+```
+
+and wrap the returned `GroupedList` in a fragment followed by
+
+```tsx
+      <VersionsSheet
+        target={versionsOf ? { kind: "card", id: versionsOf } : null}
+        visible={versionsOf !== null}
+        onClose={() => setVersionsOf(null)}
+        onRestored={(version) => setToast(`Restored version ${version}`)}
+      />
+      {toast ? <Toast message={toast} onHide={hideToast} /> : null}
+```
+
+(`useReviewData`'s card rows carry `version` once Task 3's schema is in; if its card type is a narrower pick, add `version` to it. Hooks go above the `if (cards.length === 0) return null;` guard.)
+
+- [ ] **Step 9: Takes.** `app/src/app/take/[id].tsx::EarlierVersions`: each row's left text becomes `Version {version.version}` plus, when `version.origin !== "owner"`, a second line `<Text variant="secondary" tone="ink3">{originLabel(version.origin)}</Text>`. `app/src/app/take/version.tsx` passes `shown` (which now has `origin`) to `versionKicker` unchanged. `app/src/db/actions.ts`: `insertTakeVersion`'s input gains `origin: string`, written into the row; `saveTake`'s call passes `"owner"` and `restoreTakeVersion`'s passes `"restore"`.
+
+- [ ] **Step 10: Run.** `cd app && npm run typecheck && npx jest` → PASS.
+
+- [ ] **Step 11: Commit and merge back.**
+
+```bash
+git add app/src/edits app/src/item app/src/app app/src/topics app/src/takes app/src/db/actions.ts
+git commit -m "App: Summary, Primer and Card versions sheets with Restore; take versions say how they were made
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01XcYDkHG569wyzZcbNoxSyL"
+```
+
+Then, in the `chat-edits` worktree: `git merge chat-edits-e7`.
+
+## Integration task (serial, in `chat-edits`, after Tasks 4–7 are merged)
+
+### Task 8: Merge check, the paid Maestro flow, docs, full verification  (tier: standard; Maestro runs by the coordinator)
+
+**Files:**
+- Create: `maestro/edit.yaml`
+- Modify: `Makefile`, `maestro/README.md`, `AGENTS.md` (Commands), `docs/superpowers/specs/2026-10-26-product-scope.md`, `docs/superpowers/specs/2026-11-02-backend-architecture-design.md`, `docs/superpowers/specs/2026-11-08-chat-edits-design.md` (Status line)
+
+**Interfaces:**
+- Consumes: everything above (testIDs in Global Constraints).
+- Depends on: Tasks 1-7.
+- Review: no.
+
+- [ ] **Step 1: Merge.** Merge each task branch into `chat-edits` (`git merge chat-edits-e<N>` for N = 4…7 if not already merged); resolve the one textual overlap (`services/api/archie_api/main.py`). Remove the task worktrees with `git gtr rm chat-edits-e<N> --delete-branch`.
+
+- [ ] **Step 2: Suites.** `docker exec second-brain-postgres-1 createdb -U archie archie_test_e8` (ignore "already exists"); `make lint`; `TEST_DATABASE_URL=postgresql+psycopg://archie:archie@127.0.0.1:5434/archie_test_e8 uv run pytest -m "postgres or not postgres"` — all pass with every cassette replaying; `cd app && npm run typecheck && npx jest` — pass. `make scaffold` lists nothing new.
+
+- [ ] **Step 3: `maestro/edit.yaml`** (paid: analyze, primer, embeddings and a few Sonnet rounds; own target):
+
+```yaml
+# Edits through chat: finish an article, open Ask about it from its ••• menu, ask to drop a key idea, Apply, Undo,
+# and find three Summary versions. Needs the owner's keys in .env (analyze, primer, embeddings and Sonnet 5.5: a few
+# cents); local backend only; run it through `make maestro-edit`.
+appId: com.sampocs.archie
+---
+- runFlow: login.yaml
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "library-add"
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "library-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://paulgraham.com/hwh.html"
+- tapOn:
+    id: "intent-finished"
+- tapOn:
+    id: "add-save"
+- extendedWaitUntil:
+    visible: ".*How to Work Hard.*"
+    timeout: 90000
+# The summary must exist before Ask can edit it (the row's status settles when analyze and the primer are done).
+- extendedWaitUntil:
+    notVisible: ".*Processing.*"
+    timeout: 180000
+- tapOn: ".*How to Work Hard.*"
+- extendedWaitUntil:
+    visible:
+      id: "source-gist"
+    timeout: 30000
+- tapOn:
+    id: "item-more"
+- tapOn:
+    id: "menu-ask"
+- extendedWaitUntil:
+    visible:
+      id: "chat-screen"
+    timeout: 5000
+- tapOn:
+    id: "ask-composer-input"
+- inputText: "Remove the first key idea from the summary."
+- tapOn:
+    id: "ask-send"
+# The proposal shows while the answer streams; Apply turns on once the answer is saved.
+- extendedWaitUntil:
+    visible:
+      id: "edit-apply-.*"
+      enabled: true
+    timeout: 180000
+- assertVisible: "Edit · Summary"
+- tapOn:
+    id: "edit-apply-.*"
+- extendedWaitUntil:
+    visible: "Applied"
+    timeout: 15000
+- tapOn:
+    id: "edit-undo-.*"
+- extendedWaitUntil:
+    visible: "Undone"
+    timeout: 15000
+- tapOn:
+    id: "screen-back"
+- extendedWaitUntil:
+    visible:
+      id: "item-more"
+    timeout: 10000
+- tapOn:
+    id: "item-more"
+- tapOn:
+    id: "menu-summary-versions"
+- extendedWaitUntil:
+    visible:
+      id: "version-row-3"
+    timeout: 10000
+- assertVisible:
+    id: "version-current-3"
+- assertVisible:
+    id: "version-row-1"
+- tapOn:
+    id: "version-row-2"
+- assertVisible:
+    id: "version-preview"
+- assertVisible:
+    id: "version-restore"
+```
+
+Check the add sheet's ids (`library-add`, `add-url`, `intent-finished`, `add-save`) and `screen-back` against `maestro/ask.yaml`, and use what it uses.
+
+- [ ] **Step 4: Makefile, README, AGENTS.md.** Add
+
+```make
+# Edits through chat: analyze, embeddings and an Ask answer spend real API credits (a few cents); see maestro/README.md.
+maestro-edit: reset-local-data
+	@PATH="$(MAESTRO_PATH)" maestro test maestro/edit.yaml
+```
+
+add `maestro-edit` to `.PHONY`; in `maestro/README.md` add a row `| \`edit.yaml\` | Finish an article, Ask about it from its ••• menu, ask to drop a key idea, Apply, Undo, and find three Summary versions (real keys, a few cents; \`make maestro-edit\`) |` and a numbered step like the `maestro-ask` one; in `AGENTS.md`'s Commands bullet for Maestro, append "; `make maestro-edit` runs the edits-through-chat flow, which spends a few cents".
+
+- [ ] **Step 5: Docs.** Product scope ("Carl (chat)"): extend the shipped note to "Edit through chat shipped too; see `2026-11-08-chat-edits-design.md`: Ask proposes edits to summaries, primers, topic primers, takes and cards, the owner taps Apply (Undo after), every change is a version with Restore, and Archie's rewrites never replace an owner-chosen version." and drop "Edit through chat is not built." In the architecture doc: the "Search and chat" bullet "Edits through chat …" points at the chat-edits spec; the Data model's **cards** bullet gains "version, with `card_versions` once a card has changed (an Ask edit, a care rewrite, a restore)"; **source_artifacts** gains "and who made it (`origin`); Archie's rewrites never replace an owner-chosen current version (see the chat-edits spec)". In the chat-edits spec, set the Status line to "implemented on branch `chat-edits` (Maestro flow `edit.yaml`)".
+
+- [ ] **Step 6: Coordinator: Maestro from the main checkout.** Check out `chat-edits` in the main checkout (use the `free-up-main` skill if a worktree holds it), `make migrate-local`, `make start-local` in one terminal, then `make maestro` (all free flows still pass: nothing they touch changed shape) and `make maestro-edit`. Fix what fails in `chat-edits` and re-run.
+
+- [ ] **Step 7: Commit.**
+
+```bash
+git add maestro Makefile AGENTS.md docs
+git commit -m "Chat edits: Maestro edit flow, maestro-edit target, docs
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01XcYDkHG569wyzZcbNoxSyL"
+```
+
+## Self-review notes
+
+- **Spec coverage:** five editable kinds (T2 `versions`, T5 tools); every change a version, restore as a copy (T2); card versions, lazy (T1 table, T2 `_write_card`, T2 care); confirm-to-apply with Undo (T5 proposals only, T4 apply/undo/discard, T6 card); versions sheets and entry points (T7; takes keep theirs and gain origin labels); the regeneration rule with the text exception (T2 `keeps_owner_version`, tested in `test_versions.py` and through analyze); cards kept consistent (take edits through `takes.add_version` → `take_cards`, T2; summary/primer leave cards and the prompt asks for matching card edits, T5); target finding (about ids, result tags, history lines, `find_cards`, `read_item` with `pending`, T5); lifecycle incl. superseded and stale (T4, T5 `save_proposals`, T6 `shownStatus`); wire shapes (T1 pulled rows, T5 events, T4 routes, T3 phone types); whitelist (Ask's route already refuses non-whitelisted users; the edit routes spend nothing); models and limits (Global Constraints, T5); error handling (T4 409/404, T5 error results, T6 toasts); testing (T1, T2, T4, T5 Python; T3, T6, T7 jest; T8 Maestro); drizzle reset (T3).
+- **Recorded cassettes** (T5's executor, with the command in Global Constraints): `services/api/tests/e2e/cassettes/ask_edit_summary.yaml`, `ask_edit_card.yaml` (Anthropic). Existing cassettes are reused unchanged: `analyze_greatwork` (T2), `review_care` (T2), and the M7 Ask cassettes (T5 Step 8).
+- **Prompt prefixes:** `ASK_SYSTEM` still begins "You are Archie's Ask, answering the owner's questions from th"; no new system prompt is added.
+- **Type consistency:** `versions.Target(kind, id)` / `Snapshot(version, content)` (T2) are what T4 and T5 use; `EditProposalOut` fields (T1) match the phone's `PulledEditProposal` (T3) and `proposalValues`; `useTargetVersions(kind, id) → { current, entries }` (T3) is what T6 (`current`) and T7 (`entries`) read; `ProposalView` (T3) is what `EditProposalCard` (T6) renders.

@@ -246,7 +246,7 @@ def _round(
             for stream_event in response_stream:
                 started = started or stream_event.type == "message_start"
                 yield from _events_of(stream_event, progress=progress, passages=passages)
-            yield from _blocks_of(progress.paragraphs.close(), progress=progress)
+            yield from _blocks_of(progress.paragraphs.finish(), progress=progress)
             response = response_stream.get_final_message()
             return response
         finally:
@@ -346,7 +346,7 @@ def _query_embedding(engine: sqlalchemy.Engine, *, request: AnswerRequest, query
 def _save(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress, failed: bool) -> uuid.UUID:
     """Store the answer and give the question, the answer and the chat new positions, so the phone pulls them."""
     # The answer ended (or broke) mid-paragraph: its finished blocks still get the paragraph's label.
-    blocks = [*progress.blocks, *(_Block(segment=segment) for segment in progress.paragraphs.close())]
+    blocks = [*progress.blocks, *(_Block(segment=segment) for segment in progress.paragraphs.finish())]
     segments = [block.segment for block in blocks if not block.dropped]
     # A block cut off mid-stream has no citations yet; keep its words as background so the owner sees them.
     if progress.partial.strip():

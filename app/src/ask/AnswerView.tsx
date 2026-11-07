@@ -8,6 +8,7 @@ import { timestampUrl } from "@/item/timestampLink";
 import { Button } from "@/theme/components/Button";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
+import { Markdown } from "@/ui/Markdown";
 
 import { chipText, type Section } from "./sections";
 import { ANSWER_LABEL_TEXT, formatClock, type Citation } from "./types";
@@ -37,7 +38,7 @@ export function AnswerView({ sections, streamingText, searching, failed, onRetry
           <Text variant="kicker" tone="ink2">
             {ANSWER_LABEL_TEXT[section.label]}
           </Text>
-          <Text variant="body">{section.text}</Text>
+          <Markdown text={section.text.trim()} />
           {section.citations.length > 0 ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>
               {section.citations.map((citation, chipIndex) => (
@@ -59,7 +60,7 @@ export function AnswerView({ sections, streamingText, searching, failed, onRetry
           ) : null}
         </View>
       ))}
-      {streamingText ? <Text variant="body">{streamingText}</Text> : null}
+      {streamingText ? <Markdown text={streamingText.trim()} /> : null}
       {searching ? (
         <Text testID="chat-searching" tone="ink3">
           {SEARCHING_TEXT[searching]}

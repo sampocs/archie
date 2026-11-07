@@ -55,7 +55,8 @@ export default function ChatScreen() {
   return (
     <View style={{ flex: 1 }}>
       <Screen
-        title={conversation?.title ?? "Ask"}
+        title="Ask"
+        nav={{ title: conversation?.title ?? "", backLabel: "Ask" }}
         onBack={router.back}
         footer={
           <View style={{ gap: theme.spacing.sm }}>

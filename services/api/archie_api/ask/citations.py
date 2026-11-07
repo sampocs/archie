@@ -4,14 +4,15 @@ Citations split the model's text into many blocks, often mid-sentence, so labels
 consecutive text blocks that ends at a non-text block, at the end of a model round, or after a block whose text holds a
 blank line ("\n\n"); a block starting with a blank line begins a new paragraph. A paragraph with a block citing a
 library passage (a `search_result` this answer's searches returned) is `library`; else one with a block citing a web
-result is `web`; else `background`. Every block of the paragraph gets that label and keeps its own citations. Library
-passages go to the model as `search_result` blocks whose `source` is `source_key(hit)`, so a citation's `source` leads
-back to the passage.
+result is `web`; else `background`. A heading paragraph instead takes the label of the paragraph after it in the same
+round. Every block of the paragraph gets that label and keeps its own citations. Library passages go to the model as
+`search_result` blocks whose `source` is `source_key(hit)`, so a citation's `source` leads back to the passage.
 """
 
 from __future__ import annotations
 
 import dataclasses
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -22,7 +23,9 @@ from archie_db import models, search
 
 QUOTE_CHARACTERS = 300
 PARAGRAPH_BREAK = "\n\n"
+HEADING_CHARACTERS = 60
 _SOURCE_PREFIX = "archie:chunk:"
+_HEADING_LINE = re.compile(r"#{1,6}\s|\*\*.+\*\*$")
 
 
 class AnswerLabel(StrEnum):
@@ -48,35 +51,67 @@ class Segment:
 
 @dataclass
 class Paragraphs:
-    """Text blocks gathered into the open paragraph; each closed paragraph comes back with its label on every block."""
+    """Text blocks gathered into the open paragraph; each closed paragraph comes back with its label on every block.
 
-    open: list[Segment] = field(default_factory=list)
+    A heading paragraph ("**What to pick:**") carries no citations, so it is held until the paragraph after it closes
+    and takes that paragraph's label; otherwise it would split one library answer with a background section. Its
+    blocks come back only once their label is final, so streaming never sends a label that later changes.
+    """
+
+    held: list[Segment] = field(default_factory=list)
+    current: list[Segment] = field(default_factory=list)
+
+    @property
+    def open(self) -> list[Segment]:
+        """Every block not returned yet: held headings, then the paragraph still being written."""
+        return [*self.held, *self.current]
 
     def add(self, segment: Segment) -> list[Segment]:
         """Take the next text block of the run; returns the blocks of any paragraphs it closed, relabelled."""
         closed = self.close() if segment.text.startswith(PARAGRAPH_BREAK) else []
-        self.open.append(segment)
+        self.current.append(segment)
         return [*closed, *self.close()] if PARAGRAPH_BREAK in segment.text else closed
 
     def close(self) -> list[Segment]:
-        """End the open paragraph (a non-text block, the round's end, or the answer's end) and return its blocks."""
-        paragraph, self.open = self.open, []
-        labels = {segment.label for segment in paragraph}
-        label = (
-            AnswerLabel.LIBRARY
-            if AnswerLabel.LIBRARY in labels
-            else AnswerLabel.WEB
-            if AnswerLabel.WEB in labels
-            else AnswerLabel.BACKGROUND
-        )
-        return [dataclasses.replace(segment, label=label) for segment in paragraph]
+        """End the open paragraph (a non-text block or a blank line) and return the blocks whose label is final."""
+        paragraph, self.current = self.current, []
+        if not paragraph:
+            return []
+        if _is_heading(paragraph):
+            self.held.extend(paragraph)
+            return []
+
+        label = _paragraph_label(paragraph)
+        released, self.held = [*self.held, *paragraph], []
+        return [dataclasses.replace(segment, label=label) for segment in released]
+
+    def finish(self) -> list[Segment]:
+        """End the round (or the answer): close the open paragraph, and headings nothing followed keep their label."""
+        closed = self.close()
+        held, self.held = self.held, []
+        return [*closed, *(dataclasses.replace(segment, label=_paragraph_label([segment])) for segment in held)]
+
+
+def _paragraph_label(paragraph: list[Segment]) -> AnswerLabel:
+    labels = {segment.label for segment in paragraph}
+    if AnswerLabel.LIBRARY in labels:
+        return AnswerLabel.LIBRARY
+    return AnswerLabel.WEB if AnswerLabel.WEB in labels else AnswerLabel.BACKGROUND
+
+
+def _is_heading(paragraph: list[Segment]) -> bool:
+    """A one-line paragraph that only titles what follows: `# …`, a fully bold line, or a short line ending in ':'."""
+    text = "".join(segment.text for segment in paragraph).strip()
+    if not text or "\n" in text:
+        return False
+    return bool(_HEADING_LINE.match(text)) or (len(text) <= HEADING_CHARACTERS and text.endswith(":"))
 
 
 def by_paragraph(segments: list[Segment]) -> list[Segment]:
     """One run of consecutive text blocks' segments, each relabelled with its paragraph's label."""
     paragraphs = Paragraphs()
     relabelled = [closed for segment in segments for closed in paragraphs.add(segment)]
-    return [*relabelled, *paragraphs.close()]
+    return [*relabelled, *paragraphs.finish()]
 
 
 def uncited_paragraphs_dropped(segments: list[Segment]) -> list[bool]:

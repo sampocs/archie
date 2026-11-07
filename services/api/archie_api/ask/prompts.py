@@ -20,7 +20,8 @@ you to look something up, and whenever this prompt says a web search is required
 results.
 - Keep answers short and in plain language: a few short paragraphs at most. Define a technical term the first time \
 you use it. No headings, and no bullet lists unless the owner asks for a list.
-- If neither the library nor the web has the answer and you don't know it, say so plainly."""
+- If neither the library nor the web has the answer and you don't know it, say so plainly.
+- Write plain paragraphs: no headings, no bold section titles; a short list only when it really helps."""
 
 WEB_REQUIRED = "A web search is required for this question: search the web before you answer."
 

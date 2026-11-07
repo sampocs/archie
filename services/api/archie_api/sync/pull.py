@@ -40,6 +40,8 @@ class PulledTable(StrEnum):
     TAKE_VERSIONS = "take_versions"
     CONVERSATIONS = "conversations"
     MESSAGES = "messages"
+    CARD_VERSIONS = "card_versions"
+    EDIT_PROPOSALS = "edit_proposals"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -52,7 +54,7 @@ class MergedPage[RowT: _Positioned]:
 
 
 def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL_PAGE_SIZE) -> schemas.PullResponse:
-    """Rows (deleted ones included) from the twelve synced tables with a position above `since`, oldest first.
+    """Rows (deleted ones included) from the fourteen synced tables with a position above `since`, oldest first.
 
     Of the briefs, only the open one and those done in the last 7 days are sent.
     """
@@ -78,6 +80,8 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
         PulledTable.TAKE_VERSIONS: _changed_rows(db, models.TakeVersion, user_id=user_id, since=since, limit=limit),
         PulledTable.CONVERSATIONS: _changed_rows(db, models.Conversation, user_id=user_id, since=since, limit=limit),
         PulledTable.MESSAGES: _changed_rows(db, models.Message, user_id=user_id, since=since, limit=limit),
+        PulledTable.CARD_VERSIONS: _changed_rows(db, models.CardVersion, user_id=user_id, since=since, limit=limit),
+        PulledTable.EDIT_PROPOSALS: _changed_rows(db, models.EditProposal, user_id=user_id, since=since, limit=limit),
     }
     page = merge_page(tables=tables, since=since, limit=limit)
 
@@ -97,6 +101,10 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
             take_versions=[schemas.TakeVersionOut.model_validate(row) for row in page.rows[PulledTable.TAKE_VERSIONS]],
             conversations=[schemas.ConversationOut.model_validate(row) for row in page.rows[PulledTable.CONVERSATIONS]],
             messages=[schemas.MessageOut.model_validate(row) for row in page.rows[PulledTable.MESSAGES]],
+            card_versions=[schemas.CardVersionOut.model_validate(row) for row in page.rows[PulledTable.CARD_VERSIONS]],
+            edit_proposals=[
+                schemas.EditProposalOut.model_validate(row) for row in page.rows[PulledTable.EDIT_PROPOSALS]
+            ],
         ),
         position=page.position,
         more=page.more,
@@ -135,6 +143,8 @@ def _changed_rows[
         models.TakeVersion,
         models.Conversation,
         models.Message,
+        models.CardVersion,
+        models.EditProposal,
     )
 ](
     db: orm.Session, model: type[RowT], *criteria: sqlalchemy.ColumnElement[bool], user_id: int, since: int, limit: int

@@ -253,6 +253,43 @@ class ActionResult(StrEnum):
     REJECTED = "rejected"
 
 
+class VersionOrigin(StrEnum):
+    """Who made a version of a summary, primer, take or card; every origin but `archie` is one the owner chose."""
+
+    ARCHIE = "archie"
+    OWNER = "owner"
+    CHAT_EDIT = "chat_edit"
+    CARE = "care"
+    RESTORE = "restore"
+
+
+# Archie's own regeneration never replaces a current version with one of these origins (see pipeline.write_artifact).
+OWNER_CHOSEN_ORIGINS = frozenset(
+    {VersionOrigin.OWNER, VersionOrigin.CHAT_EDIT, VersionOrigin.CARE, VersionOrigin.RESTORE}
+)
+
+
+class EditTarget(StrEnum):
+    """What an Ask edit changes. Summary and primer are named by their source, a topic primer by its topic."""
+
+    SUMMARY = "summary"
+    PRIMER = "primer"
+    TOPIC_PRIMER = "topic_primer"
+    TAKE = "take"
+    CARD = "card"
+
+
+class EditStatus(StrEnum):
+    """Where an Ask edit stands: waiting for the owner, applied (then maybe undone), or set aside."""
+
+    PROPOSED = "proposed"
+    APPLIED = "applied"
+    UNDONE = "undone"
+    DISCARDED = "discarded"
+    STALE = "stale"
+    SUPERSEDED = "superseded"
+
+
 INGEST_TOKEN_LENGTH = 10
 _INGEST_TOKEN_ALPHABET = string.ascii_lowercase + string.digits
 
@@ -417,6 +454,14 @@ class TopicPrimer(Base):
     content: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB)
     model: Mapped[str | None] = mapped_column(sqlalchemy.String(64))
     prompt_version: Mapped[str | None] = mapped_column(sqlalchemy.String(32))
+    origin: Mapped[str] = mapped_column(
+        sqlalchemy.String(16), default=VersionOrigin.ARCHIE.value, server_default=VersionOrigin.ARCHIE.value
+    )
+    # The version an Ask edit or a restore was made from, and the edit's one-line description.
+    derived_from_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("topic_primers.id")
+    )
+    instruction: Mapped[str | None] = mapped_column(sqlalchemy.Text)
     opened_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     snoozed_until: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
@@ -548,6 +593,10 @@ class TakeVersion(Base):
     cleaned: Mapped[bool] = mapped_column(sqlalchemy.Boolean)
     # Clean it up gave up: `body` holds the raw text and the take page offers Try again.
     clean_failed: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
+    # `owner` for a save in the take editor; `chat_edit` and `restore` for the other ways a version is made.
+    origin: Mapped[str] = mapped_column(
+        sqlalchemy.String(16), default=VersionOrigin.OWNER.value, server_default=VersionOrigin.OWNER.value
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
@@ -696,7 +745,8 @@ class SourceCapture(Base):
 class SourceArtifact(Base):
     """One version of something generated for a source (text, summary, primer); regenerating adds a version.
 
-    Exactly one version per (source, kind) is current, which the partial unique index enforces.
+    Exactly one version per (source, kind) is current, which the partial unique index enforces. `origin` says who made
+    it; Archie's rewrites never displace an owner-chosen current version.
     """
 
     __tablename__ = "source_artifacts"
@@ -728,6 +778,9 @@ class SourceArtifact(Base):
         postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("source_artifacts.id")
     )
     instruction: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    origin: Mapped[str] = mapped_column(
+        sqlalchemy.String(16), default=VersionOrigin.ARCHIE.value, server_default=VersionOrigin.ARCHIE.value
+    )
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
@@ -789,6 +842,8 @@ class Card(Base):
     lapses: Mapped[int] = mapped_column(sqlalchemy.Integer, server_default="0")
     # Quiz cards only: after this they are no longer offered.
     expires_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    # The current version; `card_versions` holds the history once the card has been changed at least once.
+    version: Mapped[int] = mapped_column(sqlalchemy.Integer, default=1, server_default="1")
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     deleted_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
@@ -818,6 +873,66 @@ class Review(Base):
     # Set by "I actually knew it": the review this one overrides.
     replaces_review_id: Mapped[uuid.UUID | None] = mapped_column(postgresql.UUID(as_uuid=True))
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+
+
+class CardVersion(Base):
+    """One version of a card's question and answer. Written lazily: a card's first change writes versions 1 and 2."""
+
+    __tablename__ = "card_versions"
+    __table_args__ = (
+        sqlalchemy.UniqueConstraint("card_id", "version", name="uq_card_versions_version"),
+        sqlalchemy.Index("ix_card_versions_user_id_change_seq", "user_id", "change_seq"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    card_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("cards.id", ondelete="CASCADE")
+    )
+    version: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    question: Mapped[str] = mapped_column(sqlalchemy.Text)
+    answer: Mapped[str] = mapped_column(sqlalchemy.Text)
+    origin: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    # An Ask edit's description, or the note behind a care rewrite.
+    instruction: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class EditProposal(Base):
+    """An edit Ask proposed in a chat; nothing changes until the owner applies it.
+
+    `target_id` names the source (summary, primer), the topic (topic primer), the take or the card; it has no foreign
+    key because those are soft-deleted, and Apply checks the target is still live. `before` and `after` hold the
+    content in its edit shape (see `archie_db.versions`), `base_version` the version it was proposed against.
+    """
+
+    __tablename__ = "edit_proposals"
+    __table_args__ = (
+        sqlalchemy.Index("ix_edit_proposals_user_id_change_seq", "user_id", "change_seq"),
+        sqlalchemy.Index("ix_edit_proposals_conversation_id", "conversation_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("conversations.id", ondelete="CASCADE")
+    )
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("messages.id", ondelete="CASCADE")
+    )
+    target_kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    target_id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True))
+    title: Mapped[str] = mapped_column(sqlalchemy.Text)
+    description: Mapped[str] = mapped_column(sqlalchemy.Text)
+    base_version: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    before: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB)
+    after: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB)
+    status: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    applied_version: Mapped[int | None] = mapped_column(sqlalchemy.Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 
 class CardPreference(Base):

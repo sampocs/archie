@@ -50,6 +50,7 @@ def test_a_pull_sends_cards_of_every_origin_with_their_schedule(live_stack: Live
         "kind": models.CardKind.CONCEPT.value,
         "question": "Why?",
         "answer": "Because.",
+        "version": 1,
         "fsrs_state": models.FsrsState.REVIEW.value,
         "stability": 4.5,
         "difficulty": 6.25,

@@ -134,11 +134,14 @@ def test_meaning_search_finds_a_passage_without_the_words_and_costs_one_embed_ca
 
 
 def test_a_bad_query_is_422_and_signed_out_is_401(live_stack: LiveStack) -> None:
-    """Empty and overlong queries are refused before any work."""
+    """Empty, blank and overlong queries and out-of-range limits are refused before any work."""
     authed = live_stack.authed(live_stack.sign_in())
 
     assert authed.get("/search", params={"q": ""}).status_code == 422
     assert authed.get("/search", params={"q": "x" * 201}).status_code == 422
+    assert authed.get("/search", params={"q": "   "}).status_code == 422
+    assert authed.get("/search", params={"q": "x", "limit": 0}).status_code == 422
+    assert authed.get("/search", params={"q": "x", "limit": 51}).status_code == 422
     assert live_stack.client.get("/search", params={"q": "x"}).status_code == 401
 
 

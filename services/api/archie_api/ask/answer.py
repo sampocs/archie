@@ -1,10 +1,11 @@
 """One Ask answer: the tool loop against Sonnet 5.5, streamed as server-sent events, then saved.
 
 The server runs up to `MAX_ROUNDS` model requests: `search_library` (run here, results returned as citable
-`search_result` blocks) and Anthropic's web search tool (run by Anthropic). Text streams as `delta` events; each
-finished text block becomes a `block` carrying its paragraph's label, sent when the paragraph closes; a tool run shows
-as `searching`. Uncited paragraphs the model writes before a tool call (announcing its search) are streamed but not
-saved.
+`search_result` blocks), Anthropic's web search tool (run by Anthropic) and the editing tools of `edit_tools` (run
+here). Text streams as `delta` events; each finished text block becomes a `block` carrying its paragraph's label, sent
+when the paragraph closes; a search shows as `searching`; an editing tool call shows as `editing` when it starts, and
+each proposed edit as an `edit` event, stored with the answer. Uncited paragraphs the model writes before a tool call
+(announcing its search) are streamed but not saved.
 The answer is stored when the stream ends — complete only if the model finished its turn (`end_turn` or a stop
 sequence), else failed with whatever text arrived: a refusal, a cut-off (`max_tokens`), no answer within `MAX_ROUNDS`,
 an API or database error, or the phone hanging up mid-answer. Every model round, finished or not, is recorded in
@@ -32,11 +33,12 @@ from archie_db import changes, models, search
 from archie_llm import embeddings, llm
 from archie_shared import logging
 
-from archie_api.ask import citations, prompts
+from archie_api.ask import citations, edit_tools, prompts
 from archie_api.sync import conversation_actions
 
-MAX_ROUNDS = 5
-MAX_TOKENS = 4000
+# Room for read, propose a summary edit and its card edit, then answer.
+MAX_ROUNDS = 6
+MAX_TOKENS = 8000
 LIBRARY_RESULTS = 8
 REQUEST_TIMEOUT_SECONDS = 120
 QUERY_TIMEOUT_SECONDS = 5
@@ -67,6 +69,8 @@ class EventName(StrEnum):
     DELTA = "delta"
     BLOCK = "block"
     SEARCHING = "searching"
+    EDITING = "editing"
+    EDIT = "edit"
     DONE = "done"
     ERROR = "error"
 
@@ -116,6 +120,7 @@ class _Progress:
     blocks: list[_Block] = field(default_factory=list)
     paragraphs: citations.Paragraphs = field(default_factory=citations.Paragraphs)
     partial: str = ""
+    proposals: list[edit_tools.Proposal] = field(default_factory=list)
 
     @property
     def next_block(self) -> int:
@@ -217,9 +222,12 @@ def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progre
         for block, is_dropped in zip(announced, dropped, strict=True):
             block.dropped = is_dropped
         messages.append({"role": "assistant", "content": response.content})
-        results = [
-            _search_library(engine, request=request, tool_use=tool_use, passages=passages) for tool_use in tool_uses
-        ]
+        results = []
+        for tool_use in tool_uses:
+            result = yield from _run_tool(
+                engine, request=request, tool_use=tool_use, passages=passages, progress=progress
+            )
+            results.append(result)
         messages.append({"role": "user", "content": results})
 
     raise AnswerIncompleteError(f"no answer within {MAX_ROUNDS} rounds")
@@ -246,7 +254,7 @@ def _round(
         max_tokens=MAX_TOKENS,
         system=request.system,
         messages=messages,
-        tools=[prompts.SEARCH_LIBRARY_TOOL, prompts.WEB_SEARCH_TOOL],  # type: ignore[list-item]
+        tools=[prompts.SEARCH_LIBRARY_TOOL, prompts.WEB_SEARCH_TOOL, *edit_tools.TOOLS],  # type: ignore[list-item]
         tool_choice=tool_choice,
         thinking=THINKING,
         output_config=OUTPUT_CONFIG,
@@ -276,6 +284,9 @@ def _events_of(stream_event: Any, *, progress: _Progress, passages: dict[str, se
     # A tool call, a search result or thinking ends the paragraph before it.
     if stream_event.type == "content_block_start" and stream_event.content_block.type != "text":
         yield from _blocks_of(progress.paragraphs.close(), progress=progress)
+        block = stream_event.content_block
+        if block.type == "tool_use" and block.name in edit_tools.TOOL_NAMES:
+            yield Event(name=EventName.EDITING, data={"target_kind": None})
         return
     if stream_event.type != "content_block_stop":
         return
@@ -297,6 +308,30 @@ def _blocks_of(closed: list[citations.Segment], *, progress: _Progress) -> Itera
         progress.blocks.append(_Block(segment=segment))
         data = {"block": len(progress.blocks) - 1, "label": segment.label.value, "citations": segment.citations}
         yield Event(name=EventName.BLOCK, data=data)
+
+
+def _run_tool(
+    engine: sqlalchemy.Engine,
+    *,
+    request: AnswerRequest,
+    tool_use: anthropic.types.ToolUseBlock,
+    passages: dict[str, search.ChunkHit],
+    progress: _Progress,
+) -> Generator[Event, None, dict[str, Any]]:
+    """One tool call's result block; a proposal is kept for the save and shown at once as an `edit` event."""
+    if tool_use.name not in edit_tools.TOOL_NAMES:
+        return _search_library(engine, request=request, tool_use=tool_use, passages=passages)
+
+    context = edit_tools.ToolContext(
+        user_id=request.user_id, conversation_id=request.conversation_id, pending=tuple(progress.proposals)
+    )
+    outcome = edit_tools.run(
+        engine, context=context, tool_use_id=tool_use.id, name=tool_use.name, tool_input=tool_use.input
+    )
+    if outcome.proposal is not None:
+        progress.proposals.append(outcome.proposal)
+        yield Event(name=EventName.EDIT, data=outcome.proposal.to_event())
+    return outcome.result
 
 
 def _search_library(
@@ -410,6 +445,15 @@ def _save(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progr
                 status=(models.MessageStatus.FAILED if failed else models.MessageStatus.COMPLETE).value,
                 change_seq=changes.next_change_seq(),
             )
+        )
+        db.flush()
+        # A failed answer keeps its proposals too: each is checked against its target again on Apply.
+        edit_tools.save_proposals(
+            db,
+            user_id=request.user_id,
+            conversation_id=request.conversation_id,
+            message_id=message_id,
+            proposals=progress.proposals,
         )
         question = db.get_one(models.Message, request.user_message_id)
         question.change_seq = changes.next_change_seq()

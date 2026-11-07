@@ -10,6 +10,8 @@ type ComposerProps = {
   placeholder: string;
   disabled: boolean;
   disabledLabel?: string;
+  /** Keeps the field editable but blocks sending (an answer is still streaming). */
+  sendDisabled?: boolean;
   onSend: (text: string, web: boolean) => void;
   initialWeb?: boolean;
 };
@@ -17,7 +19,7 @@ type ComposerProps = {
 const ICON_SIZE = 30;
 
 /** The question box: a field, the globe that forces a web search, and send. Offline it says why it is gone. */
-export function Composer({ placeholder, disabled, disabledLabel, onSend, initialWeb = false }: ComposerProps) {
+export function Composer({ placeholder, disabled, disabledLabel, sendDisabled = false, onSend, initialWeb = false }: ComposerProps) {
   const theme = useTheme();
   const [text, setText] = useState("");
   const [web, setWeb] = useState(initialWeb);
@@ -32,7 +34,7 @@ export function Composer({ placeholder, disabled, disabledLabel, onSend, initial
   }
 
   function send(): void {
-    if (empty) return;
+    if (empty || sendDisabled) return;
     onSend(text.trim(), web);
     setText("");
     setWeb(false);
@@ -63,8 +65,8 @@ export function Composer({ placeholder, disabled, disabledLabel, onSend, initial
           color={web ? theme.colors.chrome : theme.colors.ink3}
         />
       </Pressable>
-      <Pressable testID="ask-send" onPress={send} disabled={empty} hitSlop={8} style={{ paddingBottom: 10 }}>
-        <Ionicons name="arrow-up-circle" size={ICON_SIZE} color={empty ? theme.colors.ink3 : theme.colors.chrome} />
+      <Pressable testID="ask-send" onPress={send} disabled={empty || sendDisabled} hitSlop={8} style={{ paddingBottom: 10 }}>
+        <Ionicons name="arrow-up-circle" size={ICON_SIZE} color={empty || sendDisabled ? theme.colors.ink3 : theme.colors.chrome} />
       </Pressable>
     </View>
   );

@@ -13,6 +13,9 @@ export type LiveAnswer = {
   failed: boolean;
 };
 
+/** A question sent from this screen, with the answer streaming for it. */
+export type PendingQuestion = { userMessageId: string; text: string; webSearch: boolean; live: LiveAnswer };
+
 export const EMPTY_LIVE: LiveAnswer = { blocks: [], searching: null, messageId: null, failed: false };
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -69,6 +72,28 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
     case "error":
       return { ...live, failed: true, searching: null };
   }
+}
+
+/** A stream that ended without a `done` or `error` event (the connection closed mid-answer) has failed. */
+export function endOfStream(live: LiveAnswer): LiveAnswer {
+  if (live.messageId !== null || live.failed) return live;
+  return { ...live, failed: true, searching: null };
+}
+
+/**
+ * True once the pulled rows can stand in for the overlay: they hold the question and either its answer, or (for a
+ * failed stream) some assistant row after the question. The server commits the question before streaming, so the
+ * question alone is not enough.
+ */
+export function handedOver(
+  pending: { userMessageId: string; live: LiveAnswer },
+  messages: { id: string; role: string }[],
+): boolean {
+  const questionIndex = messages.findIndex((message) => message.id === pending.userMessageId);
+  if (questionIndex === -1) return false;
+  const { messageId, failed } = pending.live;
+  if (messageId !== null && messages.some((message) => message.id === messageId)) return true;
+  return failed && messages.slice(questionIndex + 1).some((message) => message.role === "assistant");
 }
 
 /** What the screen shows of a live answer: finished blocks as sections, the block still streaming as plain text. */

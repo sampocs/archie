@@ -4,8 +4,10 @@
 keeps each item's best passage for Library search. Only live items are searched: a deleted or merged source, a deleted
 take, or a topic primer that is no longer current or whose topic was removed or merged never comes back.
 
-Each passage carries its item's date: a source's `published_at` (else when it was saved), a topic primer version's or a
-take's `created_at`. `published_after` / `published_before` keep only passages whose item date falls in those UTC days.
+Each passage carries two dates of its item: when it was saved (a source's, topic primer version's or take's
+`created_at`) and, for an article or episode whose page or feed gave one, when it was published. A `DateFilter` keeps
+only items saved, or published, within some days of the owner's; an item without a publication date counts as
+published when it was saved (a newsletter is sent and saved the same day).
 """
 
 from __future__ import annotations
@@ -66,8 +68,9 @@ _TERM = re.compile(r"[\w']+")
 _STEM_TRIM = 3
 _MIN_STEM = 4
 
-# The day an item belongs to, for the date filter and the chat's result titles.
-_ITEM_DATE = "COALESCE(s.published_at, s.created_at, tp.created_at, k.created_at)"
+# When the owner saved the item, and when it came out (an item with no publication date came out when saved).
+_SAVED = "COALESCE(s.created_at, tp.created_at, k.created_at)"
+_PUBLISHED = f"COALESCE(s.published_at, {_SAVED})"
 _LIVE_CHUNKS = f"""
 FROM chunks c
 LEFT JOIN sources s ON s.id = c.source_id
@@ -80,12 +83,15 @@ WHERE c.user_id = :user_id
     OR (c.topic_primer_id IS NOT NULL AND tp.is_current AND t.removed_at IS NULL AND t.merged_into_id IS NULL)
     OR (c.take_id IS NOT NULL AND k.deleted_at IS NULL)
   )
-  AND (CAST(:published_from AS timestamptz) IS NULL OR {_ITEM_DATE} >= CAST(:published_from AS timestamptz))
-  AND (CAST(:published_until AS timestamptz) IS NULL OR {_ITEM_DATE} < CAST(:published_until AS timestamptz))
+  AND (CAST(:saved_from AS timestamptz) IS NULL OR {_SAVED} >= CAST(:saved_from AS timestamptz))
+  AND (CAST(:saved_until AS timestamptz) IS NULL OR {_SAVED} < CAST(:saved_until AS timestamptz))
+  AND (CAST(:published_from AS timestamptz) IS NULL OR {_PUBLISHED} >= CAST(:published_from AS timestamptz))
+  AND (CAST(:published_until AS timestamptz) IS NULL OR {_PUBLISHED} < CAST(:published_until AS timestamptz))
 """
 _COLUMNS = f"""
 SELECT c.id, c.owner_kind, c.source_id, c.topic_primer_id, c.take_id, c.text, c.start_seconds,
-       COALESCE(s.title, s.url, t.name, k.title) AS title, s.sender, {_ITEM_DATE} AS item_date
+       COALESCE(s.title, s.url, t.name, k.title) AS title, s.url, s.sender,
+       {_SAVED} AS saved_at, s.published_at
 """
 _KEYWORD_SQL = sqlalchemy.text(
     _COLUMNS
@@ -120,19 +126,44 @@ class ItemRef:
 class ChunkHit:
     """One ranked passage and the item it belongs to; `keyword_match` says the words matched, not only the meaning.
 
-    `sender` is a newsletter's; `item_date` is the item's date (see the module docstring).
+    `url` and `sender` (a newsletter's) are a source's; `published_at` is set only when its page or feed gave one.
     """
 
     chunk_id: int
     item: ItemRef
     title: str
+    url: str | None
     sender: str | None
-    item_date: datetime.datetime
+    saved_at: datetime.datetime
+    published_at: datetime.datetime | None
     owner_kind: models.ChunkOwner
     text: str
     start_seconds: float | None
     score: float
     keyword_match: bool
+
+
+@dataclass(frozen=True)
+class DateFilter:
+    """Inclusive day bounds, read in `day_zone`: on when items were saved, and on when they were published.
+
+    An item with no publication date counts as published when it was saved.
+    """
+
+    saved_after: datetime.date | None = None
+    saved_before: datetime.date | None = None
+    published_after: datetime.date | None = None
+    published_before: datetime.date | None = None
+    day_zone: datetime.tzinfo = datetime.UTC
+
+    def params(self) -> dict[str, datetime.datetime | None]:
+        """The SQL bounds: the start of each first day, and the start of the day after each last day."""
+        return {
+            "saved_from": _start_of(self.saved_after, zone=self.day_zone),
+            "saved_until": _day_after(self.saved_before, zone=self.day_zone),
+            "published_from": _start_of(self.published_after, zone=self.day_zone),
+            "published_until": _day_after(self.published_before, zone=self.day_zone),
+        }
 
 
 def search_chunks(
@@ -144,8 +175,7 @@ def search_chunks(
     limit: int,
     boost: ItemRef | None = None,
     match_any: bool = False,
-    published_after: datetime.date | None = None,
-    published_before: datetime.date | None = None,
+    dates: DateFilter | None = None,
 ) -> list[ChunkHit]:
     """The user's best `limit` passages for `query`, best first; meaning search runs only with `query_embedding`.
 
@@ -153,13 +183,9 @@ def search_chunks(
 
     Keyword search needs every word unless `match_any`, which needs any one (more matched words still rank higher).
 
-    `published_after` / `published_before` (both inclusive, UTC days) keep only items dated within them.
+    `dates` keeps only items saved or published within its days; None keeps every date.
     """
-    common = {
-        "user_id": user_id,
-        "published_from": _start_of(published_after),
-        "published_until": _start_of(published_before + datetime.timedelta(days=1) if published_before else None),
-    }
+    common = {"user_id": user_id, **(dates or DateFilter()).params()}
     keyword_query = " or ".join(_TERM.findall(query)) if match_any else query
     keyword_rows = (
         db.execute(_KEYWORD_SQL, {**common, "query": keyword_query, "limit": KEYWORD_CANDIDATES}).all()
@@ -233,8 +259,10 @@ def _fuse(
                 chunk_id=chunk_id,
                 item=item,
                 title=row.title,
+                url=row.url,
                 sender=row.sender,
-                item_date=row.item_date,
+                saved_at=row.saved_at,
+                published_at=row.published_at,
                 owner_kind=models.ChunkOwner(row.owner_kind),
                 text=row.text,
                 start_seconds=row.start_seconds,
@@ -245,8 +273,12 @@ def _fuse(
     return sorted(hits, key=lambda hit: (-hit.score, hit.chunk_id))
 
 
-def _start_of(day: datetime.date | None) -> datetime.datetime | None:
-    return datetime.datetime.combine(day, datetime.time(), tzinfo=datetime.UTC) if day is not None else None
+def _start_of(day: datetime.date | None, *, zone: datetime.tzinfo) -> datetime.datetime | None:
+    return datetime.datetime.combine(day, datetime.time(), tzinfo=zone) if day is not None else None
+
+
+def _day_after(day: datetime.date | None, *, zone: datetime.tzinfo) -> datetime.datetime | None:
+    return _start_of(day + datetime.timedelta(days=1), zone=zone) if day is not None else None
 
 
 def _item_of(row: sqlalchemy.Row[Any]) -> ItemRef:

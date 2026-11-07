@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import datetime
 import uuid
+import zoneinfo
 from collections.abc import Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -22,6 +24,17 @@ class HistoryMessage:
     role: models.MessageRole
     text: str
     status: models.MessageStatus
+
+
+def owner_zone(name: str | None) -> datetime.tzinfo:
+    """The phone's IANA time zone, or UTC when it sent none or one this server doesn't know."""
+    if not name:
+        return datetime.UTC
+    try:
+        return zoneinfo.ZoneInfo(name)
+    except (zoneinfo.ZoneInfoNotFoundError, ValueError):
+        # Outside input: an unknown or malformed name (ValueError, e.g. a path) only costs the owner's days.
+        return datetime.UTC
 
 
 def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, Any]]:

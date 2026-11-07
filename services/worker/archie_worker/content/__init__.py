@@ -15,9 +15,12 @@ TEXT_KEY = "text"
 SEGMENTS_KEY = "segments"
 
 
-def midnight_utc(day: datetime.date | None) -> datetime.datetime | None:
-    """A publication day as the moment it began in UTC, for `sources.published_at`; None stays None."""
-    return datetime.datetime.combine(day, datetime.time(), tzinfo=datetime.UTC) if day is not None else None
+def noon_utc(day: datetime.date | None) -> datetime.datetime | None:
+    """A publication day (no time of day known) as noon UTC, for `sources.published_at`; None stays None.
+
+    Noon, not midnight: read in the owner's zone (anywhere within 12 hours of UTC) it is still the same day.
+    """
+    return datetime.datetime.combine(day, datetime.time(12), tzinfo=datetime.UTC) if day is not None else None
 
 
 # Postgres text and jsonb values reject NUL, so a string containing one would fail the job forever.

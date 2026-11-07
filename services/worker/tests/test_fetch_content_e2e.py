@@ -104,7 +104,7 @@ def test_an_article_with_og_image_gets_artwork_and_its_date(engine: sqlalchemy.E
         loop.run_one(engine, handlers=handlers.HANDLERS)
 
     assert _source(engine, source_id).image_url == OG_IMAGE_ARTICLE_IMAGE
-    assert _source(engine, source_id).published_at == datetime.datetime(2026, 11, 3, tzinfo=datetime.UTC)
+    assert _source(engine, source_id).published_at == datetime.datetime(2026, 11, 3, 12, tzinfo=datetime.UTC)
 
 
 def test_an_existing_title_is_kept(engine: sqlalchemy.Engine, replay: Replay) -> None:

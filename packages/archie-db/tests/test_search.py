@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import datetime
 import uuid
+import zoneinfo
 from collections.abc import Iterator
 
 import pytest
@@ -258,49 +259,88 @@ def _at(day: int, hour: int = 12) -> datetime.datetime:
     return datetime.datetime(2026, 11, day, hour, tzinfo=datetime.UTC)
 
 
-def test_the_date_bounds_keep_items_dated_within_those_days_both_ways(db: sqlalchemy.orm.Session) -> None:
-    """A source is dated by published_at, else when it was saved; a take by when it was written. Both bounds count.
+def _dated_titles(db: sqlalchemy.orm.Session, *, user_id: int, dates: search.DateFilter) -> dict[str, set[str]]:
+    """The titles found for one filter, by keyword and by meaning (every test chunk lies on axis 5)."""
+    return {
+        way: {
+            hit.title
+            for hit in search.search_chunks(
+                db, user_id=user_id, query=query, query_embedding=embedding, limit=10, dates=dates
+            )
+        }
+        for way, query, embedding in (("keyword", "rates", None), ("meaning", "zzqx", _axis(5)))
+    }
 
-    The filter applies to keyword and meaning search alike, and each hit carries its date and sender.
+
+def test_saved_and_published_bounds_pick_items_by_each_date(db: sqlalchemy.orm.Session) -> None:
+    """Saved bounds read created_at; published bounds read published_at, else created_at. Both ends are inclusive.
+
+    The filter applies to keyword and meaning search alike, and each hit carries its url, sender and both dates.
     """
     user_id = _user(db)
-    sent_tuesday = _source(db, user_id=user_id, title="Tuesday brew")
-    sent_tuesday.kind, sent_tuesday.sender = models.SourceKind.NEWSLETTER.value, "Morning Brew"
-    sent_tuesday.published_at, sent_tuesday.created_at = _at(3), _at(5)
-    late_thursday = _source(db, user_id=user_id, title="Thursday night")
-    late_thursday.published_at = _at(5, hour=23)
-    saved_friday = _source(db, user_id=user_id, title="Saved Friday")
-    saved_friday.created_at = _at(6)
+    tuesday_brew = _source(db, user_id=user_id, title="Tuesday brew")
+    tuesday_brew.kind, tuesday_brew.sender, tuesday_brew.created_at = (
+        models.SourceKind.NEWSLETTER.value,
+        "Morning Brew",
+        _at(3),
+    )
+    old_essay = _source(db, user_id=user_id, title="Old essay")
+    old_essay.published_at, old_essay.created_at = datetime.datetime(2023, 1, 1, 12, tzinfo=datetime.UTC), _at(5, 23)
+    friday_article = _source(db, user_id=user_id, title="Friday article")
+    friday_article.created_at = _at(6)
     monday_take = _take(db, user_id=user_id, title="Monday take")
     monday_take.created_at = _at(2)
-    for owner in (sent_tuesday, late_thursday, saved_friday, monday_take):
+    for owner in (tuesday_brew, old_essay, friday_article, monday_take):
         _chunk(db, owner=owner, text="Rates and the Fed.", embedding=_axis(5))
     db.flush()
 
     tuesday, thursday = datetime.date(2026, 11, 3), datetime.date(2026, 11, 5)
-    by_keyword, by_meaning = (
-        search.search_chunks(
-            db,
-            user_id=user_id,
-            query=query,
-            query_embedding=embedding,
-            limit=10,
-            published_after=tuesday,
-            published_before=thursday,
-        )
-        for query, embedding in (("rates", None), ("zzqx", _axis(5)))
+    saved = _dated_titles(db, user_id=user_id, dates=search.DateFilter(saved_after=tuesday, saved_before=thursday))
+    published = _dated_titles(
+        db, user_id=user_id, dates=search.DateFilter(published_after=tuesday, published_before=thursday)
     )
-    after_only = search.search_chunks(
-        db, user_id=user_id, query="rates", query_embedding=None, limit=10, published_after=datetime.date(2026, 11, 6)
+    published_long_ago = _dated_titles(
+        db, user_id=user_id, dates=search.DateFilter(published_before=datetime.date(2023, 12, 31))
     )
 
-    expected = {
-        ("Tuesday brew", "Morning Brew", _at(3)),
-        ("Thursday night", None, _at(5, hour=23)),
+    assert saved == {"keyword": {"Tuesday brew", "Old essay"}, "meaning": {"Tuesday brew", "Old essay"}}
+    assert published == {"keyword": {"Tuesday brew"}, "meaning": {"Tuesday brew"}}
+    assert published_long_ago == {"keyword": {"Old essay"}, "meaning": {"Old essay"}}
+    [essay_hit] = search.search_chunks(
+        db,
+        user_id=user_id,
+        query="rates",
+        query_embedding=None,
+        limit=10,
+        dates=search.DateFilter(published_before=datetime.date(2023, 12, 31)),
+    )
+    assert (essay_hit.saved_at, essay_hit.published_at, essay_hit.sender) == (
+        _at(5, 23),
+        datetime.datetime(2023, 1, 1, 12, tzinfo=datetime.UTC),
+        None,
+    )
+    assert essay_hit.url is not None and essay_hit.url.startswith("https://example.com/")
+
+
+def test_the_date_bounds_are_the_owners_days(db: sqlalchemy.orm.Session) -> None:
+    """Thursday 23:00 UTC is Thursday evening in New York but already Friday in Tokyo."""
+    user_id = _user(db)
+    late_thursday = _source(db, user_id=user_id, title="Thursday night")
+    late_thursday.created_at = _at(5, hour=23)
+    _chunk(db, owner=late_thursday, text="Rates and the Fed.", embedding=_axis(5))
+    db.flush()
+
+    thursday = datetime.date(2026, 11, 5)
+    found = {
+        zone: _dated_titles(
+            db,
+            user_id=user_id,
+            dates=search.DateFilter(saved_after=thursday, saved_before=thursday, day_zone=zoneinfo.ZoneInfo(zone)),
+        )["keyword"]
+        for zone in ("America/New_York", "Asia/Tokyo")
     }
-    assert {(hit.title, hit.sender, hit.item_date) for hit in by_keyword} == expected
-    assert {(hit.title, hit.sender, hit.item_date) for hit in by_meaning} == expected
-    assert [hit.title for hit in after_only] == ["Saved Friday"]
+
+    assert found == {"America/New_York": {"Thursday night"}, "Asia/Tokyo": set()}
 
 
 @pytest.mark.parametrize(

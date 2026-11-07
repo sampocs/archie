@@ -109,7 +109,7 @@ def test_enqueue_transcribe_queues_one_job_with_the_episode_and_titles_the_sourc
     assert job.max_attempts == pipeline.MAX_ATTEMPTS[models.JobKind.TRANSCRIBE]
     assert episode_content.PodcastEpisode.from_payload(job.payload["episode"]) == EPISODE
     assert source.title == "Episode One"
-    assert source.published_at == datetime.datetime(2026, 11, 2, tzinfo=datetime.UTC)
+    assert source.published_at == datetime.datetime(2026, 11, 2, 12, tzinfo=datetime.UTC)
 
 
 def test_store_text_fills_an_empty_image_and_keeps_an_existing_one(db: sqlalchemy.orm.Session) -> None:

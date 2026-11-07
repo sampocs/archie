@@ -335,33 +335,3 @@ def test_0011_keeps_cards_allows_a_conversation_origin_and_indexes_chunk_words(t
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
     engine.dispose()
-
-
-def test_0012_dates_existing_newsletters_by_arrival_and_leaves_other_sources_undated(test_database_url: str) -> None:
-    """A newsletter arrived moments after it was sent, so created_at becomes its published_at; an article stays null."""
-    migrate.downgrade(test_database_url)
-    migrate.upgrade(test_database_url, "0011")
-    engine = session.engine_for(test_database_url)
-    with engine.begin() as connection:
-        connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))
-        connection.execute(
-            sqlalchemy.text(
-                "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, created_at, change_seq) "
-                "SELECT gen_random_uuid(), users.id, row.url, row.url, row.kind, 'inbox', 'queue', "
-                "'2026-11-03 10:19:36+00', nextval('change_seq') "
-                "FROM users, (VALUES ('newsletter:1', 'newsletter'), ('https://example.com/a', 'article')) "
-                "AS row (url, kind)"
-            )
-        )
-
-    migrate.upgrade(test_database_url)
-
-    with engine.connect() as connection:
-        rows = connection.execute(sqlalchemy.text("SELECT url, created_at, published_at FROM sources")).all()
-    assert {row.url: row.published_at for row in rows} == {
-        "newsletter:1": next(row.created_at for row in rows if row.url == "newsletter:1"),
-        "https://example.com/a": None,
-    }
-    with engine.begin() as connection:
-        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
-    engine.dispose()

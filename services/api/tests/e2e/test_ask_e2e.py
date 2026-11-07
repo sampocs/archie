@@ -55,8 +55,14 @@ def _replay(request: pytest.FixtureRequest, cassette: str) -> Any:
 
 
 def _ask(authed: httpx.Client, conversation_id: str, **body: Any) -> list[tuple[str, dict[str, Any]]]:
-    """POST the question and parse the server-sent events."""
-    payload = {"user_message_id": str(uuid.uuid4()), "text": QUESTION, "web_search": False, **body}
+    """POST the question, with the phone's time zone as the app sends it, and parse the server-sent events."""
+    payload = {
+        "user_message_id": str(uuid.uuid4()),
+        "text": QUESTION,
+        "web_search": False,
+        "timezone": "America/New_York",
+        **body,
+    }
     with authed.stream("POST", f"/ask/conversations/{conversation_id}/messages", json=payload, timeout=180) as response:
         assert response.status_code == 200, response.read()
         raw = "".join(response.iter_text())
@@ -398,10 +404,11 @@ def _unfinished_answer_request(live_stack: LiveStack) -> tuple[sqlalchemy.Engine
             system=prompts.system_prompt(
                 about=context.about_text(db, conversation=conversation),
                 web_required=False,
-                today=datetime.date(2026, 11, 7),
+                now=datetime.datetime(2026, 11, 7, 12, tzinfo=datetime.UTC),
             ),
             messages=[{"role": "user", "content": QUESTION}],
             boost=context.boost(db, conversation=conversation),
+            day_zone=datetime.UTC,
             anthropic_key=config.Settings().require_anthropic_api_key(),
             openai_key=None,
         )

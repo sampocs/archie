@@ -19,9 +19,10 @@ from typing import Any
 import httpx
 import pytest
 import sqlalchemy
+import sqlalchemy.exc
 import sqlalchemy.orm
 from archie_api.ask import answer, context, prompts
-from archie_db import changes, models, session
+from archie_db import changes, models, search, session
 from archie_shared import config
 from archie_testing import recording
 from archie_testing.harness import LiveStack
@@ -257,6 +258,8 @@ def test_a_failed_stream_ends_with_error_and_is_stored_as_failed(
     assert events == [("error", {"message": "Didn't finish. Try again"})]
     statuses = {message["role"]: message["status"] for message in _rows(authed)["messages"]}
     assert statuses == {"user": "complete", "assistant": "failed"}
+    # Refused before any message started: nothing was spent, so no cost row.
+    assert _llm_steps(live_stack) == []
 
 
 def test_an_answer_cut_off_by_max_tokens_is_stored_as_failed(
@@ -292,8 +295,30 @@ def test_an_answer_out_of_rounds_is_stored_as_failed(
     assert _llm_steps(live_stack) == ["ask"]
 
 
-def test_a_hang_up_mid_answer_stores_it_as_failed(live_stack: LiveStack, request: pytest.FixtureRequest) -> None:
-    """The phone goes away after the first event: the answer is saved failed and the question moves."""
+def test_a_database_error_mid_answer_ends_with_error_and_keeps_the_answer(
+    live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The library search breaks: the phone still gets `error`, and the answer is stored failed."""
+
+    def broken_search(*args: object, **kwargs: object) -> list[search.ChunkHit]:
+        raise sqlalchemy.exc.OperationalError("SELECT", params=None, orig=Exception("connection lost"))
+
+    monkeypatch.setattr(search, "search_chunks", broken_search)
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    source_id = _seed_source(live_stack, user_id=_user_id(authed))
+
+    with _replay(request, "ask_library"):
+        events = _ask(authed, str(uuid.uuid4()), about={"kind": "source", "id": source_id})
+
+    assert events[-1] == ("error", {"message": "Didn't finish. Try again"})
+    statuses = {message["role"]: message["status"] for message in _rows(authed)["messages"]}
+    assert statuses == {"user": "complete", "assistant": "failed"}
+
+
+def test_a_hang_up_mid_answer_stores_it_as_failed_and_records_the_round(
+    live_stack: LiveStack, request: pytest.FixtureRequest
+) -> None:
+    """The phone goes away after the first event: the answer is saved failed, the question moves, the spend is kept."""
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     user_id = _user_id(authed)
     source_id = _seed_source(live_stack, user_id=user_id)
@@ -329,6 +354,7 @@ def test_a_hang_up_mid_answer_stores_it_as_failed(live_stack: LiveStack, request
         assert answer_row.status == models.MessageStatus.FAILED.value
         assert db.get_one(models.Message, question_id).change_seq > question_seq
     engine.dispose()
+    assert _llm_steps(live_stack) == ["ask"]
 
 
 def test_refusals_happen_before_any_model_call(live_stack: LiveStack) -> None:

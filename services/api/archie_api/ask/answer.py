@@ -6,7 +6,7 @@ finished text block becomes a `block` carrying its paragraph's label, sent when 
 as `searching`. Uncited text the model writes before a tool call (announcing its search) is streamed but not saved.
 The answer is stored when the stream ends — complete only if the model finished its turn (`end_turn` or a stop
 sequence), else failed with whatever text arrived: a refusal, a cut-off (`max_tokens`), no answer within `MAX_ROUNDS`,
-an API error, or the phone hanging up mid-answer. Every finished model round is recorded in
+an API or database error, or the phone hanging up mid-answer. Every model round, finished or not, is recorded in
 `llm_calls` (step `ask`). No database transaction is open while the model works.
 """
 
@@ -22,6 +22,7 @@ from typing import Any
 import anthropic
 import httpx
 import sqlalchemy
+import sqlalchemy.exc
 import sqlalchemy.orm
 from archie_db import changes, models, search
 from archie_llm import embeddings, llm
@@ -131,8 +132,10 @@ def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, 
         AnswerRefusedError,
         AnswerIncompleteError,
         ValueError,
+        sqlalchemy.exc.SQLAlchemyError,
     ) as error:
-        # ValueError: the SDK could not parse the stream (e.g. a tool input that isn't JSON).
+        # ValueError: the SDK could not parse the stream (e.g. a tool input that isn't JSON). SQLAlchemyError: a
+        # library search or a cost record failed; keep the owner's partial answer and end the stream cleanly.
         _logger.warning("Answer failed for conversation %s: %r", request.conversation_id, error)
         _save(engine, request=request, progress=progress, failed=True)
         yield Event(name=EventName.ERROR, data={"message": FAILED_MESSAGE}).sse()
@@ -198,7 +201,11 @@ def _round(
     progress: _Progress,
     passages: dict[str, search.ChunkHit],
 ) -> Generator[Event, None, anthropic.types.Message]:
-    """One model request streamed as events, its paragraph closed at the end; returns the finished message."""
+    """One model request streamed as events, its paragraph closed at the end; returns the finished message.
+
+    The round is recorded in `llm_calls` once, finished or not: a round cut off mid-stream (an API error, or the phone
+    hanging up) has still spent the tokens of the message so far.
+    """
     with client.messages.stream(
         model=llm.SONNET,
         max_tokens=MAX_TOKENS,
@@ -209,12 +216,20 @@ def _round(
         thinking=THINKING,
         output_config=OUTPUT_CONFIG,
     ) as response_stream:
-        for stream_event in response_stream:
-            yield from _events_of(stream_event, progress=progress, passages=passages)
-        yield from _blocks_of(progress.paragraphs.close(), progress=progress)
-        response = response_stream.get_final_message()
-    llm.record_call(engine, context=context, model=llm.SONNET, response=response)
-    return response
+        started = False
+        response: anthropic.types.Message | None = None
+        try:
+            for stream_event in response_stream:
+                started = started or stream_event.type == "message_start"
+                yield from _events_of(stream_event, progress=progress, passages=passages)
+            yield from _blocks_of(progress.paragraphs.close(), progress=progress)
+            response = response_stream.get_final_message()
+            return response
+        finally:
+            # The SDK's message snapshot exists only once `message_start` arrived; before that nothing was spent.
+            spent = response or (response_stream.current_message_snapshot if started else None)
+            if spent is not None:
+                llm.record_call(engine, context=context, model=llm.SONNET, response=spent)
 
 
 def _events_of(stream_event: Any, *, progress: _Progress, passages: dict[str, search.ChunkHit]) -> Iterator[Event]:

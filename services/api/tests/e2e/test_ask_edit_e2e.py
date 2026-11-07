@@ -238,6 +238,54 @@ def test_a_pending_edit_made_against_an_older_version_is_not_built_on(live_stack
     engine.dispose()
 
 
+def test_a_text_edit_replaces_text_that_is_there_and_another_users_items_are_out_of_reach(
+    live_stack: LiveStack,
+) -> None:
+    """A primer find that isn't in the text is an error; one that is lands in the proposal's markdown; another user
+    can neither read nor propose an edit of the owner's card."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    user_id = _user_id(authed)
+    source_id, card_id = _seed_source(live_stack, user_id=user_id)
+    conversation_id, _ = _seed_chat(live_stack, user_id=user_id)
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+        pipeline.write_artifact(
+            db, source=db.get_one(models.Source, source_id), kind=models.ArtifactKind.PRIMER,
+            content={"markdown": PASSAGE}, model="m", prompt_version="p",
+        )  # fmt: skip
+        db.commit()
+    context = edit_tools.ToolContext(user_id=user_id, conversation_id=conversation_id)
+
+    def propose_primer_edit(find: str) -> edit_tools.ToolOutcome:
+        return edit_tools.run(
+            engine, context=context, tool_use_id="t", name=edit_tools.PROPOSE_TEXT_EDIT,
+            tool_input={
+                "kind": "primer", "id": str(source_id), "description": "Fees",
+                "replacements": [{"find": find, "replace": "Their tiny fees"}],
+            },
+        )  # fmt: skip
+
+    missing = propose_primer_edit("Their high fees")
+    assert missing.result["is_error"] and "isn't in the current text" in missing.result["content"]
+    valid = propose_primer_edit("Their low fees")
+    assert valid.proposal is not None
+    assert valid.proposal.after["markdown"] == PASSAGE.replace("Their low fees", "Their tiny fees")
+
+    stranger = edit_tools.ToolContext(user_id=user_id + 1000, conversation_id=uuid.uuid4())
+    card_edit = edit_tools.run(
+        engine, context=stranger, tool_use_id="s1", name=edit_tools.PROPOSE_CARD_EDIT,
+        tool_input={"card_id": str(card_id), "description": "x", "question": FEES_QUESTION, "answer": "Mine now."},
+    )  # fmt: skip
+    card_read = edit_tools.run(
+        engine, context=stranger, tool_use_id="s2", name=edit_tools.READ_ITEM,
+        tool_input={"kind": "card", "id": str(card_id)},
+    )  # fmt: skip
+    for outcome in (card_edit, card_read):
+        assert outcome.result["is_error"] and "that the owner can edit" in outcome.result["content"]
+    engine.dispose()
+
+
 def test_asking_to_drop_a_key_idea_proposes_a_summary_edit_and_changes_nothing(
     live_stack: LiveStack, request: pytest.FixtureRequest
 ) -> None:

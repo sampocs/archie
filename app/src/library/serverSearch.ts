@@ -12,7 +12,12 @@ export type ServerSearchResult = {
   startSeconds: number | null;
 };
 
-export type SearchState = { status: "idle" | "loading" | "ready" | "failed"; results: ServerSearchResult[] };
+export type SearchState = {
+  status: "idle" | "loading" | "ready" | "failed";
+  results: ServerSearchResult[];
+  /** True when `results` came from a ready response, even while a newer request is loading. */
+  fromServer: boolean;
+};
 
 const ITEM_KINDS = new Set(["source", "topic_primer", "take"]);
 
@@ -37,8 +42,9 @@ export function parseSearchResults(body: unknown): ServerSearchResult[] {
 }
 
 /**
- * Which results the list shows: the server's once they arrive online; meanwhile, offline, or after a failed request,
- * today's on-phone matching — with the offline line only when the server can't answer.
+ * Which results the list shows: the server's once a response has arrived online (kept while a newer request loads);
+ * before the first response, offline, or after a failed request, on-phone matching alone — with the offline line only
+ * when the server can't answer. In server mode the on-phone matches still follow the server's rows (see `localExtras`).
  */
 export function searchView(input: {
   query: string;
@@ -46,8 +52,19 @@ export function searchView(input: {
   state: SearchState;
 }): { mode: "server" | "local"; offlineLine: boolean } {
   if (!input.online || input.state.status === "failed") return { mode: "local", offlineLine: true };
-  if (input.state.status === "ready") return { mode: "server", offlineLine: false };
+  if (input.state.status === "ready" || (input.state.status === "loading" && input.state.fromServer)) {
+    return { mode: "server", offlineLine: false };
+  }
   return { mode: "local", offlineLine: false };
+}
+
+/**
+ * The on-phone matches the server's rows don't already cover, in their given order. The server indexes only passage
+ * text, so sources without text yet, notes and title-only matches reach the list only through the phone.
+ */
+export function localExtras(results: ServerSearchResult[], localMatchIds: string[]): string[] {
+  const served = new Set(results.filter((result) => result.itemKind === "source").map((result) => result.itemId));
+  return localMatchIds.filter((id) => !served.has(id));
 }
 
 /** Runs the last task given, `ms` after the last call. */

@@ -48,8 +48,10 @@ def enqueue(
 
 def enqueue_embed(
     db: sqlalchemy.orm.Session, *, user_id: int, item_kind: models.SearchItemKind, item_id: uuid.UUID
-) -> None:
-    """Queue `embed` for one item, unless one is already waiting: the job reads the item when it runs, so one is enough.
+) -> bool:
+    """Queue `embed` for one item, unless one is already waiting; returns whether it queued one.
+
+    The job reads the item when it runs, so one waiting job is enough.
 
     A source's text, summary and primer are often written within seconds of each other.
     """
@@ -63,7 +65,7 @@ def enqueue_embed(
         )
     )
     if waiting:
-        return
+        return False
 
     enqueue(
         db,
@@ -71,3 +73,4 @@ def enqueue_embed(
         user_id=user_id,
         payload={ITEM_KIND_KEY: item_kind.value, ITEM_ID_KEY: str(item_id)},
     )
+    return True

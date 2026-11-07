@@ -14,6 +14,20 @@ import { SourceRow } from "@/ui/SourceRow";
 import type { LibraryData, LibrarySource } from "./join";
 import type { ServerSearchResult } from "./serverSearch";
 
+/** Whether a server result has a row on this phone: sources always do, topic primers and takes only once pulled. */
+export function renderableResults(input: {
+  results: ServerSearchResult[];
+  data: LibraryData;
+  takes: ReturnType<typeof useTakesData>;
+}): ServerSearchResult[] {
+  return input.results.filter((result) => {
+    if (result.itemKind === "source") return true;
+    if (result.itemKind === "take") return input.takes.some((take) => take.id === result.itemId);
+    const primer = input.data.topicPrimers.find((candidate) => candidate.id === result.itemId);
+    return Boolean(primer && input.data.topics.some((topic) => topic.id === primer.topicId));
+  });
+}
+
 /** The server's search results: each row is the usual row for its kind with the passage that matched under it. */
 export function SearchResultsView(props: { data: LibraryData; results: ServerSearchResult[] }) {
   const takes = useTakesData();

@@ -30,6 +30,7 @@ export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => (
   newsletterKind: null,
   cardsOff: 0,
   favoritedAt: null,
+  publishedAt: null,
   topic: null,
   summary: null,
   primerCreatedAt: null,

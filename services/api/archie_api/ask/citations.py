@@ -12,7 +12,9 @@ round. Every block of the paragraph gets that label and keeps its own citations.
 from __future__ import annotations
 
 import dataclasses
+import datetime
 import re
+import urllib.parse
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -128,12 +130,13 @@ def source_key(hit: search.ChunkHit) -> str:
     return f"{_SOURCE_PREFIX}{hit.chunk_id}"
 
 
-def search_result_block(hit: search.ChunkHit) -> dict[str, Any]:
-    """A library passage as the model sees it: citable, titled with its item and where in the item it sits."""
+def search_result_block(hit: search.ChunkHit, *, day_zone: datetime.tzinfo) -> dict[str, Any]:
+    """A library passage as the model sees it: citable, titled with its item, its day in `day_zone`, and where in the
+    item it sits."""
     return {
         "type": "search_result",
         "source": source_key(hit),
-        "title": _result_title(hit),
+        "title": _result_title(hit, day_zone=day_zone),
         "content": [{"type": "text", "text": hit.text}],
         "citations": {"enabled": True},
     }
@@ -199,9 +202,37 @@ _OWNER_NAMES = {
 }
 
 
-def _result_title(hit: search.ChunkHit) -> str:
+def _result_title(hit: search.ChunkHit, *, day_zone: datetime.tzinfo) -> str:
+    """The item's title, who it's from and its dates, then where in the item the passage sits.
+
+    e.g. "☕ Panicky vibes · Morning Brew · Wed 5 Nov 2026" (a newsletter is sent and saved the same day), or
+    "How to Do Great Work · paulgraham.com · published 2023 · saved Wed 5 Nov 2026".
+    """
+    named = " · ".join(part for part in (hit.title, _byline(hit), _dates(hit, day_zone=day_zone)) if part)
     if hit.owner_kind == models.ChunkOwner.SOURCE_TEXT and hit.start_seconds is not None:
         minutes, seconds = divmod(int(hit.start_seconds), 60)
-        return f"{hit.title} (at {minutes}:{seconds:02d})"
+        return f"{named} (at {minutes}:{seconds:02d})"
     name = _OWNER_NAMES.get(hit.owner_kind)
-    return f"{hit.title} ({name})" if name else hit.title
+    return f"{named} ({name})" if name else named
+
+
+def _byline(hit: search.ChunkHit) -> str | None:
+    """A newsletter's sender, else a web source's site; None for topic primers, takes and other sources."""
+    if hit.sender:
+        return hit.sender
+    site = urllib.parse.urlsplit(hit.url).hostname if hit.url else None
+    return site.removeprefix("www.") if site else None
+
+
+def _dates(hit: search.ChunkHit, *, day_zone: datetime.tzinfo) -> str:
+    """The saved day, with the published date in front when that fell on another day."""
+    saved = hit.saved_at.astimezone(day_zone)
+    saved_text = f"{saved:%a} {saved.day} {saved:%b %Y}"
+    published = hit.published_at.astimezone(day_zone) if hit.published_at is not None else None
+    if published is None or published.date() == saved.date():
+        return saved_text
+
+    # A page that gives only a year comes back as 1 January, so that day is shown as the year alone.
+    is_year_only = (published.month, published.day) == (1, 1)
+    published_text = f"{published:%Y}" if is_year_only else f"{published.day} {published:%b %Y}"
+    return f"published {published_text} · saved {saved_text}"

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import collections
+import datetime
 import re
 
 import trafilatura
@@ -37,7 +38,7 @@ def clean_capture(text: str) -> str:
 
 
 def extract(*, html: str, url: str) -> content.ExtractedText | None:
-    """The page's main text and title, or None when trafilatura finds no main text.
+    """The page's main text, title and publication date, or None when trafilatura finds no main text.
 
     The title falls back to the og:title / <title> reader used for `fetch_title`.
     """
@@ -51,4 +52,18 @@ def extract(*, html: str, url: str) -> content.ExtractedText | None:
         title=title,
         text=text[: content.MAX_TEXT_LENGTH],
         image_url=fetch_title.extract_image(page=html, base_url=url),
+        published_at=_published_at(metadata.date if metadata is not None else None),
     )
+
+
+def _published_at(date: str | None) -> datetime.datetime | None:
+    """trafilatura's `YYYY-MM-DD` page date as noon UTC; None when it found none, an unreadable one or a future one."""
+    if not date:
+        return None
+    try:
+        day = datetime.date.fromisoformat(date)
+    except ValueError:
+        return None
+
+    # A date still to come is a misparsed one (or an embargo placeholder), not when it was published.
+    return None if day > datetime.datetime.now(datetime.UTC).date() else content.noon_utc(day)

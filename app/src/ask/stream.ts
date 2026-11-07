@@ -7,6 +7,8 @@ export type AskBody = {
   text: string;
   web_search: boolean;
   about: { kind: AboutKind; id: string } | null;
+  // The phone's IANA zone, so "today" and "on Tuesday" mean the owner's days.
+  timezone: string;
 };
 
 const EVENT_TYPES = new Set(["delta", "block", "searching", "done", "error"]);

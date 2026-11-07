@@ -15,13 +15,16 @@ from archie_shared import config
 from vcr import request as vcr_request
 
 ANTHROPIC_HOST = "api.anthropic.com"
+OPENAI_HOST = "api.openai.com"
 REPLAY_API_KEYS = {
     config.ANTHROPIC_API_KEY_ENV: "sk-ant-replay-only",
     config.GROQ_API_KEY_ENV: "gsk-replay-only",
     config.OPENAI_API_KEY_ENV: "sk-openai-replay-only",
 }
 REPLAY_API_KEY = REPLAY_API_KEYS[config.ANTHROPIC_API_KEY_ENV]
-TRANSCRIPTION_HOSTS = frozenset({"api.groq.com", "api.openai.com"})
+TRANSCRIPTION_HOSTS = frozenset({"api.groq.com", OPENAI_HOST})
+TRANSCRIPTION_PATH_SUFFIX = "/audio/transcriptions"
+EMBEDDINGS_PATH_SUFFIX = "/embeddings"
 OMITTED_AUDIO = b"<audio omitted>"
 RECORD_MODE_OPTION = "--record-mode"
 DEFAULT_RECORD_MODE = "none"
@@ -33,6 +36,7 @@ DEFAULT_RECORD_MODE = "none"
 _SYSTEM_PREFIX_LENGTH = 60
 _ANTHROPIC_PROMPT_MATCHER = "anthropic_prompt"
 _TRANSCRIPTION_CHUNK_MATCHER = "transcription_chunk"
+_EMBEDDINGS_MATCHER = "openai_embeddings"
 _BOUNDARY_PATTERN = re.compile(r"boundary=([^;\s]+)")
 _MODEL_PATTERN = re.compile(rb'name="model"\r\n\r\n([^\r]+)')
 _FILENAME_PATTERN = re.compile(rb'filename="([^"]+)"')
@@ -55,7 +59,11 @@ _REPO_ROOT = pathlib.Path(__file__).resolve().parents[3]
 
 
 def vcr_for(request: pytest.FixtureRequest, *, cassette_dir: pathlib.Path) -> vcr.VCR:
-    """A recorder over `cassette_dir`: replay-only unless pytest is given `--record-mode`."""
+    """A recorder over `cassette_dir`: replay-only unless pytest is given `--record-mode`.
+
+    Anthropic calls replay by model and system-prompt prefix, transcription uploads by model and chunk filename, and
+    OpenAI embeddings requests by model and their exact inputs.
+    """
     recorder = vcr.VCR(
         cassette_library_dir=str(cassette_dir),
         record_mode=_record_mode(request),
@@ -63,10 +71,19 @@ def vcr_for(request: pytest.FixtureRequest, *, cassette_dir: pathlib.Path) -> vc
         decode_compressed_response=True,
         before_record_response=_drop_identifying_response_headers,
         before_record_request=_strip_audio_upload,
-        match_on=["method", "scheme", "host", "path", _ANTHROPIC_PROMPT_MATCHER, _TRANSCRIPTION_CHUNK_MATCHER],
+        match_on=[
+            "method",
+            "scheme",
+            "host",
+            "path",
+            _ANTHROPIC_PROMPT_MATCHER,
+            _TRANSCRIPTION_CHUNK_MATCHER,
+            _EMBEDDINGS_MATCHER,
+        ],
     )
     recorder.register_matcher(_ANTHROPIC_PROMPT_MATCHER, _anthropic_prompts_match)
     recorder.register_matcher(_TRANSCRIPTION_CHUNK_MATCHER, _transcription_chunks_match)
+    recorder.register_matcher(_EMBEDDINGS_MATCHER, _embeddings_match)
     return recorder
 
 
@@ -122,7 +139,7 @@ def _prompt_identity(request: vcr_request.Request) -> tuple[str, str]:
 
 def _strip_audio_upload(request: vcr_request.Request) -> vcr_request.Request:
     """Replace the audio in a transcription upload with a marker, so cassettes never carry the uploaded chunks."""
-    if request.host not in TRANSCRIPTION_HOSTS:
+    if not _is_transcription(request):
         return request
 
     content_type = request.headers.get("content-type", "")
@@ -145,8 +162,8 @@ def _omit_file_content(part: bytes) -> bytes:
 
 
 def _transcription_chunks_match(recorded: vcr_request.Request, incoming: vcr_request.Request) -> bool:
-    """Transcription uploads match on model and chunk filename; every other host matches unconditionally."""
-    if recorded.host not in TRANSCRIPTION_HOSTS and incoming.host not in TRANSCRIPTION_HOSTS:
+    """Transcription uploads match on model and chunk filename; every other request matches unconditionally."""
+    if not _is_transcription(recorded) and not _is_transcription(incoming):
         return True
 
     recorded_identity = _chunk_identity(recorded)
@@ -158,6 +175,10 @@ def _transcription_chunks_match(recorded: vcr_request.Request, incoming: vcr_req
     return recorded_identity == incoming_identity
 
 
+def _is_transcription(request: vcr_request.Request) -> bool:
+    return request.host in TRANSCRIPTION_HOSTS and request.path.endswith(TRANSCRIPTION_PATH_SUFFIX)
+
+
 def _chunk_identity(request: vcr_request.Request) -> tuple[bytes, bytes] | None:
     body = request.body or b""
     model = _MODEL_PATTERN.search(body)
@@ -166,3 +187,19 @@ def _chunk_identity(request: vcr_request.Request) -> tuple[bytes, bytes] | None:
         return None
 
     return model.group(1), filename.group(1)
+
+
+def _embeddings_match(recorded: vcr_request.Request, incoming: vcr_request.Request) -> bool:
+    """OpenAI embeddings requests match on model and the exact inputs; every other request matches here."""
+    if not (_is_embeddings(recorded) and _is_embeddings(incoming)):
+        return True
+    return _embeddings_identity(recorded) == _embeddings_identity(incoming)
+
+
+def _is_embeddings(request: vcr_request.Request) -> bool:
+    return request.host == OPENAI_HOST and request.path.endswith(EMBEDDINGS_PATH_SUFFIX)
+
+
+def _embeddings_identity(request: vcr_request.Request) -> tuple[str, list[str]]:
+    body = json.loads(request.body or b"{}")
+    return str(body.get("model", "")), list(body.get("input", []))

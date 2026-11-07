@@ -1,5 +1,7 @@
 """Search and Ask: search passages (chunks), saved chats and their messages, and chat cards as a fifth card origin.
 
+Also widens `llm_calls.cost_usd` to 10 decimal places: one query embedding costs well under a millionth of a dollar.
+
 Revision ID: 0011
 Revises: 0010
 Create Date: 2026-11-06
@@ -23,10 +25,16 @@ _TIMESTAMP = sqlalchemy.DateTime(timezone=True)
 _FOUR_ORIGINS = "num_nonnulls(source_id, topic_primer_id, brief_id, take_id) = 1"
 _FIVE_ORIGINS = "num_nonnulls(source_id, topic_primer_id, brief_id, take_id, conversation_id) = 1"
 _EMBEDDING_DIMENSIONS = 1536
+# Same six whole-dollar digits as before, with room for sub-millionth embedding costs.
+_WIDE_COST = sqlalchemy.Numeric(16, 10)
+_NARROW_COST = sqlalchemy.Numeric(12, 6)
 
 
 def upgrade() -> None:
-    """Create `chunks`, `conversations` and `messages`, add the cards' chat columns, and widen the one-origin CHECK."""
+    """Create `chunks`, `conversations` and `messages`, add the cards' chat columns, and widen the one-origin CHECK.
+
+    `llm_calls.cost_usd` is widened too, so the cost of a single query embedding isn't rounded to 0.
+    """
     _create_chunks()
     _create_conversations()
     _create_messages()
@@ -41,6 +49,8 @@ def upgrade() -> None:
     # Existing cards have exactly one of the first four origins, so they satisfy the wider check as they are.
     op.drop_constraint("ck_cards_one_origin", "cards", type_="check")
     op.create_check_constraint("ck_cards_one_origin", "cards", _FIVE_ORIGINS)
+
+    op.alter_column("llm_calls", "cost_usd", type_=_WIDE_COST, existing_type=_NARROW_COST, existing_nullable=False)
 
 
 def _owner_column(name: str, table: str) -> sqlalchemy.Column[uuid.UUID]:
@@ -161,7 +171,12 @@ def _create_messages() -> None:
 
 
 def downgrade() -> None:
-    """Undo `upgrade`; chat cards go first so the four-origin CHECK holds again, then the three tables."""
+    """Undo `upgrade`; chat cards go first so the four-origin CHECK holds again, then the three tables.
+
+    Narrowing `cost_usd` rounds sub-millionth costs to 6 places, as they were stored before.
+    """
+    op.alter_column("llm_calls", "cost_usd", type_=_NARROW_COST, existing_type=_WIDE_COST, existing_nullable=False)
+
     op.drop_constraint("ck_cards_one_origin", "cards", type_="check")
     op.execute("DELETE FROM cards WHERE conversation_id IS NOT NULL")
     op.drop_constraint("cards_message_id_fkey", "cards", type_="foreignkey")

@@ -850,7 +850,8 @@ class LlmCall(Base):
     model: Mapped[str] = mapped_column(sqlalchemy.String(64))
     input_tokens: Mapped[int] = mapped_column(sqlalchemy.Integer)
     output_tokens: Mapped[int] = mapped_column(sqlalchemy.Integer)
-    cost_usd: Mapped[Decimal] = mapped_column(sqlalchemy.Numeric(12, 6))
+    # Ten decimal places: a query embedding costs well under a millionth of a dollar.
+    cost_usd: Mapped[Decimal] = mapped_column(sqlalchemy.Numeric(16, 10))
     stop_reason: Mapped[str | None] = mapped_column(sqlalchemy.String(32))
     # Transcription calls are billed by audio length, not tokens.
     audio_seconds: Mapped[Decimal | None] = mapped_column(sqlalchemy.Numeric(10, 3))

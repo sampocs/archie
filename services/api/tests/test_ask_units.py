@@ -248,9 +248,8 @@ def test_the_system_prompt_keeps_its_replay_prefix_and_states_the_owners_today()
 def test_the_owners_zone_is_the_phones_or_utc_when_it_is_missing_or_unknown() -> None:
     """A name zoneinfo doesn't know, or a malformed one, falls back to UTC rather than failing the question."""
     assert context.owner_zone("America/New_York") == NEW_YORK
-    assert [context.owner_zone(name) for name in (None, "", "Mars/Olympus_Mons", "../../etc/passwd")] == [
-        datetime.UTC
-    ] * 4
+    unusable = (None, "", "Mars/Olympus_Mons", "../../etc/passwd", "America", "Etc")
+    assert [context.owner_zone(name) for name in unusable] == [datetime.UTC] * len(unusable)
 
 
 def test_search_library_takes_optional_saved_and_published_day_bounds_in_the_owners_zone() -> None:
@@ -266,3 +265,8 @@ def test_search_library_takes_optional_saved_and_published_day_bounds_in_the_own
     assert answer._dates_of({"query": "x"}, day_zone=NEW_YORK) == search.DateFilter(day_zone=NEW_YORK)
     assert answer._dates_of({"query": "x", "saved_before": "last Tuesday"}, day_zone=NEW_YORK) is None
     assert answer._dates_of({"query": "x", "published_after": 20261102}, day_zone=NEW_YORK) is None
+
+
+def test_a_bound_outside_a_plausible_year_range_is_an_invalid_input_not_an_overflow() -> None:
+    """A model writing 9999-12-31 for "no end" gets the tool's error result instead of killing the stream."""
+    assert answer._dates_of({"query": "x", "saved_before": "9999-12-31"}, day_zone=NEW_YORK) is None

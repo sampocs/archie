@@ -32,8 +32,9 @@ def owner_zone(name: str | None) -> datetime.tzinfo:
         return datetime.UTC
     try:
         return zoneinfo.ZoneInfo(name)
-    except (zoneinfo.ZoneInfoNotFoundError, ValueError):
-        # Outside input: an unknown or malformed name (ValueError, e.g. a path) only costs the owner's days.
+    except (zoneinfo.ZoneInfoNotFoundError, ValueError, OSError):
+        # Outside input: an unknown or malformed name (ValueError, e.g. a path; OSError, e.g. a bare directory
+        # like "America") only costs the owner's days.
         return datetime.UTC
 
 

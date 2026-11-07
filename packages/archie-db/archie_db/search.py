@@ -168,9 +168,8 @@ def passage(text: str, *, query: str, keyword_match: bool) -> str:
         return flat[:PASSAGE_CHARACTERS].rstrip() + "…"
 
     # A third of the window before the term, so the reader sees what leads into it.
-    start = max(0, position - PASSAGE_CHARACTERS // 3)
-    end = min(len(flat), start + PASSAGE_CHARACTERS)
-    start = max(0, end - PASSAGE_CHARACTERS)
+    start = max(0, min(position - PASSAGE_CHARACTERS // 3, len(flat) - PASSAGE_CHARACTERS))
+    end = start + PASSAGE_CHARACTERS
     snippet = flat[start:end].strip()
     return f"{'…' if start > 0 else ''}{snippet}{'…' if end < len(flat) else ''}"
 
@@ -226,7 +225,7 @@ def _first_term_position(text: str, *, query: str) -> int | None:
         if term in _STOP_WORDS:
             continue
         stem = term if len(term) <= _MIN_STEM else term[: max(_MIN_STEM, len(term) - _STEM_TRIM)]
-        found = lowered.find(stem)
-        if found >= 0:
-            positions.append(found)
+        found = re.search(rf"\b{re.escape(stem)}", lowered)
+        if found is not None:
+            positions.append(found.start())
     return min(positions, default=None)

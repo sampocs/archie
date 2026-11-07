@@ -233,6 +233,7 @@ def test_the_about_boost_lifts_the_items_own_passages(db: sqlalchemy.orm.Session
     [
         ("Short text.", "short", True, "Short", "Short text."),
         ("x " * 200 + "the Fed doesn't print money in that sense " + "y " * 200, "printing", True, "…", "print money"),
+        ("unfed " + "x " * 100 + "the Fed buys bonds " + "y " * 100, "fed", True, "…", "Fed buys bonds"),
         ("Opening words " + "z " * 300, "unrelated", False, "Opening words", "Opening words"),
     ],
 )

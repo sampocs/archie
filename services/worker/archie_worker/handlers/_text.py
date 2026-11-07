@@ -56,7 +56,7 @@ def enqueue_transcribe(
 
     _set_title_if_empty(source, title=episode.title)
     _set_image_if_empty(source, image_url=episode.image_url)
-    _set_published_at(source, published_at=content.midnight_utc(episode.published))
+    _set_published_at(source, published_at=content.noon_utc(episode.published))
     jobs.enqueue(
         db,
         kind=models.JobKind.TRANSCRIBE,

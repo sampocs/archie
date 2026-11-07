@@ -116,7 +116,7 @@ def _fetch_podcast(db: sqlalchemy.orm.Session, *, source: models.Source, source_
         text_content=text_content,
         title=resolved.episode.title,
         image_url=resolved.episode.image_url,
-        published_at=content.midnight_utc(resolved.episode.published),
+        published_at=content.noon_utc(resolved.episode.published),
     )
 
 

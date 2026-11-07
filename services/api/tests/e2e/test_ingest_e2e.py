@@ -9,7 +9,6 @@ the repo root `.env`.
 
 from __future__ import annotations
 
-import datetime
 import email.message
 import pathlib
 import time
@@ -188,10 +187,6 @@ def test_a_morning_brew_issue_links_to_its_web_version_and_is_analyzed_from_clea
 
     source = pulled["rows"]["sources"][0]
     assert (source["sender"], source["title"]) == ("Morning Brew", "☕ Putting it to a vote")
-    # The Date header (05:19:36 EST) is when it was sent, whenever it arrived.
-    assert datetime.datetime.fromisoformat(source["published_at"]) == datetime.datetime(
-        2026, 11, 3, 10, 19, 36, tzinfo=datetime.UTC
-    )
     assert source["url"] == MORNING_BREW_URL
     assert [call.step for call in _llm_calls(live_stack)] == ["clean_text", "analyze"]
 
@@ -199,25 +194,6 @@ def test_a_morning_brew_issue_links_to_its_web_version_and_is_analyzed_from_clea
     text = authed.get(f"/sources/{source['id']}/text").json()["text"]
     assert "**Mission control:**" in text
     assert "Your referral count" not in text
-
-
-def test_an_email_without_a_readable_date_is_dated_when_it_arrived(live_stack: LiveStack) -> None:
-    """A garbled Date header falls back to the moment of delivery."""
-    message = email.message.EmailMessage()
-    message["From"] = "writer@example.com"
-    message["Subject"] = "Undated"
-    message["Date"] = "sometime last week"
-    message["Message-ID"] = "<undated@example.com>"
-    message.set_content("Just a short plain note.")
-    address = _ingest_address(live_stack)
-
-    before = datetime.datetime.now(tz=datetime.UTC)
-    assert _deliver(live_stack, raw=message.as_bytes(), to=address).status_code == 202
-    after = datetime.datetime.now(tz=datetime.UTC)
-
-    [source] = _source_rows(live_stack)
-    assert source.published_at is not None
-    assert before <= source.published_at <= after
 
 
 def test_a_chosen_address_delivers_to_its_user(live_stack: LiveStack) -> None:

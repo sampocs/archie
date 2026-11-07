@@ -25,21 +25,13 @@ export function sourceMeta(source: BylineSource): string {
   return `${kindLabel(source.kind)} · ${sourceByline(source)}`;
 }
 
-/** When a newsletter was sent: its Date header, else (from an older server) when it arrived. */
-export function sentDate(source: { createdAt: string; publishedAt: string | null }): Date {
-  return new Date(source.publishedAt ?? source.createdAt);
-}
-
 /**
  * The item page's byline with its date: a newsletter's send day ("Morning Brew · Wed, Nov 4"), otherwise when it was
  * added ("open.spotify.com · Added Mon").
  */
-export function datedByline(
-  source: BylineSource & { createdAt: string; publishedAt: string | null },
-  now: Date,
-): string {
+export function datedByline(source: BylineSource & { createdAt: string }, now: Date): string {
   if (source.kind === "newsletter") {
-    const sent = sentDate(source);
+    const sent = new Date(source.createdAt);
     return `${sourceByline(source)} · ${WEEKDAYS[sent.getDay()]}, ${MONTHS[sent.getMonth()]} ${sent.getDate()}`;
   }
   return `${sourceByline(source)} · Added ${recentDayLabel(source.createdAt, now)}`;

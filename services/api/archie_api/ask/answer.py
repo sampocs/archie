@@ -49,8 +49,12 @@ _TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "auto"}
 _LAST_ROUND_TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "none"}
 # The stop reasons of a model that finished its turn; any other (e.g. `max_tokens`) leaves the answer unfinished.
 _FINISHED_STOP_REASONS = frozenset({"end_turn", "stop_sequence"})
+# The `search_library` inputs that bound its results by day.
+_SAVED_AFTER = "saved_after"
+_SAVED_BEFORE = "saved_before"
 _PUBLISHED_AFTER = "published_after"
 _PUBLISHED_BEFORE = "published_before"
+_DATE_BOUNDS = (_SAVED_AFTER, _SAVED_BEFORE, _PUBLISHED_AFTER, _PUBLISHED_BEFORE)
 
 _logger = logging.get_logger(logging.LoggerName.API, "ask")
 
@@ -88,6 +92,8 @@ class AnswerRequest:
     system: str
     messages: list[dict[str, Any]]
     boost: search.ItemRef | None
+    # The owner's zone: what day an item belongs to, for the date bounds and the result titles.
+    day_zone: datetime.tzinfo
     anthropic_key: str
     # None: the chat's library search is keyword only.
     openai_key: str | None
@@ -300,7 +306,7 @@ def _search_library(
 ) -> dict[str, Any]:
     """Run `search_library` and answer with citable passages; a bad input goes back as an error the model can fix."""
     query = _query_of(tool_use.input)
-    dates = _dates_of(tool_use.input)
+    dates = _dates_of(tool_use.input, day_zone=request.day_zone)
     if not query or dates is None:
         error = json.dumps({"INVALID_JSON": json.dumps(tool_use.input)})
         return {"type": "tool_result", "tool_use_id": tool_use.id, "is_error": True, "content": error}
@@ -316,12 +322,11 @@ def _search_library(
             limit=LIBRARY_RESULTS,
             boost=request.boost,
             match_any=True,
-            published_after=dates.after,
-            published_before=dates.before,
+            dates=dates,
         )
     passages.update({citations.source_key(hit): hit for hit in hits})
 
-    content: list[dict[str, Any]] = [citations.search_result_block(hit) for hit in hits] or [
+    content: list[dict[str, Any]] = [citations.search_result_block(hit, day_zone=request.day_zone) for hit in hits] or [
         {"type": "text", "text": "Nothing in the owner's library matched."}
     ]
     return {"type": "tool_result", "tool_use_id": tool_use.id, "content": content}
@@ -335,26 +340,33 @@ def _query_of(tool_input: object) -> str | None:
     return query.strip() if isinstance(query, str) and query.strip() else None
 
 
-@dataclass(frozen=True)
-class _DateRange:
-    """The optional, inclusive day bounds of a `search_library` call."""
-
-    after: datetime.date | None
-    before: datetime.date | None
-
-
-def _dates_of(tool_input: object) -> _DateRange | None:
-    """The tool input's `published_after` / `published_before` days; None when one is given but isn't a date."""
+def _dates_of(tool_input: object, *, day_zone: datetime.tzinfo) -> search.DateFilter | None:
+    """The tool input's day bounds, as the owner's days; None when one is given but isn't a YYYY-MM-DD date."""
     if not isinstance(tool_input, dict):
-        return _DateRange(after=None, before=None)
-    bounds = [tool_input.get(name) for name in (_PUBLISHED_AFTER, _PUBLISHED_BEFORE)]
-    if any(bound is not None and not isinstance(bound, str) for bound in bounds):
+        return search.DateFilter(day_zone=day_zone)
+    bounds = {name: tool_input.get(name) for name in _DATE_BOUNDS}
+    # Eager input streaming skips the schema's validation, so a bound can be anything.
+    if not all(bound is None or _is_day(bound) for bound in bounds.values()):
         return None
+
+    days = {name: datetime.date.fromisoformat(bound) if bound else None for name, bound in bounds.items()}
+    return search.DateFilter(
+        saved_after=days[_SAVED_AFTER],
+        saved_before=days[_SAVED_BEFORE],
+        published_after=days[_PUBLISHED_AFTER],
+        published_before=days[_PUBLISHED_BEFORE],
+        day_zone=day_zone,
+    )
+
+
+def _is_day(bound: object) -> bool:
+    if not isinstance(bound, str):
+        return False
     try:
-        after, before = (datetime.date.fromisoformat(bound) if bound else None for bound in bounds)
+        datetime.date.fromisoformat(bound)
     except ValueError:
-        return None
-    return _DateRange(after=after, before=before)
+        return False
+    return True
 
 
 def _query_embedding(engine: sqlalchemy.Engine, *, request: AnswerRequest, query: str) -> list[float] | None:

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import datetime
 import hmac
 import logging
 import uuid
@@ -105,8 +104,6 @@ def _insert_newsletter(db: orm.Session, *, user: models.User, parsed: email_mess
         title=subject[:MAX_TITLE_LENGTH] if subject else None,
         sender=parsed.sender[:MAX_SENDER_LENGTH] if parsed.sender else None,
         newsletter_message_id=parsed.message_id,
-        # Without a readable Date header, the moment it arrived is the best guess at when it was sent.
-        published_at=parsed.sent_at or datetime.datetime.now(tz=datetime.UTC),
         processing=(models.ProcessingStatus.PENDING if readable else models.ProcessingStatus.FAILED).value,
         processing_error=None if readable else UNREADABLE_EMAIL_ERROR,
         change_seq=changes.next_change_seq(),

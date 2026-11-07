@@ -14,9 +14,9 @@ How to answer:
 have saved (small talk, arithmetic). Search again with other words if the first search finds nothing useful.
 - Call tools without writing anything first; don't announce your searches.
 - Base library claims only on search results, so they carry citations.
-- Each library result's title ends with its item's date (when it was published or sent, else when it was saved). \
-For a question about a time ("yesterday", "this week", "on Tuesday"), work the dates out from today's date and pass \
-published_after / published_before to search_library.
+- Each library result's title gives the day the owner saved it and, when that was another day, when it was \
+published. For a question about a time ("yesterday", "this week", "on Tuesday"), work the days out from today's date \
+and pass search_library's saved_* or published_* bounds.
 - Then add background knowledge only where the library doesn't cover the question, in its own paragraph and without \
 citations. Never present background knowledge as coming from the library.
 - Search the web for recent or fast-changing facts (prices, office holders, this year's numbers), when the owner asks \
@@ -34,29 +34,30 @@ ABOUT_INTRO = (
     "answer about it unless the owner clearly asks about something else."
 )
 
+
+def _day_bound(description: str) -> dict[str, str]:
+    # `date` is one of the string formats strict tool use supports.
+    return {"type": "string", "format": "date", "description": f"{description} YYYY-MM-DD, in the owner's time zone."}
+
+
 SEARCH_LIBRARY_TOOL: dict[str, Any] = {
     "name": "search_library",
     "description": (
         "Search the owner's saved library: article and newsletter text, podcast and video transcripts, Archie's "
         "summaries and primers of them, topic primers, and the owner's own takes. Call this first for any question "
         "the owner's reading could bear on. Returns up to 8 passages to cite. For a question about a time "
-        '("yesterday", "this week", "on Tuesday"), also pass published_after and/or '
-        "published_before so only items from those days come back."
+        '("yesterday", "this week", "on Tuesday"), also pass day bounds so only items from those days come back: '
+        'saved_* for when the owner saved or got it ("what did I save this week", "yesterday\'s newsletters"), '
+        'published_* for when it came out ("articles published this year"). For newsletters the two are the same day.'
     ),
     "input_schema": {
         "type": "object",
         "properties": {
             "query": {"type": "string", "description": "What to look for, in a few words."},
-            "published_after": {
-                "type": "string",
-                "format": "date",
-                "description": "Only items published (or saved) on or after this day, YYYY-MM-DD.",
-            },
-            "published_before": {
-                "type": "string",
-                "format": "date",
-                "description": "Only items published (or saved) on or before this day, YYYY-MM-DD.",
-            },
+            "saved_after": _day_bound("Only items the owner saved or got on or after this day."),
+            "saved_before": _day_bound("Only items the owner saved or got on or before this day."),
+            "published_after": _day_bound("Only items that came out on or after this day."),
+            "published_before": _day_bound("Only items that came out on or before this day."),
         },
         "required": ["query"],
         "additionalProperties": False,
@@ -76,12 +77,13 @@ WEB_SEARCH_TOOL: dict[str, Any] = {
 }
 
 
-def system_prompt(*, about: str | None, web_required: bool, today: datetime.date) -> str:
+def system_prompt(*, about: str | None, web_required: bool, now: datetime.datetime) -> str:
     """The rules and today's date, then the about item (Ask about this), then the web requirement if the globe was on.
 
-    The date comes after the fixed rules, so the prompt's first 60 characters (what cassettes replay by) never change.
+    `now` is in the owner's zone, which the prompt names. The date comes after the fixed rules, so the prompt's first 60
+    characters (what cassettes replay by) never change.
     """
-    parts = [ASK_SYSTEM, f"Today is {today:%A} {today.day} {today:%B %Y} (UTC)."]
+    parts = [ASK_SYSTEM, f"Today is {now:%A} {now.day} {now:%B %Y} ({now.tzinfo})."]
     if about:
         parts.append(f"{ABOUT_INTRO}\n<about>\n{about}\n</about>")
     if web_required:

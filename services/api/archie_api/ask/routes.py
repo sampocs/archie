@@ -23,6 +23,7 @@ from archie_api.ask import answer, context, prompts
 from archie_api.sync import conversation_actions
 
 MAX_QUESTION_LENGTH = 4000
+MAX_TIMEZONE_LENGTH = 64
 
 router = fastapi.APIRouter(prefix="/ask", tags=["ask"])
 
@@ -41,6 +42,8 @@ class AskRequest(pydantic.BaseModel):
     text: str = pydantic.Field(min_length=1, max_length=MAX_QUESTION_LENGTH)
     web_search: bool = False
     about: AboutIn | None = None
+    # The phone's IANA zone (e.g. "America/New_York"); unknown or missing means UTC.
+    timezone: str | None = pydantic.Field(default=None, max_length=MAX_TIMEZONE_LENGTH)
 
 
 @router.post("/conversations/{conversation_id}/messages")
@@ -64,6 +67,7 @@ def ask(
     if db.get(models.Message, body.user_message_id) is not None:
         raise fastapi.HTTPException(status_code=409, detail="message id already used")
     conversation = _conversation(db, user=user, conversation_id=conversation_id, question=question, about=body.about)
+    day_zone = context.owner_zone(body.timezone)
     request = answer.AnswerRequest(
         user_id=user.id,
         conversation_id=conversation.id,
@@ -72,12 +76,12 @@ def ask(
         system=prompts.system_prompt(
             about=context.about_text(db, conversation=conversation),
             web_required=body.web_search,
-            # No owner time zone is stored, so "today" is the UTC day.
-            today=datetime.datetime.now(tz=datetime.UTC).date(),
+            now=datetime.datetime.now(tz=day_zone),
         ),
         # Read before the question is added, so the history holds only earlier exchanges.
         messages=[*context.history(db, conversation_id=conversation.id), {"role": "user", "content": question}],
         boost=context.boost(db, conversation=conversation),
+        day_zone=day_zone,
         anthropic_key=settings.anthropic_api_key,
         openai_key=settings.openai_api_key or None,
     )

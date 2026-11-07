@@ -14,6 +14,8 @@ dependencies = [
   "lxml>=6.0",
   "python-multipart>=0.0.20",
   "anyio>=4",
+  # zoneinfo's data on images without /usr/share/zoneinfo (Ask reads the phone's time zone).
+  "tzdata>=2025.1",
 ]
 
 [project.scripts]

@@ -619,7 +619,9 @@ class Chunk(Base):
 
 
 class Conversation(Base):
-    """A saved Ask chat. The id is made on the phone; the title is the first question, cut to 60 characters.
+    """A saved Ask chat. The id is made on the phone.
+
+    The title is the first question, cut to `CONVERSATION_TITLE_LENGTH` characters.
 
     At most one `about_*` id is set: the item the chat was started from with Ask about this.
     """

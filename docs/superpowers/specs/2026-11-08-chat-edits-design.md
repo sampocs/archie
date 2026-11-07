@@ -37,6 +37,10 @@ this spec wins and those docs are updated when it ships.
   the one function that writes artifact versions, no job is skipped (cards, filing and readiness still run exactly as
   today), and nothing is lost either way. Topic primers are never regenerated today (a primer is written only when the
   topic has none), so the rule only matters for source summaries and primers.
+  **Undo hands the item back to Archie**: when Undo brings back a summary or primer version that Archie wrote, the
+  copy it saves is written with origin `archie` (and is current), so it is not owner-chosen and Archie's next
+  regeneration becomes current as usual. Undoing back to an owner-chosen version keeps that copy owner-chosen
+  (`restore`). "Restore this version" from the versions sheet is always owner-chosen.
 - **Cards stay consistent the way the code already ties them:**
   - **Take edits** (and their Undo and restores) make a new take version, which rewrites the take's cards with
     `take_cards`, exactly as a save in the take editor does.
@@ -149,7 +153,8 @@ proposed ──Apply──▶ applied ──Undo──▶ undone
   deleted or changed since, it marks it **stale** and writes nothing; the card says "Changed since you asked. Ask
   again to redo it."
 - **Undo** (applied only): if the target's current version is still `applied_version`, it restores `base_version`
-  as a new version (origin `restore`) and marks the proposal **undone**. If something changed it since, it refuses
+  as a new version (origin `restore`, or `archie` when the restored version is Archie's own: see the regeneration
+  rule) and marks the proposal **undone**. If something changed it since, it refuses
   (409) and the phone says "This was changed since. Use Earlier versions to go back." Undo on an undone proposal
   returns it unchanged.
 - **Discard** (proposed only): marks it **discarded**. Terminal.

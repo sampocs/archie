@@ -193,7 +193,7 @@ def test_apply_goes_stale_when_the_target_changed_or_is_gone(live_stack: LiveSta
 
 
 def test_undo_restores_the_version_the_edit_was_made_against(live_stack: LiveStack, authed: httpx.Client) -> None:
-    """Undo makes version 3 a copy of version 1 (origin restore) and marks the edit undone; again is harmless."""
+    """Undo makes version 3 a copy of version 1 (origin archie) and marks the edit undone; again is harmless."""
     seeded = _seed(live_stack, user_id=_user_id(authed))
     proposal_id = _propose(
         live_stack, seeded, kind=models.EditTarget.SUMMARY, target_id=seeded.source_id, before=SUMMARY, after=EDITED
@@ -207,7 +207,7 @@ def test_undo_restores_the_version_the_edit_was_made_against(live_stack: LiveSta
     assert _current(live_stack, seeded, models.EditTarget.SUMMARY, seeded.source_id) == versions.Snapshot(
         version=3, content=SUMMARY
     )
-    assert next(row for row in _rows(authed)["artifacts"] if row["is_current"])["origin"] == "restore"
+    assert next(row for row in _rows(authed)["artifacts"] if row["is_current"])["origin"] == "archie"
 
 
 def test_undo_is_refused_once_something_else_changed_the_target(live_stack: LiveStack, authed: httpx.Client) -> None:

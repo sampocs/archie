@@ -60,14 +60,16 @@ def write_artifact(
     origin: models.VersionOrigin = models.VersionOrigin.ARCHIE,
     derived_from_id: uuid.UUID | None = None,
     instruction: str | None = None,
+    hands_back: bool = False,
 ) -> models.SourceArtifact:
     """Add the next version of `kind`, normally as the current one; the previous current version is kept.
 
     Archie's rewrite of a version the owner chose is stored but not made current (`keeps_owner_version`), so an Ask
-    edit or a restore is never silently replaced; the owner can still restore Archie's newer version.
+    edit or a restore is never silently replaced; the owner can still restore Archie's newer version. `hands_back` is
+    Undo returning an item to Archie: the copy is written with origin `archie` but is current regardless.
     """
     previous = current_artifact(db, source_id=source.id, kind=kind)
-    becomes_current = not keeps_owner_version(db, previous=previous, origin=origin)
+    becomes_current = hands_back or not keeps_owner_version(db, previous=previous, origin=origin)
     if previous is not None and becomes_current:
         # Flushed first so the partial unique index never sees two current rows.
         previous.is_current = False

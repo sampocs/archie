@@ -122,7 +122,11 @@ maestro-takes-clean: reset-local-data
 maestro-ask: reset-local-data
 	@PATH="$(MAESTRO_PATH)" maestro test maestro/ask.yaml
 
+# Edits through chat: analyze, embeddings and an Ask answer spend real API credits (a few cents); see maestro/README.md.
+maestro-edit: reset-local-data
+	@PATH="$(MAESTRO_PATH)" maestro test maestro/edit.yaml
+
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-brief maestro-review maestro-takes-clean maestro-ask maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-brief maestro-review maestro-takes-clean maestro-ask maestro-edit maestro-offline

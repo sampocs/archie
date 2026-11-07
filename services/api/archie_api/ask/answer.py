@@ -3,7 +3,8 @@
 The server runs up to `MAX_ROUNDS` model requests: `search_library` (run here, results returned as citable
 `search_result` blocks) and Anthropic's web search tool (run by Anthropic). Text streams as `delta` events; each
 finished text block becomes a `block` carrying its paragraph's label, sent when the paragraph closes; a tool run shows
-as `searching`. Uncited paragraphs the model writes before a tool call (announcing its search) are streamed but not saved.
+as `searching`. Uncited paragraphs the model writes before a tool call (announcing its search) are streamed but not
+saved.
 The answer is stored when the stream ends — complete only if the model finished its turn (`end_turn` or a stop
 sequence), else failed with whatever text arrived: a refusal, a cut-off (`max_tokens`), no answer within `MAX_ROUNDS`,
 an API or database error, or the phone hanging up mid-answer. Every model round, finished or not, is recorded in

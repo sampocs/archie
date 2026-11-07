@@ -95,6 +95,10 @@ describe("applyEvent and liveView", () => {
     expect(proposed.proposals).toEqual([wire]);
     expect(proposed.editing).toBe(false);
     expect(liveView(proposed).editing).toBe(false);
+
+    const searched = applyEvent(drafting, { type: "searching", kind: "library", query: "x" });
+    expect(searched.editing).toBe(false);
+    expect(searched.searching).toBe("library");
   });
 });
 

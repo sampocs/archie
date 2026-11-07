@@ -4,6 +4,7 @@ describe("shownStatus", () => {
   it("shows a proposal as stale once this phone's copy of the target moved past its base version", () => {
     expect(shownStatus({ status: "proposed", baseVersion: 1 }, 1)).toBe("proposed");
     expect(shownStatus({ status: "proposed", baseVersion: 1 }, 2)).toBe("stale");
+    expect(shownStatus({ status: "proposed", baseVersion: 2 }, 1)).toBe("proposed");
   });
 
   it("trusts the server's status otherwise, and waits while the target hasn't loaded", () => {

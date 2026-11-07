@@ -102,6 +102,35 @@ describe("applyEvent and liveView", () => {
   });
 });
 
+describe("edit events for one target", () => {
+  const base = {
+    type: "edit" as const,
+    target_kind: "summary" as const,
+    target_id: "s1",
+    title: "T",
+    description: "D",
+    base_version: 1,
+    before: {},
+    after: {},
+    status: "proposed" as const,
+  };
+
+  it("supersedes the earlier proposed one, keeps other targets, and doesn't duplicate a repeated id", () => {
+    const same = applyEvent(applyEvent(EMPTY_LIVE, { ...base, id: "a" }), { ...base, id: "b" });
+    expect(same.proposals.map((proposal) => [proposal.id, proposal.status])).toEqual([
+      ["a", "superseded"],
+      ["b", "proposed"],
+    ]);
+
+    const other = applyEvent(applyEvent(EMPTY_LIVE, { ...base, id: "a" }), { ...base, id: "b", target_id: "s2" });
+    expect(other.proposals.map((proposal) => proposal.status)).toEqual(["proposed", "proposed"]);
+
+    const repeated = applyEvent(applyEvent(EMPTY_LIVE, { ...base, id: "a" }), { ...base, id: "a" });
+    expect(repeated.proposals).toHaveLength(1);
+    expect(repeated.proposals[0].status).toBe("proposed");
+  });
+});
+
 describe("relativeTime and rowPreview", () => {
   const now = new Date(2026, 10, 6, 15, 0);
 

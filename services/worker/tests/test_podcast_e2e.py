@@ -7,6 +7,7 @@ a cassette (needs `TEST_DATABASE_URL`, as `make test-db` sets it); nothing here 
 from __future__ import annotations
 
 import contextlib
+import datetime
 import pathlib
 import uuid
 from collections.abc import Callable, Iterator
@@ -73,6 +74,8 @@ def test_an_apple_episode_with_a_published_transcript_becomes_timed_text(
     assert source.title == artifact.content["episode"]["title"]
     assert (source.image_url or "").startswith("https://")
     assert media.APPLE_TRANSCRIPT_EPISODE_TITLE in source.title
+    # The feed item's day, which Apple's lookup matched on.
+    assert source.published_at == datetime.datetime(2026, 11, 3, 12, tzinfo=datetime.UTC)
     assert source.processing == models.ProcessingStatus.PROCESSING
     assert _queued_kinds(engine) == [models.JobKind.EMBED, models.JobKind.ANALYZE, models.JobKind.PRIMER]
 

@@ -279,6 +279,7 @@ export function createDbSyncStore(
             newsletterKind: source.newsletter_kind,
             cardsOff: source.cards_off ? 1 : 0,
             favoritedAt: source.favorited_at ?? null,
+            publishedAt: source.published_at ?? null,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })

@@ -63,6 +63,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
             segments=corrected, extra={episode_content.EPISODE_KEY: run.episode.to_payload()}
         ),
         title=run.episode.title,
+        published_at=content.noon_utc(run.episode.published),
     )
 
 

@@ -78,6 +78,10 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
 - **reviews:** an append-only log of every review: card, grade, reviewed_at, and the scheduler state before and after. The latest `reviewed_at` wins the card's state; reviews are never pulled to the phone.
 - **card_preferences:** the "what I care about" and "not this" notes that steer card generation (the last 20 are used).
 - `sources.cards_off`: the owner turned cards off for this source.
+- `sources.published_at`: when an article or podcast episode came out (the page's date or the feed item's day, as
+  noon UTC); null when unknown, and always null for newsletters, which are sent and saved the same day (`created_at`).
+  Ask's `search_library` bounds by saved day (`created_at`) or published day (`coalesce(published_at, created_at)`),
+  both in the phone's time zone, and its result titles show the saved day plus the published date when it differs.
 - **chunks:** passages of the transcript or text, with an embedding (`vector(1536)`) and a full-text `tsvector`. These are what search and chat search over.
 - **jobs:**
   - the step and the source it belongs to

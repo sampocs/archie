@@ -31,6 +31,8 @@ export type PulledSource = {
   // Absent when pulling from a server older than M6.
   cards_off?: boolean;
   favorited_at?: string | null;
+  // Absent when pulling from a server older than item dates.
+  published_at?: string | null;
 };
 export type PulledArtifact = {
   id: string;

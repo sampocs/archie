@@ -145,3 +145,29 @@ def test_only_a_paragraph_with_no_citation_at_all_is_dropped_before_a_tool_call(
     relabelled = citations.by_paragraph(segments)
 
     assert citations.uncited_paragraphs_dropped(relabelled) == [False, False, False, True]
+
+
+def test_a_heading_paragraph_takes_the_label_of_the_paragraph_after_it() -> None:
+    """A bold title line has no citations; it joins the library paragraph it introduces instead of splitting it."""
+    fragments = [
+        _block("**What to pick:**\n\n", None),
+        _block("Something you have an aptitude for, ", None),
+        _block("and a deep interest in.", [_library()]),
+        _block("\n\n## How to find it", None),
+        _block("\n\nBy working on it.", [_library()]),
+    ]
+    segments = [citations.segment_of(fragment, passages=PASSAGES) for fragment in fragments]
+
+    assert [segment.label for segment in citations.by_paragraph(segments)] == [citations.AnswerLabel.LIBRARY] * 5
+
+
+def test_a_heading_with_nothing_after_it_stays_background_and_waits_to_be_sent() -> None:
+    """Streaming sends a heading's block only once its label is final: when a paragraph follows, or the round ends."""
+    paragraphs = citations.Paragraphs()
+    heading = citations.segment_of(_block("Short answer:", None), passages=PASSAGES)
+
+    assert paragraphs.add(heading) == []
+    assert paragraphs.close() == []
+    assert paragraphs.open == [heading]
+    assert [segment.label for segment in paragraphs.finish()] == [citations.AnswerLabel.BACKGROUND]
+    assert paragraphs.open == []

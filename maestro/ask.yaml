@@ -57,9 +57,11 @@ appId: com.sampocs.archie
     visible:
       id: "answer-section-library"
     timeout: 120000
-- extendedWaitUntil:
-    visible:
+# The button sits under the answer, below the fold; it appears once the answer completes.
+- scrollUntilVisible:
+    element:
       id: "answer-make-card-.*"
+    direction: DOWN
     timeout: 60000
 - tapOn:
     id: "answer-make-card-.*"

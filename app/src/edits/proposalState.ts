@@ -22,10 +22,18 @@ export const UNDO_CONFLICT = "This was changed since. Use Earlier versions to go
 /**
  * The status the card shows. A proposal whose target this phone already holds at a newer version can't apply, so it
  * reads as stale before Apply is tapped; while the target hasn't loaded (null) it stays as the server said. Versions
- * only grow, so a copy behind the base version is a pull still on its way, not a reason to call it stale.
+ * only grow, so a copy behind the base version is a pull still on its way, not a reason to call it stale. A still
+ * proposed row whose target has a newer proposal in the live answer (`supersededLive`) reads as superseded, as the
+ * server will mark it; any other stored status wins.
  */
-export function shownStatus(proposal: Pick<ProposalView, "status" | "baseVersion">, currentVersion: number | null): EditStatus {
-  if (proposal.status !== "proposed" || currentVersion === null) return proposal.status;
+export function shownStatus(
+  proposal: Pick<ProposalView, "status" | "baseVersion">,
+  currentVersion: number | null,
+  supersededLive = false,
+): EditStatus {
+  if (proposal.status !== "proposed") return proposal.status;
+  if (supersededLive) return "superseded";
+  if (currentVersion === null) return proposal.status;
   return currentVersion > proposal.baseVersion ? "stale" : "proposed";
 }
 

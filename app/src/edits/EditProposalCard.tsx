@@ -24,11 +24,13 @@ type EditProposalCardProps = {
   // False while the answer is still streaming: the proposal is stored only when the answer is.
   ready: boolean;
   online: boolean;
+  // A newer proposal for the same target is in the live answer, so this one is about to be superseded.
+  supersededLive?: boolean;
   onToast: (message: string) => void;
 };
 
 /** One edit Ask proposed: what changes, as a diff, with Apply / Discard, then Applied · Undo or how it ended. */
-export function EditProposalCard({ proposal: streamed, ready, online, onToast }: EditProposalCardProps) {
+export function EditProposalCard({ proposal: streamed, ready, online, supersededLive, onToast }: EditProposalCardProps) {
   const theme = useTheme();
   const router = useRouter();
   const { sessionKey } = useSession();
@@ -37,7 +39,7 @@ export function EditProposalCard({ proposal: streamed, ready, online, onToast }:
   // The stored row wins once the phone has it: it carries what Apply, Undo or Discard did.
   const proposal = useProposalRow(streamed.id) ?? streamed;
   const { current } = useTargetVersions(proposal.targetKind, proposal.targetId);
-  const status = shownStatus(proposal, current);
+  const status = shownStatus(proposal, current, supersededLive);
   const lines = useMemo(() => {
     const kind = proposal.targetKind;
     const before = editLines(kind, parseContent(kind, proposal.before));

@@ -87,8 +87,16 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
       return { ...live, editing: true, searching: null };
     case "edit": {
       const { type: _type, ...wire } = event;
-      // A repeated event (a retried read of the stream) replaces the proposal rather than adding it twice.
-      return { ...live, editing: false, proposals: [...live.proposals.filter((proposal) => proposal.id !== wire.id), wire] };
+      // A repeated event (a retried read of the stream) replaces the proposal rather than adding it twice. A newer
+      // proposal for the same target supersedes the still-proposed older ones, as the server does when it saves it.
+      const earlier = live.proposals
+        .filter((proposal) => proposal.id !== wire.id)
+        .map((proposal) =>
+          proposal.status === "proposed" && proposal.target_kind === wire.target_kind && proposal.target_id === wire.target_id
+            ? { ...proposal, status: "superseded" as const }
+            : proposal,
+        );
+      return { ...live, editing: false, proposals: [...earlier, wire] };
     }
   }
 }

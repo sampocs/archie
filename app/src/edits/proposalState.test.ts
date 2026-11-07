@@ -14,6 +14,13 @@ describe("shownStatus", () => {
   });
 });
 
+it("shows a proposed row as superseded when the live answer has a newer one, and leaves other statuses alone", () => {
+  expect(shownStatus({ status: "proposed", baseVersion: 1 }, 1, true)).toBe("superseded");
+  for (const status of ["applied", "undone", "discarded", "stale"] as const) {
+    expect(shownStatus({ status, baseVersion: 1 }, 1, true)).toBe(status);
+  }
+});
+
 it("opens each kind's own page", () => {
   expect(["summary", "primer", "topic_primer", "take", "card"].map((kind) => targetHref(kind as never, "x"))).toEqual([
     "/source/x",

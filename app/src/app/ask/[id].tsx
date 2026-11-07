@@ -36,6 +36,8 @@ export default function ChatScreen() {
   );
   const { pending, send } = useChatSession({ conversationId: params.id, messages, about });
   const proposals = useConversationProposals(params.id);
+  // Targets with a proposal in the live answer: older still-proposed ones for them are superseded.
+  const liveTargets = new Set((pending?.live.proposals ?? []).map((wire) => `${wire.target_kind}:${wire.target_id}`));
   const [cardFor, setCardFor] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   // Stable, so a re-render (a pull landing) doesn't restart the toast's timer.
@@ -99,7 +101,14 @@ export default function ChatScreen() {
                 onMakeCard={message.status === "complete" ? () => setCardFor(message.id) : undefined}
               >
                 {(proposals.get(message.id) ?? []).map((proposal) => (
-                  <EditProposalCard key={proposal.id} proposal={proposal} ready online={online} onToast={setToast} />
+                  <EditProposalCard
+                    key={proposal.id}
+                    proposal={proposal}
+                    ready
+                    online={online}
+                    supersededLive={liveTargets.has(`${proposal.targetKind}:${proposal.targetId}`)}
+                    onToast={setToast}
+                  />
                 ))}
               </AnswerView>
             ),

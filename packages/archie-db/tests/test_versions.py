@@ -168,6 +168,60 @@ def test_archie_rewrites_never_replace_an_owner_chosen_version_unless_the_text_c
     assert [summary.is_current for summary in _summaries(db, source.id)] == [False, False, False, True]
 
 
+def _chat_edit(db: sqlalchemy.orm.Session, *, target: versions.Target, gist: str, derived_from: int) -> None:
+    versions.write(
+        db, target=target, content={**SUMMARY, "gist": gist}, origin=models.VersionOrigin.CHAT_EDIT,
+        instruction=None, derived_from=derived_from,
+    )  # fmt: skip
+
+
+def test_undo_back_to_archies_version_hands_the_summary_back_to_archie(db: sqlalchemy.orm.Session) -> None:
+    """Archie v1, edit v2, undo v3 (origin archie, current): Archie's v4 is current, while a Restore stays owner's."""
+    user_id = _user(db)
+    source = _source_with_summary(db, user_id=user_id)
+    target = versions.Target(kind=models.EditTarget.SUMMARY, id=source.id)
+    _chat_edit(db, target=target, gist="Mine.", derived_from=1)
+    archie_content = {"summary": SUMMARY, "domain": "Finance", "tags": [], "cards": []}
+
+    assert versions.restore(db, target=target, version=1, is_undo=True) == 3
+    undone = _summaries(db, source.id)[-1]
+    assert (undone.origin, undone.is_current) == ("archie", True)
+
+    rewrite = pipeline.write_artifact(
+        db, source=source, kind=models.ArtifactKind.SUMMARY, content=archie_content, model="m", prompt_version="p"
+    )
+    assert (rewrite.version, rewrite.is_current) == (4, True)
+
+    # The explicit Restore (not Undo) is always owner-chosen.
+    assert versions.restore(db, target=target, version=1) == 5
+    kept = pipeline.write_artifact(
+        db, source=source, kind=models.ArtifactKind.SUMMARY, content=archie_content, model="m", prompt_version="p"
+    )
+    assert (_summaries(db, source.id)[-2].origin, kept.is_current) == ("restore", False)
+
+
+def test_undo_back_to_an_owner_chosen_version_stays_owner_chosen(db: sqlalchemy.orm.Session) -> None:
+    """Edit v2, second edit v3, undo to v2 (origin restore): a later Archie write lands non-current."""
+    user_id = _user(db)
+    source = _source_with_summary(db, user_id=user_id)
+    target = versions.Target(kind=models.EditTarget.SUMMARY, id=source.id)
+    _chat_edit(db, target=target, gist="First.", derived_from=1)
+    _chat_edit(db, target=target, gist="Second.", derived_from=2)
+
+    assert versions.restore(db, target=target, version=2, is_undo=True) == 4
+    assert _summaries(db, source.id)[-1].origin == "restore"
+
+    rewrite = pipeline.write_artifact(
+        db,
+        source=source,
+        kind=models.ArtifactKind.SUMMARY,
+        content={"summary": SUMMARY, "domain": "Finance", "tags": [], "cards": []},
+        model="m",
+        prompt_version="p",
+    )
+    assert (rewrite.version, rewrite.is_current) == (5, False)
+
+
 def test_archie_primer_rewrites_never_replace_an_owner_chosen_primer(db: sqlalchemy.orm.Session) -> None:
     """Archie's primer rewrite lands not current over a chat edit of the source primer."""
     user_id = _user(db)

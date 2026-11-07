@@ -90,7 +90,7 @@ def undo(
     if target is None or versions.current(db, target=target).version != proposal.applied_version:
         raise fastapi.HTTPException(status_code=409, detail=CHANGED_SINCE)
 
-    restored = versions.restore(db, target=target, version=proposal.base_version)
+    restored = versions.restore(db, target=target, version=proposal.base_version, is_undo=True)
     # base_version existed when the edit was applied, so the restore cannot miss it.
     assert restored is not None
     _set_status(proposal, models.EditStatus.UNDONE)

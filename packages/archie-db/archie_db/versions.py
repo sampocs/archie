@@ -126,6 +126,7 @@ def write(
     origin: models.VersionOrigin,
     instruction: str | None,
     derived_from: int | None,
+    hands_back: bool = False,
 ) -> int:
     """Save `content` as the target's next, current version and return its number.
 
@@ -134,7 +135,13 @@ def write(
     """
     if target.kind in _ARTIFACT_KINDS:
         return _write_artifact(
-            db, target=target, content=content, origin=origin, instruction=instruction, derived_from=derived_from
+            db,
+            target=target,
+            content=content,
+            origin=origin,
+            instruction=instruction,
+            derived_from=derived_from,
+            hands_back=hands_back,
         )
     if target.kind == models.EditTarget.TOPIC_PRIMER:
         return _write_topic_primer(
@@ -146,10 +153,13 @@ def write(
     return _write_card(db, card_id=target.id, content=content, origin=origin, instruction=instruction)
 
 
-def restore(db: sqlalchemy.orm.Session, *, target: Target, version: int) -> int | None:
+def restore(db: sqlalchemy.orm.Session, *, target: Target, version: int, is_undo: bool = False) -> int | None:
     """Save version `version` again as the newest, current one (origin `restore`); None when there is no such version.
 
-    A take keeps the restored version's raw text and Clean it up flag, as the take page's own Restore does.
+    A take keeps the restored version's raw text and Clean it up flag, as the take page's own Restore does. Undo
+    (`is_undo`) hands a summary or primer that Archie wrote back to Archie: the copy gets origin `archie`, so it is
+    not owner-chosen and Archie's next regeneration becomes current as usual. Undoing back to an owner-chosen
+    version, and takes and cards (no regeneration rule), stay `restore`.
     """
     if target.kind == models.EditTarget.TAKE:
         earlier = takes.version_at(db, take_id=target.id, version=version)
@@ -167,9 +177,27 @@ def restore(db: sqlalchemy.orm.Session, *, target: Target, version: int) -> int 
     content = at_version(db, target=target, version=version)
     if content is None:
         return None
+    hands_back = is_undo and _origin_at(db, target=target, version=version) == models.VersionOrigin.ARCHIE
     return write(
-        db, target=target, content=content, origin=models.VersionOrigin.RESTORE, instruction=None, derived_from=version
+        db,
+        target=target,
+        content=content,
+        origin=models.VersionOrigin.ARCHIE if hands_back else models.VersionOrigin.RESTORE,
+        instruction=None,
+        derived_from=version,
+        hands_back=hands_back,
     )
+
+
+def _origin_at(db: sqlalchemy.orm.Session, *, target: Target, version: int) -> models.VersionOrigin | None:
+    """Who made a summary, primer or topic primer version; None for takes and cards, which Archie never regenerates."""
+    if target.kind in _ARTIFACT_KINDS:
+        artifact = _artifact_at(db, source_id=target.id, kind=_ARTIFACT_KINDS[target.kind], version=version)
+        return models.VersionOrigin(artifact.origin) if artifact is not None else None
+    if target.kind == models.EditTarget.TOPIC_PRIMER:
+        primer = topic_primers.at_version(db, topic_id=target.id, version=version)
+        return models.VersionOrigin(primer.origin) if primer is not None else None
+    return None
 
 
 def _source_target(
@@ -222,6 +250,7 @@ def _write_artifact(
     origin: models.VersionOrigin,
     instruction: str | None,
     derived_from: int | None,
+    hands_back: bool,
 ) -> int:
     kind = _ARTIFACT_KINDS[target.kind]
     source = db.get_one(models.Source, target.id)
@@ -248,6 +277,7 @@ def _write_artifact(
         origin=origin,
         derived_from_id=derived.id if derived is not None else None,
         instruction=instruction,
+        hands_back=hands_back,
     )
     jobs.enqueue_embed(db, user_id=source.user_id, item_kind=models.SearchItemKind.SOURCE, item_id=source.id)
     return artifact.version

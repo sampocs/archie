@@ -102,7 +102,15 @@ def save_take(db: orm.Session, *, user: models.User, payload: dict[str, object])
     take.title = title
     if makes_version:
         text = _VersionText(body=None if parsed.clean else body, raw_body=body, cleaned=parsed.clean)
-        _add_version(db, take=take, version_id=parsed.version_id, text=text)
+        takes.add_version(
+            db,
+            take=take,
+            version_id=parsed.version_id,
+            body=text.body,
+            raw_body=text.raw_body,
+            cleaned=text.cleaned,
+            origin=models.VersionOrigin.OWNER,
+        )
     changes.touch(take)
     return None
 
@@ -150,9 +158,17 @@ def restore_take_version(db: orm.Session, *, user: models.User, payload: dict[st
         return _ID_EXISTS
 
     # A version replaced while its own cleanup was still running may have no body yet; its raw text stands in.
-    body = earlier.body if earlier.body is not None else earlier.raw_body
+    body = takes.shown_body(earlier)
     text = _VersionText(body=body, raw_body=earlier.raw_body, cleaned=earlier.cleaned)
-    _add_version(db, take=take, version_id=parsed.version_id, text=text)
+    takes.add_version(
+        db,
+        take=take,
+        version_id=parsed.version_id,
+        body=text.body,
+        raw_body=text.raw_body,
+        cleaned=text.cleaned,
+        origin=models.VersionOrigin.RESTORE,
+    )
     changes.touch(take)
     return None
 
@@ -178,26 +194,6 @@ def retry_take_cleanup(db: orm.Session, *, user: models.User, payload: dict[str,
     version.clean_failed = False
     takes.enqueue_step(db, version=version, kind=models.JobKind.CLEAN_TAKE)
     return None
-
-
-def _add_version(db: orm.Session, *, take: models.Take, version_id: uuid.UUID, text: _VersionText) -> None:
-    """Make `text` the take's next version and queue its next step: the cleanup when it has no body, else its cards."""
-    take.current_version += 1
-    version = models.TakeVersion(
-        id=version_id,
-        user_id=take.user_id,
-        take_id=take.id,
-        version=take.current_version,
-        body=text.body,
-        raw_body=text.raw_body,
-        cleaned=text.cleaned,
-        change_seq=changes.next_change_seq(),
-    )
-    db.add(version)
-    db.flush()
-
-    step = models.JobKind.CLEAN_TAKE if text.body is None else models.JobKind.TAKE_CARDS
-    takes.enqueue_step(db, version=version, kind=step)
 
 
 def _save_makes_version(current: models.TakeVersion | None, *, body: str, clean: bool) -> bool:

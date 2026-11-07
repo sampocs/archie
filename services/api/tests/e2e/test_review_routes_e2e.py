@@ -127,6 +127,10 @@ def test_a_care_note_rewrites_the_answer_and_is_remembered(
     pulled = _pulled_card(authed, card.id)
     assert pulled["answer"] == returned["answer"]
     assert pulled["change_seq"] > before["change_seq"]
+    card_versions = [row for row in _rows(authed)["card_versions"] if row["card_id"] == str(card.id)]
+    assert [(row["version"], row["origin"]) for row in card_versions] == [(1, "archie"), (2, "care")]
+    assert card_versions[0]["answer"] == ANSWER and card_versions[1]["answer"] == returned["answer"]
+    assert pulled["version"] == 2
 
     [preference] = _preferences(live_stack)
     assert (preference.kind, preference.note, preference.card_id) == (
@@ -344,9 +348,13 @@ def _seed_card(live_stack: LiveStack, *, user_id: int, deleted: bool = False) ->
         return card
 
 
+def _rows(authed: httpx.Client) -> dict[str, list[dict[str, Any]]]:
+    rows: dict[str, list[dict[str, Any]]] = authed.get("/sync/pull", params={"since": 0}).json()["rows"]
+    return rows
+
+
 def _pulled_card(authed: httpx.Client, card_id: uuid.UUID) -> dict[str, Any]:
-    rows = authed.get("/sync/pull", params={"since": 0}).json()["rows"]["cards"]
-    return next(row for row in rows if row["id"] == str(card_id))
+    return next(row for row in _rows(authed)["cards"] if row["id"] == str(card_id))
 
 
 def _llm_calls(live_stack: LiveStack) -> list[models.LlmCall]:

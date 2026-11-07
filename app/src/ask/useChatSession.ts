@@ -12,7 +12,8 @@ import type { AboutKind, MessageRow } from "./types";
 export type { PendingQuestion };
 
 /**
- * Sending a question and showing its answer as it streams. The overlay stays until the pulled rows hold the question
+ * Sending a question and showing its answer as it streams. Leaving the chat lets the stream run on: the server saves
+ * the answer and the next pull brings it. The overlay stays until the pulled rows hold the question
  * and its answer (or, for a failed stream, a later assistant row), and the returned `pending` is already null on the
  * render where they land, so nothing flickers or shows twice.
  */
@@ -24,9 +25,15 @@ export function useChatSession(input: {
   const { sessionKey } = useSession();
   const [overlay, setOverlay] = useState<PendingQuestion | null>(null);
   const pending = overlay && !handedOver(overlay, input.messages) ? overlay : null;
-  const controller = useRef<AbortController | null>(null);
+  // Leaving the chat does not abort the stream: the server finishes and saves the answer, and the next pull brings it.
+  const mounted = useRef(true);
 
-  useEffect(() => () => controller.current?.abort(), []);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   // Drop the overlay's state once the pulled rows have taken over (`pending` already hides it during that render).
   useEffect(() => {
@@ -40,17 +47,19 @@ export function useChatSession(input: {
       if (!question || !sessionKey || (pending && !pending.live.failed)) return;
 
       const userMessageId = randomUUID();
-      const update = (change: (live: LiveAnswer) => LiveAnswer) =>
-        setOverlay((current) => (current && current.userMessageId === userMessageId ? { ...current, live: change(current.live) } : current));
+      const update = (change: (live: LiveAnswer) => LiveAnswer) => {
+        if (!mounted.current) return;
+        setOverlay((current) =>
+          current && current.userMessageId === userMessageId ? { ...current, live: change(current.live) } : current,
+        );
+      };
       setOverlay({ userMessageId, text: question, webSearch, live: EMPTY_LIVE });
-      controller.current = new AbortController();
 
       streamAnswer({
         conversationId: input.conversationId,
         // The server reads `about` only when this question creates the chat.
         body: { user_message_id: userMessageId, text: question, web_search: webSearch, about: input.messages.length === 0 ? input.about : null },
         sessionKey,
-        signal: controller.current.signal,
         onEvent: (event) => update((live) => applyEvent(live, event)),
       })
         .then(() => update(endOfStream))

@@ -16,12 +16,13 @@ from __future__ import annotations
 import contextlib
 import json
 import uuid
-from collections.abc import Generator, Iterator
+from collections.abc import AsyncGenerator, Generator, Iterator
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
 import anthropic
+import anyio.to_thread
 import httpx
 import sqlalchemy
 import sqlalchemy.exc
@@ -147,6 +148,22 @@ def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, 
 
     message_id = _save(engine, request=request, progress=progress, failed=False)
     yield Event(name=EventName.DONE, data={"message_id": str(message_id)}).sse()
+
+
+async def stream_async(engine: sqlalchemy.Engine, request: AnswerRequest) -> AsyncGenerator[str, None]:
+    """`stream` for the event loop: each event is pulled on a worker thread, and closing this closes `stream`.
+
+    Starlette's own sync-iterator adapter never closes the generator, so a hang-up would save the unfinished answer
+    only at garbage collection, on the event loop's thread. Closing it here runs that save on a worker thread, now.
+    """
+    generator = stream(engine, request)
+    done = object()
+    try:
+        while (event := await anyio.to_thread.run_sync(next, generator, done)) is not done:
+            assert isinstance(event, str)
+            yield event
+    finally:
+        await anyio.to_thread.run_sync(generator.close)
 
 
 def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress) -> Generator[Event, None, None]:

@@ -17,7 +17,7 @@ import fastapi
 import httpx
 import pydantic
 import sqlalchemy
-from archie_db import card_rows, changes, models
+from archie_db import card_rows, changes, models, versions
 from archie_llm import llm, speech
 from archie_shared import config, logging
 from fastapi.routing import APIRoute
@@ -226,9 +226,16 @@ def care(
     # The card may have been dropped while the model worked, so it is read again under the user's write lock.
     changes.lock_user_writes(db, user.id)
     live_card = _card_or_404(db, user=user, card_id=card_id)
-    live_card.answer = rewritten.answer
-    live_card.updated_at = sqlalchemy.func.now()
-    live_card.change_seq = changes.next_change_seq()
+
+    # The rewrite is the card's next version, so the answer it replaces can be restored.
+    versions.write(
+        db,
+        target=versions.Target(kind=models.EditTarget.CARD, id=live_card.id),
+        content={versions.QUESTION_KEY: live_card.question, versions.ANSWER_KEY: rewritten.answer},
+        origin=models.VersionOrigin.CARE,
+        instruction=body.note,
+        derived_from=None,
+    )
     db.add(
         models.CardPreference(
             user_id=user.id, card_id=live_card.id, kind=models.CardPreferenceKind.CARE, note=body.note

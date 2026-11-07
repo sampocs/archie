@@ -19,7 +19,7 @@ from collections.abc import Callable, Iterator
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import card_rows, changes, jobs, models, pipeline, session
+from archie_db import card_rows, changes, jobs, models, pipeline, session, versions
 from archie_llm import llm
 from archie_shared import config
 from archie_shared.domains import Domain
@@ -639,6 +639,43 @@ def test_preferences_block_lists_each_note_in_order() -> None:
     assert block.startswith("\n\n<card_preferences>\n")
     expected_lines = f"- cares about: {CARE_NOTE}\n- doesn't want cards like: {DROP_QUESTION}"
     assert block.endswith(f"{expected_lines}\n</card_preferences>")
+
+
+@pytest.mark.usefixtures("no_embed_jobs")
+def test_reanalyzing_keeps_an_ask_edit_current_and_still_replaces_the_cards(
+    engine: sqlalchemy.Engine, replay: Replay
+) -> None:
+    """After an applied Ask edit, analyze's version 3 is stored but not current; its cards replace version 1's."""
+    source_id = _add_source(engine, text=GREATWORK_TEXT)
+    _enqueue(engine, source_id, models.JobKind.ANALYZE)
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+    first_cards = {card.id for card in _live_cards(engine, source_id)}
+
+    with sqlalchemy.orm.Session(engine) as db:
+        source = db.get_one(models.Source, source_id)
+        changes.lock_user_writes(db, source.user_id)
+        target = versions.Target(kind=models.EditTarget.SUMMARY, id=source_id)
+        edited = {**versions.current(db, target=target).content, "gist": "The owner's own gist."}
+        versions.write(
+            db, target=target, content=edited, origin=models.VersionOrigin.CHAT_EDIT, instruction="Mine",
+            derived_from=1,
+        )  # fmt: skip
+        db.commit()
+
+    _enqueue(engine, source_id, models.JobKind.ANALYZE)
+    with replay("analyze_greatwork"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    summaries = _artifacts(engine, source_id, models.ArtifactKind.SUMMARY)
+    assert [(summary.version, summary.is_current, summary.origin) for summary in summaries] == [
+        (1, False, "archie"),
+        (2, True, "chat_edit"),
+        (3, False, "archie"),
+    ]
+    live = _live_cards(engine, source_id)
+    assert live and all(card.artifact_id == summaries[2].id for card in live)
+    assert not first_cards & {card.id for card in live}
 
 
 def _add_source(

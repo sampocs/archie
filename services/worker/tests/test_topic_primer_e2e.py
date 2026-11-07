@@ -14,11 +14,10 @@ from collections.abc import Callable, Iterator, Sequence
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, jobs, models, session, user_topics
+from archie_db import changes, jobs, models, session, topic_primers, user_topics
 from archie_llm import llm
 from archie_testing import recording
 from archie_worker import handlers, loop, prompts
-from archie_worker.handlers import topic_primer
 
 pytestmark = pytest.mark.postgres
 
@@ -211,7 +210,9 @@ def _write(engine: sqlalchemy.Engine, topic_id: uuid.UUID, markdown: str) -> int
     with sqlalchemy.orm.Session(engine) as db:
         topic = db.get_one(models.Topic, topic_id)
         changes.lock_user_writes(db, topic.user_id)
-        primer = topic_primer.write_topic_primer(db, topic=topic, markdown=markdown, model=llm.SONNET)
+        primer = topic_primers.write(
+            db, topic=topic, markdown=markdown, model=llm.SONNET, prompt_version=prompts.TOPIC_PRIMER_PROMPT_VERSION
+        )
         db.commit()
         return primer.change_seq
 

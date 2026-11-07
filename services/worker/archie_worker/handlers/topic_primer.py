@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import card_rows, changes, jobs, models, user_topics
+from archie_db import card_rows, changes, jobs, models, topic_primers, user_topics
 from archie_llm import llm
 
 from archie_worker import keys, prompts
@@ -57,45 +57,15 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     if topic.removed_at is not None or topic.merged_into_id is not None:
         return
 
-    primer = write_topic_primer(db, topic=topic, markdown=output.markdown, model=completion.model)
+    primer = topic_primers.write(
+        db,
+        topic=topic,
+        markdown=output.markdown,
+        model=completion.model,
+        prompt_version=prompts.TOPIC_PRIMER_PROMPT_VERSION,
+    )
     jobs.enqueue_embed(db, user_id=topic.user_id, item_kind=models.SearchItemKind.TOPIC_PRIMER, item_id=primer.id)
     _replace_foundation_cards(db, topic=topic, primer=primer, cards=output.foundation_cards)
-
-
-def write_topic_primer(
-    db: sqlalchemy.orm.Session, *, topic: models.Topic, markdown: str, model: str
-) -> models.TopicPrimer:
-    """Add the next version as current; the previous current one stays, no longer current. Caller holds the lock."""
-    previous = db.scalars(
-        sqlalchemy.select(models.TopicPrimer).where(
-            models.TopicPrimer.topic_id == topic.id, models.TopicPrimer.is_current
-        )
-    ).one_or_none()
-    if previous is not None:
-        # Flushed first so the partial unique index never sees two current rows.
-        previous.is_current = False
-        previous.change_seq = changes.next_change_seq()
-        db.flush()
-
-    latest_version = db.scalar(
-        sqlalchemy.select(sqlalchemy.func.max(models.TopicPrimer.version)).where(
-            models.TopicPrimer.topic_id == topic.id
-        )
-    )
-    primer = models.TopicPrimer(
-        id=uuid.uuid4(),
-        user_id=topic.user_id,
-        topic_id=topic.id,
-        version=(latest_version or 0) + 1,
-        is_current=True,
-        content={"markdown": markdown},
-        model=model,
-        prompt_version=prompts.TOPIC_PRIMER_PROMPT_VERSION,
-        change_seq=changes.next_change_seq(),
-    )
-    db.add(primer)
-    db.flush()
-    return primer
 
 
 def _replace_foundation_cards(
@@ -131,12 +101,7 @@ def _prepare(db: sqlalchemy.orm.Session, job: models.Job) -> _PrimerRun | None:
     if topic is None or topic.removed_at is not None or topic.merged_into_id is not None:
         return None
 
-    has_current_primer = db.scalar(
-        sqlalchemy.select(
-            sqlalchemy.exists().where(models.TopicPrimer.topic_id == topic.id, models.TopicPrimer.is_current)
-        )
-    )
-    if has_current_primer:
+    if topic_primers.current(db, topic_id=topic.id) is not None:
         return None
 
     api_key = keys.anthropic_key_for(db.get_one(models.User, topic.user_id))

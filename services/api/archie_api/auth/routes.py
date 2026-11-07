@@ -24,6 +24,8 @@ class MeView(pydantic.BaseModel):
     ingest_address: str | None
     # False until the user finished the topic picker; the app shows the picker while it is false.
     topics_chosen: bool
+    # Whether the owner's keys pay for this user's Ask and meaning search.
+    is_whitelisted: bool
 
 
 @router.get("/me")
@@ -40,7 +42,12 @@ def me(
 
     domain = settings.ingest_email_domain
     ingest_address = f"{user.ingest_token}@{domain}" if domain else None
-    return MeView(user_id=user.id, ingest_address=ingest_address, topics_chosen=user.topics_chosen_at is not None)
+    return MeView(
+        user_id=user.id,
+        ingest_address=ingest_address,
+        topics_chosen=user.topics_chosen_at is not None,
+        is_whitelisted=user.is_whitelisted,
+    )
 
 
 class AppleSignInRequest(pydantic.BaseModel):

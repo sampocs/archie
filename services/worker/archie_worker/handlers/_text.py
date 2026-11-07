@@ -23,7 +23,8 @@ def store_text(
     title: str | None,
     image_url: str | None = None,
 ) -> None:
-    """Store `text_content` as the current `text` artifact, fill an empty title and image, and queue its next steps.
+    """Store `text_content` as the current `text` artifact, fill an empty title and image, and queue its next steps
+    and its search passages.
 
     Takes the user's write lock and re-reads the source first: the user may have deleted it during the outside call,
     in which case nothing is written.
@@ -36,6 +37,7 @@ def store_text(
     )
     _set_title_if_empty(source, title=title)
     _set_image_if_empty(source, image_url=image_url)
+    jobs.enqueue_embed(db, user_id=source.user_id, item_kind=models.SearchItemKind.SOURCE, item_id=source.id)
     pipeline.enqueue_steps(db, source=source, steps=pipeline.steps_after_text(models.SourceKind(source.kind)))
 
 

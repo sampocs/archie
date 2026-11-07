@@ -150,6 +150,7 @@ export default function TopicScreen() {
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
         followMerge
+        askPrimer={primer ? { id: primer.id, title: topic.name } : undefined}
       />
     </Screen>
   );

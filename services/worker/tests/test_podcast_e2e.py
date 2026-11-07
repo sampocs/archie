@@ -74,7 +74,7 @@ def test_an_apple_episode_with_a_published_transcript_becomes_timed_text(
     assert (source.image_url or "").startswith("https://")
     assert media.APPLE_TRANSCRIPT_EPISODE_TITLE in source.title
     assert source.processing == models.ProcessingStatus.PROCESSING
-    assert _queued_kinds(engine) == [models.JobKind.ANALYZE, models.JobKind.PRIMER]
+    assert _queued_kinds(engine) == [models.JobKind.EMBED, models.JobKind.ANALYZE, models.JobKind.PRIMER]
 
 
 def test_a_spotify_episode_without_a_transcript_queues_transcription_and_remembers_the_show(

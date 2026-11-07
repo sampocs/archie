@@ -1,0 +1,90 @@
+# Ask: finish an article, ask about it on the Ask tab, see a YOUR LIBRARY section, Make a card, and find the chat in
+# the list. Needs the owner's keys in .env (analyze, embeddings, Sonnet 5.5 and one Haiku draft: a few cents); local
+# backend only; run it through `make maestro-ask`.
+appId: com.sampocs.archie
+---
+- runFlow: login.yaml
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "library-add"
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "library-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://paulgraham.com/greatwork.html"
+- tapOn:
+    id: "intent-finished"
+- tapOn:
+    id: "add-save"
+- extendedWaitUntil:
+    visible: ".*How to Do Great Work.*"
+    timeout: 90000
+# Give analyze and embed time to index the summary (the Library row's status settles when analyze is done).
+- extendedWaitUntil:
+    notVisible: ".*Processing.*"
+    timeout: 120000
+- tapOn:
+    id: "tab-ask"
+- tapOn:
+    id: "ask-composer-input"
+- inputText: "What does Paul Graham say about choosing what to work on, from what I saved?"
+- tapOn:
+    id: "ask-send"
+- extendedWaitUntil:
+    visible:
+      id: "chat-screen"
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: "answer-section-library"
+    timeout: 120000
+# The button sits under the answer, below the fold; it appears once the answer completes.
+- scrollUntilVisible:
+    element:
+      id: "answer-make-card-.*"
+    direction: DOWN
+    timeout: 60000
+- tapOn:
+    id: "answer-make-card-.*"
+- extendedWaitUntil:
+    visible:
+      id: "card-draft-question"
+    timeout: 5000
+# The draft fills both fields; Save is enabled once it has.
+- extendedWaitUntil:
+    visible:
+      id: "card-draft-save"
+      enabled: true
+    timeout: 30000
+- tapOn:
+    id: "card-draft-save"
+- extendedWaitUntil:
+    notVisible:
+      id: "card-draft-question"
+    timeout: 10000
+- assertVisible: "Card added to Review"
+- tapOn:
+    id: "screen-back"
+- extendedWaitUntil:
+    visible:
+      id: "ask-row-.*"
+    timeout: 15000

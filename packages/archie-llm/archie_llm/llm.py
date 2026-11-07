@@ -1,5 +1,8 @@
 """Every model call goes through `complete`: it falls back to a second model and records each call's cost.
 
+Calls made outside `complete` (the chat's tool loop, OpenAI embeddings) record their cost with `record_call` and
+`record_embedding_call`.
+
 Shared by the worker and the API.
 """
 
@@ -22,12 +25,17 @@ SONNET = "claude-sonnet-5-5"
 OPUS = "claude-opus-5-5"
 
 PROVIDER = "anthropic"
+OPENAI_PROVIDER = "openai"
 CORRECTIONS_STEP = "corrections"
 GRADE_STEP = "grade"
 CARE_STEP = "care"
 ANSWER_TRANSCRIPTION_STEP = "transcribe_answer"
+EMBED_STEP = "embed"
+ASK_STEP = "ask"
+CARD_DRAFT_STEP = "card_draft"
 GROQ_WHISPER = "whisper-large-v3-turbo"
 OPENAI_TRANSCRIBE = "gpt-4o-mini-transcribe"
+EMBEDDING_MODEL = "text-embedding-3-small"
 REQUEST_TIMEOUT_SECONDS = 300
 
 # Statuses from this one up (including Anthropic's 529 "overloaded") are the service's fault: the fallback gets a turn.
@@ -63,6 +71,7 @@ NEWS_QUIZ_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 # Writing quality matters for a cleaned-up take; its cards are short and checked against the owner's own text.
 CLEAN_TAKE_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 TAKE_CARDS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+CARD_DRAFT_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 
 # For short, latency-sensitive calls where reasoning would only add delay.
 THINKING_DISABLED: dict[str, str] = {"type": "disabled"}
@@ -79,7 +88,11 @@ _PRICES: dict[str, _Price] = {
     HAIKU: _Price(input_per_million=Decimal("0.10"), output_per_million=Decimal("0.50")),
     SONNET: _Price(input_per_million=Decimal("2"), output_per_million=Decimal("10")),
     OPUS: _Price(input_per_million=Decimal("4"), output_per_million=Decimal("20")),
+    EMBEDDING_MODEL: _Price(input_per_million=Decimal("0.02"), output_per_million=Decimal("0")),
 }
+
+# USD per web search Anthropic's server tool runs ($10 per 1,000).
+WEB_SEARCH_USD = Decimal("0.01")
 
 
 # USD per hour of audio.
@@ -176,7 +189,7 @@ def complete(
             _logger.warning("%s failed for %s, trying %s: %r", model, context.step, models.fallback, error)
             continue
 
-        _record_call(engine, context=context, model=model, response=response)
+        record_call(engine, context=context, model=model, response=response)
 
         if response.stop_reason not in _UNUSABLE_STOP_REASONS:
             return Completion(model=model, text=_text_of(response))
@@ -213,17 +226,16 @@ def record_audio_call(
         db.commit()
 
 
-def _is_service_failure(error: anthropic.APIStatusError | anthropic.APIConnectionError) -> bool:
-    if isinstance(error, anthropic.APIConnectionError):
-        return True
-    return error.status_code >= _FIRST_SERVER_ERROR_STATUS
-
-
-def _record_call(
+def record_call(
     engine: sqlalchemy.Engine, *, context: CallContext, model: str, response: anthropic.types.Message
 ) -> None:
-    # Committed on its own so the spend is kept even if the step fails afterwards.
+    """Record one answered call in its own session, so the spend is kept even if the step fails afterwards.
+
+    Web searches the call ran (Anthropic's server tool) are added at `WEB_SEARCH_USD` each.
+    """
     usage = response.usage
+    searches = usage.server_tool_use.web_search_requests if usage.server_tool_use is not None else 0
+    token_cost = cost_usd(model=model, input_tokens=usage.input_tokens, output_tokens=usage.output_tokens)
     row = models.LlmCall(
         user_id=context.user_id,
         source_id=context.source_id,
@@ -233,12 +245,37 @@ def _record_call(
         model=model,
         input_tokens=usage.input_tokens,
         output_tokens=usage.output_tokens,
-        cost_usd=cost_usd(model=model, input_tokens=usage.input_tokens, output_tokens=usage.output_tokens),
+        cost_usd=token_cost + WEB_SEARCH_USD * searches,
         stop_reason=response.stop_reason,
     )
     with sqlalchemy.orm.Session(engine) as db:
         db.add(row)
         db.commit()
+
+
+def record_embedding_call(engine: sqlalchemy.Engine, *, context: CallContext, tokens: int) -> None:
+    """Record one OpenAI embeddings request, billed by its input tokens."""
+    row = models.LlmCall(
+        user_id=context.user_id,
+        source_id=context.source_id,
+        job_id=context.job_id,
+        step=str(context.step),
+        provider=OPENAI_PROVIDER,
+        model=EMBEDDING_MODEL,
+        input_tokens=tokens,
+        output_tokens=0,
+        cost_usd=cost_usd(model=EMBEDDING_MODEL, input_tokens=tokens, output_tokens=0),
+        stop_reason=None,
+    )
+    with sqlalchemy.orm.Session(engine) as db:
+        db.add(row)
+        db.commit()
+
+
+def _is_service_failure(error: anthropic.APIStatusError | anthropic.APIConnectionError) -> bool:
+    if isinstance(error, anthropic.APIConnectionError):
+        return True
+    return error.status_code >= _FIRST_SERVER_ERROR_STATUS
 
 
 def _text_of(response: anthropic.types.Message) -> str:

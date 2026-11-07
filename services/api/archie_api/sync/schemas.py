@@ -52,6 +52,7 @@ class ActionType(StrEnum):
     UPDATE_TAKE = "update_take"
     RESTORE_TAKE_VERSION = "restore_take_version"
     RETRY_TAKE_CLEANUP = "retry_take_cleanup"
+    DELETE_CONVERSATION = "delete_conversation"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 
@@ -145,6 +146,8 @@ class CardOut(pydantic.BaseModel):
     brief_id: uuid.UUID | None
     take_id: uuid.UUID | None
     take_version_id: uuid.UUID | None
+    conversation_id: uuid.UUID | None
+    message_id: uuid.UUID | None
     kind: str
     question: str
     answer: str
@@ -276,6 +279,39 @@ class TakeVersionOut(pydantic.BaseModel):
     change_seq: int
 
 
+class ConversationOut(pydantic.BaseModel):
+    """A saved Ask chat as the phone stores it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    title: str
+    about_kind: str | None
+    about_source_id: uuid.UUID | None
+    about_topic_primer_id: uuid.UUID | None
+    about_take_id: uuid.UUID | None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    deleted_at: datetime.datetime | None
+    change_seq: int
+
+
+class MessageOut(pydantic.BaseModel):
+    """One chat message as the phone stores it; `segments` is null for a question."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    role: str
+    text: str
+    segments: list[dict[str, Any]] | None
+    web_search: bool
+    status: str
+    created_at: datetime.datetime
+    change_seq: int
+
+
 class PulledRows(pydantic.BaseModel):
     """Changed rows by table."""
 
@@ -289,6 +325,8 @@ class PulledRows(pydantic.BaseModel):
     collection_items: list[CollectionItemOut]
     takes: list[TakeOut]
     take_versions: list[TakeVersionOut]
+    conversations: list[ConversationOut]
+    messages: list[MessageOut]
 
 
 class PullResponse(pydantic.BaseModel):

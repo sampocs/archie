@@ -1,0 +1,570 @@
+interactions:
+- request:
+    body: '{"max_tokens":4000,"messages":[{"role":"user","content":"What is the Fed''s
+      current target range for the federal funds rate?"}],"model":"claude-sonnet-5-5","output_config":{"effort":"medium"},"system":"You
+      are Archie''s Ask, answering the owner''s questions from their own library first.
+      Archie is their personal library of the articles, newsletters, podcasts and
+      videos they saved, with Archie''s summaries and primers of them, topic primers,
+      and the owner''s own takes.\n\nHow to answer:\n- Search the owner''s library
+      with search_library first, unless the question plainly isn''t about anything
+      they could have saved (small talk, arithmetic). Search again with other words
+      if the first search finds nothing useful.\n- Base library claims only on search
+      results, so they carry citations.\n- Then add background knowledge only where
+      the library doesn''t cover the question, in its own paragraph and without citations.
+      Never present background knowledge as coming from the library.\n- Search the
+      web for recent or fast-changing facts (prices, office holders, this year''s
+      numbers), when the owner asks you to look something up, and whenever this prompt
+      says a web search is required. Base web claims only on web results.\n- Keep
+      answers short and in plain language: a few short paragraphs at most. Define
+      a technical term the first time you use it. No headings, and no bullet lists
+      unless the owner asks for a list.\n- If neither the library nor the web has
+      the answer and you don''t know it, say so plainly.\n\nA web search is required
+      for this question: search the web before you answer.","tools":[{"name":"search_library","description":"Search
+      the owner''s saved library: article and newsletter text, podcast and video transcripts,
+      Archie''s summaries and primers of them, topic primers, and the owner''s own
+      takes. Call this first for any question the owner''s reading could bear on.
+      Returns up to 8 passages to cite.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"What
+      to look for, in a few words."}},"required":["query"],"additionalProperties":false},"strict":true,"eager_input_streaming":true},{"type":"web_search_20260209","name":"web_search","max_uses":3,"allowed_callers":["direct"]}],"thinking":{"type":"between_tools"},"tool_choice":{"type":"auto"},"stream":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '2301'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-helper-method:
+      - stream
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '120'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-stream-helper:
+      - messages
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: 'event: message_start
+
+        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011CgpDBQ33cErME5dNCyenc","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":3402,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}              }
+
+
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}    }
+
+
+        event: ping
+
+        data: {"type": "ping"}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"I"}
+        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"''ll
+        check"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        the web"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        for the current fig"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ure,
+        and"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        the library in"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        case you"}               }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"''ve
+        saved anything on it"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}      }
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":0  }
+
+
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":1,"content_block":{"type":"server_tool_use","id":"srvtoolu_011YEo6Tz1pAi3xE6ZgoC3Gf","name":"web_search","input":{}}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"query"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\":
+        \"Fed"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        federa"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"l
+        funds"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        rate t"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"arget
+        r"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ange
+        cu"} }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"rrent\"}"}             }
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":1         }
+
+
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"toolu_01Lm9FKbE6YePaXtkQGCbeZM","name":"search_library","input":{},"caller":{"type":"direct"}}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":""}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"query\":
+        \"federal funds r"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"ate
+        target range Fed"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"\"}"}       }
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":2    }
+
+
+        event: message_delta
+
+        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":3402,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":139,"output_tokens_details":{"thinking_tokens":0}}       }
+
+
+        event: message_stop
+
+        data: {"type":"message_stop"       }
+
+
+        '
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9998000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-07T20:37:31Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-07T20:37:31Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-07T20:37:31Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11998000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-07T20:37:31Z'
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a56f22e6b86270c4-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '4804'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Sat, 07 Nov 2026 20:37:32 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=225
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-44ac0aa3e1d841a3457e913fc4b8f218-9758cd696216c7a8-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: '{"max_tokens":4000,"messages":[{"role":"user","content":"What is the Fed''s
+      current target range for the federal funds rate?"},{"role":"assistant","content":[{"text":"I''ll
+      check the web for the current figure, and the library in case you''ve saved
+      anything on it.","type":"text"},{"id":"srvtoolu_011YEo6Tz1pAi3xE6ZgoC3Gf","input":{"query":"Fed
+      federal funds rate target range current"},"name":"web_search","type":"server_tool_use"},{"id":"toolu_01Lm9FKbE6YePaXtkQGCbeZM","caller":{"type":"direct"},"input":{"query":"federal
+      funds rate target range Fed"},"name":"search_library","type":"tool_use"}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01Lm9FKbE6YePaXtkQGCbeZM","content":[{"type":"text","text":"Nothing
+      in the owner''s library matched."}]}]}],"model":"claude-sonnet-5-5","output_config":{"effort":"medium"},"system":"You
+      are Archie''s Ask, answering the owner''s questions from their own library first.
+      Archie is their personal library of the articles, newsletters, podcasts and
+      videos they saved, with Archie''s summaries and primers of them, topic primers,
+      and the owner''s own takes.\n\nHow to answer:\n- Search the owner''s library
+      with search_library first, unless the question plainly isn''t about anything
+      they could have saved (small talk, arithmetic). Search again with other words
+      if the first search finds nothing useful.\n- Base library claims only on search
+      results, so they carry citations.\n- Then add background knowledge only where
+      the library doesn''t cover the question, in its own paragraph and without citations.
+      Never present background knowledge as coming from the library.\n- Search the
+      web for recent or fast-changing facts (prices, office holders, this year''s
+      numbers), when the owner asks you to look something up, and whenever this prompt
+      says a web search is required. Base web claims only on web results.\n- Keep
+      answers short and in plain language: a few short paragraphs at most. Define
+      a technical term the first time you use it. No headings, and no bullet lists
+      unless the owner asks for a list.\n- If neither the library nor the web has
+      the answer and you don''t know it, say so plainly.\n\nA web search is required
+      for this question: search the web before you answer.","tools":[{"name":"search_library","description":"Search
+      the owner''s saved library: article and newsletter text, podcast and video transcripts,
+      Archie''s summaries and primers of them, topic primers, and the owner''s own
+      takes. Call this first for any question the owner''s reading could bear on.
+      Returns up to 8 passages to cite.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"What
+      to look for, in a few words."}},"required":["query"],"additionalProperties":false},"strict":true,"eager_input_streaming":true},{"type":"web_search_20260209","name":"web_search","max_uses":3,"allowed_callers":["direct"]}],"thinking":{"type":"between_tools"},"tool_choice":{"type":"auto"},"stream":true}'
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '2947'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-helper-method:
+      - stream
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '120'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-stream-helper:
+      - messages
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: "event: message_start\ndata: {\"type\":\"message_start\",\"message\":{\"model\":\"claude-sonnet-5-5\",\"id\":\"msg_011CgpDBZiTKmoMmAwhjpL2s\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[],\"container\":null,\"stop_reason\":null,\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":11144,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":354,\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}
+        }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":0,\"content_block\":{\"type\":\"web_search_tool_result\",\"tool_use_id\":\"srvtoolu_011YEo6Tz1pAi3xE6ZgoC3Gf\",\"content\":[{\"type\":\"web_search_result\",\"title\":\"Fed
+        Funds Target Rate\",\"url\":\"https://www.fedprimerate.com/fedfundsrate/\",\"encrypted_content\":\"EqQICioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDAlD8cl9OuJA1gmNFBoMU8ddcHhdAX3V2dShIjDlk9mNc+vJTJ2eQCZ1NXLkY9F/NuioKsdBqmGC4u4XSyqFPi8tRwGJw52D8djBNusqpwexVYYP0SbbRD0Q0HmNCQFmSNm+Z/CqoMmZZYGEgPKSk67EDecQaTJKKKdGeCyTkcUAaj50nQmmso6n0pvY6EvOr1eKKYrRHzoXhVDNpbjrxS00ogj0V1VDOgLCXmx0JXVXjkGNzozNemQEWWchijp2m+v9A0c9+ekNfWawg9xF1eX286dzWtx5CNij/ynsTHsL/oWjGsuTy7AI5LTrXwxgu9QOrzj4mbDhG+fFmmvRK3MovRrlsWV+v6LbWXVReKOYvd5aU2r1GQ0yjxrQEI5sKpw9E9MUqdohDDLT8ZiNjxMFk8ygBQabTegLDkGd06UZkmBd0NIKHWoSPyu81xYaQbuOpuSBdZrb8pYjS/5DdJKFU9aQQTXmubnQOETHHgOk3yrlGDbxJPVwpn2/0WRLob9mHJGiUdhhTRYPgvz1p2b7a76OJbL7hFlDcjF3auGGvnIZg6m0Z7k0Hg4tYGJec19921sNaINAIl6lbr7lsZadGudWQup8knRIktKq/AHINskwlfUbK92OXO657D9cQoFeClELgXx59EEH/UyXeZQKlVWGiR0nIzqmvwYonwLuKaobzV7OdRpW+gZD2tYvHzO/mYEsGLaLWvsu6hC0Cgz9a7cgypvSlLLZlNC93VSQcN6P+oeUh7kTRtn+5qAED0bxY6Dn49TFQUptSDifXT0LxzhOSvwy3GD8pOpapkbciTlJ/H3J6inztK1BSJNQ5cD4ElVWiU1V2ODmCazgDp2zilKBiCTfYj+E/3xuGihoCaaiy0bBm6iLPzGO3kBlkzoy3CB8xExSeOEmCtgrkcS+3Pb0QYUQzwlj3o/XJg0fistHBpUBxFv7EiH4HcBno6de4tnYZVbqsrHxKapfZbOjXpXs+LmrYiT7Cp10VnxNIYKMbTT5MtojCxmU1+hjHMQUFzI02sM+m47FDQdOYc7zSOkzkZXOhdziQyvR/tmKfo+irV8dGjAC7w6tsn7w/NRUw0+G6hgp3AAuNVHWfi1SZUSVOjhE2ZQEf44rPDEfQiNzxGjQrbt0tzBmEbO+64uVTcjJp0+EjvlXShjPyfi+hy/8HKwtTuV6o7YKo325VT6Zvnt22yS2FekEFOO0YFtrkc/4gFRMyJxCxFIS5pWjwpwdcqx9Fjs0wgI1I+81nEjZw5P/wWLeBQ4S5krQeDk9VLXrKtio0dqHJKBqh2zJl6oViQqAW6zk7FSOUqYrGqrNrVO1ViQGKwDbWX+5mHLVqK0BEhgD\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"The
+        Federal Reserve Discount Window\",\"url\":\"https://www.frbdiscountwindow.org/\",\"encrypted_content\":\"Es0ICioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDL06xo6tfCpJJ3SSLhoMhKFJzWKMlgO2pSuXIjCdwCXWT9sTDbW7sDuegwwTyEgACgeybCF7bHsITl2DYegCAp2IUo2SNROsLsETgj0q0AfGqwnLefRFNnMas9UX6ksxH7iMunAiU7Aj3QdYeK1qOTN/uzNNrmZGSz4nkCoMgqLTAv3EMwrqU+0AysOASQMOzFRQs4Kr8MxxbKahy3dOcZh2mdtGp1yR0xvTcpI1Q5UrUbKMGnbbx4Bgw/13iRAMpsWRQAy59ldp/NqOQ5L0TOft+jrQH4vJUKsWyCIUFRkSRame4VTOiJVgTSjjlDETbnbr+Fqn0yYeM+4SIIvdaOtieWBsbr8qIjBzAKuhhs6DX+ULzpZhcgBDNOJucVSSM//mFwfj0o/IeNsrW5NOEQ2IzXUYfqn5+7DVDO8T3TFE/mTI2uh+aiHd8uoz/3nfvo4PapGyjDx9hz2AQxqUW50Iq0Wn0lZo3baBprW/xAOQlsc1JZ3Qd5P7e4sKeLA3z4+/I8qD5c/8OwmvWIZ5wKwCBTvlysjFrd38NmNGpkzhMZctPZsU3FxKP1MbudiCEeQ9pckMd5ERAgGahOBaVd07Jjx1mYiLThG8EHb+N7aAeYC25lSRARkVLy+H9s1vSVV6YdxDdvJ8/R2zgR2rI0TcfimD+aMawcxNc1wBuYMeG9fARLHE7Mzf3F8b0g1rCwtK6Y4Ftl46XiUPOLQwCBoFmzNr/ChETTY2bq0oltTNxV/N7Aq8egbVOvj7ZNEi6wJJia2jyVPHs7cgLO/s1+aLCgECByYRGIJsAT3FWy1lKsbXxbtuFwNiwSiqkUWhHb6p21+Zm7NSs0ke+gSesC/GS67KUzpHeehnFzj2ycWCAhsLEqnPawXEuFGb7iw7XZayHBy+6ZJMUUYjJlQxmO/w78YBMqD78shPZRJY9L7/bkqkcdSeLZME41tVO6Ifvgq2YQw2CzE916A9aNMl0LiMd3baWLOmldkehVGEly7SwV7mMwDSiHRqrcfjzYKCD93RHBf1yogNyMZx6afgewMl+S94KZKhM5LoJJ36bGU3IPWs/kYVZNB0+uaafWcIGrjddwFjJ9j9LnsvBEeTdMJQaMc8JL3To4w/GDfZSoJIJJRnfpi5fBKjY4461I9thbwRAEMlsliy+F5hANV71cdeTl2Wo5RlsCJJ8DfbOKpU84QjmvKAaZxy5cBKJZShA4upyqvw7yb7d4NlZ2OHKTQpN3XhfFQ9zAJZWcdzv2cwDgrq354Um/RcmUeV5SnZggLyH3HbQlrX/jqUgkA688L60NosCUrqi1q3VNIoAW0RQ0NJwWj/ocrqz+gQ6X9S1IbUZbuU/wSjAuX2XF4aTJzoNKsXcVKcuxQ5+Ip5uwYoUHl1y0tvztLamS+U9QRvGAM=\",\"page_age\":\"5157
+        days ago\"},{\"type\":\"web_search_result\",\"title\":\"What Is the Federal
+        Funds Rate? - NerdWallet\",\"url\":\"https://www.nerdwallet.com/banking/news/what-is-the-fed-rate\",\"encrypted_content\":\"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\",\"page_age\":\"10
+        days ago\"},{\"type\":\"web_search_result\",\"title\":\"Minutes of the Federal
+        Open Market Committee\",\"url\":\"https://www.federalreserve.gov/monetarypolicy/fomcminutes20260916.htm\",\"encrypted_content\":\"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\",\"page_age\":\"4
+        days ago\"},{\"type\":\"web_search_result\",\"title\":\"Fed\u2019s Interest
+        Rate Decision: October 28, 2026 - dshort - Advisor Perspectives\",\"url\":\"https://www.advisorperspectives.com/dshort/updates/2026/10/28/feds-interest-rate-decision-october-28-2026\",\"encrypted_content\":\"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\",\"page_age\":\"10
+        days ago\"},{\"type\":\"web_search_result\",\"title\":\"Fed\u2019s December
+        rate path in question as nonfarm payrolls data becomes key factor\",\"url\":\"https://www.kucoin.com/news/flash/fed-s-december-rate-path-in-question-as-nonfarm-payrolls-data-becomes-key-factor\",\"encrypted_content\":\"EvcICioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDHdmUd0ECW+ekg8wahoMrLy0i3W4Fcqo306aIjAgJLRjN06km9tYSk3Jvwu1aNFMeIGxQ4TMfQVBxAkwPXWvXC4R/r6mBtMd3hraLPoq+gf3BZBILE+RgSQyDvwutlAXEE23egP5TDW/WJzlt6AeP5YYpLO/f+SBIMVjfISXCRBebuMCGDCPzAVE/iNAu68O0Akzx4kenBHKIpzmr1EjT/UncIwlucZKBASow0bxqS82ZDEQzy3oTW3hIlT2tT0qp3okY2pCqOz2CvIS0DwdK6a2R7mB030Hjk2dcp/Z3Iptd/MFmm8B6bsTdrvGh2JMg6RsG6gaa9IJMNlss7ypzZOhFaaHjQRXWCXzDJGzw3IT6LkRVwgm0y+xH43bqOfW5TukWP/0AEs23l5SeWS5+JlxGe3/YL60w2ms5qcFZrV6dzEv2Gncl8vX5S9/DAp59lahM6G4GZUoW6OBr7Ik8yrXhkBcv2mD7PTBFG9MwLh1B4hg6Te1K2U68msLRVh2KagLALNZtK6rCdOMnvX0xCj319F6z8JDuHI5aSU3hDOQvxPXuvhx6zT+QFq0QmzXniqVtABBY1hsp/Tf7KPAXPhks/DfP7WWwrJn2FDOkxEeb/hOe/sbyj6JZOjMGPokXW002Vas+HHD2keX8Jo6wIZCteHdiuEErLA/fbPQUkYewjYlWJ/4kYQFvxwOEqLlhnx9/D5Z3DkqeDfW15mrBGlE+0I0tvo/HjPuSzXAC4autev02mNOsT3gbNdesrSPfo6yAbdN05X8QCr1dl+7zj4C2udiCXOdq9s60VGrxVpvkhWms1sf1gXk3uSJ0IH31k0a+0R4w+9Mi/HTel9lnynSb9tQRDJ2K60ukDnlGv/hZepZnIAJuy0rRxnFqpw96LsiKuMO2nuCrrvT64JNy5leGaCh/07eF5SXOvP8KJuucgEJaiDDX3P9l9Al0510lw787e3ZVRFER7HiWJi+ocWeuZ+NSHM5qMT8ie8hJesnT6tlk6U5hOQZMNQxJCX1k9Qq0/IW5Fv1XmSj9XXvtgQzL/0+9+3ywNaA2Psh3xkz/qy6lrRksl75JH5tJ/YbRY3Cpwg9gbJ8uyjx66Z9ycKVkznnCb57mb+5rPUFtz69aK+ag4w5W4vt60od1b5cS9j8EGJskCQKq2qo3r35SqPmjaY0pX4jN33rbQAN6I9p2HkNc7Su1iTTFVmm/8uDTiEmHHvJbGeqFlPVu4Vqc7AIXPWmGFABOg8l2KjeJVEKkafj6qtd26BcAhccVR6R03UMBR1RlldhTWShC+zsBPGqeeNdu4jBegAVeYVdEqKZ80UmCPMWfw8Ng1hsPhgSNbFkkPEfDRWhVeow4LnaU7bjrkLv6T3Y6lU1pv3PSVRlLTDwYWqalFYOu2XOxgGdYZ/gzODMFCTVwkfhyrgfwCoJQSV44lhANmdmhrw+rXhKwmni0rj8Tgh0GAM=\",\"page_age\":\"1
+        days ago\"},{\"type\":\"web_search_result\",\"title\":\"Federal Reserve Board
+        - Federal Reserve issues FOMC statement\",\"url\":\"https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm\",\"encrypted_content\":\"Es8GCioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDLWiynPFxYG664ZkPhoM4MAC4ytp3jabifd8IjBdYpn5FF/JvfBsPNLm1qnOO7OOSx8bl1ST/Rm+f1U9/0akHDCPxSSaJybOV8rlxSIq0gWrEZOljng6BkKE01h84ngSVL5wL1CDvRVXS0zCZzawxMvIy+Wpb7linXzVQ1ghHn85luv/ZsJvzPp5GAOd+1GdSRZSUzmoJhQxuW81jK1UJiTV9byD/XzFrDAyiOaweDbhenKcN/beG/wW9I2vJHs+kDNEBO3SI1htpL91LCMobW/WvXOegZs14G4EsXBn6eedLQ47CE44rudDKV4xkg5nVS5ZgcczyxGa2c4jx+8aFuOWGkCxpOBgvyjLBly/7veojpxUntNlMQNy7VEWh6ApW1oxVngIKK6+DFTE7AisuhUHUDpc7g3Ts18pP217KEdBCIENospFogMnke9QmrndGpMOtOOMLuAYrRdd/ThHW2hxZXKWPNpGyX/dWbFSqHAMgrIjvGOSXc58y0xNgXzklP+Ji8us+rANc4BxwrlP1paJQofFpvvkEzAf/Kh5LC2UaIBvEA8Jb0eXPDMpdOykzzihbz5qdU/FjMQQFtNUad6C3lWJ5lfk2P2ofB54P5ZT/NNqGCSSwpdICW7DQ+6vCAayvRNSNb6H/zNxYG4JX9r02RAKjqmJssQWzY/K2bE0O4aYd225gAeew7eYn7Yt7mmSbPI18+HkL2KHkpqFCoCHE1Y9F6P+0UCb3D2hUnTmJS9Vtu+E9iFBm/7l9iF5qLMMsVnKLfJ0fRkP2ypWEm3riFhegV/qi9olcAbFsWvMWJ/7rHvrWqNn32MeYLGNTzXLTEmjzLuoLxe/ul3Jet0icLVC0JHiQRJnMMmx62SRhgTJoc5dmYj4j15teullwYsf5nnwZAA+ixj/OjzPBiatqFT9OxRPUcNJTJ1X3t+xedi3YMJ/vy3L5tPVUEuih9x9VHrdonHi3SKYrjqK49aDa6nt8ujCIkEu13RsHtB5iaKfdxEjYcCED4uD65aLz2vw5xBTqcd0oKzlQFv2RPR9VkEWMZf1hMl/lObPsyD0mhgD\",\"page_age\":\"10
+        days ago\"},{\"type\":\"web_search_result\",\"title\":\"Fed Rate Dashboard
+        - Current Fed Funds Rate, Target Range & SOFR\",\"url\":\"https://ryanoconnellfinance.com/fed-rate-dashboard/\",\"encrypted_content\":\"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\",\"page_age\":null},{\"type\":\"web_search_result\",\"title\":\"Current
+        Federal Funds Rate 2026 \u2014 Fed Rate History, FOMC Decisions & Impact\",\"url\":\"https://wealthvieu.com/banking/interest-rates/federal-funds-rate/\",\"encrypted_content\":\"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\",\"page_age\":\"18
+        days ago\"},{\"type\":\"web_search_result\",\"title\":\"Dutkowsky Weighs In
+        on Upcoming Interest Rates\",\"url\":\"https://news.syr.edu/2023/01/30/dutkowsky-weighs-in-on-upcoming-interest-rates/\",\"encrypted_content\":\"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\",\"page_age\":null}],\"caller\":{\"type\":\"direct\"}}
+        \            }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":0
+        \     }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":1,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"The
+        Fed's target\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        range for\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        the federal funds rate is\"}         }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        **\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"3.75%
+        to 4.\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"00%**.\"}}\n\nevent:
+        content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":1,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n\\n\"}
+        \           }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":1
+        \             }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":2,\"content_block\":{\"citations\":[],\"type\":\"text\",\"text\":\"\"}}\n\nevent:
+        content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"citations_delta\",\"citation\":{\"type\":\"web_search_result_location\",\"cited_text\":\"The
+        Federal Open Market Committee approved the following statement for release
+        by a 10 \u2013 2 vote: The Committee decided to maintain the target range
+        fo...\",\"url\":\"https://www.federalreserve.gov/newsevents/pressreleases/monetary20261028a.htm\",\"title\":\"Federal
+        Reserve Board - Federal Reserve issues FOMC statement\",\"encrypted_index\":\"Eo8BCioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDCqL4KMFZbxWNNC9ChoMXurJIJLOi+Og/cklIjALb9GBYhapTcMBz3o9O15G/eyqLAeMcY2ROGYKiUiDBkX2AGPqQIOnd55pfXvzVAkqE2K4jBvlHBQRDPwZaUIyz33RCGoYBA==\"}}
+        \       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"The
+        Feder\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"al
+        Open Market Committee\"}               }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        (FOMC) vo\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"ted
+        \"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"10\u2013\"}
+        \          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"2
+        on\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        October\"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        28,\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        2026 to maintain\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        the range\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        at 3-3/4 \"}               }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":2,\"delta\":{\"type\":\"text_delta\",\"text\":\"to
+        4 percent.\"}             }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":2
+        \      }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":3,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":3,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        That\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":3,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        follow\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":3,\"delta\":{\"type\":\"text_delta\",\"text\":\"ed
+        a h\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":3,\"delta\":{\"type\":\"text_delta\",\"text\":\"ike:\"}
+        \          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":3,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        \"}              }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":3
+        }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":4,\"content_block\":{\"citations\":[],\"type\":\"text\",\"text\":\"\"}
+        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"citations_delta\",\"citation\":{\"type\":\"web_search_result_location\",\"cited_text\":\">
+        The Committee decided to raise the target range for the federal funds rate
+        by 1/4 percentage point to 3-3/4 to 4 percent, in support of the Federal ...\",\"url\":\"https://www.federalreserve.gov/monetarypolicy/fomcminutes20260916.htm\",\"title\":\"Minutes
+        of the Federal Open Market Committee\",\"encrypted_index\":\"Eo8BCioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDJe16h/XfPs2VBP/ZBoMeb0nODTY9mzQzQvHIjD0KH811rLJ3CBYaJj7oI59ggoZnRyb+IhooeM3R/5ksUTgGYxZNleLVwZGBdIxPrwqE9Z+sQwSJrFrIFMnOKlDPtqPo9YYBA==\"}}
+        \              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"in\"}
+        \           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        September the\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        Committee raised the range\"}           }\n\nevent: content_block_delta\ndata:
+        {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        by \"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"1/4
+        percentage point\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        to 3-3/4 \"}}\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":4,\"delta\":{\"type\":\"text_delta\",\"text\":\"to
+        4 percent.\"}               }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":4
+        \            }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":5,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":5,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        Before that it had\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":5,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        been at 3.50%\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":5,\"delta\":{\"type\":\"text_delta\",\"text\":\"-\"}
+        \      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":5,\"delta\":{\"type\":\"text_delta\",\"text\":\"3.75%.\\n\\nThe
+        feder\"}       }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":5,\"delta\":{\"type\":\"text_delta\",\"text\":\"al
+        funds rate is \"}   }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":5
+        \         }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":6,\"content_block\":{\"citations\":[],\"type\":\"text\",\"text\":\"\"}
+        \     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":6,\"delta\":{\"type\":\"citations_delta\",\"citation\":{\"type\":\"web_search_result_location\",\"cited_text\":\"The
+        federal funds rate \u2014 or Fed rate \u2014 is the interest rate banks pay
+        one another to borrow or loan money overnight. \",\"url\":\"https://www.nerdwallet.com/banking/news/what-is-the-fed-rate\",\"title\":\"What
+        Is the Federal Funds Rate? - NerdWallet\",\"encrypted_index\":\"Eo8BCioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDOVM7tQAfaNQu32o9BoMi7sao5m0GR6OCxP6IjBppdPeiAF7sTy6TE67W2zgJ9N0shCU1xu6rkzUdAHnDibrsHxZYVHXsHwYSRcYs2EqE3tICyz51I/L6sMgU0cqgBQUqREYBA==\"}}
+        \  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":6,\"delta\":{\"type\":\"text_delta\",\"text\":\"the
+        interest rate\"}          }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":6,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        banks pay one another to bor\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":6,\"delta\":{\"type\":\"text_delta\",\"text\":\"row
+        or loan money overn\"}    }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":6,\"delta\":{\"type\":\"text_delta\",\"text\":\"ight.\"}
+        \         }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":6
+        \            }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":7,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":7,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        The\"}           }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":7,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        Fed sets a range\"}         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":7,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        rather than a single number. \"}        }\n\nevent: content_block_stop\ndata:
+        {\"type\":\"content_block_stop\",\"index\":7              }\n\nevent: content_block_start\ndata:
+        {\"type\":\"content_block_start\",\"index\":8,\"content_block\":{\"citations\":[],\"type\":\"text\",\"text\":\"\"}
+        \            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":8,\"delta\":{\"type\":\"citations_delta\",\"citation\":{\"type\":\"web_search_result_location\",\"cited_text\":\"The
+        effective federal funds rate is 3.88%, showing where overnight bank lending
+        is actually trading inside the target range.\",\"url\":\"https://ryanoconnellfinance.com/fed-rate-dashboard/\",\"title\":\"Fed
+        Rate Dashboard - Current Fed Funds Rate, Target Range & SOFR\",\"encrypted_index\":\"EpABCioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDNFmji6E8nE9rJElLhoMYimbzp/azaEoE/RMIjA/TzD490nVMWLRtF5+B6cyZ9Wqn0ISyrgph+dl35J0adScsUWndcoRu3ZVUVrSdk0qFKiPk9zO+c5MgQIQd1azsV975Nc/GAQ=\"}}
+        \         }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":8,\"delta\":{\"type\":\"text_delta\",\"text\":\"The
+        effective r\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":8,\"delta\":{\"type\":\"text_delta\",\"text\":\"ate,
+        where\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":8,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        over\"}   }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":8,\"delta\":{\"type\":\"text_delta\",\"text\":\"night
+        lending actually trades\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":8,\"delta\":{\"type\":\"text_delta\",\"text\":\",
+        is 3.88%.\"}      }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":8}\n\nevent:
+        content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":9,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \ }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":9,\"delta\":{\"type\":\"text_delta\",\"text\":\"\\n\\n\"}
+        }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":9
+        \   }\n\nevent: content_block_start\ndata: {\"type\":\"content_block_start\",\"index\":10,\"content_block\":{\"citations\":[],\"type\":\"text\",\"text\":\"\"}
+        \            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":10,\"delta\":{\"type\":\"citations_delta\",\"citation\":{\"type\":\"web_search_result_location\",\"cited_text\":\"Analysts
+        suggest a rate hike in December remains possible. \",\"url\":\"https://www.kucoin.com/news/flash/fed-s-december-rate-path-in-question-as-nonfarm-payrolls-data-becomes-key-factor\",\"title\":\"Fed\u2019s
+        December rate path in question as nonfarm payrolls data becomes key factor\",\"encrypted_index\":\"Eo8BCioIFRgCIiRiYzBhMjEyMi1hYjc2LTQwOTMtOWU1Ny1lZGU4MmJkZDgyYWUSDDPn3NmqVCELtwwOPRoMPeF2cIS9azeikAPSIjALU5LVsVlFQo3z5jVEyc46ZUvrRgzPh6hfU9pRfF1ADImLzPA61SJ5DUMW2QU3yJ8qE1EwpM2C67m8bHRY871zDLuzA+AYBA==\"}}
+        \ }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":10,\"delta\":{\"type\":\"text_delta\",\"text\":\"Analysts
+        su\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":10,\"delta\":{\"type\":\"text_delta\",\"text\":\"ggest
+        a rate hike in\"}      }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":10,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        December remains possible.\"}            }\n\nevent: content_block_stop\ndata:
+        {\"type\":\"content_block_stop\",\"index\":10    }\n\nevent: content_block_start\ndata:
+        {\"type\":\"content_block_start\",\"index\":11,\"content_block\":{\"type\":\"text\",\"text\":\"\"}
+        \            }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":11,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        Your library\"}     }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":11,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        had\"} }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":11,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        n\"}        }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":11,\"delta\":{\"type\":\"text_delta\",\"text\":\"othing
+        on this top\"}              }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":11,\"delta\":{\"type\":\"text_delta\",\"text\":\"ic,
+        so ever\"}  }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":11,\"delta\":{\"type\":\"text_delta\",\"text\":\"ything
+        above\"}             }\n\nevent: content_block_delta\ndata: {\"type\":\"content_block_delta\",\"index\":11,\"delta\":{\"type\":\"text_delta\",\"text\":\"
+        comes from the web.\"}             }\n\nevent: content_block_stop\ndata: {\"type\":\"content_block_stop\",\"index\":11
+        \        }\n\nevent: message_delta\ndata: {\"type\":\"message_delta\",\"delta\":{\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"container\":null},\"usage\":{\"input_tokens\":11144,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"output_tokens\":354,\"output_tokens_details\":{\"thinking_tokens\":0},\"server_tool_use\":{\"web_search_requests\":1,\"web_fetch_requests\":0}}
+        \  }\n\nevent: message_stop\ndata: {\"type\":\"message_stop\"          }\n\n"
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9998000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-07T20:37:34Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-07T20:37:34Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-07T20:37:34Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11998000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-07T20:37:34Z'
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a56f22f4de2a70c4-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '36700'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Sat, 07 Nov 2026 20:37:37 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=1023
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-0c631e8e910b49008aca1fb00e47033b-fe25db58c5946da8-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

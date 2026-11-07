@@ -60,5 +60,7 @@ export const topicPrimerRow = (overrides: Partial<TopicPrimerRow>): TopicPrimerR
   openedAt: null,
   snoozedUntil: null,
   createdAt: "2026-11-03T00:00:00Z",
+  origin: "archie",
+  instruction: null,
   ...overrides,
 });

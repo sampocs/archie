@@ -47,6 +47,10 @@ export const artifacts = sqliteTable("artifacts", {
   content: text("content").notNull(),
   isCurrent: integer("is_current").notNull(),
   createdAt: text("created_at").notNull(),
+  // Who made this version: archie, chat_edit or restore (see the versions sheet).
+  origin: text("origin").notNull().default("archie"),
+  // An Ask edit's one-line description.
+  instruction: text("instruction"),
 });
 
 export const cards = sqliteTable("cards", {
@@ -78,6 +82,8 @@ export const cards = sqliteTable("cards", {
   // A card made from an Ask answer: the chat and the answer it came from.
   conversationId: text("conversation_id"),
   messageId: text("message_id"),
+  // The current version; card_versions holds the history once the card has changed.
+  version: integer("version").notNull().default(1),
 });
 
 export const topics = sqliteTable("topics", {
@@ -104,6 +110,8 @@ export const topicPrimers = sqliteTable("topic_primers", {
   openedAt: text("opened_at"),
   snoozedUntil: text("snoozed_until"),
   createdAt: text("created_at").notNull(),
+  origin: text("origin").notNull().default("archie"),
+  instruction: text("instruction"),
 });
 
 export const outbox = sqliteTable("outbox", {
@@ -220,6 +228,8 @@ export const takeVersions = sqliteTable("take_versions", {
   // Clean it up gave up: body holds the raw text and the page offers Try again.
   cleanFailed: integer("clean_failed").notNull().default(0),
   createdAt: text("created_at").notNull(),
+  // owner for a save in the editor; chat_edit and restore otherwise.
+  origin: text("origin").notNull().default("owner"),
 });
 
 // Saved Ask chats, written by the server and pulled; the phone only deletes one (an outbox action).
@@ -245,4 +255,35 @@ export const messages = sqliteTable("messages", {
   webSearch: integer("web_search").notNull().default(0),
   status: text("status").notNull(),
   createdAt: text("created_at").notNull(),
+});
+
+// A card's earlier questions and answers; the server writes versions 1 and 2 on a card's first change.
+export const cardVersions = sqliteTable("card_versions", {
+  id: text("id").primaryKey(),
+  cardId: text("card_id").notNull(),
+  version: integer("version").notNull(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  origin: text("origin").notNull(),
+  instruction: text("instruction"),
+  createdAt: text("created_at").notNull(),
+});
+
+// Edits Ask proposed in a chat. The phone applies, undoes or discards one through the edit routes, never the outbox.
+export const editProposals = sqliteTable("edit_proposals", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull(),
+  messageId: text("message_id").notNull(),
+  targetKind: text("target_kind").notNull(),
+  targetId: text("target_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  baseVersion: integer("base_version").notNull(),
+  // JSON-encoded content in its edit shape (see edits/content.ts).
+  before: text("before").notNull(),
+  after: text("after").notNull(),
+  status: text("status").notNull(),
+  appliedVersion: integer("applied_version"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
 });

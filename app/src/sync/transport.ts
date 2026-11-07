@@ -4,6 +4,7 @@ import { apiFetch } from "@/api/client";
 import type { AppDb } from "@/db/client";
 import * as schema from "@/db/schema";
 import { getSessionEpoch } from "@/auth/sessionEpoch";
+import { cardVersionValues, proposalValues } from "@/edits/types";
 
 import type {
   OutboxEntry,
@@ -295,6 +296,8 @@ export function createDbSyncStore(
             content: JSON.stringify(artifact.content),
             isCurrent: artifact.is_current ? 1 : 0,
             createdAt: artifact.created_at,
+            origin: artifact.origin ?? "archie",
+            instruction: artifact.instruction ?? null,
           };
           tx.insert(schema.artifacts)
             .values({ id: artifact.id, ...values })
@@ -325,6 +328,7 @@ export function createDbSyncStore(
             takeVersionId: card.take_version_id ?? null,
             conversationId: card.conversation_id ?? null,
             messageId: card.message_id ?? null,
+            version: card.version ?? 1,
           };
           tx.insert(schema.cards)
             .values({ id: card.id, ...values })
@@ -360,6 +364,8 @@ export function createDbSyncStore(
             openedAt: primer.opened_at,
             snoozedUntil: primer.snoozed_until,
             createdAt: primer.created_at,
+            origin: primer.origin ?? "archie",
+            instruction: primer.instruction ?? null,
           };
           tx.insert(schema.topicPrimers)
             .values({ id: primer.id, ...values })
@@ -448,6 +454,7 @@ export function createDbSyncStore(
             cleaned: version.cleaned ? 1 : 0,
             cleanFailed: version.clean_failed ? 1 : 0,
             createdAt: version.created_at,
+            origin: version.origin ?? "owner",
           };
           tx.insert(schema.takeVersions)
             .values({ id: version.id, ...values })
@@ -486,6 +493,24 @@ export function createDbSyncStore(
           tx.insert(schema.messages)
             .values({ id: message.id, ...values })
             .onConflictDoUpdate({ target: schema.messages.id, set: values })
+            .run();
+        }
+
+        for (const version of page.rows.card_versions ?? []) {
+          const values = cardVersionValues(version);
+          tx.insert(schema.cardVersions)
+            .values({ id: version.id, ...values })
+            .onConflictDoUpdate({ target: schema.cardVersions.id, set: values })
+            .run();
+        }
+
+        // Proposals change only through the edit routes, whose answer is stored at once (edits/api.ts), so a pulled
+        // row is never older than what the phone shows.
+        for (const proposal of page.rows.edit_proposals ?? []) {
+          const values = proposalValues(proposal);
+          tx.insert(schema.editProposals)
+            .values({ id: proposal.id, ...values })
+            .onConflictDoUpdate({ target: schema.editProposals.id, set: values })
             .run();
         }
 

@@ -39,6 +39,7 @@ export const cardRow = (overrides: Partial<CardRow>): CardRow => ({
   expiresAt: null,
   conversationId: null,
   messageId: null,
+  version: 1,
   ...overrides,
 });
 
@@ -90,6 +91,7 @@ export const takeVersionRow = (overrides: Partial<TakeVersionRow>): TakeVersionR
   cleaned: 0,
   cleanFailed: 0,
   createdAt: "2026-11-01T00:00:00Z",
+  origin: "owner",
   ...overrides,
 });
 

@@ -64,7 +64,7 @@ def test_captions_become_timed_text_titled_from_the_watch_page(
     assert source.title and source.title != media.YOUTUBE_VIDEO_URL
     assert source.image_url == "https://i.ytimg.com/vi/e0gVE3YxZs8/hqdefault.jpg"
     assert source.processing == models.ProcessingStatus.PROCESSING
-    assert queued == sorted([models.JobKind.ANALYZE, models.JobKind.PRIMER])
+    assert queued == sorted([models.JobKind.EMBED, models.JobKind.ANALYZE, models.JobKind.PRIMER])
 
 
 def test_a_video_url_without_an_id_fails_for_good_without_a_request(

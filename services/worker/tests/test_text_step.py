@@ -70,7 +70,7 @@ def _queued_kinds(db: sqlalchemy.orm.Session, source: models.Source) -> list[str
 def test_store_text_writes_the_artifact_titles_and_queues_the_kinds_steps(
     db: sqlalchemy.orm.Session, kind: models.SourceKind, expected_steps: list[models.JobKind]
 ) -> None:
-    """The text artifact is current, an untitled source gets the title, and only the kind's steps are queued."""
+    """The text artifact is current, an untitled source gets the title, and `embed` plus the kind's steps are queued."""
     source = _source(db, kind=kind)
 
     _text.store_text(db, source=source, text_content={"text": "hello"}, title="  A  Title ")
@@ -79,7 +79,7 @@ def test_store_text_writes_the_artifact_titles_and_queues_the_kinds_steps(
     assert artifact is not None
     assert artifact.content == {"text": "hello"}
     assert source.title == "A Title"
-    assert _queued_kinds(db, source) == [step.value for step in expected_steps]
+    assert _queued_kinds(db, source) == [models.JobKind.EMBED.value, *[step.value for step in expected_steps]]
 
 
 def test_store_text_does_nothing_for_a_deleted_source(db: sqlalchemy.orm.Session) -> None:

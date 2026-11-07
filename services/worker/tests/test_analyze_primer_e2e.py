@@ -51,6 +51,12 @@ def recording_api_key(request: pytest.FixtureRequest, monkeypatch: pytest.Monkey
     recording.use_recording_api_key(request, monkeypatch)
 
 
+@pytest.fixture(autouse=True)
+def no_embed_jobs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Analyze and primer queue `embed`; `test_embed_e2e` covers that, and here it would take a loop turn."""
+    monkeypatch.setattr(jobs, "enqueue_embed", lambda db, **kwargs: None)
+
+
 @pytest.fixture
 def engine(migrated_database_url: str) -> Iterator[sqlalchemy.Engine]:
     """An engine on the migrated test database."""

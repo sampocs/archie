@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { useRouter } from "expo-router";
+import type { ReactNode } from "react";
 import { Linking, Pressable, View } from "react-native";
 
 import { db } from "@/db/client";
@@ -17,6 +18,9 @@ type AnswerViewProps = {
   sections: Section[];
   streamingText?: string;
   searching?: "library" | "web" | null;
+  // Ask is drafting an edit now; the proposals it made are the children, shown under the sections.
+  editing?: boolean;
+  children?: ReactNode;
   failed?: boolean;
   onRetry?: () => void;
   // Set only for a complete stored answer.
@@ -27,7 +31,17 @@ type AnswerViewProps = {
 const SEARCHING_TEXT = { library: "Searching your library…", web: "Searching the web…" } as const;
 
 /** One answer: its labelled sections with citation chips, the text still streaming, and how it ended. */
-export function AnswerView({ sections, streamingText, searching, failed, onRetry, onMakeCard, index }: AnswerViewProps) {
+export function AnswerView({
+  sections,
+  streamingText,
+  searching,
+  editing,
+  children,
+  failed,
+  onRetry,
+  onMakeCard,
+  index,
+}: AnswerViewProps) {
   const theme = useTheme();
   const router = useRouter();
 
@@ -61,6 +75,12 @@ export function AnswerView({ sections, streamingText, searching, failed, onRetry
         </View>
       ))}
       {streamingText ? <Markdown text={streamingText.trim()} /> : null}
+      {editing ? (
+        <Text testID="chat-editing" tone="ink3">
+          Drafting an edit…
+        </Text>
+      ) : null}
+      {children}
       {searching ? (
         <Text testID="chat-searching" tone="ink3">
           {SEARCHING_TEXT[searching]}

@@ -63,7 +63,7 @@ describe("applyEvent and liveView", () => {
     ] as const;
     const streaming = events.reduce(applyEvent, EMPTY_LIVE);
 
-    expect(liveView(streaming)).toEqual({ sections: [], streamingText: "It buys bonds.", searching: null });
+    expect(liveView(streaming)).toEqual({ sections: [], streamingText: "It buys bonds.", searching: null, editing: false });
 
     const finished = applyEvent(streaming, { type: "block", block: 0, label: "library", citations: [library()] });
     expect(liveView(finished).sections).toEqual([{ label: "library", text: "It buys bonds.", citations: [library()] }]);
@@ -74,6 +74,27 @@ describe("applyEvent and liveView", () => {
   it("shows the searching line until text arrives", () => {
     const live = applyEvent(EMPTY_LIVE, { type: "searching", kind: "web", query: "fed funds rate" });
     expect(liveView(live).searching).toBe("web");
+  });
+
+  it("an editing event shows the drafting line and an edit event adds its proposal once", () => {
+    const wire = {
+      id: "p1",
+      target_kind: "summary" as const,
+      target_id: "s1",
+      title: "Index funds",
+      description: "Drop the fees idea",
+      base_version: 1,
+      before: {},
+      after: {},
+      status: "proposed" as const,
+    };
+    const drafting = applyEvent(EMPTY_LIVE, { type: "editing", target_kind: null });
+    expect(drafting.editing).toBe(true);
+
+    const proposed = applyEvent(applyEvent(drafting, { type: "edit", ...wire }), { type: "edit", ...wire });
+    expect(proposed.proposals).toEqual([wire]);
+    expect(proposed.editing).toBe(false);
+    expect(liveView(proposed).editing).toBe(false);
   });
 });
 

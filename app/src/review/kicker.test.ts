@@ -1,5 +1,5 @@
 import { cardKicker } from "./kicker";
-import { cardRow, reviewData, takeRow } from "./testCards";
+import { cardRow, conversationRow, reviewData, takeRow } from "./testCards";
 
 describe("cardKicker", () => {
   const data = reviewData([], { takes: [takeRow({ id: "k1", kind: "opinion" }), takeRow({ id: "k2" })] });
@@ -21,6 +21,19 @@ describe("cardKicker", () => {
       suffix: "Talking point",
       domain: "Startups",
     });
+  });
+
+  it("reads From Ask in the about item's colour for a chat card, else Other", () => {
+    const chatData = reviewData([], {
+      conversations: [
+        conversationRow({ id: "about-source", aboutKind: "source", aboutSourceId: "s1" }),
+        conversationRow({ id: "general" }),
+      ],
+    });
+    const chatCard = (conversationId: string) => cardRow({ sourceId: null, conversationId });
+
+    expect(cardKicker(chatCard("about-source"), chatData)).toEqual({ label: "From Ask", suffix: undefined, domain: "AI" });
+    expect(cardKicker(chatCard("general"), chatData)).toEqual({ label: "From Ask", suffix: undefined, domain: null });
   });
 
   it("reads the kind in the source's domain colour for a source card", () => {

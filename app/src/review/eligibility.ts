@@ -6,6 +6,7 @@ import type { CardRow } from "./types";
 type SourceRow = typeof schema.sources.$inferSelect;
 type TopicPrimerRow = typeof schema.topicPrimers.$inferSelect;
 type TopicRow = typeof schema.topics.$inferSelect;
+type ConversationRow = typeof schema.conversations.$inferSelect;
 
 export type ReviewData = {
   cards: CardRow[];
@@ -13,6 +14,7 @@ export type ReviewData = {
   topicPrimersById: Map<string, TopicPrimerRow>;
   topicsById: Map<string, TopicRow>;
   takesById: Map<string, TakeRow>;
+  conversationsById: Map<string, ConversationRow>;
 };
 
 // Where a card came from. An origin this phone doesn't know yet (a newer server's) is never reviewable here.
@@ -21,6 +23,7 @@ export type CardOrigin =
   | { kind: "topicPrimer"; topicPrimerId: string }
   | { kind: "brief"; briefId: string }
   | { kind: "take"; takeId: string }
+  | { kind: "conversation"; conversationId: string }
   | { kind: "unknown" };
 
 export function cardOrigin(card: CardRow): CardOrigin {
@@ -28,12 +31,13 @@ export function cardOrigin(card: CardRow): CardOrigin {
   if (card.topicPrimerId) return { kind: "topicPrimer", topicPrimerId: card.topicPrimerId };
   if (card.briefId) return { kind: "brief", briefId: card.briefId };
   if (card.takeId) return { kind: "take", takeId: card.takeId };
+  if (card.conversationId) return { kind: "conversation", conversationId: card.conversationId };
   return { kind: "unknown" };
 }
 
 /**
  * A card joins reviews only once you've taken in what it came from: a source's cards once it is consumed, foundation
- * cards once their primer was opened, take cards at once. Quiz cards are answered only in the quiz.
+ * cards once their primer was opened, take cards and chat cards at once. Quiz cards are answered only in the quiz.
  */
 export function isReviewable(card: CardRow, data: ReviewData): boolean {
   if (card.deletedAt !== null) return false;
@@ -55,6 +59,9 @@ export function isReviewable(card: CardRow, data: ReviewData): boolean {
       const take = data.takesById.get(origin.takeId);
       return take !== undefined && take.deletedAt === null;
     }
+    // The owner made a chat card from an answer they just read, so it is reviewable at once.
+    case "conversation":
+      return true;
     case "brief":
     case "unknown":
       return false;
@@ -96,6 +103,7 @@ export function makeReviewData(rows: {
   topicPrimers: TopicPrimerRow[];
   topics: TopicRow[];
   takes?: TakeRow[];
+  conversations?: ConversationRow[];
 }): ReviewData {
   return {
     cards: rows.cards,
@@ -103,5 +111,6 @@ export function makeReviewData(rows: {
     topicPrimersById: new Map(rows.topicPrimers.map((primer) => [primer.id, primer])),
     topicsById: new Map(rows.topics.map((topic) => [topic.id, topic])),
     takesById: new Map((rows.takes ?? []).map((take) => [take.id, take])),
+    conversationsById: new Map((rows.conversations ?? []).map((conversation) => [conversation.id, conversation])),
   };
 }

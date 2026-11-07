@@ -50,8 +50,8 @@ export const artifacts = sqliteTable("artifacts", {
 export const cards = sqliteTable("cards", {
   id: text("id").primaryKey(),
   // Exactly one origin is set: a source (its summary's cards, or foundation cards from its primer), a topic primer
-  // (foundation cards), a brief (quiz cards) or a take (take cards). Later origins add their own column; see
-  // review/eligibility.ts.
+  // (foundation cards), a brief (quiz cards), a take (take cards) or an Ask chat (chat cards). Later origins add their
+  // own column; see review/eligibility.ts.
   sourceId: text("source_id"),
   topicPrimerId: text("topic_primer_id"),
   briefId: text("brief_id"),
@@ -73,6 +73,9 @@ export const cards = sqliteTable("cards", {
   lapses: integer("lapses").notNull().default(0),
   // Quiz cards only.
   expiresAt: text("expires_at"),
+  // A card made from an Ask answer: the chat and the answer it came from.
+  conversationId: text("conversation_id"),
+  messageId: text("message_id"),
 });
 
 export const topics = sqliteTable("topics", {
@@ -214,5 +217,30 @@ export const takeVersions = sqliteTable("take_versions", {
   cleaned: integer("cleaned").notNull(),
   // Clean it up gave up: body holds the raw text and the page offers Try again.
   cleanFailed: integer("clean_failed").notNull().default(0),
+  createdAt: text("created_at").notNull(),
+});
+
+// Saved Ask chats, written by the server and pulled; the phone only deletes one (an outbox action).
+export const conversations = sqliteTable("conversations", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  aboutKind: text("about_kind"),
+  aboutSourceId: text("about_source_id"),
+  aboutTopicPrimerId: text("about_topic_primer_id"),
+  aboutTakeId: text("about_take_id"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  deletedAt: text("deleted_at"),
+});
+
+export const messages = sqliteTable("messages", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull(),
+  role: text("role").notNull(),
+  text: text("text").notNull(),
+  // An answer's segments as JSON (`AnswerSegment[]`); null for a question.
+  segments: text("segments"),
+  webSearch: integer("web_search").notNull().default(0),
+  status: text("status").notNull(),
   createdAt: text("created_at").notNull(),
 });

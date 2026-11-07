@@ -7,6 +7,8 @@ import { Linking, Pressable, StyleSheet, View } from "react-native";
 import { db } from "@/db/client";
 import { readLater, returnToInbox, setFavorite } from "@/db/actions";
 import * as schema from "@/db/schema";
+import { useTargetVersions } from "@/edits/useTargetVersions";
+import { VersionsSheet } from "@/edits/VersionsSheet";
 import { CardsSection } from "@/item/CardsSection";
 import { FullEmailSheet } from "@/item/FullEmailSheet";
 import { ItemActions } from "@/item/ItemActions";
@@ -60,6 +62,11 @@ export default function SourceScreen() {
   const [emailOpen, setEmailOpen] = useState(false);
   const [queuedToast, setQueuedToast] = useState(false);
   const hideToast = useCallback(() => setQueuedToast(false), []);
+  const summaryVersions = useTargetVersions("summary", id).entries.length;
+  const primerVersions = useTargetVersions("primer", id).entries.length;
+  const [versionsOf, setVersionsOf] = useState<"summary" | "primer" | null>(null);
+  const [restoredToast, setRestoredToast] = useState<string | null>(null);
+  const hideRestoredToast = useCallback(() => setRestoredToast(null), []);
 
   const source = sources[0];
   const mergedIntoId = source?.deletedAt ? source.mergedIntoId : null;
@@ -129,10 +136,25 @@ export default function SourceScreen() {
           visible={finishOpen}
           onClose={() => setFinishOpen(false)}
         />
-        <ItemMenu source={source} cardCount={cards.length} visible={menuOpen} onClose={() => setMenuOpen(false)} />
+        <ItemMenu
+          source={source}
+          cardCount={cards.length}
+          summaryVersions={summaryVersions}
+          primerVersions={primerVersions}
+          onOpenVersions={setVersionsOf}
+          visible={menuOpen}
+          onClose={() => setMenuOpen(false)}
+        />
+        <VersionsSheet
+          target={versionsOf ? { kind: versionsOf, id: source.id } : null}
+          visible={versionsOf !== null}
+          onClose={() => setVersionsOf(null)}
+          onRestored={(version) => setRestoredToast(`Restored version ${version}`)}
+        />
         <FullEmailSheet sourceId={source.id} visible={emailOpen} onClose={() => setEmailOpen(false)} />
       </Screen>
       {/* Undo sends the reverse action rather than cancelling the first, which may already have synced. */}
+      {restoredToast ? <Toast message={restoredToast} onHide={hideRestoredToast} /> : null}
       {queuedToast ? (
         <Toast
           message="Added to your queue"

@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
+import { openChat } from "@/ask/openChat";
 import { mergeTopic, removeTopic } from "@/db/actions";
 import { db } from "@/db/client";
 import type { TopicRow } from "@/library/join";
@@ -19,10 +20,12 @@ type TopicMenuProps = {
   onRemoved?: () => void;
   // Set on the topic page, which follows the merge to the winner instead of showing a dead topic.
   followMerge?: boolean;
+  // Set on the topic page when the topic has a current primer: the row starts a chat about it.
+  askPrimer?: { id: string; title: string };
 };
 
 /** Rename / Merge into… / Remove for a topic, from a chip's long press or the topic page's ••• button. */
-export function TopicMenu({ topic, topics, visible, onClose, onRemoved, followMerge }: TopicMenuProps) {
+export function TopicMenu({ topic, topics, visible, onClose, onRemoved, followMerge, askPrimer }: TopicMenuProps) {
   const router = useRouter();
   const [renaming, setRenaming] = useState(false);
   const [merging, setMerging] = useState(false);
@@ -47,6 +50,15 @@ export function TopicMenu({ topic, topics, visible, onClose, onRemoved, followMe
         visible={visible}
         onClose={onClose}
         items={[
+          ...(askPrimer
+            ? [
+                {
+                  label: "Ask about this",
+                  testID: "topic-menu-ask",
+                  onPress: () => openChat(router, { kind: "topic_primer", id: askPrimer.id, title: askPrimer.title }),
+                },
+              ]
+            : []),
           { label: "Rename", testID: "topic-menu-rename", onPress: () => setRenaming(true) },
           { label: "Merge into…", testID: "topic-menu-merge", onPress: () => setMerging(true) },
           { label: "Remove", testID: "topic-menu-remove", destructive: true, onPress: remove },

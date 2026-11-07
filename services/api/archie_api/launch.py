@@ -13,6 +13,7 @@ import sys
 import time
 from types import FrameType
 
+import sqlalchemy.exc
 import sqlalchemy.orm
 from archie_db import backfill_embed, migrate, session
 from archie_shared import config, logging
@@ -60,12 +61,18 @@ def main() -> None:
 
 
 def _queue_unindexed_items(database_url: str) -> None:
-    """Queue `embed` for items that predate search, so a deploy indexes them without anyone running a command."""
+    """Queue `embed` for items that predate search, so a deploy indexes them; a failure is logged, never raised."""
     engine = session.engine_for(database_url)
-    with sqlalchemy.orm.Session(engine) as db:
-        queued = backfill_embed.backfill_all(db)
-        db.commit()
-    engine.dispose()
+    try:
+        with sqlalchemy.orm.Session(engine) as db:
+            queued = backfill_embed.backfill_all(db)
+    except sqlalchemy.exc.SQLAlchemyError:
+        # A best-effort indexing step must never block the API and worker from starting.
+        _logger.exception("Could not queue embed for unindexed items; starting anyway")
+        return
+    finally:
+        engine.dispose()
+
     _logger.info("Queued embed for %d unindexed items", queued)
 
 

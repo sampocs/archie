@@ -1,11 +1,14 @@
-"""Ask's system prompt and tools. The fixed rules come first, so every chat's prompt shares its first 60 characters."""
+"""Ask's system prompt and tools.
+
+The fixed answer rules come first (so every chat's prompt shares its first 60 characters), then the editing rules.
+"""
 
 from __future__ import annotations
 
 import datetime
 from typing import Any
 
-ASK_SYSTEM = """You are Archie's Ask, answering the owner's questions from their own library first. Archie is \
+_ANSWER_RULES = """You are Archie's Ask, answering the owner's questions from their own library first. Archie is \
 their personal library of the articles, newsletters, podcasts and videos they saved, with Archie's summaries and \
 primers of them, topic primers, and the owner's own takes.
 
@@ -26,6 +29,23 @@ results.
 you use it. No headings, and no bullet lists unless the owner asks for a list.
 - If neither the library nor the web has the answer and you don't know it, say so plainly.
 - Write plain paragraphs: no headings, no bold section titles; a short list only when it really helps."""
+
+EDIT_RULES = """Editing the owner's things:
+- You can propose edits to a source's summary or primer, a topic primer, one of the owner's takes, or a review \
+card, but only when the owner asks for a change. Use propose_summary_edit, propose_text_edit or propose_card_edit. \
+Nothing changes until the owner taps Apply, so never say the edit is done.
+- Find the id first: the about item below names its ids, search results end with [kind id] tags, earlier answers \
+list the items they cited, and find_cards finds cards. You don't need to search the library for an edit when you \
+already have the id.
+- Read the current content with read_item first and change only what the owner asked for; copy everything else \
+exactly, timestamps included. If read_item shows a pending edit, build on it: your new proposal replaces it.
+- When an edit removes or changes a fact that one of the item's cards asks about, find that item's cards and \
+propose a matching card edit too.
+- A take is the owner's own words: change only what they asked, and never add claims of your own.
+- After proposing, say in one short sentence what will change. Don't repeat the new text."""
+
+# The answer rules come first, so every chat's prompt keeps its first 60 characters (the cassette key).
+ASK_SYSTEM = f"{_ANSWER_RULES}\n\n{EDIT_RULES}"
 
 WEB_REQUIRED = "A web search is required for this question: search the web before you answer."
 

@@ -18,7 +18,7 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_api.ask import edit_tools
-from archie_db import changes, models, pipeline, session
+from archie_db import changes, models, pipeline, session, versions
 from archie_testing import recording
 from archie_testing.harness import LiveStack
 
@@ -184,6 +184,57 @@ def test_text_edits_must_match_and_a_new_proposal_supersedes_the_pending_one(
         "question": FEES_QUESTION,
         "answer": "They compound over decades.",
     }
+    engine.dispose()
+
+
+def test_a_pending_edit_made_against_an_older_version_is_not_built_on(live_stack: LiveStack) -> None:
+    """Once the card moves on past a stored proposal's base version, read_item shows no pending edit and a new
+    proposal starts from the newer version, so Apply can't drop it."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    user_id = _user_id(authed)
+    _, card_id = _seed_source(live_stack, user_id=user_id)
+    conversation_id, message_id = _seed_chat(live_stack, user_id=user_id)
+    engine = session.engine_for(live_stack.database_url)
+    context = edit_tools.ToolContext(user_id=user_id, conversation_id=conversation_id)
+    target = versions.Target(kind=models.EditTarget.CARD, id=card_id)
+
+    # A proposal stored against version 1, then Review's care rewrites the card to version 2.
+    stale = edit_tools.run(
+        engine, context=context, tool_use_id="p1", name=edit_tools.PROPOSE_CARD_EDIT,
+        tool_input={"card_id": str(card_id), "description": "Shorter", "question": FEES_QUESTION, "answer": "Grow."},
+    ).proposal  # fmt: skip
+    assert stale is not None
+    newer = {"question": "What do low fees add up to over decades?", "answer": FEES_ANSWER}
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+        edit_tools.save_proposals(
+            db, user_id=user_id, conversation_id=conversation_id, message_id=message_id, proposals=[stale]
+        )
+        newer_version = versions.write(
+            db, target=target, content=newer, origin=models.VersionOrigin.CARE, instruction=None, derived_from=None
+        )
+        db.commit()
+
+    read = edit_tools.run(
+        engine, context=context, tool_use_id="r1", name=edit_tools.READ_ITEM,
+        tool_input={"kind": "card", "id": str(card_id)},
+    )  # fmt: skip
+    assert json.loads(read.result["content"])["pending"] is None
+
+    # The same holds for a proposal made earlier in this answer.
+    in_answer = edit_tools.ToolContext(user_id=user_id, conversation_id=conversation_id, pending=(stale,))
+    read_in_answer = edit_tools.run(
+        engine, context=in_answer, tool_use_id="r2", name=edit_tools.READ_ITEM,
+        tool_input={"kind": "card", "id": str(card_id)},
+    )  # fmt: skip
+    assert json.loads(read_in_answer.result["content"])["pending"] is None
+
+    fresh = edit_tools.run(
+        engine, context=context, tool_use_id="p2", name=edit_tools.PROPOSE_CARD_EDIT,
+        tool_input={"card_id": str(card_id), "description": "Short", "question": newer["question"], "answer": "Grow."},
+    ).proposal  # fmt: skip
+    assert fresh is not None
+    assert (fresh.before, fresh.base_version) == (newer, newer_version)
     engine.dispose()
 
 

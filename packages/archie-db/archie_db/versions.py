@@ -3,7 +3,9 @@
 A target is a source's summary or primer, a topic's primer, a take or a card (`Target`). Every change adds a version
 and makes it current; nothing is overwritten. Content travels in one edit shape per kind:
 - summary: the artifact's `summary` object (`gist`, `key_ideas`, `numbers`); writing copies the rest of the
-  artifact's content (domain, tags, the cards it came with) from the current version;
+  artifact's content (domain, tags, the cards it came with) from the current version; restoring a summary copies
+  only that version's `summary` object, so the rest of the analysis (domain, tags, cards) stays as in the current
+  version;
 - primer, topic primer and take: `{"markdown": ...}` (a take's body);
 - card: `{"question": ..., "answer": ...}`.
 Writing a topic primer version also moves the topic's live foundation cards onto it, since Review only knows the
@@ -224,7 +226,10 @@ def _write_artifact(
     source = db.get_one(models.Source, target.id)
     base = pipeline.current_artifact(db, source_id=source.id, kind=kind)
     assert base is not None
-    derived = _artifact_at(db, source_id=source.id, kind=kind, version=derived_from) if derived_from else None
+    derived = None
+    if derived_from is not None:
+        derived = _artifact_at(db, source_id=source.id, kind=kind, version=derived_from)
+        assert derived is not None
 
     # A summary edit changes only the summary; the analysis around it (domain, tags, the cards it came with) stays.
     full_content = (
@@ -257,7 +262,10 @@ def _write_topic_primer(
     derived_from: int | None,
 ) -> int:
     topic = db.get_one(models.Topic, target.id)
-    derived = topic_primers.at_version(db, topic_id=topic.id, version=derived_from) if derived_from else None
+    derived = None
+    if derived_from is not None:
+        derived = topic_primers.at_version(db, topic_id=topic.id, version=derived_from)
+        assert derived is not None
     primer = topic_primers.write(
         db,
         topic=topic,

@@ -47,6 +47,7 @@ SOURCE_KEYS_ADDED_BY_M4 = {
 SOURCE_KEYS_ADDED_BY_M4_POLISH = {"primer_queue_position", "primer_snoozed_until"}
 SOURCE_KEYS_ADDED_BY_M6 = {"cards_off"}
 SOURCE_KEYS_ADDED_BY_FAVORITES = {"favorited_at"}
+SOURCE_KEYS_ADDED_BY_ITEM_DATES = {"published_at"}
 
 
 def _add_source(url: str, *, intent: str = "queue") -> dict[str, Any]:
@@ -125,6 +126,7 @@ def test_a_pulled_source_carries_the_library_columns_and_hides_the_episode_guid(
         | SOURCE_KEYS_ADDED_BY_M4_POLISH
         | SOURCE_KEYS_ADDED_BY_M6
         | SOURCE_KEYS_ADDED_BY_FAVORITES
+        | SOURCE_KEYS_ADDED_BY_ITEM_DATES
     )
 
 

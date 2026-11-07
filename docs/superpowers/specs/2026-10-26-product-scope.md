@@ -101,6 +101,7 @@ The ＋ in the Library header opens the add sheet: the same Finished / Queue flo
 - **Library first, then background, then the web.** Answers come from my library where possible, fill gaps from general knowledge, and search the web when needed (recent events, fast-changing facts) or when I ask ("look it up," or a toggle). Each part is labeled: *your library* / *background* / *web*, with links.
 - **Edit through chat**: e.g. "remove this bullet from the summary." Edits create a new version, so the original is always kept and can be restored.
 - Turns any answer into a card.
+- Can be asked by date: when I saved or got something ("what did Morning Brew say on Tuesday?", "summarize this week's newsletters") or when it came out ("articles published this year"). Articles and episodes keep both dates; a newsletter's are the same day. Days are the phone's.
 - Can be opened from any primer or item page, already knowing what I'm looking at.
 
 ## Primers

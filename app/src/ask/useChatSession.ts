@@ -58,7 +58,13 @@ export function useChatSession(input: {
       streamAnswer({
         conversationId: input.conversationId,
         // The server reads `about` only when this question creates the chat.
-        body: { user_message_id: userMessageId, text: question, web_search: webSearch, about: input.messages.length === 0 ? input.about : null },
+        body: {
+          user_message_id: userMessageId,
+          text: question,
+          web_search: webSearch,
+          about: input.messages.length === 0 ? input.about : null,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        },
         sessionKey,
         onEvent: (event) => update((live) => applyEvent(live, event)),
       })

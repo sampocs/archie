@@ -114,6 +114,7 @@ class SourceOut(pydantic.BaseModel):
     newsletter_kind: str | None
     cards_off: bool
     favorited_at: datetime.datetime | None
+    published_at: datetime.datetime | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None

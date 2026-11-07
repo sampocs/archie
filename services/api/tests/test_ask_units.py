@@ -2,16 +2,23 @@
 
 from __future__ import annotations
 
+import dataclasses
+import datetime
 import uuid
+import zoneinfo
 
 import anthropic.types
-from archie_api.ask import citations, context
+from archie_api.ask import answer, citations, context, prompts
 from archie_db import models, search
 
 HIT = search.ChunkHit(
     chunk_id=7,
     item=search.ItemRef(kind=models.SearchItemKind.SOURCE, id=uuid.UUID(int=1)),
     title="Odd Lots",
+    url="https://open.spotify.com/episode/1",
+    sender=None,
+    saved_at=datetime.datetime(2026, 11, 2, 9, tzinfo=datetime.UTC),
+    published_at=None,
     owner_kind=models.ChunkOwner.SOURCE_TEXT,
     text="The Fed pays with reserves.",
     start_seconds=1880.0,
@@ -19,6 +26,7 @@ HIT = search.ChunkHit(
     keyword_match=True,
 )
 PASSAGES = {citations.source_key(HIT): HIT}
+NEW_YORK = zoneinfo.ZoneInfo("America/New_York")
 
 
 def _library(cited: str = "The Fed pays with reserves.") -> anthropic.types.CitationsSearchResultLocation:
@@ -171,3 +179,94 @@ def test_a_heading_with_nothing_after_it_stays_background_and_waits_to_be_sent()
     assert paragraphs.open == [heading]
     assert [segment.label for segment in paragraphs.finish()] == [citations.AnswerLabel.BACKGROUND]
     assert paragraphs.open == []
+
+
+def test_a_library_result_is_titled_with_who_its_from_its_dates_and_where_it_sits() -> None:
+    """A newsletter shows its sender and the day it came; a timed passage keeps its timestamp after the date.
+
+    The day is the owner's: an issue that came at 10pm in New York is Wednesday there and already Thursday in UTC.
+    """
+    newsletter = dataclasses.replace(
+        HIT,
+        title="☕ Panicky vibes",
+        url="https://example.invalid/tracked",
+        sender="Morning Brew",
+        saved_at=datetime.datetime(2026, 11, 5, 3, tzinfo=datetime.UTC),
+        owner_kind=models.ChunkOwner.SOURCE_SUMMARY,
+        start_seconds=None,
+    )
+
+    assert citations.search_result_block(newsletter, day_zone=NEW_YORK)["title"] == (
+        "☕ Panicky vibes · Morning Brew · Wed 4 Nov 2026 (Archie's summary)"
+    )
+    assert citations.search_result_block(newsletter, day_zone=datetime.UTC)["title"] == (
+        "☕ Panicky vibes · Morning Brew · Thu 5 Nov 2026 (Archie's summary)"
+    )
+    assert citations.search_result_block(HIT, day_zone=NEW_YORK)["title"] == (
+        "Odd Lots · open.spotify.com · Mon 2 Nov 2026 (at 31:20)"
+    )
+
+
+def test_an_article_published_on_another_day_shows_both_dates_and_a_year_only_date_as_its_year() -> None:
+    """Published on the day it was saved shows one date; a 1 January date (a page giving only a year) shows the year."""
+    article = dataclasses.replace(
+        HIT,
+        title="How to Do Great Work",
+        url="https://www.paulgraham.com/greatwork.html",
+        saved_at=datetime.datetime(2026, 11, 5, 15, tzinfo=datetime.UTC),
+        owner_kind=models.ChunkOwner.SOURCE_TEXT,
+        start_seconds=None,
+    )
+    titles = [
+        citations.search_result_block(dataclasses.replace(article, published_at=published), day_zone=NEW_YORK)["title"]
+        for published in (
+            datetime.datetime(2023, 1, 1, 12, tzinfo=datetime.UTC),
+            datetime.datetime(2026, 10, 30, 12, tzinfo=datetime.UTC),
+            datetime.datetime(2026, 11, 5, 12, tzinfo=datetime.UTC),
+        )
+    ]
+
+    assert titles == [
+        "How to Do Great Work · paulgraham.com · published 2023 · saved Thu 5 Nov 2026",
+        "How to Do Great Work · paulgraham.com · published 30 Oct 2026 · saved Thu 5 Nov 2026",
+        "How to Do Great Work · paulgraham.com · Thu 5 Nov 2026",
+    ]
+
+
+def test_the_system_prompt_keeps_its_replay_prefix_and_states_the_owners_today() -> None:
+    """Cassettes replay by the first 60 characters, so the date must come after them; the day is the owner's."""
+    # 02:00 UTC on Sunday is still Saturday evening in New York.
+    sunday_utc = datetime.datetime(2026, 11, 8, 2, tzinfo=datetime.UTC)
+    in_new_york = prompts.system_prompt(about=None, web_required=False, now=sunday_utc.astimezone(NEW_YORK))
+    in_utc = prompts.system_prompt(about=None, web_required=False, now=sunday_utc)
+
+    assert in_new_york[:60] == in_utc[:60] == prompts.ASK_SYSTEM[:60]
+    assert "Today is Saturday 7 November 2026 (America/New_York)." in in_new_york
+    assert "Today is Sunday 8 November 2026 (UTC)." in in_utc
+
+
+def test_the_owners_zone_is_the_phones_or_utc_when_it_is_missing_or_unknown() -> None:
+    """A name zoneinfo doesn't know, or a malformed one, falls back to UTC rather than failing the question."""
+    assert context.owner_zone("America/New_York") == NEW_YORK
+    unusable = (None, "", "Mars/Olympus_Mons", "../../etc/passwd", "America", "Etc")
+    assert [context.owner_zone(name) for name in unusable] == [datetime.UTC] * len(unusable)
+
+
+def test_search_library_takes_optional_saved_and_published_day_bounds_in_the_owners_zone() -> None:
+    """Only the query is required; a bound that isn't a YYYY-MM-DD date goes back to the model as an error."""
+    schema = prompts.SEARCH_LIBRARY_TOOL["input_schema"]
+    assert schema["required"] == ["query"]
+    assert set(schema["properties"]) == {"query", "saved_after", "saved_before", "published_after", "published_before"}
+
+    bounds = {"query": "x", "saved_after": "2026-11-02", "published_before": "2026-11-06"}
+    assert answer._dates_of(bounds, day_zone=NEW_YORK) == search.DateFilter(
+        saved_after=datetime.date(2026, 11, 2), published_before=datetime.date(2026, 11, 6), day_zone=NEW_YORK
+    )
+    assert answer._dates_of({"query": "x"}, day_zone=NEW_YORK) == search.DateFilter(day_zone=NEW_YORK)
+    assert answer._dates_of({"query": "x", "saved_before": "last Tuesday"}, day_zone=NEW_YORK) is None
+    assert answer._dates_of({"query": "x", "published_after": 20261102}, day_zone=NEW_YORK) is None
+
+
+def test_a_bound_outside_a_plausible_year_range_is_an_invalid_input_not_an_overflow() -> None:
+    """A model writing 9999-12-31 for "no end" gets the tool's error result instead of killing the stream."""
+    assert answer._dates_of({"query": "x", "saved_before": "9999-12-31"}, day_zone=NEW_YORK) is None

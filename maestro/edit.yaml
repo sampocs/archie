@@ -61,6 +61,10 @@ appId: com.sampocs.archie
 - inputText: "Remove the first key idea from the summary."
 - tapOn:
     id: "ask-send"
+# The keyboard stays up after sending and would cover the card's buttons; dragging the page puts it away.
+- swipe:
+    start: "50%, 30%"
+    end: "50%, 60%"
 # The proposal card sits below the answer; Apply turns on once the answer is saved.
 - scrollUntilVisible:
     element:

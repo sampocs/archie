@@ -20,12 +20,15 @@ takes are now indexed, searchable and askable.
 - **Ask conversations are saved, listed and synced.** They live on the server, sync to the phone through the normal
   pull, and stay readable offline. Sending needs a connection. A chat can be deleted with a swipe.
 - **Labels come from citations, not from the model's own tags.** The chat uses Anthropic search-result content blocks
-  for library passages and the server web search tool, so every text block carries its citations:
-  - a block citing library passages is **your library** (chips naming the item, with a timestamp for audio/video,
+  for library passages and the server web search tool, so text carries its citations. Citations split the model's
+  text into many blocks mid-sentence, so labels are decided **per paragraph** (a run of text blocks up to a blank
+  line or a tool call): a paragraph is labelled by any citation inside it. Text written before a tool call ("Let me
+  search…") is dropped from the saved answer.
+  - a paragraph citing library passages is **your library** (chips naming the item, with a timestamp for audio/video,
     and "Summary" / "Primer" when the passage came from one);
-  - a block citing web results is **web** (link chips);
-  - a block with no citations is **background**.
-  Consecutive blocks with the same label are shown as one labelled section.
+  - a paragraph citing web results (and no library passage) is **web** (link chips);
+  - a paragraph with no citations is **background**.
+  Consecutive paragraphs with the same label are shown as one labelled section.
 - **Make a card** is the only thing an answer turns into: Haiku drafts one card from the answer, the owner edits it
   in a sheet, and Save adds it to Review. The card's origin is the conversation (a fifth card origin).
 - **Ask about this** is an entry in the ••• menu of source pages, topic pages (asking about the topic primer) and take

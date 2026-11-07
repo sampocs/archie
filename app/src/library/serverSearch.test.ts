@@ -1,4 +1,4 @@
-import { createDebouncer, parseSearchResults, searchView } from "./serverSearch";
+import { createDebouncer, localExtras, parseSearchResults, searchView, type ServerSearchResult } from "./serverSearch";
 
 describe("parseSearchResults", () => {
   it("maps the server's rows and drops malformed ones", () => {
@@ -31,25 +31,53 @@ describe("parseSearchResults", () => {
 });
 
 describe("searchView", () => {
-  const ready = { status: "ready" as const, results: [] };
+  const ready = { status: "ready" as const, results: [], fromServer: true };
 
   it("shows the server's results once they arrive while online", () => {
     expect(searchView({ query: "fed", online: true, state: ready })).toEqual({ mode: "server", offlineLine: false });
   });
 
   it("keeps on-phone matching while the request runs, without the offline line", () => {
-    expect(searchView({ query: "fed", online: true, state: { status: "loading", results: [] } })).toEqual({
+    expect(searchView({ query: "fed", online: true, state: { status: "loading", results: [], fromServer: false } })).toEqual({
       mode: "local",
+      offlineLine: false,
+    });
+  });
+
+  it("keeps showing the previous server results while a newer request loads", () => {
+    const loadingAgain = { status: "loading" as const, results: [], fromServer: true };
+    expect(searchView({ query: "fede", online: true, state: loadingAgain })).toEqual({
+      mode: "server",
       offlineLine: false,
     });
   });
 
   it("falls back to on-phone matching with the offline line when offline or the request failed", () => {
     expect(searchView({ query: "fed", online: false, state: ready })).toEqual({ mode: "local", offlineLine: true });
-    expect(searchView({ query: "fed", online: true, state: { status: "failed", results: [] } })).toEqual({
+    expect(searchView({ query: "fed", online: true, state: { status: "failed", results: [], fromServer: false } })).toEqual({
       mode: "local",
       offlineLine: true,
     });
+  });
+});
+
+describe("localExtras", () => {
+  const hit = (itemKind: ServerSearchResult["itemKind"], itemId: string): ServerSearchResult => ({
+    itemKind,
+    itemId,
+    title: "",
+    passage: "",
+    ownerKind: "source_text",
+    startSeconds: null,
+  });
+
+  it("keeps on-phone matches the server did not return, in order", () => {
+    const results = [hit("source", "a"), hit("take", "c")];
+    expect(localExtras(results, ["a", "b", "c", "d"])).toEqual(["b", "c", "d"]);
+  });
+
+  it("returns every on-phone match when the server found nothing", () => {
+    expect(localExtras([], ["a", "b"])).toEqual(["a", "b"]);
   });
 });
 

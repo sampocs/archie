@@ -14,10 +14,10 @@ from collections.abc import Iterator
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, jobs, models, pipeline, session
+from archie_db import backfill_embed, changes, jobs, models, pipeline, session
 from archie_shared import config
 from archie_testing import recording
-from archie_worker import backfill_embed, handlers, loop
+from archie_worker import handlers, loop
 
 pytestmark = pytest.mark.postgres
 
@@ -124,6 +124,57 @@ def test_backfill_queues_every_live_item_once(engine: sqlalchemy.Engine) -> None
 
     assert (queued, again) == (3, 0)
     assert sorted(job.payload[jobs.ITEM_KIND_KEY] for job in _jobs(engine)) == ["source", "take", "topic_primer"]
+
+
+def test_backfill_skips_items_that_already_have_chunks(engine: sqlalchemy.Engine) -> None:
+    """An indexed source, topic (on an older version) and take are not queued; an unindexed source is."""
+    user_id = _add_user(engine, whitelisted=False)
+    indexed_source = _add_source(engine, whitelisted=False, user_id=user_id)
+    unindexed_source = _add_source(engine, whitelisted=False, user_id=user_id)
+    old_primer, _ = _add_topic_primers(engine, user_id=user_id)
+    take_id = _add_take(engine, user_id=user_id)
+    _add_chunk(engine, user_id=user_id, source_id=indexed_source)
+    _add_chunk(engine, user_id=user_id, topic_primer_id=old_primer)
+    _add_chunk(engine, user_id=user_id, take_id=take_id)
+
+    with sqlalchemy.orm.Session(engine) as db:
+        queued = backfill_embed.backfill_all(db)
+        db.commit()
+        again = backfill_embed.backfill_all(db)
+        db.commit()
+
+    assert (queued, again) == (1, 0)
+    assert [job.payload[jobs.ITEM_ID_KEY] for job in _jobs(engine)] == [str(unindexed_source)]
+
+
+def _add_chunk(
+    engine: sqlalchemy.Engine,
+    *,
+    user_id: int,
+    source_id: uuid.UUID | None = None,
+    topic_primer_id: uuid.UUID | None = None,
+    take_id: uuid.UUID | None = None,
+) -> None:
+    owner = (
+        models.ChunkOwner.SOURCE_TEXT
+        if source_id
+        else models.ChunkOwner.TOPIC_PRIMER
+        if topic_primer_id
+        else models.ChunkOwner.TAKE
+    )
+    with sqlalchemy.orm.Session(engine) as db:
+        db.add(
+            models.Chunk(
+                user_id=user_id,
+                owner_kind=owner.value,
+                source_id=source_id,
+                topic_primer_id=topic_primer_id,
+                take_id=take_id,
+                chunk_index=0,
+                text="A passage.",
+            )
+        )
+        db.commit()
 
 
 def _add_user(engine: sqlalchemy.Engine, *, whitelisted: bool) -> int:

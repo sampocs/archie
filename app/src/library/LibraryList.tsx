@@ -13,6 +13,7 @@ import {
 } from "@/db/actions";
 import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
+import { useTakesData } from "@/takes/useTakesData";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
@@ -39,10 +40,11 @@ import {
   type LibraryEntry,
   type LibraryFilter,
 } from "./sections";
+import { renderableResults, SearchResultsView } from "./SearchResultsView";
 import { formatReturnTime } from "./snooze";
-import { SearchResultsView } from "./SearchResultsView";
-import { useServerSearch } from "./useServerSearch";
+import { localExtras } from "./serverSearch";
 import { SwipeRow, type SwipeAction } from "./SwipeRow";
+import { useServerSearch } from "./useServerSearch";
 import { statusTag, upNext, type QueueEntry } from "./visibility";
 
 type LibraryListProps = {
@@ -251,11 +253,16 @@ function SearchResults(props: { data: LibraryData; query: string; rowActions: Ro
       Offline · searching titles and notes
     </Text>
   ) : null;
-  const matches =
-    view.mode === "server" ? [] : props.data.sources.filter((source) => matchesQuery(searchText(source), props.query));
-  const empty = view.mode === "server" ? results.length === 0 : matches.length === 0;
+  const takes = useTakesData();
+  const localMatches = props.data.sources.filter((source) => matchesQuery(searchText(source), props.query));
+  const serverRows = view.mode === "server" ? renderableResults({ results, data: props.data, takes }) : [];
 
-  if (empty) {
+  // The server indexes only passage text, so on-phone matches it didn't return (no text yet, notes, titles) follow it.
+  const localIds = localMatches.map((source) => source.id);
+  const extraIds = new Set(view.mode === "server" ? localExtras(results, localIds) : localIds);
+  const extras = localMatches.filter((source) => extraIds.has(source.id));
+
+  if (serverRows.length === 0 && extras.length === 0) {
     return (
       <View style={{ gap: 8 }}>
         {offlineLine}
@@ -269,15 +276,14 @@ function SearchResults(props: { data: LibraryData; query: string; rowActions: Ro
   return (
     <View style={{ gap: 8 }}>
       {offlineLine}
-      {view.mode === "server" ? (
-        <SearchResultsView data={props.data} results={results} />
-      ) : (
+      {serverRows.length > 0 ? <SearchResultsView data={props.data} results={serverRows} /> : null}
+      {extras.length > 0 ? (
         <GroupedList>
-          {matches.map((source) => (
+          {extras.map((source) => (
             <EntryRow key={source.id} entry={{ kind: "source", source }} filter="all" rowActions={props.rowActions} />
           ))}
         </GroupedList>
-      )}
+      ) : null}
     </View>
   );
 }

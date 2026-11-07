@@ -13,7 +13,8 @@ import sys
 import time
 from types import FrameType
 
-from archie_db import migrate
+import sqlalchemy.orm
+from archie_db import backfill_embed, migrate, session
 from archie_shared import config, logging
 
 _DEFAULT_PORT = "8000"
@@ -24,9 +25,11 @@ _logger = logging.get_logger(logging.LoggerName.API, "launch")
 
 
 def main() -> None:
-    """Apply migrations, start both processes, and exit when either one does."""
+    """Apply migrations, index what search hasn't seen, start both processes, and exit when either one does."""
     logging.configure()
-    migrate.upgrade(config.get_settings().require_database_url())
+    database_url = config.get_settings().require_database_url()
+    migrate.upgrade(database_url)
+    _queue_unindexed_items(database_url)
 
     port = os.environ.get("PORT", _DEFAULT_PORT)
     api = subprocess.Popen(["uvicorn", "archie_api.main:app", "--host", "0.0.0.0", "--port", port])
@@ -54,6 +57,16 @@ def main() -> None:
         sys.exit(0)
     # A child that quits on its own is a failure even with code 0, or the restart policy would not restart us.
     sys.exit(exit_code or 1)
+
+
+def _queue_unindexed_items(database_url: str) -> None:
+    """Queue `embed` for items that predate search, so a deploy indexes them without anyone running a command."""
+    engine = session.engine_for(database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        queued = backfill_embed.backfill_all(db)
+        db.commit()
+    engine.dispose()
+    _logger.info("Queued embed for %d unindexed items", queued)
 
 
 def _wait_for_first_exit(children: list[subprocess.Popen[bytes]]) -> int:

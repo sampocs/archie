@@ -21,6 +21,13 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
   without a `source_id` (topic-primer foundation cards and quiz cards), so its pulls stop until the new build is
   installed (phone migration 0007 re-pulls everything). An older server refuses the new review actions with a 422.
 
+## M7
+
+- **Search indexing.** On every deploy the launcher queues `embed` for live items that have no search passages yet
+  (existing sources, topic primers and takes), so nothing needs running by hand. To run it manually:
+  `railway ssh --service archie -- uv run --no-sync archie-worker backfill-embed` (`railway run` can't reach the
+  private `DATABASE_URL`).
+
 ## Not in code
 
 - **Secrets and the owner's email.** The repo is public, so these are `preserve()` in

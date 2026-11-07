@@ -174,8 +174,9 @@ def test_text_edits_must_match_and_a_new_proposal_supersedes_the_pending_one(
         )  # fmt: skip
         db.commit()
 
-    statuses = [row["status"] for row in sorted(_rows(authed)["edit_proposals"], key=lambda row: row["created_at"])]
-    assert sorted(statuses) == ["proposed", "superseded"]
+    rows = sorted(_rows(authed)["edit_proposals"], key=lambda row: row["created_at"])
+    assert [row["status"] for row in rows] == ["superseded", "proposed"]
+    assert rows[0]["created_at"] < rows[1]["created_at"]
     read = edit_tools.run(
         engine, context=context, tool_use_id="r1", name=edit_tools.READ_ITEM,
         tool_input={"kind": "card", "id": str(card_id)},

@@ -324,6 +324,8 @@ def save_proposals(
                 before=proposal.before,
                 after=proposal.after,
                 status=models.EditStatus.PROPOSED.value,
+                # now() is the transaction's start, so rows saved together would tie; they must keep their order.
+                created_at=sqlalchemy.func.clock_timestamp(),
                 change_seq=changes.next_change_seq(),
             )
         )

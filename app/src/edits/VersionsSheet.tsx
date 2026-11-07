@@ -12,7 +12,7 @@ import { BottomSheet } from "@/ui/BottomSheet";
 import { haptic } from "@/ui/haptics";
 import { useNow } from "@/ui/useNow";
 
-import { restoreVersion } from "./api";
+import { isConflict, restoreVersion } from "./api";
 import type { EditTargetKind } from "./types";
 import { useTargetVersions } from "./useTargetVersions";
 import { VersionPreview } from "./VersionPreview";
@@ -63,7 +63,16 @@ export function VersionsSheet({ target, visible, onClose, onRestored }: Versions
         onRestored(version);
       })
       .catch((error) => {
-        if (error instanceof UnauthorizedError) void clearSession();
+        if (error instanceof UnauthorizedError) {
+          void clearSession();
+          return;
+        }
+        // The server already moved on (a 409): the sync brings its state, so close rather than show a failure.
+        if (isConflict(error)) {
+          requestSync();
+          onClose();
+          return;
+        }
         setFailed(true);
       })
       .finally(() => setRestoring(false));

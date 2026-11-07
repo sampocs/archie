@@ -66,6 +66,11 @@ def test_topic_primer_writes_the_first_version(engine: sqlalchemy.Engine, replay
     assert primer.model == llm.SONNET
     assert primer.prompt_version == prompts.TOPIC_PRIMER_PROMPT_VERSION == "topic-primer-v2"
     assert "<foundation_cards>" not in primer.content["markdown"]
+    with sqlalchemy.orm.Session(engine) as db:
+        [embed] = db.scalars(sqlalchemy.select(models.Job).where(models.Job.kind == models.JobKind.EMBED.value))
+    assert embed.status == models.JobStatus.QUEUED.value
+    assert embed.payload[jobs.ITEM_KIND_KEY] == "topic_primer"
+    assert embed.payload[jobs.ITEM_ID_KEY] == str(primer.id)
     [call] = _llm_calls(engine)
     assert call.step == models.JobKind.TOPIC_PRIMER.value
     assert call.source_id is None

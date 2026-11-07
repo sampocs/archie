@@ -1,8 +1,8 @@
 """Cutting an item's words into search passages of about 300 words with a 50-word overlap.
 
-Passages break at sentence ends (paragraph ends are sentence ends too); a sentence longer than a passage is cut at word
-counts. A transcript is cut from its timed segments and each passage keeps its first segment's start. Summaries and
-primers are cut section by section, so a heading always starts a passage.
+Passages break at sentence ends (paragraph ends are sentence ends too); a sentence or transcript segment longer than a
+passage is cut at word counts. A transcript is cut from its timed segments and each passage keeps its first segment's
+start. Summaries and primers are cut section by section, so a heading always starts a passage.
 """
 
 from __future__ import annotations
@@ -52,11 +52,7 @@ def text_passages(text: str, *, owner_kind: models.ChunkOwner) -> list[Passage]:
 
 def segment_passages(segments: Sequence[content.Segment]) -> list[Passage]:
     """A transcript cut at segment ends; each passage starts when its first segment does."""
-    units = [
-        _Unit(text=" ".join(segment.text.split()), start=segment.start, words=len(segment.text.split()))
-        for segment in segments
-        if segment.text.strip()
-    ]
+    units = [unit for segment in segments for unit in _word_units(segment.text.split(), start=segment.start)]
     return [
         Passage(owner_kind=models.ChunkOwner.SOURCE_TEXT, text=window_text, start_seconds=start)
         for window_text, start in _pack(units)
@@ -92,12 +88,16 @@ def _sentence_units(text: str) -> list[_Unit]:
     for paragraph in _PARAGRAPH_BREAK.split(text):
         flat = " ".join(paragraph.split())
         for sentence in _SENTENCE_END.split(flat) if flat else []:
-            words = sentence.split()
-            # A sentence longer than a passage (a transcript without punctuation, a list) is cut at word counts.
-            for start in range(0, len(words), TARGET_WORDS):
-                piece = words[start : start + TARGET_WORDS]
-                units.append(_Unit(text=" ".join(piece), start=None, words=len(piece)))
+            units.extend(_word_units(sentence.split(), start=None))
     return units
+
+
+def _word_units(words: Sequence[str], *, start: float | None) -> list[_Unit]:
+    """One unit per TARGET_WORDS words, for a sentence or segment longer than a passage; each keeps the start."""
+    return [
+        _Unit(text=" ".join(piece), start=start, words=len(piece))
+        for piece in (words[offset : offset + TARGET_WORDS] for offset in range(0, len(words), TARGET_WORDS))
+    ]
 
 
 def _pack(units: Sequence[_Unit]) -> list[tuple[str, float | None]]:

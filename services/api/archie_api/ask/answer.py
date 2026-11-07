@@ -1,0 +1,262 @@
+"""One Ask answer: the tool loop against Sonnet 5.5, streamed as server-sent events, then saved.
+
+The server runs up to `MAX_ROUNDS` model requests: `search_library` (run here, results returned as citable
+`search_result` blocks) and Anthropic's web search tool (run by Anthropic). Text streams as `delta` events; each
+finished text block becomes a labelled `block`; a tool run shows as `searching`. The answer is stored when the stream
+ends — complete, or failed with whatever text arrived (also when the phone hangs up mid-answer). Every model round is
+recorded in `llm_calls` (step `ask`). No database transaction is open while the model works.
+"""
+
+from __future__ import annotations
+
+import json
+import uuid
+from collections.abc import Iterator
+from dataclasses import dataclass, field
+from enum import StrEnum
+from typing import Any
+
+import anthropic
+import httpx
+import sqlalchemy
+import sqlalchemy.orm
+from archie_db import changes, models, search
+from archie_llm import embeddings, llm
+from archie_shared import logging
+
+from archie_api.ask import citations, prompts
+from archie_api.sync import conversation_actions
+
+MAX_ROUNDS = 5
+MAX_TOKENS = 4000
+LIBRARY_RESULTS = 8
+REQUEST_TIMEOUT_SECONDS = 120
+QUERY_TIMEOUT_SECONDS = 5
+FAILED_MESSAGE = "Didn't finish. Try again"
+# Answers should start fast: thinking only between tool calls, at medium effort (Sonnet 5.5 rejects "disabled").
+THINKING: anthropic.types.ThinkingConfigParam = {"type": "between_tools"}
+OUTPUT_CONFIG: anthropic.types.OutputConfigParam = {"effort": "medium"}
+_TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "auto"}
+# The last round may not call tools, so it has to answer.
+_LAST_ROUND_TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "none"}
+
+_logger = logging.get_logger(logging.LoggerName.API, "ask")
+
+
+class EventName(StrEnum):
+    """The server-sent events of an answer stream."""
+
+    DELTA = "delta"
+    BLOCK = "block"
+    SEARCHING = "searching"
+    DONE = "done"
+    ERROR = "error"
+
+
+@dataclass(frozen=True)
+class Event:
+    """One server-sent event."""
+
+    name: EventName
+    data: dict[str, Any]
+
+    def sse(self) -> str:
+        """The event on the wire."""
+        return f"event: {self.name.value}\ndata: {json.dumps(self.data)}\n\n"
+
+
+@dataclass(frozen=True)
+class AnswerRequest:
+    """Everything one answer needs, read before the stream starts so no request-scoped session is used."""
+
+    user_id: int
+    conversation_id: uuid.UUID
+    user_message_id: uuid.UUID
+    web_search: bool
+    system: str
+    messages: list[dict[str, Any]]
+    boost: search.ItemRef | None
+    anthropic_key: str
+    # None: the chat's library search is keyword only.
+    openai_key: str | None
+
+
+@dataclass
+class _Progress:
+    """The answer so far: finished segments and the text of the block still streaming."""
+
+    segments: list[citations.Segment] = field(default_factory=list)
+    partial: str = ""
+
+
+class AnswerRefusedError(Exception):
+    """The model declined to answer; stored as a failed answer the owner can retry."""
+
+
+def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Iterator[str]:
+    """The answer's events as SSE text, ending with `done` or `error`; the answer is saved either way."""
+    progress = _Progress()
+    try:
+        for event in _run(engine, request=request, progress=progress):
+            yield event.sse()
+    except GeneratorExit:
+        # The phone hung up: keep what arrived so the chat shows "Didn't finish" rather than nothing.
+        _save(engine, request=request, progress=progress, failed=True)
+        raise
+    except (anthropic.APIError, AnswerRefusedError, ValueError) as error:
+        # ValueError: the SDK could not parse the stream (e.g. a tool input that isn't JSON).
+        _logger.warning("Answer failed for conversation %s: %r", request.conversation_id, error)
+        _save(engine, request=request, progress=progress, failed=True)
+        yield Event(name=EventName.ERROR, data={"message": FAILED_MESSAGE}).sse()
+        return
+
+    message_id = _save(engine, request=request, progress=progress, failed=False)
+    yield Event(name=EventName.DONE, data={"message_id": str(message_id)}).sse()
+
+
+def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress) -> Iterator[Event]:
+    """The tool loop; the last round may not call tools, so it has to answer."""
+    client = anthropic.Anthropic(api_key=request.anthropic_key, max_retries=0, timeout=REQUEST_TIMEOUT_SECONDS)
+    context = llm.CallContext(user_id=request.user_id, source_id=None, job_id=None, step=llm.ASK_STEP)
+    messages: list[Any] = list(request.messages)
+    passages: dict[str, search.ChunkHit] = {}
+
+    for round_number in range(1, MAX_ROUNDS + 1):
+        tool_choice = _LAST_ROUND_TOOL_CHOICE if round_number == MAX_ROUNDS else _TOOL_CHOICE
+        with client.messages.stream(
+            model=llm.SONNET,
+            max_tokens=MAX_TOKENS,
+            system=request.system,
+            messages=messages,
+            tools=[prompts.SEARCH_LIBRARY_TOOL, prompts.WEB_SEARCH_TOOL],  # type: ignore[list-item]
+            tool_choice=tool_choice,
+            thinking=THINKING,
+            output_config=OUTPUT_CONFIG,
+        ) as response_stream:
+            for stream_event in response_stream:
+                yield from _events_of(stream_event, progress=progress, passages=passages)
+            response = response_stream.get_final_message()
+        llm.record_call(engine, context=context, model=llm.SONNET, response=response)
+
+        if response.stop_reason == "refusal":
+            raise AnswerRefusedError(str(response.stop_details))
+        # Web search's own loop paused; re-sending the turn resumes it.
+        if response.stop_reason == "pause_turn":
+            messages.append({"role": "assistant", "content": response.content})
+            continue
+        tool_uses = [block for block in response.content if block.type == "tool_use"]
+        if response.stop_reason != "tool_use" or not tool_uses:
+            return
+
+        messages.append({"role": "assistant", "content": response.content})
+        results = [
+            _search_library(engine, request=request, tool_use=tool_use, passages=passages) for tool_use in tool_uses
+        ]
+        messages.append({"role": "user", "content": results})
+
+
+def _events_of(stream_event: Any, *, progress: _Progress, passages: dict[str, search.ChunkHit]) -> Iterator[Event]:
+    """The phone's events for one SDK stream event; most SDK events have none."""
+    if stream_event.type == "text":
+        progress.partial += stream_event.text
+        yield Event(name=EventName.DELTA, data={"block": len(progress.segments), "text": stream_event.text})
+        return
+    if stream_event.type != "content_block_stop":
+        return
+
+    block = stream_event.content_block
+    if block.type == "text":
+        segment = citations.segment_of(block, passages=passages)
+        progress.segments.append(segment)
+        progress.partial = ""
+        data = {"block": len(progress.segments) - 1, "label": segment.label.value, "citations": segment.citations}
+        yield Event(name=EventName.BLOCK, data=data)
+    elif block.type == "tool_use" and block.name == prompts.SEARCH_LIBRARY_TOOL["name"]:
+        yield Event(name=EventName.SEARCHING, data={"kind": "library", "query": _query_of(block.input) or ""})
+    elif block.type == "server_tool_use" and block.name == prompts.WEB_SEARCH_TOOL["name"]:
+        yield Event(name=EventName.SEARCHING, data={"kind": "web", "query": _query_of(block.input) or ""})
+
+
+def _search_library(
+    engine: sqlalchemy.Engine,
+    *,
+    request: AnswerRequest,
+    tool_use: anthropic.types.ToolUseBlock,
+    passages: dict[str, search.ChunkHit],
+) -> dict[str, Any]:
+    """Run `search_library` and answer with citable passages; a bad input goes back as an error the model can fix."""
+    query = _query_of(tool_use.input)
+    if not query:
+        error = json.dumps({"INVALID_JSON": json.dumps(tool_use.input)})
+        return {"type": "tool_result", "tool_use_id": tool_use.id, "is_error": True, "content": error}
+
+    # Embedded before the session opens: no transaction is held across the OpenAI call.
+    embedding = _query_embedding(engine, request=request, query=query)
+    with sqlalchemy.orm.Session(engine) as db:
+        hits = search.search_chunks(
+            db,
+            user_id=request.user_id,
+            query=query,
+            query_embedding=embedding,
+            limit=LIBRARY_RESULTS,
+            boost=request.boost,
+            match_any=True,
+        )
+    passages.update({citations.source_key(hit): hit for hit in hits})
+
+    content: list[dict[str, Any]] = [citations.search_result_block(hit) for hit in hits] or [
+        {"type": "text", "text": "Nothing in the owner's library matched."}
+    ]
+    return {"type": "tool_result", "tool_use_id": tool_use.id, "content": content}
+
+
+def _query_of(tool_input: object) -> str | None:
+    """The `query` string of a tool input, or None when the input isn't one (eager streaming skips validation)."""
+    if not isinstance(tool_input, dict):
+        return None
+    query = tool_input.get("query")
+    return query.strip() if isinstance(query, str) and query.strip() else None
+
+
+def _query_embedding(engine: sqlalchemy.Engine, *, request: AnswerRequest, query: str) -> list[float] | None:
+    if request.openai_key is None:
+        return None
+    context = llm.CallContext(user_id=request.user_id, source_id=None, job_id=None, step=llm.EMBED_STEP)
+    try:
+        [vector] = embeddings.embed(
+            engine, api_key=request.openai_key, context=context, texts=[query], timeout_seconds=QUERY_TIMEOUT_SECONDS
+        )
+    except (httpx.HTTPError, embeddings.EmbeddingError) as error:
+        _logger.warning("Chat query embedding failed, searching by keyword only: %r", error)
+        return None
+    return vector
+
+
+def _save(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress, failed: bool) -> uuid.UUID:
+    """Store the answer and give the question, the answer and the chat new positions, so the phone pulls them."""
+    segments = list(progress.segments)
+    # A block cut off mid-stream has no citations yet; keep its words as background so the owner sees them.
+    if progress.partial.strip():
+        segments.append(citations.Segment(label=citations.AnswerLabel.BACKGROUND, text=progress.partial, citations=[]))
+    message_id = uuid.uuid4()
+
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, request.user_id)
+        db.add(
+            models.Message(
+                id=message_id,
+                user_id=request.user_id,
+                conversation_id=request.conversation_id,
+                role=models.MessageRole.ASSISTANT.value,
+                text="".join(segment.text for segment in segments).strip(),
+                segments=[segment.to_wire() for segment in segments],
+                web_search=request.web_search,
+                status=(models.MessageStatus.FAILED if failed else models.MessageStatus.COMPLETE).value,
+                change_seq=changes.next_change_seq(),
+            )
+        )
+        question = db.get_one(models.Message, request.user_message_id)
+        question.change_seq = changes.next_change_seq()
+        conversation_actions.touch_conversation(db.get_one(models.Conversation, request.conversation_id))
+        db.commit()
+    return message_id

@@ -17,12 +17,22 @@ from archie_db import changes, jobs, models
 
 
 def backfill_all(db: sqlalchemy.orm.Session) -> int:
-    """Queue one `embed` per unindexed live item, in the caller's transaction; returns how many were queued."""
-    items = [*_sources(db), *_topic_primers(db), *_takes(db)]
+    """Queue one `embed` per unindexed live item; returns how many were queued.
+
+    Commits once per user, so each user's write lock is held only while that user's items are queued.
+    """
+    items_by_user: dict[int, list[_Item]] = {}
+    for item in [*_sources(db), *_topic_primers(db), *_takes(db)]:
+        items_by_user.setdefault(item.user_id, []).append(item)
+
     queued = 0
-    for item in items:
-        changes.lock_user_writes(db, item.user_id)
-        queued += jobs.enqueue_embed(db, user_id=item.user_id, item_kind=item.kind, item_id=item.item_id)
+    for user_id, items in items_by_user.items():
+        changes.lock_user_writes(db, user_id)
+        queued += sum(
+            jobs.enqueue_embed(db, user_id=user_id, item_kind=item.kind, item_id=item.item_id) for item in items
+        )
+        db.commit()
+
     return queued
 
 

@@ -425,4 +425,7 @@ def test_0013_keeps_versions_with_their_defaults_and_cascades_proposals(test_dat
 
     migrate.downgrade(test_database_url, "0012")
     migrate.upgrade(test_database_url)
+
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
     engine.dispose()

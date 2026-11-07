@@ -117,3 +117,67 @@ def test_pull_carries_origins_card_versions_and_proposals(live_stack: LiveStack)
         "id", "conversation_id", "message_id", "target_kind", "target_id", "title", "description", "base_version",
         "before", "after", "status", "applied_version", "created_at", "updated_at", "change_seq",
     }  # fmt: skip
+
+
+def test_pull_carries_take_version_and_topic_primer_origins(live_stack: LiveStack) -> None:
+    """A take version that leaves origin unset reads as owner; a chat-edited primer keeps its origin and instruction."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    user_id = _user_id(authed)
+    take_id, topic_id = uuid.uuid4(), uuid.uuid4()
+
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+        db.add(
+            models.Take(
+                id=take_id,
+                user_id=user_id,
+                kind=models.TakeKind.OPINION.value,
+                title="T",
+                current_version=1,
+                change_seq=changes.next_change_seq(),
+            )
+        )
+        db.add(
+            models.Topic(
+                id=topic_id,
+                user_id=user_id,
+                domain="Macro",
+                name=f"Rates {uuid.uuid4()}",
+                origin=models.TopicOrigin.USER.value,
+                change_seq=changes.next_change_seq(),
+            )
+        )
+        db.flush()
+        db.add(
+            models.TakeVersion(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                take_id=take_id,
+                version=1,
+                body="B",
+                raw_body="B",
+                cleaned=False,
+                change_seq=changes.next_change_seq(),
+            )
+        )
+        db.add(
+            models.TopicPrimer(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                topic_id=topic_id,
+                version=1,
+                is_current=True,
+                content={"markdown": "# Rates"},
+                origin=models.VersionOrigin.CHAT_EDIT.value,
+                instruction="Shorter",
+                change_seq=changes.next_change_seq(),
+            )
+        )
+        db.commit()
+    engine.dispose()
+
+    rows = _rows(authed)
+    assert rows["take_versions"][0]["origin"] == "owner"
+    [primer] = rows["topic_primers"]
+    assert (primer["origin"], primer["instruction"]) == ("chat_edit", "Shorter")

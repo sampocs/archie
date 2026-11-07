@@ -58,6 +58,9 @@ const COLLECTION_ACTIONS = new Set(["update_collection", "update_collection_item
 // Actions whose payload id is a take: a rejection re-pulls the server's copy and touches no source.
 const TAKE_ACTIONS = new Set(["update_take", "retry_take_cleanup"]);
 
+// Actions whose payload id is an Ask chat: a rejection re-pulls the server's copy and touches no source.
+const CONVERSATION_ACTIONS = new Set(["delete_conversation"]);
+
 // Take actions that add a version on the phone: a rejection removes it (the server never made it).
 const TAKE_VERSION_ACTIONS = new Set(["save_take", "restore_take_version"]);
 
@@ -169,13 +172,15 @@ export function createDbSyncStore(
         // Source actions that change state, processing or the primer's queue entry optimistically rewind too, and
         // still surface syncError on the source below. A rejected finish_brief (a brief already closed) re-pulls the brief
         // and the newsletters it marked briefed; a rejected card action re-pulls the card's schedule or undoes its drop;
-        // a rejected collection edit re-pulls the collection or post; a rejected take edit re-pulls the take.
+        // a rejected collection edit re-pulls the collection or post; a rejected take edit re-pulls the take; a rejected
+        // chat delete re-pulls the chat.
         const rowIsNotSource =
           TOPIC_ACTIONS.has(entry.type) ||
           BRIEF_ACTIONS.has(entry.type) ||
           CARD_ACTIONS.has(entry.type) ||
           COLLECTION_ACTIONS.has(entry.type) ||
-          TAKE_ACTIONS.has(entry.type);
+          TAKE_ACTIONS.has(entry.type) ||
+          CONVERSATION_ACTIONS.has(entry.type);
         const rewind =
           rowIsNotSource ||
           payload.target === "topic_primer" ||
@@ -226,9 +231,9 @@ export function createDbSyncStore(
       db.transaction((tx) => {
         if (signedOutSinceStart()) return;
 
-        // A row (source, card, topic, topic primer, brief, collection, saved post, take, or the take version an action
-        // made or changed) with an unsent local action keeps its local copy; it returns on a later pull once the push
-        // bumps its change_seq. No timestamp comparison: phone and server clocks can't be trusted.
+        // A row (source, card, topic, topic primer, brief, collection, saved post, take, the take version an action
+        // made or changed, or a chat) with an unsent local action keeps its local copy; it returns on a later pull
+        // once the push bumps its change_seq. No timestamp comparison: phone and server clocks can't be trusted.
         const unsent = new Set(
           tx
             .select()
@@ -317,6 +322,8 @@ export function createDbSyncStore(
             expiresAt: card.expires_at ?? null,
             takeId: card.take_id ?? null,
             takeVersionId: card.take_version_id ?? null,
+            conversationId: card.conversation_id ?? null,
+            messageId: card.message_id ?? null,
           };
           tx.insert(schema.cards)
             .values({ id: card.id, ...values })
@@ -444,6 +451,40 @@ export function createDbSyncStore(
           tx.insert(schema.takeVersions)
             .values({ id: version.id, ...values })
             .onConflictDoUpdate({ target: schema.takeVersions.id, set: values })
+            .run();
+        }
+
+        for (const conversation of page.rows.conversations ?? []) {
+          if (unsent.has(conversation.id)) continue;
+          const values = {
+            title: conversation.title,
+            aboutKind: conversation.about_kind,
+            aboutSourceId: conversation.about_source_id,
+            aboutTopicPrimerId: conversation.about_topic_primer_id,
+            aboutTakeId: conversation.about_take_id,
+            createdAt: conversation.created_at,
+            updatedAt: conversation.updated_at,
+            deletedAt: conversation.deleted_at,
+          };
+          tx.insert(schema.conversations)
+            .values({ id: conversation.id, ...values })
+            .onConflictDoUpdate({ target: schema.conversations.id, set: values })
+            .run();
+        }
+
+        for (const message of page.rows.messages ?? []) {
+          const values = {
+            conversationId: message.conversation_id,
+            role: message.role,
+            text: message.text,
+            segments: message.segments === null ? null : JSON.stringify(message.segments),
+            webSearch: message.web_search ? 1 : 0,
+            status: message.status,
+            createdAt: message.created_at,
+          };
+          tx.insert(schema.messages)
+            .values({ id: message.id, ...values })
+            .onConflictDoUpdate({ target: schema.messages.id, set: values })
             .run();
         }
 

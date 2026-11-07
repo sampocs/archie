@@ -984,7 +984,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;
@@ -1679,6 +1679,41 @@ describe("database SyncStore: takes", () => {
         reps: 2,
         take_id: null,
         take_version_id: null,
+      }),
+    ]);
+  });
+
+  // 0011 only adds tables and columns too; the same guard against a cards rebuild that drops a schedule.
+  it("the 0011_search_ask migration keeps an existing card and its schedule", () => {
+    const sqlite = new Database(":memory:");
+    const sqlByKey = migrations.migrations as Record<string, string>;
+    const runMigration = (idx: number) => {
+      for (const statement of sqlByKey[`m${String(idx).padStart(4, "0")}`].split("--> statement-breakpoint")) {
+        if (statement.trim()) sqlite.exec(statement);
+      }
+    };
+    const searchAskIdx = migrations.journal.entries.find((entry) => entry.tag === "0011_search_ask")!.idx;
+    for (let idx = 0; idx < searchAskIdx; idx++) runMigration(idx);
+    sqlite
+      .prepare(
+        "INSERT INTO cards (id, source_id, take_id, kind, question, answer, created_at, fsrs_state, stability, due_at, reps) " +
+          "VALUES ('c1', 's1', NULL, 'concept', 'Q?', 'A.', 'x', 'review', 3.5, '2026-11-09T00:00:00Z', 2)",
+      )
+      .run();
+
+    runMigration(searchAskIdx);
+
+    expect(sqlite.prepare("SELECT * FROM cards").all()).toEqual([
+      expect.objectContaining({
+        id: "c1",
+        source_id: "s1",
+        fsrs_state: "review",
+        stability: 3.5,
+        due_at: "2026-11-09T00:00:00Z",
+        reps: 2,
+        take_id: null,
+        conversation_id: null,
+        message_id: null,
       }),
     ]);
   });

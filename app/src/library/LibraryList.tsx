@@ -40,6 +40,8 @@ import {
   type LibraryFilter,
 } from "./sections";
 import { formatReturnTime } from "./snooze";
+import { SearchResultsView } from "./SearchResultsView";
+import { useServerSearch } from "./useServerSearch";
 import { SwipeRow, type SwipeAction } from "./SwipeRow";
 import { statusTag, upNext, type QueueEntry } from "./visibility";
 
@@ -243,22 +245,40 @@ function SnoozedSection(props: { entries: LibraryEntry[]; filter: LibraryFilter;
 }
 
 function SearchResults(props: { data: LibraryData; query: string; rowActions: RowActions }) {
-  const matches = props.data.sources.filter((source) => matchesQuery(searchText(source), props.query));
+  const { view, results } = useServerSearch(props.query);
+  const offlineLine = view.offlineLine ? (
+    <Text testID="search-offline" variant="secondary" tone="ink3">
+      Offline · searching titles and notes
+    </Text>
+  ) : null;
+  const matches =
+    view.mode === "server" ? [] : props.data.sources.filter((source) => matchesQuery(searchText(source), props.query));
+  const empty = view.mode === "server" ? results.length === 0 : matches.length === 0;
 
-  if (matches.length === 0) {
+  if (empty) {
     return (
-      <Text testID="library-search-empty" tone="ink2">
-        No matches for “{props.query.trim()}”
-      </Text>
+      <View style={{ gap: 8 }}>
+        {offlineLine}
+        <Text testID="library-search-empty" tone="ink2">
+          No matches for “{props.query.trim()}”
+        </Text>
+      </View>
     );
   }
 
   return (
-    <GroupedList>
-      {matches.map((source) => (
-        <EntryRow key={source.id} entry={{ kind: "source", source }} filter="all" rowActions={props.rowActions} />
-      ))}
-    </GroupedList>
+    <View style={{ gap: 8 }}>
+      {offlineLine}
+      {view.mode === "server" ? (
+        <SearchResultsView data={props.data} results={results} />
+      ) : (
+        <GroupedList>
+          {matches.map((source) => (
+            <EntryRow key={source.id} entry={{ kind: "source", source }} filter="all" rowActions={props.rowActions} />
+          ))}
+        </GroupedList>
+      )}
+    </View>
   );
 }
 

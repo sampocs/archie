@@ -168,6 +168,27 @@ def test_archie_rewrites_never_replace_an_owner_chosen_version_unless_the_text_c
     assert [summary.is_current for summary in _summaries(db, source.id)] == [False, False, False, True]
 
 
+def test_archie_primer_rewrites_never_replace_an_owner_chosen_primer(db: sqlalchemy.orm.Session) -> None:
+    """Archie's primer rewrite lands not current over a chat edit of the source primer."""
+    user_id = _user(db)
+    source = _source_with_summary(db, user_id=user_id)
+    pipeline.write_artifact(
+        db, source=source, kind=models.ArtifactKind.PRIMER, content={"markdown": "## A"}, model="m", prompt_version="p"
+    )
+    target = versions.Target(kind=models.EditTarget.PRIMER, id=source.id)
+    versions.write(
+        db, target=target, content={"markdown": "## Mine"}, origin=models.VersionOrigin.CHAT_EDIT,
+        instruction=None, derived_from=1,
+    )  # fmt: skip
+
+    rewrite = pipeline.write_artifact(
+        db, source=source, kind=models.ArtifactKind.PRIMER, content={"markdown": "## B"}, model="m", prompt_version="p"
+    )
+
+    assert (rewrite.version, rewrite.is_current) == (3, False)
+    assert versions.current(db, target=target).content["markdown"] == "## Mine"
+
+
 def test_a_topic_primer_is_resolved_from_any_version_and_edits_carry_its_read_state(
     db: sqlalchemy.orm.Session,
 ) -> None:

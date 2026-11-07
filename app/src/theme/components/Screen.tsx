@@ -43,7 +43,8 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
   const footerInset = Math.max(bottomInset, insets.bottom);
 
   // A pinned footer rides above the keyboard; otherwise a typed-in field would hide the screen's submit button.
-  // Only footer screens opt in: tab screens sit above the tab bar, which the keyboard's height already includes.
+  // The KAV is enabled only for footer screens; for a footer on a tab screen, keyboardVerticalOffset removes the tab
+  // bar's height, which the keyboard's height already includes.
   return (
     <KeyboardAvoidingView
       behavior="padding"
@@ -68,7 +69,8 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
         scrollEventThrottle={onScroll ? SCROLL_EVENT_THROTTLE_MS : undefined}
         contentContainerStyle={{
           padding: theme.spacing.gutterCards,
-          paddingBottom: theme.spacing.gutterCards + bottomInset,
+          // A footer already clears the tab bar, so the content only needs a small gap above it.
+          paddingBottom: theme.spacing.gutterCards + (footer ? theme.spacing.md : bottomInset),
           gap: theme.spacing.section,
         }}
         scrollIndicatorInsets={{ bottom: bottomInset }}

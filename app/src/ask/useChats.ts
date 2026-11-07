@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull } from "drizzle-orm";
+import { asc, desc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { useMemo } from "react";
 
@@ -41,7 +41,7 @@ export function useChat(conversationId: string): { conversation: ConversationRow
     db
       .select()
       .from(schema.messages)
-      .where(and(eq(schema.messages.conversationId, conversationId)))
+      .where(eq(schema.messages.conversationId, conversationId))
       .orderBy(asc(schema.messages.createdAt), asc(schema.messages.id)),
   );
   return { conversation: conversations[0] ?? null, messages };

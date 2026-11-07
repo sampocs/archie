@@ -78,7 +78,7 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
       return { ...live, blocks };
     }
     case "searching":
-      return { ...live, searching: event.kind };
+      return { ...live, searching: event.kind, editing: false };
     case "done":
       return { ...live, messageId: event.message_id, searching: null, editing: false };
     case "error":

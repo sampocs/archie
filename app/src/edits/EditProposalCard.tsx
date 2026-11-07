@@ -50,7 +50,10 @@ export function EditProposalCard({ proposal: streamed, ready, online, onToast }:
     sendEditAction({ proposalId: proposal.id, action, sessionKey })
       .then(() => haptic("success"))
       .catch((error) => {
-        if (error instanceof UnauthorizedError) void clearSession();
+        if (error instanceof UnauthorizedError) {
+          void clearSession();
+          return;
+        }
         // Any other 409 means the server already moved the proposal on; the sync below brings its state.
         if (action === "undo" && isConflict(error)) onToast(UNDO_CONFLICT);
         else if (!isConflict(error)) onToast(NETWORK_FAILED);

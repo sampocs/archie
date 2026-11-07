@@ -22,6 +22,13 @@ def _axis(index: int) -> list[float]:
     return vector
 
 
+def _leaning(index: int, *, toward: int, weight: float) -> list[float]:
+    """`_axis(index)` tilted toward another axis: still close to it, but not identical."""
+    vector = _axis(index)
+    vector[toward] = weight
+    return vector
+
+
 @pytest.fixture
 def db(migrated_database_url: str) -> Iterator[sqlalchemy.orm.Session]:
     """A session on the migrated test database."""
@@ -147,12 +154,25 @@ def test_meaning_search_ranks_by_cosine_distance(db: sqlalchemy.orm.Session) -> 
     near = _source(db, user_id=user_id, title="Near")
     far = _source(db, user_id=user_id, title="Far")
     _chunk(db, owner=near, text="Reserves at the central bank.", embedding=_axis(1))
-    _chunk(db, owner=far, text="Football results.", embedding=_axis(2))
+    _chunk(db, owner=far, text="Football results.", embedding=_leaning(1, toward=2, weight=0.5))
 
     hits = search.search_chunks(db, user_id=user_id, query="zzqx", query_embedding=_axis(1), limit=10)
 
     assert [hit.title for hit in hits] == ["Near", "Far"]
     assert not hits[0].keyword_match
+
+
+def test_meaning_search_drops_chunks_beyond_the_distance_cutoff(db: sqlalchemy.orm.Session) -> None:
+    """A chunk nearly the query's way is returned; an unrelated one (orthogonal, distance 1.0) is not."""
+    user_id = _user(db)
+    within = _source(db, user_id=user_id, title="Within")
+    beyond = _source(db, user_id=user_id, title="Beyond")
+    _chunk(db, owner=within, text="Reserves at the central bank.", embedding=_leaning(1, toward=2, weight=0.5))
+    _chunk(db, owner=beyond, text="Football results.", embedding=_axis(5))
+
+    hits = search.search_chunks(db, user_id=user_id, query="zzqx", query_embedding=_axis(1), limit=10)
+
+    assert [hit.title for hit in hits] == ["Within"]
 
 
 def test_a_chunk_found_both_ways_outranks_one_found_once(db: sqlalchemy.orm.Session) -> None:
@@ -163,7 +183,12 @@ def test_a_chunk_found_both_ways_outranks_one_found_once(db: sqlalchemy.orm.Sess
     meaning_only = _source(db, user_id=user_id, title="Meaning")
     _chunk(db, owner=words_only, text="Money printing and money printing again.")
     _chunk(db, owner=both, text="Money printing is a loose phrase.", embedding=_axis(3))
-    _chunk(db, owner=meaning_only, text="Reserves are created by asset purchases.", embedding=_axis(4))
+    _chunk(
+        db,
+        owner=meaning_only,
+        text="Reserves are created by asset purchases.",
+        embedding=_leaning(3, toward=4, weight=0.5),
+    )
 
     hits = search.search_chunks(db, user_id=user_id, query="money printing", query_embedding=_axis(3), limit=10)
 

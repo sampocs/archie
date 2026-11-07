@@ -2,16 +2,19 @@
 
 The server runs up to `MAX_ROUNDS` model requests: `search_library` (run here, results returned as citable
 `search_result` blocks) and Anthropic's web search tool (run by Anthropic). Text streams as `delta` events; each
-finished text block becomes a labelled `block`; a tool run shows as `searching`. The answer is stored when the stream
-ends — complete, or failed with whatever text arrived (also when the phone hangs up mid-answer). Every model round is
-recorded in `llm_calls` (step `ask`). No database transaction is open while the model works.
+finished text block becomes a `block` carrying its paragraph's label, sent when the paragraph closes; a tool run shows
+as `searching`. Uncited text the model writes before a tool call (announcing its search) is streamed but not saved.
+The answer is stored when the stream ends — complete only if the model finished its turn (`end_turn` or a stop
+sequence), else failed with whatever text arrived: a refusal, a cut-off (`max_tokens`), no answer within `MAX_ROUNDS`,
+an API error, or the phone hanging up mid-answer. Every finished model round is recorded in
+`llm_calls` (step `ask`). No database transaction is open while the model works.
 """
 
 from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import Iterator
+from collections.abc import Generator, Iterator
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
@@ -39,6 +42,8 @@ OUTPUT_CONFIG: anthropic.types.OutputConfigParam = {"effort": "medium"}
 _TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "auto"}
 # The last round may not call tools, so it has to answer.
 _LAST_ROUND_TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "none"}
+# The stop reasons of a model that finished its turn; any other (e.g. `max_tokens`) leaves the answer unfinished.
+_FINISHED_STOP_REASONS = frozenset({"end_turn", "stop_sequence"})
 
 _logger = logging.get_logger(logging.LoggerName.API, "ask")
 
@@ -82,18 +87,36 @@ class AnswerRequest:
 
 
 @dataclass
-class _Progress:
-    """The answer so far: finished segments and the text of the block still streaming."""
+class _Block:
+    """A finished text block, labelled by its paragraph; a dropped one was streamed but isn't saved."""
 
-    segments: list[citations.Segment] = field(default_factory=list)
+    segment: citations.Segment
+    dropped: bool = False
+
+
+@dataclass
+class _Progress:
+    """The answer so far: text blocks whose paragraph closed (in wire order), the open paragraph, the streaming text."""
+
+    blocks: list[_Block] = field(default_factory=list)
+    paragraphs: citations.Paragraphs = field(default_factory=citations.Paragraphs)
     partial: str = ""
+
+    @property
+    def next_block(self) -> int:
+        """The wire index of the text block streaming now: every text block of the answer counts, dropped or not."""
+        return len(self.blocks) + len(self.paragraphs.open)
 
 
 class AnswerRefusedError(Exception):
     """The model declined to answer; stored as a failed answer the owner can retry."""
 
 
-def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Iterator[str]:
+class AnswerIncompleteError(Exception):
+    """The model stopped before finishing its turn (cut off, or out of rounds); stored as a failed answer."""
+
+
+def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, None, None]:
     """The answer's events as SSE text, ending with `done` or `error`; the answer is saved either way."""
     progress = _Progress()
     try:
@@ -103,7 +126,12 @@ def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Iterator[str]:
         # The phone hung up: keep what arrived so the chat shows "Didn't finish" rather than nothing.
         _save(engine, request=request, progress=progress, failed=True)
         raise
-    except (anthropic.APIError, AnswerRefusedError, ValueError) as error:
+    except (
+        anthropic.APIError,
+        AnswerRefusedError,
+        AnswerIncompleteError,
+        ValueError,
+    ) as error:
         # ValueError: the SDK could not parse the stream (e.g. a tool input that isn't JSON).
         _logger.warning("Answer failed for conversation %s: %r", request.conversation_id, error)
         _save(engine, request=request, progress=progress, failed=True)
@@ -123,58 +151,102 @@ def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progre
 
     for round_number in range(1, MAX_ROUNDS + 1):
         tool_choice = _LAST_ROUND_TOOL_CHOICE if round_number == MAX_ROUNDS else _TOOL_CHOICE
-        with client.messages.stream(
-            model=llm.SONNET,
-            max_tokens=MAX_TOKENS,
-            system=request.system,
+        round_start = len(progress.blocks)
+        response = yield from _round(
+            engine,
+            client=client,
+            context=context,
+            request=request,
             messages=messages,
-            tools=[prompts.SEARCH_LIBRARY_TOOL, prompts.WEB_SEARCH_TOOL],  # type: ignore[list-item]
             tool_choice=tool_choice,
-            thinking=THINKING,
-            output_config=OUTPUT_CONFIG,
-        ) as response_stream:
-            for stream_event in response_stream:
-                yield from _events_of(stream_event, progress=progress, passages=passages)
-            response = response_stream.get_final_message()
-        llm.record_call(engine, context=context, model=llm.SONNET, response=response)
+            progress=progress,
+            passages=passages,
+        )
 
         if response.stop_reason == "refusal":
             raise AnswerRefusedError(str(response.stop_details))
+        if response.stop_reason in _FINISHED_STOP_REASONS:
+            return
         # Web search's own loop paused; re-sending the turn resumes it.
         if response.stop_reason == "pause_turn":
             messages.append({"role": "assistant", "content": response.content})
             continue
         tool_uses = [block for block in response.content if block.type == "tool_use"]
         if response.stop_reason != "tool_use" or not tool_uses:
-            return
+            raise AnswerIncompleteError(f"the model stopped on {response.stop_reason}")
 
+        # Uncited text before a tool call announces the search ("Let me search your library"); it isn't the answer.
+        for block in progress.blocks[round_start:]:
+            block.dropped = not block.segment.citations
         messages.append({"role": "assistant", "content": response.content})
         results = [
             _search_library(engine, request=request, tool_use=tool_use, passages=passages) for tool_use in tool_uses
         ]
         messages.append({"role": "user", "content": results})
 
+    raise AnswerIncompleteError(f"no answer within {MAX_ROUNDS} rounds")
+
+
+def _round(
+    engine: sqlalchemy.Engine,
+    *,
+    client: anthropic.Anthropic,
+    context: llm.CallContext,
+    request: AnswerRequest,
+    messages: list[Any],
+    tool_choice: anthropic.types.ToolChoiceParam,
+    progress: _Progress,
+    passages: dict[str, search.ChunkHit],
+) -> Generator[Event, None, anthropic.types.Message]:
+    """One model request streamed as events, its paragraph closed at the end; returns the finished message."""
+    with client.messages.stream(
+        model=llm.SONNET,
+        max_tokens=MAX_TOKENS,
+        system=request.system,
+        messages=messages,
+        tools=[prompts.SEARCH_LIBRARY_TOOL, prompts.WEB_SEARCH_TOOL],  # type: ignore[list-item]
+        tool_choice=tool_choice,
+        thinking=THINKING,
+        output_config=OUTPUT_CONFIG,
+    ) as response_stream:
+        for stream_event in response_stream:
+            yield from _events_of(stream_event, progress=progress, passages=passages)
+        yield from _blocks_of(progress.paragraphs.close(), progress=progress)
+        response = response_stream.get_final_message()
+    llm.record_call(engine, context=context, model=llm.SONNET, response=response)
+    return response
+
 
 def _events_of(stream_event: Any, *, progress: _Progress, passages: dict[str, search.ChunkHit]) -> Iterator[Event]:
     """The phone's events for one SDK stream event; most SDK events have none."""
     if stream_event.type == "text":
         progress.partial += stream_event.text
-        yield Event(name=EventName.DELTA, data={"block": len(progress.segments), "text": stream_event.text})
+        yield Event(name=EventName.DELTA, data={"block": progress.next_block, "text": stream_event.text})
+        return
+    # A tool call, a search result or thinking ends the paragraph before it.
+    if stream_event.type == "content_block_start" and stream_event.content_block.type != "text":
+        yield from _blocks_of(progress.paragraphs.close(), progress=progress)
         return
     if stream_event.type != "content_block_stop":
         return
 
     block = stream_event.content_block
     if block.type == "text":
-        segment = citations.segment_of(block, passages=passages)
-        progress.segments.append(segment)
         progress.partial = ""
-        data = {"block": len(progress.segments) - 1, "label": segment.label.value, "citations": segment.citations}
-        yield Event(name=EventName.BLOCK, data=data)
+        closed = progress.paragraphs.add(citations.segment_of(block, passages=passages))
+        yield from _blocks_of(closed, progress=progress)
     elif block.type == "tool_use" and block.name == prompts.SEARCH_LIBRARY_TOOL["name"]:
         yield Event(name=EventName.SEARCHING, data={"kind": "library", "query": _query_of(block.input) or ""})
     elif block.type == "server_tool_use" and block.name == prompts.WEB_SEARCH_TOOL["name"]:
         yield Event(name=EventName.SEARCHING, data={"kind": "web", "query": _query_of(block.input) or ""})
+
+
+def _blocks_of(closed: list[citations.Segment], *, progress: _Progress) -> Iterator[Event]:
+    """A closed paragraph's blocks, kept in order and sent as `block` events with the paragraph's label."""
+    for segment in closed:
+        progress.blocks.append(_Block(segment=segment))
+        data = {"block": len(progress.blocks) - 1, "label": segment.label.value, "citations": segment.citations}
+        yield Event(name=EventName.BLOCK, data=data)
 
 
 def _search_library(
@@ -234,7 +306,9 @@ def _query_embedding(engine: sqlalchemy.Engine, *, request: AnswerRequest, query
 
 def _save(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress, failed: bool) -> uuid.UUID:
     """Store the answer and give the question, the answer and the chat new positions, so the phone pulls them."""
-    segments = list(progress.segments)
+    # The answer ended (or broke) mid-paragraph: its finished blocks still get the paragraph's label.
+    blocks = [*progress.blocks, *(_Block(segment=segment) for segment in progress.paragraphs.close())]
+    segments = [block.segment for block in blocks if not block.dropped]
     # A block cut off mid-stream has no citations yet; keep its words as background so the owner sees them.
     if progress.partial.strip():
         segments.append(citations.Segment(label=citations.AnswerLabel.BACKGROUND, text=progress.partial, citations=[]))

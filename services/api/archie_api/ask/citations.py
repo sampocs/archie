@@ -1,14 +1,19 @@
-"""Turning the model's text blocks into labelled segments: the label is read off the block's citations.
+"""Turning the model's text blocks into labelled segments: each paragraph is labelled by its blocks' citations.
 
-A block citing a library passage (a `search_result` this answer's searches returned) is `library`; else one citing a
-web result is `web`; else `background`. Library passages go to the model as `search_result` blocks whose `source` is
-`source_key(hit)`, so a citation's `source` leads back to the passage.
+Citations split the model's text into many blocks, often mid-sentence, so labels are given per paragraph: a run of
+consecutive text blocks that ends at a non-text block, at the end of a model round, or after a block whose text holds a
+blank line ("\n\n"); a block starting with a blank line begins a new paragraph. A paragraph with a block citing a
+library passage (a `search_result` this answer's searches returned) is `library`; else one with a block citing a web
+result is `web`; else `background`. Every block of the paragraph gets that label and keeps its own citations. Library
+passages go to the model as `search_result` blocks whose `source` is `source_key(hit)`, so a citation's `source` leads
+back to the passage.
 """
 
 from __future__ import annotations
 
+import dataclasses
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
@@ -16,6 +21,7 @@ import anthropic.types
 from archie_db import models, search
 
 QUOTE_CHARACTERS = 300
+PARAGRAPH_BREAK = "\n\n"
 _SOURCE_PREFIX = "archie:chunk:"
 
 
@@ -40,6 +46,39 @@ class Segment:
         return {"label": self.label.value, "text": self.text, "citations": self.citations}
 
 
+@dataclass
+class Paragraphs:
+    """Text blocks gathered into the open paragraph; each closed paragraph comes back with its label on every block."""
+
+    open: list[Segment] = field(default_factory=list)
+
+    def add(self, segment: Segment) -> list[Segment]:
+        """Take the next text block of the run; returns the blocks of any paragraphs it closed, relabelled."""
+        closed = self.close() if segment.text.startswith(PARAGRAPH_BREAK) else []
+        self.open.append(segment)
+        return [*closed, *self.close()] if PARAGRAPH_BREAK in segment.text else closed
+
+    def close(self) -> list[Segment]:
+        """End the open paragraph (a non-text block, the round's end, or the answer's end) and return its blocks."""
+        paragraph, self.open = self.open, []
+        labels = {segment.label for segment in paragraph}
+        label = (
+            AnswerLabel.LIBRARY
+            if AnswerLabel.LIBRARY in labels
+            else AnswerLabel.WEB
+            if AnswerLabel.WEB in labels
+            else AnswerLabel.BACKGROUND
+        )
+        return [dataclasses.replace(segment, label=label) for segment in paragraph]
+
+
+def by_paragraph(segments: list[Segment]) -> list[Segment]:
+    """One run of consecutive text blocks' segments, each relabelled with its paragraph's label."""
+    paragraphs = Paragraphs()
+    relabelled = [closed for segment in segments for closed in paragraphs.add(segment)]
+    return [*relabelled, *paragraphs.close()]
+
+
 def source_key(hit: search.ChunkHit) -> str:
     """The `source` a passage's `search_result` block carries, which its citations echo back."""
     return f"{_SOURCE_PREFIX}{hit.chunk_id}"
@@ -57,7 +96,7 @@ def search_result_block(hit: search.ChunkHit) -> dict[str, Any]:
 
 
 def segment_of(block: anthropic.types.TextBlock, *, passages: Mapping[str, search.ChunkHit]) -> Segment:
-    """The block's segment: its label from its citations, and each cited item or link once."""
+    """The block's segment: its own label from its citations (before `Paragraphs` relabels it), each citation once."""
     library: list[dict[str, Any]] = []
     web: list[dict[str, Any]] = []
     for citation in block.citations or []:

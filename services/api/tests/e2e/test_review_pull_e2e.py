@@ -45,6 +45,8 @@ def test_a_pull_sends_cards_of_every_origin_with_their_schedule(live_stack: Live
         "brief_id": None,
         "take_id": None,
         "take_version_id": None,
+        "conversation_id": None,
+        "message_id": None,
         "kind": models.CardKind.CONCEPT.value,
         "question": "Why?",
         "answer": "Because.",

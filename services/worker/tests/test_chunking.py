@@ -59,3 +59,17 @@ def test_the_summary_becomes_gist_key_ideas_and_numbers_sections() -> None:
         "## Key ideas\n\n- It buys bonds.\n\n"
         "## Numbers\n\n- $6.6T balance sheet."
     )
+
+
+def test_a_sentence_or_segment_longer_than_a_passage_is_cut_at_word_counts() -> None:
+    """700 words with no sentence end, as text and as a segment: no passage is over 300 words."""
+    long_text = " ".join(["word"] * 700)
+
+    text_result = chunking.text_passages(long_text, owner_kind=models.ChunkOwner.SOURCE_TEXT)
+    segment_result = chunking.segment_passages(
+        [content.Segment(start=12.0, text=long_text), content.Segment(start=99.0, text="A short one.")]
+    )
+
+    assert all(len(passage.text.split()) <= chunking.TARGET_WORDS for passage in [*text_result, *segment_result])
+    assert segment_result[0].start_seconds == 12.0
+    assert [passage.start_seconds for passage in segment_result[:3]] == [12.0, 12.0, 12.0]

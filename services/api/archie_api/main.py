@@ -12,6 +12,7 @@ import sqlalchemy
 from archie_shared import config, logging
 
 from archie_api import deps, test_routes
+from archie_api.ask import card_routes as ask_card_routes
 from archie_api.auth import routes as auth_routes
 from archie_api.ingest import routes as ingest_routes
 from archie_api.review import routes as review_routes
@@ -40,6 +41,7 @@ def create_app() -> fastapi.FastAPI:
     app.include_router(sources_routes.router)
     app.include_router(review_routes.router)
     app.include_router(topics_routes.router)
+    app.include_router(ask_card_routes.router)
 
     if _test_routes_enabled():
         app.include_router(test_routes.router)

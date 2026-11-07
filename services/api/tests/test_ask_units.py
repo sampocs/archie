@@ -1,4 +1,4 @@
-"""Ask's pure logic: a block's label comes from its citations; history keeps only finished question-answer pairs."""
+"""Ask's pure logic: a paragraph's label comes from its blocks' citations; history keeps only finished pairs."""
 
 from __future__ import annotations
 
@@ -74,6 +74,41 @@ def test_web_only_is_web_and_no_citations_is_background() -> None:
         citations.AnswerLabel.BACKGROUND
     )
     assert citations.segment_of(_block("Hm.", [stray]), passages=PASSAGES).label == citations.AnswerLabel.BACKGROUND
+
+
+def test_a_paragraph_split_by_citations_takes_one_label_and_a_blank_line_starts_the_next() -> None:
+    """The recorded `ask_library` answer: citations cut one paragraph into four blocks, then a background paragraph."""
+    fragments = [
+        _block("According to your saved article, the Fed creates money by ", None),
+        _block("buying bonds from banks and paying with newly created reserves.", [_library()]),
+        _block(" Those reserves are digital balances, and the article notes that ", None),
+        _block("they sit in the banks' accounts at the Fed.", [_library(), _library()]),
+        _block("\n\nThat's all your library says about it.", None),
+    ]
+    segments = [citations.segment_of(fragment, passages=PASSAGES) for fragment in fragments]
+
+    relabelled = citations.by_paragraph(segments)
+
+    assert [segment.label for segment in relabelled] == [citations.AnswerLabel.LIBRARY] * 4 + [
+        citations.AnswerLabel.BACKGROUND
+    ]
+    assert [segment.text for segment in relabelled] == [fragment.text for fragment in fragments]
+    assert [len(segment.citations) for segment in relabelled] == [0, 1, 0, 1, 0]
+
+
+def test_a_block_holding_a_blank_line_ends_its_paragraph_and_web_beats_background() -> None:
+    """A cited web block labels its paragraph web; the uncited paragraph after the break stays background."""
+    segments = [
+        citations.segment_of(_block("Rates sit at 4.25%.", [_web()]), passages=PASSAGES),
+        citations.segment_of(_block(" That is high.\n\nRates", None), passages=PASSAGES),
+        citations.segment_of(_block(" move slowly.", None), passages=PASSAGES),
+    ]
+
+    assert [segment.label for segment in citations.by_paragraph(segments)] == [
+        citations.AnswerLabel.WEB,
+        citations.AnswerLabel.WEB,
+        citations.AnswerLabel.BACKGROUND,
+    ]
 
 
 def test_history_keeps_finished_pairs_only_and_the_last_twenty_messages() -> None:

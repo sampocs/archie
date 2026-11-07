@@ -79,6 +79,15 @@ def by_paragraph(segments: list[Segment]) -> list[Segment]:
     return [*relabelled, *paragraphs.close()]
 
 
+def uncited_paragraphs_dropped(segments: list[Segment]) -> list[bool]:
+    """Per paragraph-relabelled segment: whether it belongs to a paragraph with no citation at all.
+
+    Citations cut a paragraph into blocks, many uncited, so the rule is per paragraph: a background label (set by
+    `by_paragraph`) means no block of the paragraph cited anything.
+    """
+    return [segment.label == AnswerLabel.BACKGROUND for segment in segments]
+
+
 def source_key(hit: search.ChunkHit) -> str:
     """The `source` a passage's `search_result` block carries, which its citations echo back."""
     return f"{_SOURCE_PREFIX}{hit.chunk_id}"

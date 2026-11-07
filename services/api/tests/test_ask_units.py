@@ -130,3 +130,18 @@ def test_history_keeps_finished_pairs_only_and_the_last_twenty_messages() -> Non
 
     assert len(history) == context.HISTORY_MESSAGES
     assert history[0] == {"role": "user", "content": "q3"} and history[-1] == {"role": "assistant", "content": "a12"}
+
+
+def test_only_a_paragraph_with_no_citation_at_all_is_dropped_before_a_tool_call() -> None:
+    """Citations cut a cited paragraph into uncited fragments; those stay, while an uncited paragraph is dropped."""
+    fragments = [
+        _block("According to your article, ", None),
+        _block("rates rose.", [_library()]),
+        _block(" That mattered a lot.", None),
+        _block("\n\nLet me search your library.", None),
+    ]
+    segments = [citations.segment_of(fragment, passages=PASSAGES) for fragment in fragments]
+
+    relabelled = citations.by_paragraph(segments)
+
+    assert citations.uncited_paragraphs_dropped(relabelled) == [False, False, False, True]

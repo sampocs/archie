@@ -4,6 +4,7 @@ import { Pressable, View } from "react-native";
 
 import { retryTakeCleanup } from "@/db/actions";
 import { db } from "@/db/client";
+import { originLabel } from "@/edits/versions";
 import { CardsSection } from "@/item/CardsSection";
 import { requestSync } from "@/sync/useSync";
 import { RawTextSheet } from "@/takes/RawTextSheet";
@@ -173,7 +174,14 @@ function EarlierVersions({ take, open, now, onToggle, onOpenVersion }: EarlierVe
               onPress={() => onOpenVersion(version.version)}
               style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: theme.spacing.sm }}
             >
-              <Text>Version {version.version}</Text>
+              <View>
+                <Text>Version {version.version}</Text>
+                {version.origin !== "owner" ? (
+                  <Text variant="secondary" tone="ink3">
+                    {originLabel(version.origin)}
+                  </Text>
+                ) : null}
+              </View>
               <Text tone="ink3">{takeDate(version.createdAt, now)}</Text>
             </Pressable>
           ))

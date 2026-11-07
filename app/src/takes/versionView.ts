@@ -1,3 +1,5 @@
+import { originLabel } from "@/edits/versions";
+
 import { takeDate, type CleanState, type TakeVersionRow } from "./takes";
 
 /**
@@ -11,7 +13,11 @@ export function showsOrigin(
   return state === "cleaned" && version.body !== null && version.body !== version.rawBody;
 }
 
-/** The version viewer's kicker: "Version 2 · Nov 2". */
-export function versionKicker(version: Pick<TakeVersionRow, "version" | "createdAt">, now: Date): string {
-  return `Version ${version.version} · ${takeDate(version.createdAt, now)}`;
+/** The version viewer's kicker: "Version 2 · Nov 2", plus how it was made when it wasn't the owner's own save. */
+export function versionKicker(
+  version: Pick<TakeVersionRow, "version" | "createdAt"> & { origin?: string },
+  now: Date,
+): string {
+  const base = `Version ${version.version} · ${takeDate(version.createdAt, now)}`;
+  return version.origin && version.origin !== "owner" ? `${base} · ${originLabel(version.origin)}` : base;
 }

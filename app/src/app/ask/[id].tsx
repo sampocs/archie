@@ -3,6 +3,7 @@ import * as Network from "expo-network";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View } from "react-native";
 
+import { aboutTitleOf } from "@/ask/aboutTitle";
 import { AnswerView } from "@/ask/AnswerView";
 import { Composer } from "@/ask/Composer";
 import { MakeCardSheet } from "@/ask/MakeCardSheet";
@@ -44,7 +45,11 @@ export default function ChatScreen() {
     send(params.q, params.web === "1");
   }, [params.q, params.web, messages.length, send]);
 
-  const aboutTitle = params.aboutTitle ?? null;
+  // The opening screen passes the title along; reopening a chat later derives it from the item the chat is about.
+  const aboutTitle = useMemo(
+    () => params.aboutTitle ?? aboutTitleOf(conversation),
+    [params.aboutTitle, conversation],
+  );
   const turns = useMemo(() => messages.filter((message) => message.id !== pending?.userMessageId), [messages, pending]);
 
   return (

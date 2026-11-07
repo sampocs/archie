@@ -22,7 +22,6 @@ from archie_api.ask import answer, context, prompts
 from archie_api.sync import conversation_actions
 
 MAX_QUESTION_LENGTH = 4000
-_NEEDS_KEY = "needs your own API key"
 
 router = fastapi.APIRouter(prefix="/ask", tags=["ask"])
 
@@ -55,7 +54,7 @@ def ask(
     if not question:
         raise fastapi.HTTPException(status_code=422, detail="question is empty")
     if not user.is_whitelisted:
-        raise fastapi.HTTPException(status_code=403, detail=_NEEDS_KEY)
+        raise fastapi.HTTPException(status_code=403, detail=deps.NEEDS_OWN_KEY)
     settings = config.Settings()
     if not settings.anthropic_api_key:
         raise fastapi.HTTPException(status_code=503, detail="Ask isn't set up")
@@ -99,7 +98,7 @@ def ask(
     # Committed before streaming: the stream holds no transaction and saves the answer in its own session.
     db.commit()
     return fastapi.responses.StreamingResponse(
-        answer.stream(engine, request),
+        answer.stream_async(engine, request),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -136,7 +135,14 @@ def _set_about(db: orm.Session, *, user: models.User, conversation: models.Conve
         conversation.about_source_id = about.id
     elif about.kind == models.SearchItemKind.TOPIC_PRIMER:
         primer = db.get(models.TopicPrimer, about.id)
-        live = primer is not None and primer.user_id == user.id
+        topic = db.get(models.Topic, primer.topic_id) if primer is not None else None
+        live = (
+            primer is not None
+            and primer.user_id == user.id
+            and topic is not None
+            and topic.removed_at is None
+            and topic.merged_into_id is None
+        )
         conversation.about_topic_primer_id = about.id
     else:
         take = db.get(models.Take, about.id)

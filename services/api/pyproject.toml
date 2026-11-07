@@ -13,6 +13,7 @@ dependencies = [
   "trafilatura>=2.3.1",
   "lxml>=6.0",
   "python-multipart>=0.0.20",
+  "anyio>=4",
 ]
 
 [project.scripts]

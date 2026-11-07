@@ -37,7 +37,6 @@ MAX_PROMPT_CHARACTERS = 800
 
 _AUDIO_FILENAME = "answer.m4a"
 _AUDIO_MEDIA_TYPE = "audio/m4a"
-_NEEDS_KEY = "needs your own API key"
 _MILLISECONDS_PER_SECOND = 1000
 
 
@@ -256,7 +255,7 @@ def _owner_anthropic_key(user: models.User) -> str:
 def _require_whitelisted(user: models.User) -> None:
     """Refuse (403) a user without the owner's blessing: every route here spends the owner's keys."""
     if not user.is_whitelisted:
-        raise fastapi.HTTPException(status_code=403, detail=_NEEDS_KEY)
+        raise fastapi.HTTPException(status_code=403, detail=deps.NEEDS_OWN_KEY)
 
 
 def _speech_keys() -> _SpeechKeys:

@@ -11,6 +11,7 @@ search your library for this."), which the answer must not save.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import pathlib
 import uuid
@@ -98,6 +99,38 @@ def _seed_source(live_stack: LiveStack, *, user_id: int) -> str:
         source_id = str(source.id)
     engine.dispose()
     return source_id
+
+
+def _seed_removed_topic_primer(live_stack: LiveStack, *, user_id: int) -> str:
+    """The current primer of a topic the user removed."""
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+        topic = models.Topic(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            domain="Macro",
+            name="Reserves",
+            origin=models.TopicOrigin.USER.value,
+            removed_at=sqlalchemy.func.now(),
+            change_seq=changes.next_change_seq(),
+        )
+        db.add(topic)
+        db.flush()
+        primer = models.TopicPrimer(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            topic_id=topic.id,
+            version=1,
+            is_current=True,
+            content={"markdown": "## Reserves"},
+            change_seq=changes.next_change_seq(),
+        )
+        db.add(primer)
+        db.commit()
+        primer_id = str(primer.id)
+    engine.dispose()
+    return primer_id
 
 
 def _seed_chat(live_stack: LiveStack, *, user_id: int, conversation_id: str, message_id: str) -> None:
@@ -319,6 +352,35 @@ def test_a_hang_up_mid_answer_stores_it_as_failed_and_records_the_round(
     live_stack: LiveStack, request: pytest.FixtureRequest
 ) -> None:
     """The phone goes away after the first event: the answer is saved failed, the question moves, the spend is kept."""
+    engine, answer_request, question_seq = _unfinished_answer_request(live_stack)
+
+    with _replay(request, "ask_library"):
+        generator = answer.stream(engine, answer_request)
+        next(generator)
+        generator.close()
+
+    _assert_hang_up_recorded(live_stack, engine=engine, answer_request=answer_request, question_seq=question_seq)
+
+
+def test_closing_the_async_stream_saves_the_failed_answer_at_once(
+    live_stack: LiveStack, request: pytest.FixtureRequest
+) -> None:
+    """Starlette closes the response body with `aclose()` on a hang-up; that must close `stream`, not leave it to GC."""
+    engine, answer_request, question_seq = _unfinished_answer_request(live_stack)
+
+    async def hang_up_after_first_event() -> None:
+        events = answer.stream_async(engine, answer_request)
+        await anext(events)
+        await events.aclose()
+
+    with _replay(request, "ask_library"):
+        asyncio.run(hang_up_after_first_event())
+
+    _assert_hang_up_recorded(live_stack, engine=engine, answer_request=answer_request, question_seq=question_seq)
+
+
+def _unfinished_answer_request(live_stack: LiveStack) -> tuple[sqlalchemy.Engine, answer.AnswerRequest, int]:
+    """A signed-in owner's chat about a seeded source with its question stored; returns what `stream` needs."""
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     user_id = _user_id(authed)
     source_id = _seed_source(live_stack, user_id=user_id)
@@ -338,21 +400,21 @@ def test_a_hang_up_mid_answer_stores_it_as_failed_and_records_the_round(
             anthropic_key=config.Settings().require_anthropic_api_key(),
             openai_key=None,
         )
+    return engine, answer_request, question_seq
 
-    with _replay(request, "ask_library"):
-        generator = answer.stream(engine, answer_request)
-        next(generator)
-        generator.close()
 
+def _assert_hang_up_recorded(
+    live_stack: LiveStack, *, engine: sqlalchemy.Engine, answer_request: answer.AnswerRequest, question_seq: int
+) -> None:
     with sqlalchemy.orm.Session(engine) as db:
         [answer_row] = db.scalars(
             sqlalchemy.select(models.Message).where(
-                models.Message.conversation_id == conversation_id,
+                models.Message.conversation_id == answer_request.conversation_id,
                 models.Message.role == models.MessageRole.ASSISTANT.value,
             )
         )
         assert answer_row.status == models.MessageStatus.FAILED.value
-        assert db.get_one(models.Message, question_id).change_seq > question_seq
+        assert db.get_one(models.Message, answer_request.user_message_id).change_seq > question_seq
     engine.dispose()
     assert _llm_steps(live_stack) == ["ask"]
 
@@ -376,5 +438,9 @@ def test_refusals_happen_before_any_model_call(live_stack: LiveStack) -> None:
     assert owner.post(f"/ask/conversations/{chat_id}/messages", json=fresh).status_code == 404
     bad_about = {**fresh, "about": {"kind": "take", "id": str(uuid.uuid4())}}
     assert owner.post(f"/ask/conversations/{uuid.uuid4()}/messages", json=bad_about).status_code == 404
+    removed_topic_primer = _seed_removed_topic_primer(live_stack, user_id=_user_id(owner))
+    removed_about = {**fresh, "about": {"kind": "topic_primer", "id": removed_topic_primer}}
+    refused = owner.post(f"/ask/conversations/{uuid.uuid4()}/messages", json=removed_about)
+    assert (refused.status_code, refused.json()["detail"]) == (404, "about item not found")
     assert owner.post(f"/ask/conversations/{uuid.uuid4()}/messages", json={**fresh, "text": "  "}).status_code == 422
     assert _llm_steps(live_stack) == []

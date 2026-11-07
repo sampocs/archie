@@ -23,7 +23,6 @@ from archie_api.ask import card_prompts
 from archie_api.sync import schemas
 
 DRAFT_MAX_TOKENS = 1000
-_NEEDS_KEY = "needs your own API key"
 
 router = fastapi.APIRouter(prefix="/ask", tags=["ask"])
 _logger = logging.get_logger(logging.LoggerName.API, "ask_cards")
@@ -59,7 +58,7 @@ def card_draft(
 ) -> CardDraftView:
     """Draft one card from the answer with Haiku (Sonnet if Haiku gives no usable answer)."""
     if not user.is_whitelisted:
-        raise fastapi.HTTPException(status_code=403, detail=_NEEDS_KEY)
+        raise fastapi.HTTPException(status_code=403, detail=deps.NEEDS_OWN_KEY)
     answer = _owned_answer(db, user=user, message_id=message_id)
     user_message = card_prompts.card_draft_message(question=_question_before(db, answer=answer), answer=answer.text)
     context = llm.CallContext(user_id=user.id, source_id=None, job_id=None, step=llm.CARD_DRAFT_STEP)

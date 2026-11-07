@@ -1,5 +1,6 @@
 import { ReactNode, useContext } from "react";
 import {
+  Keyboard,
   KeyboardAvoidingView,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -75,7 +76,12 @@ export function Screen({
           <View style={[styles.navSide, styles.navRight]}>{headerRight}</View>
         </View>
       ) : (
-        <View style={[styles.header, { paddingHorizontal: theme.spacing.gutterText }]}>
+        // Tapping the title area puts the keyboard away (e.g. after typing in Library search); buttons in it still win.
+        <Pressable
+          accessible={false}
+          onPress={Keyboard.dismiss}
+          style={[styles.header, { paddingHorizontal: theme.spacing.gutterText }]}
+        >
           <View style={styles.titleGroup}>
             {onBack ? (
               <Pressable testID="screen-back" onPress={onBack} hitSlop={12}>
@@ -85,7 +91,7 @@ export function Screen({
             <Text variant="largeTitle">{title}</Text>
           </View>
           {headerRight}
-        </View>
+        </Pressable>
       )}
       {subheader}
       <ScrollView

@@ -63,6 +63,9 @@ export type PulledCard = {
   // Absent when pulling from a server older than Saved piece 3.
   take_id?: string | null;
   take_version_id?: string | null;
+  // Absent when pulling from a server older than M7.
+  conversation_id?: string | null;
+  message_id?: string | null;
 };
 export type PulledTopic = {
   id: string;
@@ -137,6 +140,29 @@ export type PulledTakeVersion = {
   clean_failed: boolean;
   created_at: string;
 };
+export type PulledConversation = {
+  id: string;
+  title: string;
+  about_kind: string | null;
+  about_source_id: string | null;
+  about_topic_primer_id: string | null;
+  about_take_id: string | null;
+  created_at: string;
+  updated_at: string;
+  deleted_at: string | null;
+  change_seq: number;
+};
+export type PulledMessage = {
+  id: string;
+  conversation_id: string;
+  role: string;
+  text: string;
+  segments: unknown[] | null;
+  web_search: boolean;
+  status: string;
+  created_at: string;
+  change_seq: number;
+};
 export type PullPage = {
   rows: {
     sources: PulledSource[];
@@ -153,6 +179,9 @@ export type PullPage = {
     // Absent when pulling from a server older than Saved piece 3.
     takes?: PulledTake[];
     take_versions?: PulledTakeVersion[];
+    // Absent when pulling from a server older than M7.
+    conversations?: PulledConversation[];
+    messages?: PulledMessage[];
   };
   position: number;
   more: boolean;
@@ -165,8 +194,9 @@ export interface SyncStore {
   // topics, and a rejected create_collection / add_collection_item deletes its optimistic rows; a rejected save_take /
   // restore_take_version deletes its optimistic version (and a new take left with none) and rewinds. Any other rejected
   // topic or topic-primer action, finish_brief, a card action, a rejected update_collection / update_collection_item,
-  // update_take / retry_take_cleanup, and the source actions in transport's REWOUND_SOURCE_ACTIONS, rewind the position
-  // so the next pull restores the server copy. No take action touches a source.
+  // update_take / retry_take_cleanup, a rejected delete_conversation, and the source actions in transport's
+  // REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the server copy. No take or chat action
+  // touches a source.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
   // Upserts rows and saves the position in one transaction.

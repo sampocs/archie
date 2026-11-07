@@ -1,6 +1,7 @@
 // Row factories for review logic tests: our own rows, filled with neutral defaults. Sources, topics and topic primers
 // come from the Library's factories (their rows carry a few joined fields the review code ignores).
 import { sourceRow, topicPrimerRow, topicRow } from "@/library/testRows";
+import type { ConversationRow } from "@/ask/types";
 import type { TakeRow, TakeVersionRow } from "@/takes/takes";
 
 import { makeReviewData, type ReviewData } from "./eligibility";
@@ -36,6 +37,8 @@ export const cardRow = (overrides: Partial<CardRow>): CardRow => ({
   reps: 0,
   lapses: 0,
   expiresAt: null,
+  conversationId: null,
+  messageId: null,
   ...overrides,
 });
 
@@ -53,7 +56,7 @@ export const reviewCard = (overrides: Partial<CardRow> & { dueAt: string }): Car
 /** Review data where source s1 is consumed with its primer opened, and topic t1 has an opened primer p1. */
 export function reviewData(
   cards: CardRow[],
-  rows: Partial<Pick<Parameters<typeof makeReviewData>[0], "sources" | "topicPrimers" | "topics" | "takes">> = {},
+  rows: Partial<Pick<Parameters<typeof makeReviewData>[0], "sources" | "topicPrimers" | "topics" | "takes" | "conversations">> = {},
 ): ReviewData {
   return makeReviewData({
     cards,
@@ -63,6 +66,7 @@ export function reviewData(
     topicPrimers: rows.topicPrimers ?? [topicPrimerRow({ id: "p1", topicId: "t1", openedAt: "2026-11-03T00:00:00Z" })],
     topics: rows.topics ?? [topicRow({ id: "t1" })],
     takes: rows.takes ?? [],
+    conversations: rows.conversations ?? [],
   });
 }
 
@@ -86,5 +90,18 @@ export const takeVersionRow = (overrides: Partial<TakeVersionRow>): TakeVersionR
   cleaned: 0,
   cleanFailed: 0,
   createdAt: "2026-11-01T00:00:00Z",
+  ...overrides,
+});
+
+export const conversationRow = (overrides: Partial<ConversationRow>): ConversationRow => ({
+  id: "chat1",
+  title: "Q",
+  aboutKind: null,
+  aboutSourceId: null,
+  aboutTopicPrimerId: null,
+  aboutTakeId: null,
+  createdAt: "2026-11-01T00:00:00Z",
+  updatedAt: "2026-11-01T00:00:00Z",
+  deletedAt: null,
   ...overrides,
 });

@@ -38,13 +38,18 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
   const tabBarInset = useContext(TabBarInsetContext);
   // A page sheet has no tab bar, but its last control must still clear the home indicator.
   const bottomInset = sheet ? insets.bottom : tabBarInset;
+  // A footer on a tab screen (Ask's composer) sits above the floating tab bar; with the keyboard up, the offset takes
+  // the bar's height back off so the footer rides the keyboard as closely as anywhere else.
+  const footerInset = Math.max(bottomInset, insets.bottom);
 
   // A pinned footer rides above the keyboard; otherwise a typed-in field would hide the screen's submit button.
-  // Only footer screens opt in: tab screens sit above the tab bar, which the keyboard's height already includes.
+  // The KAV is enabled only for footer screens; for a footer on a tab screen, keyboardVerticalOffset removes the tab
+  // bar's height, which the keyboard's height already includes.
   return (
     <KeyboardAvoidingView
       behavior="padding"
       enabled={footer !== undefined}
+      keyboardVerticalOffset={insets.bottom - footerInset}
       style={[styles.root, { backgroundColor: theme.colors.bg, paddingTop: sheet ? theme.spacing.md : insets.top }]}
     >
       <View style={[styles.header, { paddingHorizontal: theme.spacing.gutterText }]}>
@@ -64,7 +69,8 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
         scrollEventThrottle={onScroll ? SCROLL_EVENT_THROTTLE_MS : undefined}
         contentContainerStyle={{
           padding: theme.spacing.gutterCards,
-          paddingBottom: theme.spacing.gutterCards + bottomInset,
+          // A footer already clears the tab bar, so the content only needs a small gap above it.
+          paddingBottom: theme.spacing.gutterCards + (footer ? theme.spacing.md : bottomInset),
           gap: theme.spacing.section,
         }}
         scrollIndicatorInsets={{ bottom: bottomInset }}
@@ -81,7 +87,7 @@ export function Screen({ title, children, headerRight, onBack, footer, subheader
           style={{
             paddingHorizontal: theme.spacing.gutterCards,
             paddingTop: theme.spacing.md,
-            paddingBottom: insets.bottom + theme.spacing.md,
+            paddingBottom: footerInset + theme.spacing.md,
             borderTopWidth: StyleSheet.hairlineWidth,
             borderTopColor: theme.colors.line,
           }}

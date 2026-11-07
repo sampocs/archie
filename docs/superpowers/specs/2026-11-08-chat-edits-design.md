@@ -108,7 +108,7 @@ JSON; a bad input returns `is_error: true` with a message the model can act on):
 | Tool | Input | Returns |
 |---|---|---|
 | `read_item` | `kind` (`summary`, `primer`, `topic_primer`, `take`, `card`), `id` | `{kind, id, title, version, content, pending}` — `content` in the edit shape; `pending` is the `after` of this chat's still-proposed edit of the same target (or null), so a follow-up ("and the next one too") builds on it |
-| `find_cards` | `query` (words, may be empty), `item` (`{kind: source\|topic_primer\|take, id}` or null) | up to 10 live cards `{id, question, answer, item}` matching any of the words, best first |
+| `find_cards` | `query` (words, may be empty), `item` (`{kind: source\|topic_primer\|take, id}` or null) | up to 10 live cards `{id, question, answer}` matching any of the words, best first (or the item's cards, oldest first) |
 | `propose_summary_edit` | `source_id`, `description`, `gist`, `key_ideas`, `numbers` | `{proposal_id, status}` |
 | `propose_text_edit` | `kind` (`primer`, `topic_primer`, `take`), `id`, `description`, `replacements: [{find, replace}]` (1–20; each `find` must occur exactly once) | `{proposal_id, status}` |
 | `propose_card_edit` | `card_id`, `description`, `question`, `answer` | `{proposal_id, status}` |

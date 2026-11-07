@@ -15,6 +15,15 @@ from sqlalchemy import orm
 
 HISTORY_MESSAGES = 20
 ABOUT_PRIMER_CHARACTERS = 2000
+_EDIT_STATUS_NOTES: dict[models.EditStatus, str] = {
+    models.EditStatus.PROPOSED: "waiting for the owner to apply it",
+    models.EditStatus.APPLIED: "the owner applied it",
+    models.EditStatus.UNDONE: "the owner applied it, then undid it",
+    models.EditStatus.DISCARDED: "the owner discarded it",
+    models.EditStatus.STALE: "it went stale: the item changed before it was applied",
+    models.EditStatus.SUPERSEDED: "replaced by a later proposal",
+}
+_CITED_ITEM_KEYS = (("source", "source_id"), ("topic_primer", "topic_primer_id"), ("take", "take_id"))
 
 
 @dataclass(frozen=True)
@@ -24,6 +33,7 @@ class HistoryMessage:
     role: models.MessageRole
     text: str
     status: models.MessageStatus
+    notes: tuple[str, ...] = ()
 
 
 def owner_zone(name: str | None) -> datetime.tzinfo:
@@ -39,18 +49,54 @@ def owner_zone(name: str | None) -> datetime.tzinfo:
 
 
 def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, Any]]:
-    """The conversation's earlier finished exchanges as Messages API turns, oldest first."""
+    """The conversation's earlier finished exchanges as Messages API turns, oldest first.
+
+    Each answer is followed by lines naming the items it cited and the edits it proposed (with what became of them),
+    so a follow-up like "and fix that card too" can find its target.
+    """
     stored = db.scalars(
         sqlalchemy.select(models.Message)
         .where(models.Message.conversation_id == conversation_id)
         .order_by(models.Message.created_at, models.Message.id)
     ).all()
+    proposals = db.scalars(
+        sqlalchemy.select(models.EditProposal)
+        .where(models.EditProposal.conversation_id == conversation_id)
+        .order_by(models.EditProposal.created_at)
+    ).all()
+    edit_notes: dict[uuid.UUID, list[str]] = {}
+    for proposal in proposals:
+        edit_notes.setdefault(proposal.message_id, []).append(proposal_note(proposal))
+
     return history_messages(
         [
-            HistoryMessage(role=models.MessageRole(row.role), text=row.text, status=models.MessageStatus(row.status))
+            HistoryMessage(
+                role=models.MessageRole(row.role),
+                text=row.text,
+                status=models.MessageStatus(row.status),
+                notes=(*citation_notes(row.segments), *edit_notes.get(row.id, [])),
+            )
             for row in stored
         ]
     )
+
+
+def citation_notes(segments: list[dict[str, Any]] | None) -> list[str]:
+    """One `[cited: title — kind id]` line per library item an answer cited, in order, each once."""
+    cited = [
+        citation
+        for segment in segments or []
+        for citation in segment.get("citations", [])
+        if citation.get("kind") == "library"
+    ]
+    tagged = (f"[cited: {citation['title']} — {tag}]" for citation in cited if (tag := _item_tag(citation)))
+    return list(dict.fromkeys(tagged))
+
+
+def proposal_note(proposal: models.EditProposal) -> str:
+    """A `[edit proposed: …]` line: what the edit does, its target, and what the owner did with it."""
+    status = _EDIT_STATUS_NOTES[models.EditStatus(proposal.status)]
+    return f"[edit proposed: {proposal.description} — {proposal.target_kind} {proposal.target_id} — {status}]"
 
 
 def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:
@@ -62,7 +108,10 @@ def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:
     for question, answer in zip(rows, rows[1:], strict=False):
         is_pair = question.role == models.MessageRole.USER and answer.role == models.MessageRole.ASSISTANT
         if is_pair and answer.status == models.MessageStatus.COMPLETE and answer.text.strip():
-            turns += [{"role": "user", "content": question.text}, {"role": "assistant", "content": answer.text}]
+            turns += [
+                {"role": "user", "content": question.text},
+                {"role": "assistant", "content": "\n\n".join([answer.text, *answer.notes])},
+            ]
     return turns[-HISTORY_MESSAGES:]
 
 
@@ -75,12 +124,14 @@ def about_text(db: orm.Session, *, conversation: models.Conversation) -> str | N
         if primer is None:
             return None
         topic = db.get_one(models.Topic, primer.topic_id)
-        return f"Topic primer: {topic.name}\n\n{primer.content['markdown'][:ABOUT_PRIMER_CHARACTERS]}"
+        markdown = primer.content["markdown"][:ABOUT_PRIMER_CHARACTERS]
+        return f"Topic primer: {topic.name} (topic primer id {primer.id})\n\n{markdown}"
     if conversation.about_take_id is not None:
         take = db.get_one(models.Take, conversation.about_take_id)
         version = takes.current_version(db, take=take)
         body = (version.body or version.raw_body) if version is not None else ""
-        return f"The owner's own {takes.KIND_NAMES[models.TakeKind(take.kind)]}: {take.title}\n\n{body}"
+        kind_name = takes.KIND_NAMES[models.TakeKind(take.kind)]
+        return f"The owner's own {kind_name}: {take.title} (take id {take.id})\n\n{body}"
     return None
 
 
@@ -110,7 +161,10 @@ def _current_primer(db: orm.Session, *, primer_id: uuid.UUID) -> models.TopicPri
 
 def _source_text(db: orm.Session, *, source_id: uuid.UUID) -> str:
     source = db.get_one(models.Source, source_id)
-    lines = [f"{source.kind.capitalize()}: {source.title or source.url}"]
+    lines = [
+        f"{source.kind.capitalize()}: {source.title or source.url}",
+        f"Source id: {source.id} (its summary and primer are editable)",
+    ]
     summary = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.SUMMARY)
     if summary is not None:
         content = summary.content["summary"]
@@ -119,3 +173,7 @@ def _source_text(db: orm.Session, *, source_id: uuid.UUID) -> str:
     if source.note:
         lines.append(f"The owner's note: {source.note}")
     return "\n".join(lines)
+
+
+def _item_tag(citation: dict[str, Any]) -> str | None:
+    return next((f"{kind} {citation[key]}" for kind, key in _CITED_ITEM_KEYS if citation.get(key)), None)

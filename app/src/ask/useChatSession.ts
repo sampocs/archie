@@ -5,15 +5,16 @@ import { UnauthorizedError } from "@/api/client";
 import { clearSession, useSession } from "@/auth/session";
 import { requestSync } from "@/sync/useSync";
 
-import { applyEvent, EMPTY_LIVE, type LiveAnswer } from "./sections";
+import { applyEvent, EMPTY_LIVE, endOfStream, handedOver, type LiveAnswer, type PendingQuestion } from "./sections";
 import { streamAnswer } from "./stream";
 import type { AboutKind, MessageRow } from "./types";
 
-export type PendingQuestion = { userMessageId: string; text: string; webSearch: boolean; live: LiveAnswer };
+export type { PendingQuestion };
 
 /**
  * Sending a question and showing its answer as it streams. The overlay stays until the pulled rows hold the question
- * and its answer (or the stream failed and the question arrived), so nothing flickers or shows twice.
+ * and its answer (or, for a failed stream, a later assistant row), and the returned `pending` is already null on the
+ * render where they land, so nothing flickers or shows twice.
  */
 export function useChatSession(input: {
   conversationId: string;
@@ -21,18 +22,16 @@ export function useChatSession(input: {
   about: { kind: AboutKind; id: string } | null;
 }): { pending: PendingQuestion | null; send: (text: string, webSearch: boolean) => void } {
   const { sessionKey } = useSession();
-  const [pending, setPending] = useState<PendingQuestion | null>(null);
+  const [overlay, setOverlay] = useState<PendingQuestion | null>(null);
+  const pending = overlay && !handedOver(overlay, input.messages) ? overlay : null;
   const controller = useRef<AbortController | null>(null);
 
   useEffect(() => () => controller.current?.abort(), []);
 
-  // Hand over to the pulled rows once they hold what the overlay shows.
+  // Drop the overlay's state once the pulled rows have taken over (`pending` already hides it during that render).
   useEffect(() => {
-    if (!pending) return;
-    const hasQuestion = input.messages.some((message) => message.id === pending.userMessageId);
-    const hasAnswer = pending.live.messageId !== null && input.messages.some((m) => m.id === pending.live.messageId);
-    if (hasQuestion && (hasAnswer || pending.live.failed)) setPending(null);
-  }, [input.messages, pending]);
+    if (overlay && handedOver(overlay, input.messages)) setOverlay(null);
+  }, [input.messages, overlay]);
 
   const send = useCallback(
     (text: string, webSearch: boolean) => {
@@ -42,8 +41,8 @@ export function useChatSession(input: {
 
       const userMessageId = randomUUID();
       const update = (change: (live: LiveAnswer) => LiveAnswer) =>
-        setPending((current) => (current && current.userMessageId === userMessageId ? { ...current, live: change(current.live) } : current));
-      setPending({ userMessageId, text: question, webSearch, live: EMPTY_LIVE });
+        setOverlay((current) => (current && current.userMessageId === userMessageId ? { ...current, live: change(current.live) } : current));
+      setOverlay({ userMessageId, text: question, webSearch, live: EMPTY_LIVE });
       controller.current = new AbortController();
 
       streamAnswer({
@@ -54,6 +53,7 @@ export function useChatSession(input: {
         signal: controller.current.signal,
         onEvent: (event) => update((live) => applyEvent(live, event)),
       })
+        .then(() => update(endOfStream))
         .catch((error) => {
           if (error instanceof UnauthorizedError) void clearSession();
           update((live) => ({ ...live, failed: true, searching: null }));

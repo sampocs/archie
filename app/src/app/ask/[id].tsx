@@ -68,6 +68,7 @@ export default function ChatScreen() {
                 placeholder="Ask a follow-up"
                 disabled={!online}
                 disabledLabel="Ask needs a connection"
+                sendDisabled={pending !== null && !pending.live.failed}
                 onSend={send}
               />
             )}

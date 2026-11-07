@@ -1,5 +1,15 @@
 import type { AnswerSegment, LibraryCitation, WebCitation } from "./types";
-import { applyEvent, chipText, EMPTY_LIVE, groupSections, liveView, relativeTime, rowPreview } from "./sections";
+import {
+  applyEvent,
+  chipText,
+  EMPTY_LIVE,
+  endOfStream,
+  groupSections,
+  handedOver,
+  liveView,
+  relativeTime,
+  rowPreview,
+} from "./sections";
 
 const library = (overrides: Partial<LibraryCitation> = {}): LibraryCitation => ({
   kind: "library",
@@ -82,5 +92,44 @@ describe("relativeTime and rowPreview", () => {
     const segments: AnswerSegment[] = [{ label: "background", text: "Apple's buybacks run about $90B.\nMore.", citations: [] }];
     expect(rowPreview(segments)).toBe("Background: Apple's buybacks run about $90B.");
     expect(rowPreview([])).toBe("");
+  });
+});
+
+describe("endOfStream", () => {
+  it("fails an answer whose stream closed without done or error", () => {
+    const live = { ...EMPTY_LIVE, searching: "web" as const };
+    expect(endOfStream(live)).toEqual({ ...EMPTY_LIVE, failed: true, searching: null });
+  });
+
+  it("leaves a finished or failed answer alone", () => {
+    const done = { ...EMPTY_LIVE, messageId: "a1" };
+    expect(endOfStream(done)).toBe(done);
+    const failed = { ...EMPTY_LIVE, failed: true };
+    expect(endOfStream(failed)).toBe(failed);
+  });
+});
+
+describe("handedOver", () => {
+  const question = { id: "q1", role: "user" };
+  const answer = { id: "a1", role: "assistant" };
+
+  it("is true once the question and the complete answer are pulled", () => {
+    const pending = { userMessageId: "q1", live: { ...EMPTY_LIVE, messageId: "a1" } };
+    expect(handedOver(pending, [question, answer])).toBe(true);
+  });
+
+  it("is false while only the question has been pulled", () => {
+    const pending = { userMessageId: "q1", live: { ...EMPTY_LIVE, messageId: "a1" } };
+    expect(handedOver(pending, [question])).toBe(false);
+  });
+
+  it("is true for a failed stream once a later assistant row exists", () => {
+    const pending = { userMessageId: "q1", live: { ...EMPTY_LIVE, failed: true } };
+    expect(handedOver(pending, [question, { id: "a9", role: "assistant" }])).toBe(true);
+  });
+
+  it("is false for a failed stream with no assistant row after the question", () => {
+    const pending = { userMessageId: "q1", live: { ...EMPTY_LIVE, failed: true } };
+    expect(handedOver(pending, [{ id: "a0", role: "assistant" }, question])).toBe(false);
   });
 });

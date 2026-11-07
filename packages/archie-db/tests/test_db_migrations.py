@@ -14,6 +14,8 @@ from archie_db import migrate, models, session
 pytestmark = pytest.mark.postgres
 
 
+# Alembic reflects pgvector's `vector` as an unknown type and skips comparing it (plan Decision 1).
+@pytest.mark.filterwarnings("ignore:Did not recognize type 'vector':sqlalchemy.exc.SAWarning")
 def test_models_match_the_migrations(migrated_database_url: str) -> None:
     """Autogenerate finds no difference between the ORM models and the migrated schema."""
     engine = session.engine_for(migrated_database_url)

@@ -3,7 +3,8 @@
 The server runs up to `MAX_ROUNDS` model requests: `search_library` (run here, results returned as citable
 `search_result` blocks) and Anthropic's web search tool (run by Anthropic). Text streams as `delta` events; each
 finished text block becomes a `block` carrying its paragraph's label, sent when the paragraph closes; a tool run shows
-as `searching`. Uncited text the model writes before a tool call (announcing its search) is streamed but not saved.
+as `searching`. Uncited paragraphs the model writes before a tool call (announcing its search) are streamed but not
+saved.
 The answer is stored when the stream ends — complete only if the model finished its turn (`end_turn` or a stop
 sequence), else failed with whatever text arrived: a refusal, a cut-off (`max_tokens`), no answer within `MAX_ROUNDS`,
 an API or database error, or the phone hanging up mid-answer. Every model round, finished or not, is recorded in
@@ -12,6 +13,7 @@ an API or database error, or the phone hanging up mid-answer. Every model round,
 
 from __future__ import annotations
 
+import contextlib
 import json
 import uuid
 from collections.abc import Generator, Iterator
@@ -121,8 +123,10 @@ def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, 
     """The answer's events as SSE text, ending with `done` or `error`; the answer is saved either way."""
     progress = _Progress()
     try:
-        for event in _run(engine, request=request, progress=progress):
-            yield event.sse()
+        # Closing `_run` explicitly on hang-up records its round before `_save` runs below.
+        with contextlib.closing(_run(engine, request=request, progress=progress)) as events:
+            for event in events:
+                yield event.sse()
     except GeneratorExit:
         # The phone hung up: keep what arrived so the chat shows "Didn't finish" rather than nothing.
         _save(engine, request=request, progress=progress, failed=True)
@@ -145,7 +149,7 @@ def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, 
     yield Event(name=EventName.DONE, data={"message_id": str(message_id)}).sse()
 
 
-def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress) -> Iterator[Event]:
+def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress) -> Generator[Event, None, None]:
     """The tool loop; the last round may not call tools, so it has to answer."""
     client = anthropic.Anthropic(api_key=request.anthropic_key, max_retries=0, timeout=REQUEST_TIMEOUT_SECONDS)
     context = llm.CallContext(user_id=request.user_id, source_id=None, job_id=None, step=llm.ASK_STEP)
@@ -178,9 +182,12 @@ def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progre
         if response.stop_reason != "tool_use" or not tool_uses:
             raise AnswerIncompleteError(f"the model stopped on {response.stop_reason}")
 
-        # Uncited text before a tool call announces the search ("Let me search your library"); it isn't the answer.
-        for block in progress.blocks[round_start:]:
-            block.dropped = not block.segment.citations
+        # An uncited paragraph before a tool call announces the search ("Let me search your library"); it isn't the
+        # answer. A cited paragraph is kept whole, including the uncited fragments citations cut it into.
+        announced = progress.blocks[round_start:]
+        dropped = citations.uncited_paragraphs_dropped([block.segment for block in announced])
+        for block, is_dropped in zip(announced, dropped, strict=True):
+            block.dropped = is_dropped
         messages.append({"role": "assistant", "content": response.content})
         results = [
             _search_library(engine, request=request, tool_use=tool_use, passages=passages) for tool_use in tool_uses

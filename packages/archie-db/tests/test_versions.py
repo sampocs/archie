@@ -275,3 +275,40 @@ def test_resolve_refuses_other_users_deleted_items_and_missing_content(db: sqlal
     db.flush()
     assert versions.resolve(db, user_id=user_id, kind=models.EditTarget.SUMMARY, item_id=source.id) is None
     assert versions.resolve(db, user_id=user_id, kind=models.EditTarget.CARD, item_id=uuid.uuid4()) is None
+
+
+def test_topic_primer_versions_carry_the_live_foundation_cards_along(db: sqlalchemy.orm.Session) -> None:
+    """Review knows only the current primer version, so an edit and a restore move the cards onto the new version."""
+    user_id = _user(db)
+    topic = models.Topic(
+        id=uuid.uuid4(), user_id=user_id, domain="Macro", name="The Fed", origin=models.TopicOrigin.USER.value,
+        change_seq=changes.next_change_seq(),
+    )  # fmt: skip
+    db.add(topic)
+    db.flush()
+    first = topic_primers.write(db, topic=topic, markdown="## The Fed", model="m", prompt_version="p")
+    card = models.Card(
+        id=uuid.uuid4(), user_id=user_id, source_id=None, topic_primer_id=first.id,
+        kind=models.CardKind.FOUNDATION.value, question="Who sets rates?", answer="The Fed.",
+        change_seq=changes.next_change_seq(),
+    )  # fmt: skip
+    db.add(card)
+    db.flush()
+    seq_before = card.change_seq
+    target = versions.Target(kind=models.EditTarget.TOPIC_PRIMER, id=topic.id)
+
+    versions.write(
+        db, target=target, content={"markdown": "## The Fed\nIt sets rates."},
+        origin=models.VersionOrigin.CHAT_EDIT, instruction=None, derived_from=1,
+    )  # fmt: skip
+    db.refresh(card)
+    second = topic_primers.at_version(db, topic_id=topic.id, version=2)
+    assert second is not None
+    assert card.topic_primer_id == second.id
+    assert card.change_seq > seq_before
+
+    versions.restore(db, target=target, version=1)
+    db.refresh(card)
+    third = topic_primers.at_version(db, topic_id=topic.id, version=3)
+    assert third is not None
+    assert card.topic_primer_id == third.id

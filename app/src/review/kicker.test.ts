@@ -32,7 +32,11 @@ describe("cardKicker", () => {
     });
     const chatCard = (conversationId: string) => cardRow({ sourceId: null, conversationId });
 
-    expect(cardKicker(chatCard("about-source"), chatData)).toEqual({ label: "From Ask", suffix: undefined, domain: "AI" });
+    expect(cardKicker(chatCard("about-source"), chatData)).toEqual({
+      label: "From Ask",
+      suffix: undefined,
+      domain: "AI",
+    });
     expect(cardKicker(chatCard("general"), chatData)).toEqual({ label: "From Ask", suffix: undefined, domain: null });
   });
 

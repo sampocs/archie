@@ -52,7 +52,9 @@ describe("isReviewable", () => {
 
   it("a chat card is reviewable at once", () => {
     expect(isReviewable(cardRow({ sourceId: null, conversationId: "x" }), reviewData([]))).toBe(true);
-    expect(isReviewable(cardRow({ sourceId: null, conversationId: "x", deletedAt: dayAt(-1) }), reviewData([]))).toBe(false);
+    expect(
+      isReviewable(cardRow({ sourceId: null, conversationId: "x", deletedAt: dayAt(-1) }), reviewData([])),
+    ).toBe(false);
   });
 
   it("a deleted card is not", () => {

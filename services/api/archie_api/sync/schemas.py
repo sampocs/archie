@@ -131,6 +131,8 @@ class ArtifactOut(pydantic.BaseModel):
     kind: str
     version: int
     content: dict[str, Any]
+    origin: str
+    instruction: str | None
     is_current: bool
     created_at: datetime.datetime
     change_seq: int
@@ -152,6 +154,7 @@ class CardOut(pydantic.BaseModel):
     kind: str
     question: str
     answer: str
+    version: int
     fsrs_state: str
     stability: float | None
     difficulty: float | None
@@ -191,6 +194,8 @@ class TopicPrimerOut(pydantic.BaseModel):
     version: int
     is_current: bool
     content: dict[str, Any]
+    origin: str
+    instruction: str | None
     opened_at: datetime.datetime | None
     snoozed_until: datetime.datetime | None
     created_at: datetime.datetime
@@ -276,6 +281,7 @@ class TakeVersionOut(pydantic.BaseModel):
     raw_body: str
     cleaned: bool
     clean_failed: bool
+    origin: str
     created_at: datetime.datetime
     change_seq: int
 
@@ -313,6 +319,44 @@ class MessageOut(pydantic.BaseModel):
     change_seq: int
 
 
+class CardVersionOut(pydantic.BaseModel):
+    """One version of a card's question and answer as the phone stores it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    card_id: uuid.UUID
+    version: int
+    question: str
+    answer: str
+    origin: str
+    instruction: str | None
+    created_at: datetime.datetime
+    change_seq: int
+
+
+class EditProposalOut(pydantic.BaseModel):
+    """An edit Ask proposed in a chat, as the phone stores it and as the edit routes return it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    message_id: uuid.UUID
+    target_kind: str
+    target_id: uuid.UUID
+    title: str
+    description: str
+    base_version: int
+    before: dict[str, Any]
+    after: dict[str, Any]
+    status: str
+    applied_version: int | None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    change_seq: int
+
+
 class PulledRows(pydantic.BaseModel):
     """Changed rows by table."""
 
@@ -328,6 +372,8 @@ class PulledRows(pydantic.BaseModel):
     take_versions: list[TakeVersionOut]
     conversations: list[ConversationOut]
     messages: list[MessageOut]
+    card_versions: list[CardVersionOut]
+    edit_proposals: list[EditProposalOut]
 
 
 class PullResponse(pydantic.BaseModel):

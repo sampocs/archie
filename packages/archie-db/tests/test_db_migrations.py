@@ -335,3 +335,94 @@ def test_0011_keeps_cards_allows_a_conversation_origin_and_indexes_chunk_words(t
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
     engine.dispose()
+
+
+def test_0013_keeps_versions_with_their_defaults_and_cascades_proposals(test_database_url: str) -> None:
+    """Rows written before 0013 get origin archie/owner and card version 1; proposals and card versions cascade."""
+    migrate.downgrade(test_database_url)
+    migrate.upgrade(test_database_url, "0012")
+    engine = session.engine_for(test_database_url)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, change_seq) "
+                "SELECT '00000000-0000-0000-0000-000000000001', id, 'https://example.com/a', "
+                "'https://example.com/a', 'article', 'inbox', 'queue', nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO source_artifacts (id, user_id, source_id, kind, version, content, is_current, change_seq) "
+                "SELECT gen_random_uuid(), id, '00000000-0000-0000-0000-000000000001', 'primer', 1, "
+                "'{\"markdown\": \"## A\"}', true, nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO cards (id, user_id, source_id, kind, question, answer, change_seq) "
+                "SELECT '00000000-0000-0000-0000-0000000000c1', id, '00000000-0000-0000-0000-000000000001', "
+                "'concept', 'Q?', 'A.', nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO takes (id, user_id, kind, title, current_version, change_seq) "
+                "SELECT '00000000-0000-0000-0000-0000000000d1', id, 'opinion', 'T', 1, nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO take_versions (id, user_id, take_id, version, body, raw_body, cleaned, change_seq) "
+                "SELECT gen_random_uuid(), id, '00000000-0000-0000-0000-0000000000d1', 1, 'B', 'B', false, "
+                "nextval('change_seq') FROM users"
+            )
+        )
+
+    migrate.upgrade(test_database_url)
+
+    with engine.begin() as connection:
+        assert connection.execute(sqlalchemy.text("SELECT origin FROM source_artifacts")).scalar_one() == "archie"
+        assert connection.execute(sqlalchemy.text("SELECT version FROM cards")).scalar_one() == 1
+        assert connection.execute(sqlalchemy.text("SELECT origin FROM take_versions")).scalar_one() == "owner"
+
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO card_versions (id, user_id, card_id, version, question, answer, origin, change_seq) "
+                "SELECT gen_random_uuid(), id, '00000000-0000-0000-0000-0000000000c1', 1, 'Q?', 'A.', 'archie', "
+                "nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO conversations (id, user_id, title, change_seq) "
+                "SELECT '00000000-0000-0000-0000-0000000000a1', id, 'Q', nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO messages (id, user_id, conversation_id, role, text, status, change_seq) "
+                "SELECT '00000000-0000-0000-0000-0000000000b1', id, '00000000-0000-0000-0000-0000000000a1', "
+                "'assistant', 'A', 'complete', nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO edit_proposals (id, user_id, conversation_id, message_id, target_kind, target_id, title, "
+                "description, base_version, before, after, status, change_seq) "
+                "SELECT gen_random_uuid(), id, '00000000-0000-0000-0000-0000000000a1', "
+                "'00000000-0000-0000-0000-0000000000b1', 'card', '00000000-0000-0000-0000-0000000000c1', 'Q?', "
+                '\'Say B\', 1, \'{"question": "Q?", "answer": "A."}\', '
+                '\'{"question": "Q?", "answer": "B."}\', '
+                "'proposed', nextval('change_seq') FROM users"
+            )
+        )
+
+        connection.execute(sqlalchemy.text("DELETE FROM conversations"))
+        connection.execute(sqlalchemy.text("DELETE FROM cards"))
+        assert connection.execute(sqlalchemy.text("SELECT count(*) FROM edit_proposals")).scalar_one() == 0
+        assert connection.execute(sqlalchemy.text("SELECT count(*) FROM card_versions")).scalar_one() == 0
+
+    migrate.downgrade(test_database_url, "0012")
+    migrate.upgrade(test_database_url)
+    engine.dispose()

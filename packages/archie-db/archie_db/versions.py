@@ -6,6 +6,8 @@ and makes it current; nothing is overwritten. Content travels in one edit shape 
   artifact's content (domain, tags, the cards it came with) from the current version;
 - primer, topic primer and take: `{"markdown": ...}` (a take's body);
 - card: `{"question": ..., "answer": ...}`.
+Writing a topic primer version also moves the topic's live foundation cards onto it, since Review only knows the
+current primer version.
 Cards are versioned lazily: a card has no `card_versions` rows until its first change, which writes version 1 (the
 card as it was) and version 2 together. Every function that writes expects the caller to hold
 `changes.lock_user_writes` for the target's user.
@@ -265,6 +267,21 @@ def _write_topic_primer(
         origin=origin,
         derived_from_id=derived.id if derived is not None else None,
         instruction=instruction,
+    )
+
+    # Review loads only the current primer version and drops cards pointing at any other, so the topic's live
+    # foundation cards follow every new version.
+    earlier_ids = sqlalchemy.select(models.TopicPrimer.id).where(
+        models.TopicPrimer.topic_id == topic.id, models.TopicPrimer.id != primer.id
+    )
+    db.execute(
+        sqlalchemy.update(models.Card)
+        .where(models.Card.topic_primer_id.in_(earlier_ids), models.Card.deleted_at.is_(None))
+        .values(
+            topic_primer_id=primer.id,
+            updated_at=sqlalchemy.func.now(),
+            change_seq=changes.next_change_seq(),
+        )
     )
     jobs.enqueue_embed(db, user_id=topic.user_id, item_kind=models.SearchItemKind.TOPIC_PRIMER, item_id=primer.id)
     return primer.version

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -24,6 +25,8 @@ class PodcastEpisode:
     audio_url: str
     duration_s: int | None
     image_url: str | None = None
+    # The feed item's publication day, when the feed gives one.
+    published: datetime.date | None = None
 
     def to_payload(self) -> dict[str, Any]:
         """The episode as JSON-ready data."""
@@ -36,11 +39,13 @@ class PodcastEpisode:
             "audio_url": self.audio_url,
             "duration_s": self.duration_s,
             "image_url": self.image_url,
+            "published": self.published.isoformat() if self.published is not None else None,
         }
 
     @classmethod
     def from_payload(cls, data: Mapping[str, Any]) -> PodcastEpisode:
-        """The episode back from `to_payload` data; payloads queued before artwork existed have no `image_url`."""
+        """The episode back from `to_payload` data; older payloads may lack `image_url` and `published`."""
+        published = data.get("published")
         return cls(
             show_name=data["show_name"],
             title=data["title"],
@@ -50,4 +55,5 @@ class PodcastEpisode:
             audio_url=data["audio_url"],
             duration_s=data["duration_s"],
             image_url=data.get("image_url"),
+            published=datetime.date.fromisoformat(published) if published else None,
         )

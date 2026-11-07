@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+import datetime
 import uuid
 from collections.abc import Iterator
 
@@ -22,6 +24,7 @@ EPISODE = episode_content.PodcastEpisode(
     guid=None,
     audio_url="https://example.com/a.mp3",
     duration_s=None,
+    published=datetime.date(2026, 11, 2),
 )
 
 
@@ -95,7 +98,7 @@ def test_store_text_does_nothing_for_a_deleted_source(db: sqlalchemy.orm.Session
 
 
 def test_enqueue_transcribe_queues_one_job_with_the_episode_and_titles_the_source(db: sqlalchemy.orm.Session) -> None:
-    """The job carries the episode and the transcribe attempt budget; the source gets its title."""
+    """The job carries the episode and the transcribe attempt budget; the source gets its title and episode day."""
     source = _source(db, kind=models.SourceKind.PODCAST)
 
     _text.enqueue_transcribe(db, source=source, episode=EPISODE)
@@ -106,6 +109,7 @@ def test_enqueue_transcribe_queues_one_job_with_the_episode_and_titles_the_sourc
     assert job.max_attempts == pipeline.MAX_ATTEMPTS[models.JobKind.TRANSCRIBE]
     assert episode_content.PodcastEpisode.from_payload(job.payload["episode"]) == EPISODE
     assert source.title == "Episode One"
+    assert source.published_at == datetime.datetime(2026, 11, 2, tzinfo=datetime.UTC)
 
 
 def test_store_text_fills_an_empty_image_and_keeps_an_existing_one(db: sqlalchemy.orm.Session) -> None:
@@ -134,8 +138,8 @@ def test_store_text_fills_an_empty_image_and_keeps_an_existing_one(db: sqlalchem
 
 
 def test_episode_payloads_queued_before_artwork_still_load() -> None:
-    """A transcribe job queued by M3 has no `image_url` key; it loads with no image."""
+    """A transcribe job queued by M3 has no `image_url` or `published` key; it loads with neither."""
     payload = EPISODE.to_payload()
-    del payload["image_url"]
+    del payload["image_url"], payload["published"]
 
-    assert episode_content.PodcastEpisode.from_payload(payload) == EPISODE
+    assert episode_content.PodcastEpisode.from_payload(payload) == dataclasses.replace(EPISODE, published=None)

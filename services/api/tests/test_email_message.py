@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import email.message
 import pathlib
 
@@ -36,6 +37,26 @@ def test_a_morning_brew_issue_takes_its_web_url_from_view_online_and_keeps_parag
     # Markdown keeps the bold lead-ins and separates paragraphs with a blank line.
     assert "**Mission control:** Currently, Republicans control both chambers" in parsed.text
     assert "\n\n**It’s the economy, stupid.**" in parsed.text
+
+
+def test_the_date_header_is_when_it_was_sent_and_a_missing_or_garbled_one_is_none() -> None:
+    """The header's own zone is kept; a zone-less `-0000` date reads as UTC."""
+    morning_brew = email_message.parse((FIXTURES / "morning_brew.eml").read_bytes())
+    assert morning_brew.sent_at == datetime.datetime(2026, 11, 3, 10, 19, 36, tzinfo=datetime.UTC)
+
+    sent_at = {}
+    for date_header in (None, "sometime last week", "Tue, 3 Nov 2026 05:19:36 -0000"):
+        message = email.message.EmailMessage()
+        if date_header is not None:
+            message["Date"] = date_header
+        message.set_content("Just a short plain note.")
+        sent_at[date_header] = email_message.parse(message.as_bytes()).sent_at
+
+    assert sent_at == {
+        None: None,
+        "sometime last week": None,
+        "Tue, 3 Nov 2026 05:19:36 -0000": datetime.datetime(2026, 11, 3, 5, 19, 36, tzinfo=datetime.UTC),
+    }
 
 
 def test_a_newsletter_table_row_of_short_cells_reads_as_one_line() -> None:

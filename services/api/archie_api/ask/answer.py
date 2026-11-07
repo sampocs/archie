@@ -14,6 +14,7 @@ an API or database error, or the phone hanging up mid-answer. Every model round,
 from __future__ import annotations
 
 import contextlib
+import datetime
 import json
 import uuid
 from collections.abc import AsyncGenerator, Generator, Iterator
@@ -48,6 +49,8 @@ _TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "auto"}
 _LAST_ROUND_TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "none"}
 # The stop reasons of a model that finished its turn; any other (e.g. `max_tokens`) leaves the answer unfinished.
 _FINISHED_STOP_REASONS = frozenset({"end_turn", "stop_sequence"})
+_PUBLISHED_AFTER = "published_after"
+_PUBLISHED_BEFORE = "published_before"
 
 _logger = logging.get_logger(logging.LoggerName.API, "ask")
 
@@ -297,7 +300,8 @@ def _search_library(
 ) -> dict[str, Any]:
     """Run `search_library` and answer with citable passages; a bad input goes back as an error the model can fix."""
     query = _query_of(tool_use.input)
-    if not query:
+    dates = _dates_of(tool_use.input)
+    if not query or dates is None:
         error = json.dumps({"INVALID_JSON": json.dumps(tool_use.input)})
         return {"type": "tool_result", "tool_use_id": tool_use.id, "is_error": True, "content": error}
 
@@ -312,6 +316,8 @@ def _search_library(
             limit=LIBRARY_RESULTS,
             boost=request.boost,
             match_any=True,
+            published_after=dates.after,
+            published_before=dates.before,
         )
     passages.update({citations.source_key(hit): hit for hit in hits})
 
@@ -327,6 +333,28 @@ def _query_of(tool_input: object) -> str | None:
         return None
     query = tool_input.get("query")
     return query.strip() if isinstance(query, str) and query.strip() else None
+
+
+@dataclass(frozen=True)
+class _DateRange:
+    """The optional, inclusive day bounds of a `search_library` call."""
+
+    after: datetime.date | None
+    before: datetime.date | None
+
+
+def _dates_of(tool_input: object) -> _DateRange | None:
+    """The tool input's `published_after` / `published_before` days; None when one is given but isn't a date."""
+    if not isinstance(tool_input, dict):
+        return _DateRange(after=None, before=None)
+    bounds = [tool_input.get(name) for name in (_PUBLISHED_AFTER, _PUBLISHED_BEFORE)]
+    if any(bound is not None and not isinstance(bound, str) for bound in bounds):
+        return None
+    try:
+        after, before = (datetime.date.fromisoformat(bound) if bound else None for bound in bounds)
+    except ValueError:
+        return None
+    return _DateRange(after=after, before=before)
 
 
 def _query_embedding(engine: sqlalchemy.Engine, *, request: AnswerRequest, query: str) -> list[float] | None:

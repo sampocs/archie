@@ -3,10 +3,14 @@
 `search_chunks` returns ranked passages (the chat's `search_library` tool uses them as they are); `best_per_item`
 keeps each item's best passage for Library search. Only live items are searched: a deleted or merged source, a deleted
 take, or a topic primer that is no longer current or whose topic was removed or merged never comes back.
+
+Each passage carries its item's date: a source's `published_at` (else when it was saved), a topic primer version's or a
+take's `created_at`. `published_after` / `published_before` keep only passages whose item date falls in those UTC days.
 """
 
 from __future__ import annotations
 
+import datetime
 import re
 import uuid
 from collections.abc import Sequence
@@ -62,7 +66,9 @@ _TERM = re.compile(r"[\w']+")
 _STEM_TRIM = 3
 _MIN_STEM = 4
 
-_LIVE_CHUNKS = """
+# The day an item belongs to, for the date filter and the chat's result titles.
+_ITEM_DATE = "COALESCE(s.published_at, s.created_at, tp.created_at, k.created_at)"
+_LIVE_CHUNKS = f"""
 FROM chunks c
 LEFT JOIN sources s ON s.id = c.source_id
 LEFT JOIN topic_primers tp ON tp.id = c.topic_primer_id
@@ -74,10 +80,12 @@ WHERE c.user_id = :user_id
     OR (c.topic_primer_id IS NOT NULL AND tp.is_current AND t.removed_at IS NULL AND t.merged_into_id IS NULL)
     OR (c.take_id IS NOT NULL AND k.deleted_at IS NULL)
   )
+  AND (CAST(:published_from AS timestamptz) IS NULL OR {_ITEM_DATE} >= CAST(:published_from AS timestamptz))
+  AND (CAST(:published_until AS timestamptz) IS NULL OR {_ITEM_DATE} < CAST(:published_until AS timestamptz))
 """
-_COLUMNS = """
+_COLUMNS = f"""
 SELECT c.id, c.owner_kind, c.source_id, c.topic_primer_id, c.take_id, c.text, c.start_seconds,
-       COALESCE(s.title, s.url, t.name, k.title) AS title
+       COALESCE(s.title, s.url, t.name, k.title) AS title, s.sender, {_ITEM_DATE} AS item_date
 """
 _KEYWORD_SQL = sqlalchemy.text(
     _COLUMNS
@@ -110,11 +118,16 @@ class ItemRef:
 
 @dataclass(frozen=True)
 class ChunkHit:
-    """One ranked passage and the item it belongs to; `keyword_match` says the words matched, not only the meaning."""
+    """One ranked passage and the item it belongs to; `keyword_match` says the words matched, not only the meaning.
+
+    `sender` is a newsletter's; `item_date` is the item's date (see the module docstring).
+    """
 
     chunk_id: int
     item: ItemRef
     title: str
+    sender: str | None
+    item_date: datetime.datetime
     owner_kind: models.ChunkOwner
     text: str
     start_seconds: float | None
@@ -131,16 +144,25 @@ def search_chunks(
     limit: int,
     boost: ItemRef | None = None,
     match_any: bool = False,
+    published_after: datetime.date | None = None,
+    published_before: datetime.date | None = None,
 ) -> list[ChunkHit]:
     """The user's best `limit` passages for `query`, best first; meaning search runs only with `query_embedding`.
 
     Meaning search keeps only passages within `MEANING_MAX_DISTANCE` of the query, so unrelated queries find nothing.
 
     Keyword search needs every word unless `match_any`, which needs any one (more matched words still rank higher).
+
+    `published_after` / `published_before` (both inclusive, UTC days) keep only items dated within them.
     """
+    common = {
+        "user_id": user_id,
+        "published_from": _start_of(published_after),
+        "published_until": _start_of(published_before + datetime.timedelta(days=1) if published_before else None),
+    }
     keyword_query = " or ".join(_TERM.findall(query)) if match_any else query
     keyword_rows = (
-        db.execute(_KEYWORD_SQL, {"user_id": user_id, "query": keyword_query, "limit": KEYWORD_CANDIDATES}).all()
+        db.execute(_KEYWORD_SQL, {**common, "query": keyword_query, "limit": KEYWORD_CANDIDATES}).all()
         if keyword_query.strip()
         else []
     )
@@ -148,7 +170,7 @@ def search_chunks(
         db.execute(
             _MEANING_SQL,
             {
-                "user_id": user_id,
+                **common,
                 "embedding": vector.to_literal(query_embedding),
                 "max_distance": MEANING_MAX_DISTANCE,
                 "limit": MEANING_CANDIDATES,
@@ -211,6 +233,8 @@ def _fuse(
                 chunk_id=chunk_id,
                 item=item,
                 title=row.title,
+                sender=row.sender,
+                item_date=row.item_date,
                 owner_kind=models.ChunkOwner(row.owner_kind),
                 text=row.text,
                 start_seconds=row.start_seconds,
@@ -219,6 +243,10 @@ def _fuse(
             )
         )
     return sorted(hits, key=lambda hit: (-hit.score, hit.chunk_id))
+
+
+def _start_of(day: datetime.date | None) -> datetime.datetime | None:
+    return datetime.datetime.combine(day, datetime.time(), tzinfo=datetime.UTC) if day is not None else None
 
 
 def _item_of(row: sqlalchemy.Row[Any]) -> ItemRef:

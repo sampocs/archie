@@ -12,6 +12,7 @@ round. Every block of the paragraph gets that label and keeps its own citations.
 from __future__ import annotations
 
 import dataclasses
+import datetime
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass, field
@@ -200,8 +201,14 @@ _OWNER_NAMES = {
 
 
 def _result_title(hit: search.ChunkHit) -> str:
+    """The item's title, a newsletter's sender and the item's date, then where in the item the passage sits.
+
+    e.g. "☕ Panicky vibes · Morning Brew · Wed 5 Nov 2026", so the model can tell which day's issue said what.
+    """
+    day = hit.item_date.astimezone(datetime.UTC)
+    named = " · ".join(part for part in (hit.title, hit.sender, f"{day:%a} {day.day} {day:%b %Y}") if part)
     if hit.owner_kind == models.ChunkOwner.SOURCE_TEXT and hit.start_seconds is not None:
         minutes, seconds = divmod(int(hit.start_seconds), 60)
-        return f"{hit.title} (at {minutes}:{seconds:02d})"
+        return f"{named} (at {minutes}:{seconds:02d})"
     name = _OWNER_NAMES.get(hit.owner_kind)
-    return f"{hit.title} ({name})" if name else hit.title
+    return f"{named} ({name})" if name else named

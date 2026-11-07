@@ -86,6 +86,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         text_content={content.TEXT_KEY: content.strip_nul(extracted.text)},
         title=extracted.title,
         image_url=extracted.image_url,
+        published_at=extracted.published_at,
     )
 
 
@@ -115,6 +116,7 @@ def _fetch_podcast(db: sqlalchemy.orm.Session, *, source: models.Source, source_
         text_content=text_content,
         title=resolved.episode.title,
         image_url=resolved.episode.image_url,
+        published_at=content.midnight_utc(resolved.episode.published),
     )
 
 

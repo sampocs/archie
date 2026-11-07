@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
@@ -13,17 +14,24 @@ MAX_TEXT_LENGTH = 200_000
 TEXT_KEY = "text"
 SEGMENTS_KEY = "segments"
 
+
+def midnight_utc(day: datetime.date | None) -> datetime.datetime | None:
+    """A publication day as the moment it began in UTC, for `sources.published_at`; None stays None."""
+    return datetime.datetime.combine(day, datetime.time(), tzinfo=datetime.UTC) if day is not None else None
+
+
 # Postgres text and jsonb values reject NUL, so a string containing one would fail the job forever.
 _NUL = "\x00"
 
 
 @dataclass(frozen=True)
 class ExtractedText:
-    """A source's readable text and, when one was found, its title and artwork."""
+    """A source's readable text and, when one was found, its title, artwork and publication date."""
 
     title: str | None
     text: str
     image_url: str | None = None
+    published_at: datetime.datetime | None = None
 
 
 # Longest caption kept for a saved post; a long X thread's first post can run to thousands of characters.

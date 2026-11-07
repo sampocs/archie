@@ -12,6 +12,7 @@ search your library for this."), which the answer must not save.
 from __future__ import annotations
 
 import asyncio
+import datetime
 import json
 import pathlib
 import uuid
@@ -394,7 +395,11 @@ def _unfinished_answer_request(live_stack: LiveStack) -> tuple[sqlalchemy.Engine
             conversation_id=conversation_id,
             user_message_id=question_id,
             web_search=False,
-            system=prompts.system_prompt(about=context.about_text(db, conversation=conversation), web_required=False),
+            system=prompts.system_prompt(
+                about=context.about_text(db, conversation=conversation),
+                web_required=False,
+                today=datetime.date(2026, 11, 7),
+            ),
             messages=[{"role": "user", "content": QUESTION}],
             boost=context.boost(db, conversation=conversation),
             anthropic_key=config.Settings().require_anthropic_api_key(),

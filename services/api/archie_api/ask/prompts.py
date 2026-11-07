@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from typing import Any
 
 ASK_SYSTEM = """You are Archie's Ask, answering the owner's questions from their own library first. Archie is \
@@ -13,6 +14,9 @@ How to answer:
 have saved (small talk, arithmetic). Search again with other words if the first search finds nothing useful.
 - Call tools without writing anything first; don't announce your searches.
 - Base library claims only on search results, so they carry citations.
+- Each library result's title ends with its item's date (when it was published or sent, else when it was saved). \
+For a question about a time ("yesterday", "this week", "on Tuesday"), work the dates out from today's date and pass \
+published_after / published_before to search_library.
 - Then add background knowledge only where the library doesn't cover the question, in its own paragraph and without \
 citations. Never present background knowledge as coming from the library.
 - Search the web for recent or fast-changing facts (prices, office holders, this year's numbers), when the owner asks \
@@ -35,11 +39,25 @@ SEARCH_LIBRARY_TOOL: dict[str, Any] = {
     "description": (
         "Search the owner's saved library: article and newsletter text, podcast and video transcripts, Archie's "
         "summaries and primers of them, topic primers, and the owner's own takes. Call this first for any question "
-        "the owner's reading could bear on. Returns up to 8 passages to cite."
+        "the owner's reading could bear on. Returns up to 8 passages to cite. For a question about a time "
+        '("yesterday", "this week", "on Tuesday"), also pass published_after and/or '
+        "published_before so only items from those days come back."
     ),
     "input_schema": {
         "type": "object",
-        "properties": {"query": {"type": "string", "description": "What to look for, in a few words."}},
+        "properties": {
+            "query": {"type": "string", "description": "What to look for, in a few words."},
+            "published_after": {
+                "type": "string",
+                "format": "date",
+                "description": "Only items published (or saved) on or after this day, YYYY-MM-DD.",
+            },
+            "published_before": {
+                "type": "string",
+                "format": "date",
+                "description": "Only items published (or saved) on or before this day, YYYY-MM-DD.",
+            },
+        },
         "required": ["query"],
         "additionalProperties": False,
     },
@@ -58,9 +76,12 @@ WEB_SEARCH_TOOL: dict[str, Any] = {
 }
 
 
-def system_prompt(*, about: str | None, web_required: bool) -> str:
-    """The rules, then the about item (for Ask about this), then the web requirement when the globe was on."""
-    parts = [ASK_SYSTEM]
+def system_prompt(*, about: str | None, web_required: bool, today: datetime.date) -> str:
+    """The rules and today's date, then the about item (Ask about this), then the web requirement if the globe was on.
+
+    The date comes after the fixed rules, so the prompt's first 60 characters (what cassettes replay by) never change.
+    """
+    parts = [ASK_SYSTEM, f"Today is {today:%A} {today.day} {today:%B %Y} (UTC)."]
     if about:
         parts.append(f"{ABOUT_INTRO}\n<about>\n{about}\n</about>")
     if web_required:

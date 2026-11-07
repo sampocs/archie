@@ -6,6 +6,7 @@ The question is stored before the stream starts. Only whitelisted users may ask:
 
 from __future__ import annotations
 
+import datetime
 import uuid
 from typing import Annotated
 
@@ -69,7 +70,10 @@ def ask(
         user_message_id=body.user_message_id,
         web_search=body.web_search,
         system=prompts.system_prompt(
-            about=context.about_text(db, conversation=conversation), web_required=body.web_search
+            about=context.about_text(db, conversation=conversation),
+            web_required=body.web_search,
+            # No owner time zone is stored, so "today" is the UTC day.
+            today=datetime.datetime.now(tz=datetime.UTC).date(),
         ),
         # Read before the question is added, so the history holds only earlier exchanges.
         messages=[*context.history(db, conversation_id=conversation.id), {"role": "user", "content": question}],

@@ -7,6 +7,7 @@ after deleting a cassette.
 from __future__ import annotations
 
 import contextlib
+import datetime
 import pathlib
 import uuid
 from collections.abc import Callable, Iterator
@@ -95,14 +96,15 @@ def test_an_article_page_becomes_a_text_artifact_and_queues_analysis(engine: sql
     assert _job(engine, models.JobKind.FETCH_CONTENT).status == models.JobStatus.DONE
 
 
-def test_an_article_with_og_image_gets_artwork(engine: sqlalchemy.Engine, replay: Replay) -> None:
-    """The page's og:image becomes the source's absolute image_url."""
+def test_an_article_with_og_image_gets_artwork_and_its_date(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """The page's og:image becomes the source's absolute image_url, and its publication day its published_at."""
     source_id = _add_source(engine, url=OG_IMAGE_ARTICLE_URL, kind=models.SourceKind.ARTICLE)
 
     with replay("article_og_image"):
         loop.run_one(engine, handlers=handlers.HANDLERS)
 
     assert _source(engine, source_id).image_url == OG_IMAGE_ARTICLE_IMAGE
+    assert _source(engine, source_id).published_at == datetime.datetime(2026, 11, 3, tzinfo=datetime.UTC)
 
 
 def test_an_existing_title_is_kept(engine: sqlalchemy.Engine, replay: Replay) -> None:

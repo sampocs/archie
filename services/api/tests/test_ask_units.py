@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
+import dataclasses
+import datetime
 import uuid
 
 import anthropic.types
-from archie_api.ask import citations, context
+from archie_api.ask import answer, citations, context, prompts
 from archie_db import models, search
 
 HIT = search.ChunkHit(
     chunk_id=7,
     item=search.ItemRef(kind=models.SearchItemKind.SOURCE, id=uuid.UUID(int=1)),
     title="Odd Lots",
+    sender=None,
+    item_date=datetime.datetime(2026, 11, 2, 9, tzinfo=datetime.UTC),
     owner_kind=models.ChunkOwner.SOURCE_TEXT,
     text="The Fed pays with reserves.",
     start_seconds=1880.0,
@@ -171,3 +175,45 @@ def test_a_heading_with_nothing_after_it_stays_background_and_waits_to_be_sent()
     assert paragraphs.open == [heading]
     assert [segment.label for segment in paragraphs.finish()] == [citations.AnswerLabel.BACKGROUND]
     assert paragraphs.open == []
+
+
+def test_a_library_result_is_titled_with_its_sender_and_date_and_where_it_sits() -> None:
+    """A newsletter shows who sent it and on which day; a timed passage keeps its timestamp after the date.
+
+    The date is the UTC day: an issue sent late in New York is already the next day.
+    """
+    newsletter = dataclasses.replace(
+        HIT,
+        title="☕ Panicky vibes",
+        sender="Morning Brew",
+        item_date=datetime.datetime(2026, 11, 4, 22, tzinfo=datetime.timezone(datetime.timedelta(hours=-5))),
+        owner_kind=models.ChunkOwner.SOURCE_SUMMARY,
+        start_seconds=None,
+    )
+
+    assert citations.search_result_block(newsletter)["title"] == (
+        "☕ Panicky vibes · Morning Brew · Thu 5 Nov 2026 (Archie's summary)"
+    )
+    assert citations.search_result_block(HIT)["title"] == "Odd Lots · Mon 2 Nov 2026 (at 31:20)"
+
+
+def test_the_system_prompt_keeps_its_replay_prefix_and_states_today() -> None:
+    """Cassettes replay by the first 60 characters, so the date must come after them."""
+    today = prompts.system_prompt(about=None, web_required=False, today=datetime.date(2026, 11, 7))
+    tomorrow = prompts.system_prompt(about=None, web_required=False, today=datetime.date(2026, 11, 8))
+
+    assert today[:60] == tomorrow[:60] == prompts.ASK_SYSTEM[:60]
+    assert "Today is Saturday 7 November 2026 (UTC)." in today
+
+
+def test_search_library_takes_optional_inclusive_date_bounds() -> None:
+    """Only the query is required; a bound that isn't a date goes back to the model as an error."""
+    schema = prompts.SEARCH_LIBRARY_TOOL["input_schema"]
+    assert schema["required"] == ["query"]
+    assert set(schema["properties"]) == {"query", "published_after", "published_before"}
+
+    assert answer._dates_of({"query": "x", "published_after": "2026-11-02", "published_before": "2026-11-06"}) == (
+        answer._DateRange(after=datetime.date(2026, 11, 2), before=datetime.date(2026, 11, 6))
+    )
+    assert answer._dates_of({"query": "x"}) == answer._DateRange(after=None, before=None)
+    assert answer._dates_of({"query": "x", "published_before": "last Tuesday"}) is None

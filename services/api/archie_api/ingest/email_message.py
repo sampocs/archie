@@ -6,6 +6,7 @@ paragraphs kept), and nothing in it is ever executed or followed.
 
 from __future__ import annotations
 
+import datetime
 import email
 import email.message
 import email.policy
@@ -48,6 +49,8 @@ class ParsedEmail:
     message_id: str
     web_url: str | None
     text: str
+    # From the Date header; None when it is missing or unreadable.
+    sent_at: datetime.datetime | None
 
 
 def parse(raw: bytes) -> ParsedEmail:
@@ -62,6 +65,7 @@ def parse(raw: bytes) -> ParsedEmail:
         message_id=_message_id(message, raw=raw),
         web_url=_web_url(message, plain=plain, html=html),
         text=_without_nul(_readable_text(html=html, plain=plain)[:MAX_TEXT_LENGTH]),
+        sent_at=_sent_at(message),
     )
 
 
@@ -91,6 +95,19 @@ def _sender(message: email.message.Message) -> str | None:
 
     display_name, address = email.utils.parseaddr(from_header)
     return display_name.strip() or address or from_header
+
+
+def _sent_at(message: email.message.Message) -> datetime.datetime | None:
+    """The Date header as an aware datetime; a date without a zone is read as UTC, as RFC 5322's `-0000` means."""
+    date_header = _header_text(message, "Date")
+    if date_header is None:
+        return None
+    try:
+        sent_at = email.utils.parsedate_to_datetime(date_header)
+    except (TypeError, ValueError):
+        # Outside mail: a garbled date only costs the date.
+        return None
+    return sent_at if sent_at.tzinfo is not None else sent_at.replace(tzinfo=datetime.UTC)
 
 
 def _message_id(message: email.message.Message, *, raw: bytes) -> str:

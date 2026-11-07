@@ -368,6 +368,7 @@ def _resolved(
         audio_url=item.audio_url,
         duration_s=item.duration_s,
         image_url=item.image_url or artwork_url,
+        published=item.published,
     )
     return ResolvedEpisode(episode=episode, transcripts=item.transcripts)
 

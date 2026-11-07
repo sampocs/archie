@@ -676,6 +676,19 @@ describe("database SyncStore", () => {
     expect(sourceRow(db)?.favoritedAt).toBeNull();
   });
 
+  it("stores a pulled source's published_at, and a missing one as null", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: { sources: [pulledSource({ published_at: "2026-11-03T10:19:36Z" })], artifacts: [], cards: [] },
+      position: 1,
+      more: false,
+    });
+    expect(sourceRow(db)?.publishedAt).toBe("2026-11-03T10:19:36Z");
+
+    await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 2, more: false });
+    expect(sourceRow(db)?.publishedAt).toBeNull();
+  });
+
   it("a re-pull of a source with an unsent set_favorite keeps the local star", async () => {
     const { db, store } = makeDbStore();
     await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 1, more: false });
@@ -984,7 +997,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;

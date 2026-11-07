@@ -16,6 +16,7 @@ import { ArtworkTile } from "@/ui/ArtworkTile";
 import { haptic } from "@/ui/haptics";
 import { Kicker } from "@/ui/Kicker";
 import { monogramFor } from "@/ui/monogram";
+import { sentDate } from "@/ui/sourceLabels";
 
 type SourceRow = typeof schema.sources.$inferSelect;
 
@@ -133,7 +134,7 @@ function CoveringRow({
           style={{ fontSize: 12.5 }}
           numberOfLines={1}
         >
-          {`${subject} · ${WEEKDAYS[new Date(source.createdAt).getDay()]}`}
+          {`${subject} · ${WEEKDAYS[sentDate(source).getDay()]}`}
         </Text>
       </View>
     </Pressable>

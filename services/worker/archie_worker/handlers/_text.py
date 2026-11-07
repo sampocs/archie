@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 from typing import Any
 
 import sqlalchemy
@@ -22,9 +23,10 @@ def store_text(
     text_content: dict[str, Any],
     title: str | None,
     image_url: str | None = None,
+    published_at: datetime.datetime | None = None,
 ) -> None:
-    """Store `text_content` as the current `text` artifact, fill an empty title and image, and queue its next steps
-    and its search passages.
+    """Store `text_content` as the current `text` artifact, fill an empty title and image, set the publication date
+    when one was found, and queue its next steps and its search passages.
 
     Takes the user's write lock and re-reads the source first: the user may have deleted it during the outside call,
     in which case nothing is written.
@@ -37,6 +39,7 @@ def store_text(
     )
     _set_title_if_empty(source, title=title)
     _set_image_if_empty(source, image_url=image_url)
+    _set_published_at(source, published_at=published_at)
     jobs.enqueue_embed(db, user_id=source.user_id, item_kind=models.SearchItemKind.SOURCE, item_id=source.id)
     pipeline.enqueue_steps(db, source=source, steps=pipeline.steps_after_text(models.SourceKind(source.kind)))
 
@@ -44,12 +47,16 @@ def store_text(
 def enqueue_transcribe(
     db: sqlalchemy.orm.Session, *, source: models.Source, episode: episode_content.PodcastEpisode
 ) -> None:
-    """Queue a `transcribe` job for the resolved episode and fill an empty title and image; it stays `processing`."""
+    """Queue a `transcribe` job for the resolved episode, fill an empty title and image, and set its date.
+
+    The source stays `processing`.
+    """
     if not _lock_live(db, source=source):
         return
 
     _set_title_if_empty(source, title=episode.title)
     _set_image_if_empty(source, image_url=episode.image_url)
+    _set_published_at(source, published_at=content.midnight_utc(episode.published))
     jobs.enqueue(
         db,
         kind=models.JobKind.TRANSCRIBE,
@@ -81,4 +88,13 @@ def _set_image_if_empty(source: models.Source, *, image_url: str | None) -> None
         return
 
     source.image_url = image_url
+    changes.touch(source)
+
+
+def _set_published_at(source: models.Source, *, published_at: datetime.datetime | None) -> None:
+    # A found date replaces the old one: after "Wrong episode?" the chosen episode's day is the right one.
+    if published_at is None or source.published_at == published_at:
+        return
+
+    source.published_at = published_at
     changes.touch(source)

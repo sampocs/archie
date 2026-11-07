@@ -5,6 +5,7 @@ Embeddings are unit vectors along one axis each, so cosine distance picks exactl
 
 from __future__ import annotations
 
+import datetime
 import uuid
 from collections.abc import Iterator
 
@@ -251,6 +252,55 @@ def test_the_about_boost_lifts_the_items_own_passages(db: sqlalchemy.orm.Session
     hits = search.search_chunks(db, user_id=user_id, query="tariffs", query_embedding=None, limit=10, boost=boost)
 
     assert hits[0].item == boost
+
+
+def _at(day: int, hour: int = 12) -> datetime.datetime:
+    return datetime.datetime(2026, 11, day, hour, tzinfo=datetime.UTC)
+
+
+def test_the_date_bounds_keep_items_dated_within_those_days_both_ways(db: sqlalchemy.orm.Session) -> None:
+    """A source is dated by published_at, else when it was saved; a take by when it was written. Both bounds count.
+
+    The filter applies to keyword and meaning search alike, and each hit carries its date and sender.
+    """
+    user_id = _user(db)
+    sent_tuesday = _source(db, user_id=user_id, title="Tuesday brew")
+    sent_tuesday.kind, sent_tuesday.sender = models.SourceKind.NEWSLETTER.value, "Morning Brew"
+    sent_tuesday.published_at, sent_tuesday.created_at = _at(3), _at(5)
+    late_thursday = _source(db, user_id=user_id, title="Thursday night")
+    late_thursday.published_at = _at(5, hour=23)
+    saved_friday = _source(db, user_id=user_id, title="Saved Friday")
+    saved_friday.created_at = _at(6)
+    monday_take = _take(db, user_id=user_id, title="Monday take")
+    monday_take.created_at = _at(2)
+    for owner in (sent_tuesday, late_thursday, saved_friday, monday_take):
+        _chunk(db, owner=owner, text="Rates and the Fed.", embedding=_axis(5))
+    db.flush()
+
+    tuesday, thursday = datetime.date(2026, 11, 3), datetime.date(2026, 11, 5)
+    by_keyword, by_meaning = (
+        search.search_chunks(
+            db,
+            user_id=user_id,
+            query=query,
+            query_embedding=embedding,
+            limit=10,
+            published_after=tuesday,
+            published_before=thursday,
+        )
+        for query, embedding in (("rates", None), ("zzqx", _axis(5)))
+    )
+    after_only = search.search_chunks(
+        db, user_id=user_id, query="rates", query_embedding=None, limit=10, published_after=datetime.date(2026, 11, 6)
+    )
+
+    expected = {
+        ("Tuesday brew", "Morning Brew", _at(3)),
+        ("Thursday night", None, _at(5, hour=23)),
+    }
+    assert {(hit.title, hit.sender, hit.item_date) for hit in by_keyword} == expected
+    assert {(hit.title, hit.sender, hit.item_date) for hit in by_meaning} == expected
+    assert [hit.title for hit in after_only] == ["Saved Friday"]
 
 
 @pytest.mark.parametrize(

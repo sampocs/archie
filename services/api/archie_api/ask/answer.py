@@ -55,6 +55,8 @@ _SAVED_BEFORE = "saved_before"
 _PUBLISHED_AFTER = "published_after"
 _PUBLISHED_BEFORE = "published_before"
 _DATE_BOUNDS = (_SAVED_AFTER, _SAVED_BEFORE, _PUBLISHED_AFTER, _PUBLISHED_BEFORE)
+_MIN_YEAR = 1900
+_MAX_YEAR = 2200
 
 _logger = logging.get_logger(logging.LoggerName.API, "ask")
 
@@ -363,10 +365,11 @@ def _is_day(bound: object) -> bool:
     if not isinstance(bound, str):
         return False
     try:
-        datetime.date.fromisoformat(bound)
+        day = datetime.date.fromisoformat(bound)
     except ValueError:
         return False
-    return True
+    # A model's "no end" 9999-12-31 would overflow the day-after arithmetic in search.
+    return _MIN_YEAR <= day.year <= _MAX_YEAR
 
 
 def _query_embedding(engine: sqlalchemy.Engine, *, request: AnswerRequest, query: str) -> list[float] | None:

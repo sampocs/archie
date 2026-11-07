@@ -57,10 +57,13 @@ def extract(*, html: str, url: str) -> content.ExtractedText | None:
 
 
 def _published_at(date: str | None) -> datetime.datetime | None:
-    """trafilatura's `YYYY-MM-DD` page date as noon UTC; None when it found none or an unreadable one."""
+    """trafilatura's `YYYY-MM-DD` page date as noon UTC; None when it found none, an unreadable one or a future one."""
     if not date:
         return None
     try:
-        return content.noon_utc(datetime.date.fromisoformat(date))
+        day = datetime.date.fromisoformat(date)
     except ValueError:
         return None
+
+    # A date still to come is a misparsed one (or an embargo placeholder), not when it was published.
+    return None if day > datetime.datetime.now(datetime.UTC).date() else content.noon_utc(day)

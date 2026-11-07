@@ -294,6 +294,41 @@ def test_restore_copies_a_version_and_refuses_the_current_one_or_a_missing_one(
     assert (card["version"], card["answer"]) == (3, "They compound.")
 
 
+def test_restore_copies_an_earlier_take_version(live_stack: LiveStack, authed: httpx.Client) -> None:
+    """Restoring version 1 of an edited take makes version 3 (origin restore) with version 1's body."""
+    seeded = _seed(live_stack, user_id=_user_id(authed))
+    take_edit = _propose(
+        live_stack, seeded, kind=models.EditTarget.TAKE, target_id=seeded.take_id,
+        before={"markdown": "Rates stay high."}, after={"markdown": "Rates stay high into 2027."},
+    )  # fmt: skip
+    authed.post(f"/ask/edits/{take_edit}/apply")
+
+    restored = authed.post(
+        "/versions/restore", json={"target_kind": "take", "target_id": str(seeded.take_id), "version": 1}
+    )
+
+    assert (restored.status_code, restored.json()) == (200, {"version": 3})
+    third = next(row for row in _rows(authed)["take_versions"] if row["version"] == 3)
+    assert (third["origin"], third["body"]) == ("restore", "Rates stay high.")
+
+
+def test_apply_on_a_superseded_proposal_is_refused(live_stack: LiveStack, authed: httpx.Client) -> None:
+    """A superseded edit answers 409 "edit is superseded" and writes nothing."""
+    seeded = _seed(live_stack, user_id=_user_id(authed))
+    proposal_id = _propose(
+        live_stack, seeded, kind=models.EditTarget.SUMMARY, target_id=seeded.source_id, before=SUMMARY, after=EDITED
+    )
+    with _db(live_stack) as db:
+        changes.lock_user_writes(db, seeded.user_id)
+        db.get_one(models.EditProposal, uuid.UUID(proposal_id)).status = models.EditStatus.SUPERSEDED.value
+        db.commit()
+
+    refused = authed.post(f"/ask/edits/{proposal_id}/apply")
+
+    assert (refused.status_code, refused.json()["detail"]) == (409, "edit is superseded")
+    assert _current(live_stack, seeded, models.EditTarget.SUMMARY, seeded.source_id).version == 1
+
+
 def test_another_users_proposal_and_a_deleted_chats_are_not_found(live_stack: LiveStack, authed: httpx.Client) -> None:
     """Every edit route answers 404 for someone else's proposal, and for one whose chat was deleted."""
     seeded = _seed(live_stack, user_id=_user_id(authed))
@@ -309,4 +344,5 @@ def test_another_users_proposal_and_a_deleted_chats_are_not_found(live_stack: Li
     with _db(live_stack) as db:
         db.get_one(models.Conversation, seeded.conversation_id).deleted_at = sqlalchemy.func.now()
         db.commit()
-    assert authed.post(f"/ask/edits/{proposal_id}/apply").status_code == 404
+    for action in ("apply", "undo", "discard"):
+        assert authed.post(f"/ask/edits/{proposal_id}/{action}").status_code == 404

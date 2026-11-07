@@ -12,6 +12,7 @@ an API or database error, or the phone hanging up mid-answer. Every model round,
 
 from __future__ import annotations
 
+import contextlib
 import json
 import uuid
 from collections.abc import Generator, Iterator
@@ -121,8 +122,10 @@ def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, 
     """The answer's events as SSE text, ending with `done` or `error`; the answer is saved either way."""
     progress = _Progress()
     try:
-        for event in _run(engine, request=request, progress=progress):
-            yield event.sse()
+        # Closing `_run` explicitly on hang-up records its round before `_save` runs below.
+        with contextlib.closing(_run(engine, request=request, progress=progress)) as events:
+            for event in events:
+                yield event.sse()
     except GeneratorExit:
         # The phone hung up: keep what arrived so the chat shows "Didn't finish" rather than nothing.
         _save(engine, request=request, progress=progress, failed=True)

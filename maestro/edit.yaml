@@ -51,9 +51,10 @@ appId: com.sampocs.archie
     id: "item-more"
 - tapOn:
     id: "menu-ask"
+# A new chat has no messages yet, so wait for its About line (the empty message list isn't on screen).
 - extendedWaitUntil:
     visible:
-      id: "chat-screen"
+      id: "chat-about"
     timeout: 5000
 - tapOn:
     id: "ask-composer-input"

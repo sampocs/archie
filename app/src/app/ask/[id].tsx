@@ -109,8 +109,8 @@ export default function ChatScreen() {
           onSaved={() => setToast("Card added to Review")}
         />
       </Screen>
-    {/* Outside the scroll view, so it pins to the screen's bottom rather than the end of the chat. */}
-    {toast ? <Toast message={toast} onHide={hideToast} /> : null}
+      {/* Outside the scroll view, so it pins to the screen's bottom rather than the end of the chat. */}
+      {toast ? <Toast message={toast} onHide={hideToast} /> : null}
     </View>
   );
 }

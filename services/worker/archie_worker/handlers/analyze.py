@@ -13,7 +13,7 @@ from typing import Any
 
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import card_rows, changes, models, pipeline, user_topics
+from archie_db import card_rows, changes, jobs, models, pipeline, user_topics
 from archie_llm import llm
 
 from archie_worker import prompts, timestamps
@@ -51,6 +51,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         model=completion.model,
         prompt_version=prompts.ANALYZE_PROMPT_VERSION,
     )
+    jobs.enqueue_embed(db, user_id=source.user_id, item_kind=models.SearchItemKind.SOURCE, item_id=source.id)
     _retire_cards_before(db, source_id=source.id, current_artifact_id=summary.id)
     # A newsletter gets cards only once the user went deeper (it is then consumed); other sources always may, unless
     # the user turned cards off for this one (read after the lock, so a change during the call counts).

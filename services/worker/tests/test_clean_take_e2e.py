@@ -155,6 +155,7 @@ def test_a_rambling_dictation_becomes_a_short_take_in_its_own_words(engine: sqla
     assert _kinds_and_statuses(engine) == [
         (models.JobKind.CLEAN_TAKE, models.JobStatus.DONE),
         (models.JobKind.TAKE_CARDS, models.JobStatus.QUEUED),
+        (models.JobKind.EMBED, models.JobStatus.QUEUED),
     ]
     assert _jobs(engine)[1].payload == {jobs.TAKE_VERSION_ID_KEY: str(version_id)}
 
@@ -185,10 +186,11 @@ def test_without_a_key_the_raw_text_stands_in_and_the_cards_still_come(engine: s
 
     loop.run_one(engine, handlers=handlers.HANDLERS)
 
-    clean_job, cards_job = _jobs(engine)
+    clean_job, cards_job, embed_job = _jobs(engine)
     assert (clean_job.status, clean_job.last_error) == (models.JobStatus.FAILED, errors.FailureReason.NEEDS_API_KEY)
     assert (cards_job.kind, cards_job.status) == (models.JobKind.TAKE_CARDS, models.JobStatus.QUEUED)
     assert cards_job.payload == {jobs.TAKE_VERSION_ID_KEY: str(version_id)}
+    assert embed_job.kind == models.JobKind.EMBED
 
     version = _version(engine, version_id)
     assert version.body == RAMBLE

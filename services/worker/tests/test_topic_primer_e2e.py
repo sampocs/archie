@@ -271,4 +271,5 @@ def _llm_calls(engine: sqlalchemy.Engine) -> list[models.LlmCall]:
 
 def _only_job(engine: sqlalchemy.Engine) -> models.Job:
     with sqlalchemy.orm.Session(engine) as db:
-        return db.scalars(sqlalchemy.select(models.Job)).one()
+        # The search passages job the new primer queues is not what these tests look at.
+        return db.scalars(sqlalchemy.select(models.Job).where(models.Job.kind != models.JobKind.EMBED.value)).one()

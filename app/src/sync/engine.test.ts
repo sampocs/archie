@@ -997,7 +997,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at", "0013_chat_edits"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;
@@ -1007,6 +1007,50 @@ describe("database SyncStore: M4 migration and rejections", () => {
     db.run(sqlTag(sql.split("--> statement-breakpoint").at(-1)!));
 
     expect(db.select().from(schema.syncState).get()?.position).toBe(0);
+  });
+
+  it("stores pulled card versions, edit proposals and version origins", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: {
+        sources: [],
+        artifacts: [pulledArtifact({ origin: "chat_edit", instruction: "Drop the jargon" })],
+        cards: [pulledCard({ version: 2 })],
+        card_versions: [
+          { id: "cv1", card_id: "c1", version: 1, question: "Q?", answer: "A.", origin: "archie", instruction: null, created_at: "x", change_seq: 3 },
+        ],
+        edit_proposals: [
+          {
+            id: "p1",
+            conversation_id: "k1",
+            message_id: "m1",
+            target_kind: "card",
+            target_id: "c1",
+            title: "Q?",
+            description: "Say B",
+            base_version: 1,
+            before: { question: "Q?", answer: "A." },
+            after: { question: "Q?", answer: "B." },
+            status: "applied",
+            applied_version: 2,
+            created_at: "x",
+            updated_at: "y",
+            change_seq: 4,
+          },
+        ],
+      },
+      position: 4,
+      more: false,
+    });
+
+    expect(db.select().from(schema.artifacts).get()).toEqual(
+      expect.objectContaining({ origin: "chat_edit", instruction: "Drop the jargon" }),
+    );
+    expect(db.select().from(schema.cards).get()?.version).toBe(2);
+    expect(db.select().from(schema.cardVersions).all()).toEqual([expect.objectContaining({ cardId: "c1", version: 1 })]);
+    expect(db.select().from(schema.editProposals).get()).toEqual(
+      expect.objectContaining({ status: "applied", appliedVersion: 2, after: JSON.stringify({ question: "Q?", answer: "B." }) }),
+    );
   });
 
   it("a rejected go_deeper surfaces syncError, rewinds the position, and the next pull restores the server copy", async () => {
@@ -1729,5 +1773,56 @@ describe("database SyncStore: takes", () => {
         message_id: null,
       }),
     ]);
+  });
+
+  // 0013 only adds tables and columns too; existing cards keep their schedule and read as version 1, and existing
+  // versions read as Archie's (artifacts) or the owner's (take versions).
+  it("the 0013_chat_edits migration keeps an existing card and its schedule", () => {
+    const sqlite = new Database(":memory:");
+    const sqlByKey = migrations.migrations as Record<string, string>;
+    const runMigration = (idx: number) => {
+      for (const statement of sqlByKey[`m${String(idx).padStart(4, "0")}`].split("--> statement-breakpoint")) {
+        if (statement.trim()) sqlite.exec(statement);
+      }
+    };
+    const chatEditsIdx = migrations.journal.entries.find((entry) => entry.tag === "0013_chat_edits")!.idx;
+    for (let idx = 0; idx < chatEditsIdx; idx++) runMigration(idx);
+    sqlite
+      .prepare(
+        "INSERT INTO cards (id, source_id, take_id, conversation_id, message_id, kind, question, answer, created_at, " +
+          "fsrs_state, stability, due_at, reps) " +
+          "VALUES ('c1', 's1', NULL, NULL, NULL, 'concept', 'Q?', 'A.', 'x', 'review', 3.5, '2026-11-09T00:00:00Z', 2)",
+      )
+      .run();
+    sqlite
+      .prepare(
+        "INSERT INTO artifacts (id, source_id, kind, version, content, is_current, created_at) " +
+          "VALUES ('a1', 's1', 'primer', 1, '{}', 1, 'x')",
+      )
+      .run();
+    sqlite
+      .prepare(
+        "INSERT INTO take_versions (id, take_id, version, body, raw_body, cleaned, created_at) " +
+          "VALUES ('v1', 'k1', 1, 'b', 'b', 1, 'x')",
+      )
+      .run();
+
+    runMigration(chatEditsIdx);
+
+    expect(sqlite.prepare("SELECT * FROM cards").all()).toEqual([
+      expect.objectContaining({
+        id: "c1",
+        source_id: "s1",
+        fsrs_state: "review",
+        stability: 3.5,
+        due_at: "2026-11-09T00:00:00Z",
+        reps: 2,
+        version: 1,
+      }),
+    ]);
+    expect(sqlite.prepare("SELECT origin, instruction FROM artifacts").all()).toEqual([
+      { origin: "archie", instruction: null },
+    ]);
+    expect(sqlite.prepare("SELECT origin FROM take_versions").all()).toEqual([{ origin: "owner" }]);
   });
 });

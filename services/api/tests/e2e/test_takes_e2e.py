@@ -21,6 +21,7 @@ EDITED = "Crypto's lasting use is moving dollars. Stablecoins settle ~$10T a yea
 RAMBLE = "ok so the main thing is people think it's all speculation but stablecoins did like 10 trillion last year"
 CLEANED = "Crypto's lasting use is moving dollars.\n\n## Main points\n\n- Stablecoins did ~10 trillion last year."
 TITLE = "The argument for crypto"
+EMBED = models.JobKind.EMBED.value
 
 
 @pytest.fixture
@@ -82,10 +83,17 @@ def _db(live_stack: LiveStack) -> sqlalchemy.orm.Session:
 
 
 def _queued(live_stack: LiveStack) -> list[tuple[str, str]]:
-    """Every job as (kind, the version it names), oldest first."""
+    """Every job that names a version as (kind, the version it names), oldest first; `embed` names the take instead."""
     with _db(live_stack) as db:
         queued = db.scalars(sqlalchemy.select(models.Job).order_by(models.Job.id))
-        return [(job.kind, job.payload[jobs.TAKE_VERSION_ID_KEY]) for job in queued]
+        return [(job.kind, job.payload[jobs.TAKE_VERSION_ID_KEY]) for job in queued if job.kind != EMBED]
+
+
+def _queued_embeds(live_stack: LiveStack) -> list[str]:
+    """The take id of every queued `embed` job, oldest first."""
+    with _db(live_stack) as db:
+        queued = db.scalars(sqlalchemy.select(models.Job).where(models.Job.kind == EMBED).order_by(models.Job.id))
+        return [job.payload[jobs.ITEM_ID_KEY] for job in queued]
 
 
 def _set_version(live_stack: LiveStack, *, version_id: str, body: str, clean_failed: bool) -> None:
@@ -144,6 +152,7 @@ def test_writing_a_take_makes_version_one_and_queues_its_cards(live_stack: LiveS
     )
     assert rows["sources"] == []
     assert _queued(live_stack) == [(models.JobKind.TAKE_CARDS.value, version_id)]
+    assert _queued_embeds(live_stack) == [take_id]
 
 
 def test_clean_it_up_leaves_the_body_empty_and_queues_the_cleanup(live_stack: LiveStack, authed: httpx.Client) -> None:
@@ -194,6 +203,8 @@ def test_an_edit_makes_the_next_version_and_clean_on_alone_asks_for_a_cleanup(
         (models.JobKind.TAKE_CARDS.value, second),
         (models.JobKind.CLEAN_TAKE.value, third),
     ]
+    # Three saves, one waiting `embed`: the job reads the take when it runs.
+    assert _queued_embeds(live_stack) == [take_id]
 
 
 def test_saving_while_the_cleanup_runs_compares_against_the_raw_text(

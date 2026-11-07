@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import card_rows, changes, models, user_topics
+from archie_db import card_rows, changes, jobs, models, user_topics
 from archie_llm import llm
 
 from archie_worker import keys, prompts
@@ -58,6 +58,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         return
 
     primer = write_topic_primer(db, topic=topic, markdown=output.markdown, model=completion.model)
+    jobs.enqueue_embed(db, user_id=topic.user_id, item_kind=models.SearchItemKind.TOPIC_PRIMER, item_id=primer.id)
     _replace_foundation_cards(db, topic=topic, primer=primer, cards=output.foundation_cards)
 
 

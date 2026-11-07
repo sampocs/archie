@@ -37,5 +37,8 @@ def mark_changed(version: models.TakeVersion) -> None:
 
 
 def enqueue_step(db: sqlalchemy.orm.Session, *, version: models.TakeVersion, kind: models.JobKind) -> None:
-    """Queue `clean_take` or `take_cards` for this version."""
+    """Queue `clean_take` or `take_cards` for this version and, once it has its body, the take's search passages."""
     jobs.enqueue(db, kind=kind, user_id=version.user_id, payload={jobs.TAKE_VERSION_ID_KEY: str(version.id)})
+    # Every path that gives a version its body queues `take_cards`, so this is the one place to index it.
+    if kind == models.JobKind.TAKE_CARDS:
+        jobs.enqueue_embed(db, user_id=version.user_id, item_kind=models.SearchItemKind.TAKE, item_id=version.take_id)

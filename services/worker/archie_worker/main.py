@@ -1,19 +1,27 @@
 """`archie-worker` (or `python -m archie_worker.main`): the background process that runs queued jobs."""
 
 import signal
+import sys
 import threading
 from types import FrameType
 
 from archie_db import session
 from archie_shared import config, logging
 
-from archie_worker import loop
+from archie_worker import backfill_embed, loop
 
 _logger = logging.get_logger(logging.LoggerName.WORKER)
 
 
 def main() -> None:
-    """Run the job loop until SIGTERM or Ctrl-C, finishing the job in hand first."""
+    """Run the job loop until SIGTERM or Ctrl-C, finishing the job in hand first.
+
+    `archie-worker backfill-embed` queues search passages for existing items instead.
+    """
+    if sys.argv[1:] == ["backfill-embed"]:
+        backfill_embed.main()
+        return
+
     logging.configure()
     engine = session.engine_for(config.get_settings().require_database_url())
 

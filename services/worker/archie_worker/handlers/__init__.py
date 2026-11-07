@@ -10,6 +10,7 @@ from archie_worker.handlers import (
     analyze,
     clean_take,
     clean_text,
+    embed,
     fetch_collection_item,
     fetch_content,
     fetch_title,
@@ -66,4 +67,6 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.CLEAN_TAKE: HandlerSpec(run=clean_take.handle, on_final_failure=clean_take.mark_failed),
     # No failure hook: a take without cards still reads fine.
     models.JobKind.TAKE_CARDS: HandlerSpec(run=take_cards.handle),
+    # No failure hook: an item without chunks is only missing from search until its next save or the backfill.
+    models.JobKind.EMBED: HandlerSpec(run=embed.handle),
 }

@@ -33,6 +33,7 @@ const source = (overrides: Partial<SourceRow>): SourceRow => ({
   newsletterKind: null,
   cardsOff: 0,
   favoritedAt: null,
+  publishedAt: null,
   ...overrides,
 });
 

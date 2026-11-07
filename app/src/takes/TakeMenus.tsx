@@ -1,5 +1,7 @@
+import { useRouter } from "expo-router";
 import { useState } from "react";
 
+import { openChat } from "@/ask/openChat";
 import { changeTakeKind, deleteTake } from "@/db/actions";
 import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
@@ -15,6 +17,7 @@ const KINDS: TakeKind[] = ["opinion", "talking_point"];
 
 /** The take page's ••• menu, and the kind chooser it opens. */
 export function TakeMenus({ take, visible, onClose }: TakeMenusProps) {
+  const router = useRouter();
   const [kindOpen, setKindOpen] = useState(false);
 
   return (
@@ -23,8 +26,13 @@ export function TakeMenus({ take, visible, onClose }: TakeMenusProps) {
         visible={visible}
         onClose={onClose}
         items={[
+          {
+            label: "Ask about this",
+            testID: "take-menu-ask",
+            onPress: () => openChat(router, { kind: "take", id: take.id, title: take.title }),
+          },
           // MenuSheet runs this after the first sheet has dismissed, so two modals are never up at once.
-          { label: "Change kind", testID: "take-menu-kind", onPress: () => setKindOpen(true) },
+          { label: "Change kind", testID: "take-menu-kind", startsGroup: true, onPress: () => setKindOpen(true) },
           {
             label: "Delete take",
             testID: "take-menu-delete",

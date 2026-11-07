@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 
+import { openChat } from "@/ask/openChat";
 import { deleteSource, goDeeper, queuePrimer, setCardsOff, setRead, setSourceTopic } from "@/db/actions";
 import { db } from "@/db/client";
 import type * as schema from "@/db/schema";
@@ -18,7 +19,7 @@ type ItemMenuProps = { source: SourceRow; cardCount: number; visible: boolean; o
 type Panel = "topic" | "snooze" | "episodes" | null;
 
 /**
- * The ••• menu, grouped by how often each is used: [Remind me later…, Mark as read/unread]
+ * The ••• menu, grouped by how often each is used: [Ask about this] [Remind me later…, Mark as read/unread]
  * [Queue the primer, Make review cards, No cards for this, Change topic, Wrong episode?] [Delete]; and the sheets its entries open.
  */
 export function ItemMenu({ source, cardCount, visible, onClose }: ItemMenuProps) {
@@ -30,7 +31,12 @@ export function ItemMenu({ source, cardCount, visible, onClose }: ItemMenuProps)
   const makeCards = makeCardsAction(source, cardCount);
 
   const items: MenuItem[] = [
-    { testID: "menu-snooze", label: "Remind me later…", onPress: () => setPanel("snooze") },
+    {
+      testID: "menu-ask",
+      label: "Ask about this",
+      onPress: () => openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }),
+    },
+    { testID: "menu-snooze", label: "Remind me later…", startsGroup: true, onPress: () => setPanel("snooze") },
     ...(source.kind === "newsletter" && inInbox
       ? [
           {

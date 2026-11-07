@@ -1,7 +1,8 @@
 appId: com.sampocs.archie
 ---
 # Free to run: the dev test user isn't whitelisted, so the source fails at analyze but keeps its fetched title.
-# Local search finds it by title and shows the empty state for a query nothing matches.
+# Search finds it (the server's matching passage shows as a quote under the row) and shows the empty state for a
+# query nothing matches.
 - runFlow: login.yaml
 - tapOn:
     id: "library-add"
@@ -31,8 +32,28 @@ appId: com.sampocs.archie
 - tapOn:
     id: "library-search"
 - inputText: "work hard"
+# Keyword search runs on the server once typing stops; the passage that matched shows under the row.
+- extendedWaitUntil:
+    visible:
+      id: "search-quote-.*"
+    timeout: 15000
+    optional: true
+# The embed job may not have run yet: type the query again to search once more.
+- runFlow:
+    when:
+      notVisible:
+        id: "search-quote-.*"
+    commands:
+      - eraseText
+      - inputText: "work hard"
+      - extendedWaitUntil:
+          visible:
+            id: "search-quote-.*"
+          timeout: 15000
 - assertVisible: ".*How to Work Hard.*"
 - eraseText
 - inputText: "zzqx nothing"
-- assertVisible:
-    id: "library-search-empty"
+- extendedWaitUntil:
+    visible:
+      id: "library-search-empty"
+    timeout: 10000

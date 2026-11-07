@@ -1,6 +1,6 @@
 # M7: Search and Ask
 
-**Status:** approved in brainstorming on 2026-11-06 (the owner deferred the technical choices). Mocks:
+**Status:** implemented on branch `m7-ask` (Maestro flows `library_search.yaml` and `ask.yaml`); approved in brainstorming on 2026-11-06 (the owner deferred the technical choices). Mocks:
 `2026-11-06-m7-search-ask-mocks.html` (screens 01–05). Product background is `2026-10-26-product-scope.md` ("Carl
 (chat)") and `2026-11-02-backend-architecture-design.md` ("Search and chat"); where they differ, this spec wins and
 those docs are updated when M7 ships. It also supersedes the Saved-and-Takes line "Takes aren't searchable … no Ask":

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import datetime
+import uuid
 from typing import Any
 
 import sqlalchemy
@@ -15,6 +16,10 @@ COLLECTION_ITEM_ID_KEY = "collection_item_id"
 
 # The payload key of `clean_take` and `take_cards` jobs: the take version to clean up or write cards from.
 TAKE_VERSION_ID_KEY = "take_version_id"
+
+# An `embed` job's payload keys: which kind of item (a `SearchItemKind`) and its id.
+ITEM_KIND_KEY = "item_kind"
+ITEM_ID_KEY = "item_id"
 
 
 def enqueue(
@@ -39,3 +44,30 @@ def enqueue(
     db.add(job)
     db.flush()
     return job
+
+
+def enqueue_embed(
+    db: sqlalchemy.orm.Session, *, user_id: int, item_kind: models.SearchItemKind, item_id: uuid.UUID
+) -> None:
+    """Queue `embed` for one item, unless one is already waiting: the job reads the item when it runs, so one is enough.
+
+    A source's text, summary and primer are often written within seconds of each other.
+    """
+    waiting = db.scalar(
+        sqlalchemy.select(
+            sqlalchemy.exists().where(
+                models.Job.kind == models.JobKind.EMBED.value,
+                models.Job.status == models.JobStatus.QUEUED.value,
+                models.Job.payload[ITEM_ID_KEY].astext == str(item_id),
+            )
+        )
+    )
+    if waiting:
+        return
+
+    enqueue(
+        db,
+        kind=models.JobKind.EMBED,
+        user_id=user_id,
+        payload={ITEM_KIND_KEY: item_kind.value, ITEM_ID_KEY: str(item_id)},
+    )

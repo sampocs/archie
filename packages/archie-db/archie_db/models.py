@@ -19,6 +19,8 @@ import sqlalchemy
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from archie_db import vector
+
 TIMESTAMP = sqlalchemy.DateTime(timezone=True)
 CHANGE_SEQ_NAME = "change_seq"
 
@@ -170,6 +172,7 @@ class JobKind(StrEnum):
     FETCH_COLLECTION_ITEM = "fetch_collection_item"
     CLEAN_TAKE = "clean_take"
     TAKE_CARDS = "take_cards"
+    EMBED = "embed"
 
 
 class TopicOrigin(StrEnum):
@@ -210,6 +213,38 @@ class JobStatus(StrEnum):
     FAILED = "failed"
 
 
+class ChunkOwner(StrEnum):
+    """What a passage was cut from: a source's own text, Archie's summary or primer of it, a topic primer, or a take."""
+
+    SOURCE_TEXT = "source_text"
+    SOURCE_SUMMARY = "source_summary"
+    SOURCE_PRIMER = "source_primer"
+    TOPIC_PRIMER = "topic_primer"
+    TAKE = "take"
+
+
+class SearchItemKind(StrEnum):
+    """The library items search returns and a chat can be about; each owns its passages."""
+
+    SOURCE = "source"
+    TOPIC_PRIMER = "topic_primer"
+    TAKE = "take"
+
+
+class MessageRole(StrEnum):
+    """Who wrote a chat message."""
+
+    USER = "user"
+    ASSISTANT = "assistant"
+
+
+class MessageStatus(StrEnum):
+    """Whether an answer finished; a failed one keeps the text that arrived."""
+
+    COMPLETE = "complete"
+    FAILED = "failed"
+
+
 class ActionResult(StrEnum):
     """How the server answered a phone's action."""
 
@@ -229,6 +264,12 @@ def new_ingest_token() -> str:
 
 # Artifact kinds the phone syncs; the raw text stays on the server.
 SYNCED_ARTIFACT_KINDS = frozenset({ArtifactKind.SUMMARY, ArtifactKind.PRIMER})
+
+EMBEDDING_DIMENSIONS = 1536
+# A chat's title is its first question, cut to this many characters.
+CONVERSATION_TITLE_LENGTH = 60
+CHUNK_OWNER_CHECK = "num_nonnulls(source_id, topic_primer_id, take_id) = 1"
+CONVERSATION_ABOUT_CHECK = "num_nonnulls(about_source_id, about_topic_primer_id, about_take_id) <= 1"
 
 
 class User(Base):
@@ -508,6 +549,132 @@ class TakeVersion(Base):
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 
+class Chunk(Base):
+    """One search passage of a live item, with its words indexed for keyword search and (when paid for) an embedding.
+
+    Server only: chunks never reach the phone. `embed` rebuilds an item's chunks from scratch.
+    """
+
+    __tablename__ = "chunks"
+    __table_args__ = (
+        sqlalchemy.CheckConstraint(CHUNK_OWNER_CHECK, name="ck_chunks_one_owner"),
+        # Partial, because a unique key over nullable owner columns never fires; they double as the owner lookups.
+        sqlalchemy.Index(
+            "uq_chunks_source",
+            "source_id",
+            "owner_kind",
+            "chunk_index",
+            unique=True,
+            postgresql_where=sqlalchemy.text("source_id IS NOT NULL"),
+        ),
+        sqlalchemy.Index(
+            "uq_chunks_topic_primer",
+            "topic_primer_id",
+            "owner_kind",
+            "chunk_index",
+            unique=True,
+            postgresql_where=sqlalchemy.text("topic_primer_id IS NOT NULL"),
+        ),
+        sqlalchemy.Index(
+            "uq_chunks_take",
+            "take_id",
+            "owner_kind",
+            "chunk_index",
+            unique=True,
+            postgresql_where=sqlalchemy.text("take_id IS NOT NULL"),
+        ),
+        sqlalchemy.Index("ix_chunks_user_id", "user_id"),
+        sqlalchemy.Index(
+            "ix_chunks_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+        sqlalchemy.Index("ix_chunks_tsv", "tsv", postgresql_using="gin"),
+    )
+
+    id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.Identity(), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    owner_kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    source_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="CASCADE")
+    )
+    topic_primer_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("topic_primers.id", ondelete="CASCADE")
+    )
+    take_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("takes.id", ondelete="CASCADE")
+    )
+    chunk_index: Mapped[int] = mapped_column(sqlalchemy.Integer)
+    text: Mapped[str] = mapped_column(sqlalchemy.Text)
+    # Transcript passages only: where the passage's first segment starts, in seconds.
+    start_seconds: Mapped[float | None] = mapped_column(sqlalchemy.Double)
+    # Null when nobody paid for an embedding (no owner key); the passage still serves keyword search.
+    embedding: Mapped[list[float] | None] = mapped_column(vector.Vector(EMBEDDING_DIMENSIONS))
+    # Generated by Postgres from `text`; never written. Nullable as Postgres reflects a generated column.
+    tsv: Mapped[str | None] = mapped_column(
+        postgresql.TSVECTOR, sqlalchemy.Computed("to_tsvector('english', text)", persisted=True)
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+
+
+class Conversation(Base):
+    """A saved Ask chat. The id is made on the phone; the title is the first question, cut to 60 characters.
+
+    At most one `about_*` id is set: the item the chat was started from with Ask about this.
+    """
+
+    __tablename__ = "conversations"
+    __table_args__ = (
+        sqlalchemy.Index("ix_conversations_user_id_change_seq", "user_id", "change_seq"),
+        sqlalchemy.CheckConstraint(CONVERSATION_ABOUT_CHECK, name="ck_conversations_one_about"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    title: Mapped[str] = mapped_column(sqlalchemy.String(200))
+    # A `SearchItemKind` value naming which `about_*` id is set; null for a general chat.
+    about_kind: Mapped[str | None] = mapped_column(sqlalchemy.String(16))
+    about_source_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="SET NULL")
+    )
+    about_topic_primer_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("topic_primers.id", ondelete="SET NULL")
+    )
+    about_take_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("takes.id", ondelete="SET NULL")
+    )
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    deleted_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class Message(Base):
+    """One question or answer in a chat. An answer's `segments` are its text blocks with their labels and citations."""
+
+    __tablename__ = "messages"
+    __table_args__ = (
+        sqlalchemy.Index("ix_messages_user_id_change_seq", "user_id", "change_seq"),
+        sqlalchemy.Index("ix_messages_conversation_id_created_at", "conversation_id", "created_at"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("conversations.id", ondelete="CASCADE")
+    )
+    role: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    # The question, or the answer's plain text (all its segments joined) for history and copying.
+    text: Mapped[str] = mapped_column(sqlalchemy.Text)
+    segments: Mapped[list[dict[str, Any]] | None] = mapped_column(postgresql.JSONB)
+    # The globe toggle as the question was sent.
+    web_search: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
+    status: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
 class SourceCapture(Base):
     """The text the phone or the fetcher captured for a source; the pipeline's input, kept on the server only."""
 
@@ -560,16 +727,17 @@ class SourceArtifact(Base):
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
 
-# Exactly one origin per card; `take_version_id` only records which version a take card came from.
-CARD_ORIGIN_CHECK = "num_nonnulls(source_id, topic_primer_id, brief_id, take_id) = 1"
+# Exactly one origin per card; `take_version_id` and `message_id` only record which version or answer it came from.
+CARD_ORIGIN_CHECK = "num_nonnulls(source_id, topic_primer_id, brief_id, take_id, conversation_id) = 1"
 
 
 class Card(Base):
     """A spaced-repetition question and answer, with its FSRS state as the phone's scheduler last wrote it.
 
     Its origin is a source (cards from the summary, or foundation cards from the source's primer, with `artifact_id`
-    naming that summary or primer version), a topic primer (foundation cards), a brief (quiz cards) or a take (take
-    cards, with `take_version_id` naming the version they were written from).
+    naming that summary or primer version), a topic primer (foundation cards), a brief (quiz cards), a take (take
+    cards, with `take_version_id` naming the version they were written from) or a chat (a card made from an answer,
+    with `message_id` naming it).
     """
 
     __tablename__ = "cards"
@@ -597,6 +765,12 @@ class Card(Base):
     )
     take_version_id: Mapped[uuid.UUID | None] = mapped_column(
         postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("take_versions.id", ondelete="CASCADE")
+    )
+    conversation_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("conversations.id", ondelete="CASCADE")
+    )
+    message_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("messages.id", ondelete="CASCADE")
     )
     kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
     question: Mapped[str] = mapped_column(sqlalchemy.Text)

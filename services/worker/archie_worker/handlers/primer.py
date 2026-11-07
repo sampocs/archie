@@ -9,7 +9,7 @@ from __future__ import annotations
 import uuid
 
 import sqlalchemy.orm
-from archie_db import card_rows, changes, models, pipeline
+from archie_db import card_rows, changes, jobs, models, pipeline
 from archie_llm import llm
 
 from archie_worker import prompts
@@ -45,6 +45,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         model=completion.model,
         prompt_version=prompts.PRIMER_PROMPT_VERSION,
     )
+    jobs.enqueue_embed(db, user_id=source.user_id, item_kind=models.SearchItemKind.SOURCE, item_id=source.id)
 
     # A rewritten primer replaces its foundation cards; none are written while the user has cards off for the source.
     card_rows.retire_cards(

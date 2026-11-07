@@ -16,6 +16,9 @@ from archie_api.auth import sessions
 
 _BEARER_SCHEME = "bearer"
 
+# The 403 detail when a feature that spends the owner's model keys is asked of a user who is not whitelisted.
+NEEDS_OWN_KEY = "needs your own API key"
+
 # Built on first use, not at import, so tests can point each live stack at its own database.
 _engine: sqlalchemy.Engine | None = None
 _engine_lock = threading.Lock()

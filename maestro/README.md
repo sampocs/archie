@@ -8,7 +8,8 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `source_page.yaml` | Dev login as the owner's user, add a finished article with a reaction, open it from Library, wait for the primer, open it from the primer button, see "✓ Primed" |
 | `add_podcast.yaml` | Dev login as the owner's user, add a Spotify episode, open it from Library, wait for the primer, see the gist, a timestamp chip and the primer button (real keys, a few cents) |
 | `library_queue.yaml` | Library queue: reorder by drag, snooze from a swipe; Snoozed · 1 |
-| `library_search.yaml` | Library search finds items by title and filters the list |
+| `library_search.yaml` | Library search finds the item on the server and shows its matching quote, then the empty state for a query nothing matches (free) |
+| `ask.yaml` | Finish an article, ask about it on the Ask tab, see the Your library section, Make a card, Save, and find the chat in the list (real keys, a few cents; `make maestro-ask`) |
 | `favorites.yaml` | Star an item from its page, find it under Library → Saved → Other, unstar it with a swipe; Saved shows its empty state |
 | `collections.yaml` | Save a link from the Library ＋ into a new collection, see it on the collection page and not in All, delete the collection from its tile |
 | `topics.yaml` | Topics: add, remove and restore a topic |
@@ -41,7 +42,8 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 4. `make maestro-brief` with the backend up (`make start-local`): runs `run_brief.sh`, which delivers two newsletters and waits up to 5 minutes for the brief (the worker cleans, analyzes and files them, then writes the brief with Sonnet). Same `.env` needs as above; spends a few cents (Haiku + Sonnet).
 5. `make maestro-review` with the backend up (`make start-local`): runs `review.yaml`, which waits up to 4 minutes for the finished article's cards to reach Today. Needs the owner's keys in `.env`; spends a few cents (analyze, primer, one Haiku grade).
 6. `make maestro-takes-clean` with the backend up (`make start-local`): runs `takes_clean.yaml`, which waits up to 2.5 minutes each for the Sonnet cleanup and the Haiku cards. Needs the owner's keys in `.env`; spends a few cents.
-7. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
+7. `make maestro-ask` with the backend up (`make start-local`): runs `ask.yaml`, which waits for analyze and embeddings, then a Sonnet 5.5 answer and one Haiku card draft. Needs the owner's keys in `.env` (`OPENAI_API_KEY` too, for embeddings); spends a few cents.
+8. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
 
 These targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
 

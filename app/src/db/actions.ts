@@ -50,7 +50,8 @@ export type ActionType =
   | "save_take"
   | "update_take"
   | "restore_take_version"
-  | "retry_take_cleanup";
+  | "retry_take_cleanup"
+  | "delete_conversation";
 export type PrimerTarget = "source" | "topic_primer";
 // What a snooze applies to: a source, a topic primer, or a source's queued primer.
 export type SnoozeTarget = PrimerTarget | "source_primer";
@@ -755,6 +756,18 @@ export function deleteTake(db: AppDb, takeId: string): void {
       .where(and(eq(schema.cards.takeId, takeId), isNull(schema.cards.deletedAt)))
       .run();
     enqueue(tx, "update_take", { id: takeId, deleted: true });
+  });
+}
+
+/** Deletes a saved chat (cards made from it stay in Review). */
+export function deleteConversation(db: AppDb, conversationId: string): void {
+  const now = new Date().toISOString();
+  db.transaction((tx) => {
+    tx.update(schema.conversations)
+      .set({ deletedAt: now, updatedAt: now })
+      .where(eq(schema.conversations.id, conversationId))
+      .run();
+    enqueue(tx, "delete_conversation", { id: conversationId });
   });
 }
 

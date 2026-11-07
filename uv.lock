@@ -94,6 +94,7 @@ name = "archie-api"
 version = "0.1.0"
 source = { editable = "services/api" }
 dependencies = [
+    { name = "anyio" },
     { name = "archie-db" },
     { name = "archie-llm" },
     { name = "archie-shared" },
@@ -107,6 +108,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "anyio", specifier = ">=4" },
     { name = "archie-db", editable = "packages/archie-db" },
     { name = "archie-llm", editable = "packages/archie-llm" },
     { name = "archie-shared", editable = "packages/archie-shared" },

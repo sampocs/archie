@@ -8,11 +8,14 @@ import alembic.autogenerate
 import alembic.migration
 import pytest
 import sqlalchemy
+import sqlalchemy.orm
 from archie_db import migrate, models, session
 
 pytestmark = pytest.mark.postgres
 
 
+# Alembic reflects pgvector's `vector` as an unknown type and skips comparing it (plan Decision 1).
+@pytest.mark.filterwarnings("ignore:Did not recognize type 'vector':sqlalchemy.exc.SAWarning")
 def test_models_match_the_migrations(migrated_database_url: str) -> None:
     """Autogenerate finds no difference between the ORM models and the migrated schema."""
     engine = session.engine_for(migrated_database_url)
@@ -253,6 +256,81 @@ def test_0010_keeps_existing_cards_and_allows_exactly_one_origin_including_a_tak
                 "nextval('change_seq') FROM takes, sources"
             )
         )
+
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
+    engine.dispose()
+
+
+def test_0011_keeps_cards_allows_a_conversation_origin_and_indexes_chunk_words(test_database_url: str) -> None:
+    """A pre-M7 card survives; a card needs exactly one of five origins; `tsv` is generated; embeddings round-trip."""
+    migrate.downgrade(test_database_url)
+    migrate.upgrade(test_database_url, "0010")
+    engine = session.engine_for(test_database_url)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, change_seq) "
+                "SELECT '00000000-0000-0000-0000-000000000001', id, 'https://example.com/a', "
+                "'https://example.com/a', 'article', 'inbox', 'queue', nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO cards (id, user_id, source_id, kind, question, answer, fsrs_state, reps, change_seq) "
+                "SELECT '00000000-0000-0000-0000-0000000000c1', id, '00000000-0000-0000-0000-000000000001', "
+                "'concept', 'Q?', 'A.', 'review', 2, nextval('change_seq') FROM users"
+            )
+        )
+
+    migrate.upgrade(test_database_url)
+
+    with engine.begin() as connection:
+        card = connection.execute(sqlalchemy.text("SELECT fsrs_state, reps, conversation_id FROM cards")).one()
+        assert (card.fsrs_state, card.reps, card.conversation_id) == ("review", 2, None)
+
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO conversations (id, user_id, title, change_seq) "
+                "SELECT '00000000-0000-0000-0000-0000000000a1', id, 'Q', nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO cards (id, user_id, conversation_id, kind, question, answer, change_seq) "
+                "SELECT gen_random_uuid(), id, '00000000-0000-0000-0000-0000000000a1', 'concept', 'Q?', 'A.', "
+                "nextval('change_seq') FROM users"
+            )
+        )
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO chunks (user_id, owner_kind, source_id, chunk_index, text) "
+                "SELECT id, 'source_text', '00000000-0000-0000-0000-000000000001', 0, "
+                "'Stablecoins settle payments without a bank' FROM users"
+            )
+        )
+        matched: int = connection.execute(
+            sqlalchemy.text("SELECT count(*) FROM chunks WHERE tsv @@ websearch_to_tsquery('english', 'stablecoin')")
+        ).scalar_one()
+        assert matched == 1
+
+    with pytest.raises(sqlalchemy.exc.IntegrityError), engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO cards (id, user_id, source_id, conversation_id, kind, question, answer, change_seq) "
+                "SELECT gen_random_uuid(), id, '00000000-0000-0000-0000-000000000001', "
+                "'00000000-0000-0000-0000-0000000000a1', 'concept', 'Q?', 'A.', nextval('change_seq') FROM users"
+            )
+        )
+
+    with sqlalchemy.orm.Session(engine) as db:
+        chunk = db.scalars(sqlalchemy.select(models.Chunk)).one()
+        chunk.embedding = [0.5] + [0.0] * (models.EMBEDDING_DIMENSIONS - 1)
+        db.commit()
+        db.expire_all()
+        stored = db.scalars(sqlalchemy.select(models.Chunk)).one().embedding
+        assert stored is not None and stored[0] == 0.5 and len(stored) == models.EMBEDDING_DIMENSIONS
 
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))

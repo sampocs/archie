@@ -52,6 +52,12 @@ def recording_api_key(request: pytest.FixtureRequest, monkeypatch: pytest.Monkey
 
 
 @pytest.fixture
+def no_embed_jobs(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Analyze and primer queue `embed`; chained tests drop it so it does not take the next loop turn."""
+    monkeypatch.setattr(jobs, "enqueue_embed", lambda db, **kwargs: None)
+
+
+@pytest.fixture
 def engine(migrated_database_url: str) -> Iterator[sqlalchemy.Engine]:
     """An engine on the migrated test database."""
     database_engine = session.engine_for(migrated_database_url)
@@ -91,10 +97,12 @@ def test_analyze_writes_a_summary_and_cards(engine: sqlalchemy.Engine, replay: R
     assert all(card.kind in prompts.CARD_KINDS and card.question.strip() and card.answer.strip() for card in cards)
     assert len({card.change_seq for card in cards}) == len(cards)
     assert _only_job(engine).status == models.JobStatus.DONE.value
+    _assert_embed_queued(engine, source_id)
     assert [(call.step, call.model) for call in _llm_calls(engine)] == [(models.JobKind.ANALYZE.value, llm.HAIKU)]
     assert _source(engine, source_id).processing == models.ProcessingStatus.PROCESSING.value
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_newsletter_analyze_writes_a_summary_but_no_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """Even when the model calls a newsletter educational, it gets a summary only: no cards, no primer, ready."""
     source_id = _add_source(engine, text=GREATWORK_TEXT, kind=models.SourceKind.NEWSLETTER)
@@ -129,6 +137,7 @@ def test_a_newsletter_analyzed_after_going_deeper_gets_cards(engine: sqlalchemy.
     assert MIN_CARDS <= len(_cards(engine, source_id)) <= MAX_CARDS
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_analyze_and_primer_together_make_the_source_ready(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """The primer is stored as markdown from Sonnet, and the second of the two steps flips the source to ready."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)
@@ -156,6 +165,7 @@ def test_analyze_and_primer_together_make_the_source_ready(engine: sqlalchemy.En
     assert [call.step for call in _llm_calls(engine)] == [models.JobKind.ANALYZE.value, models.JobKind.PRIMER.value]
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_a_requested_newsletter_primer_returns_the_newsletter_to_ready(
     engine: sqlalchemy.Engine, replay: Replay
 ) -> None:
@@ -177,6 +187,7 @@ def test_a_requested_newsletter_primer_returns_the_newsletter_to_ready(
     assert _source(engine, source_id).processing == models.ProcessingStatus.READY.value
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_a_newsletter_stays_processing_while_its_primer_is_queued_behind_analyze(
     engine: sqlalchemy.Engine, replay: Replay
 ) -> None:
@@ -197,6 +208,7 @@ def test_a_newsletter_stays_processing_while_its_primer_is_queued_behind_analyze
     assert _source(engine, source_id).processing == models.ProcessingStatus.READY.value
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_analyze_queues_filing_for_a_user_who_has_chosen_topics(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """A never-filed source of a user with topics gets a `file_topic` job after its analyze."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)
@@ -212,6 +224,7 @@ def test_analyze_queues_filing_for_a_user_who_has_chosen_topics(engine: sqlalche
     assert filing.payload == {pipeline.SOURCE_ID_KEY: str(source_id)}
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_a_new_newsletter_is_filed_before_its_brief_is_rewritten(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """`file_topic` is queued ahead of `update_brief`, so the brief knows whether the newsletter is news or an essay."""
     source_id = _add_source(engine, text=GREATWORK_TEXT, kind=models.SourceKind.NEWSLETTER)
@@ -228,6 +241,7 @@ def test_a_new_newsletter_is_filed_before_its_brief_is_rewritten(engine: sqlalch
     ]
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_reanalyzing_a_filed_source_does_not_refile_it(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """A source that already has a domain keeps its filing: no `file_topic` job is queued."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)
@@ -255,6 +269,7 @@ def test_entertainment_gets_a_summary_but_no_cards(engine: sqlalchemy.Engine, re
     assert _cards(engine, source_id) == []
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_a_second_analyze_adds_a_version_and_replaces_the_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """Re-running keeps summary v1 (no longer current), makes v2 current, retires v1's cards and inserts v2's."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)
@@ -282,6 +297,7 @@ def test_a_second_analyze_adds_a_version_and_replaces_the_cards(engine: sqlalche
     assert len(cards) == len(retired) + len(live)
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_a_rerun_that_finds_no_teaching_retires_the_old_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """If the new summary is not educational, the previous version's cards still go and none are added."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)
@@ -446,8 +462,10 @@ def test_a_primer_writes_two_or_three_foundation_cards(engine: sqlalchemy.Engine
     assert all(card.kind == models.CardKind.FOUNDATION.value for card in cards)
     assert all(card.artifact_id == primer.id and card.question.strip() and card.answer.strip() for card in cards)
     assert len({card.change_seq for card in cards}) == len(cards)
+    _assert_embed_queued(engine, source_id)
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_a_rewritten_primer_replaces_only_its_foundation_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """A second primer retires the first one's foundation cards and adds its own; the summary's cards stay."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)
@@ -472,6 +490,7 @@ def test_a_rewritten_primer_replaces_only_its_foundation_cards(engine: sqlalchem
     assert {card.id: card.change_seq for card in _live_cards(engine, source_id, foundation=False)} == summary_cards
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_reanalyzing_keeps_the_primers_foundation_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """A re-run analyze replaces only the summary's cards: foundation cards belong to the primer."""
     source_id = _add_source(engine, text=GREATWORK_TEXT)
@@ -493,6 +512,7 @@ def test_reanalyzing_keeps_the_primers_foundation_cards(engine: sqlalchemy.Engin
     assert live_summary_cards.isdisjoint(first_summary_cards)
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_a_source_with_cards_off_gets_its_summary_and_primer_but_no_cards(
     engine: sqlalchemy.Engine, replay: Replay
 ) -> None:
@@ -514,6 +534,7 @@ def test_a_source_with_cards_off_gets_its_summary_and_primer_but_no_cards(
     assert _cards(engine, source_id) == []
 
 
+@pytest.mark.usefixtures("no_embed_jobs")
 def test_card_steps_tell_the_model_the_users_card_preferences(
     engine: sqlalchemy.Engine, replay: Replay, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -740,6 +761,15 @@ def _jobs(engine: sqlalchemy.Engine) -> list[models.Job]:
         return list(db.scalars(sqlalchemy.select(models.Job).order_by(models.Job.id)))
 
 
+def _assert_embed_queued(engine: sqlalchemy.Engine, source_id: uuid.UUID) -> None:
+    """Exactly one queued `embed` job exists, for this source's text."""
+    [embed] = [job for job in _jobs(engine) if job.kind == models.JobKind.EMBED.value]
+    assert embed.status == models.JobStatus.QUEUED.value
+    assert embed.payload[jobs.ITEM_KIND_KEY] == "source"
+    assert embed.payload[jobs.ITEM_ID_KEY] == str(source_id)
+
+
 def _only_job(engine: sqlalchemy.Engine) -> models.Job:
-    [job] = _jobs(engine)
+    # The `embed` job a step queues is checked by `_assert_embed_queued`, not here.
+    [job] = [job for job in _jobs(engine) if job.kind != models.JobKind.EMBED.value]
     return job

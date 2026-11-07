@@ -1,0 +1,180 @@
+<title>Archie Search and Ask</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of numbered phone mocks (wrapping to one column on a phone), each with a short caption under it. */
+:root {
+  --page: #E9E6DE; --pink: #1C1B18; --pink2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --macro: #3F7262; --ai: #6A5A9C; --history: #8E5468; --web: #3D6690;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --pink: #F1EFE9; --pink2: #A9A59B; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --pink: #F1EFE9; --pink2: #A9A59B; color-scheme: dark }
+body { background: var(--page); color: var(--pink); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+header { max-width: 1280px; margin: 0 auto 26px; display: grid; gap: 6px; }
+h1 { font-size: 28px; letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--pink2); max-width: 70ch; line-height: 1.5; font-size: 15px; }
+.row { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px 26px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; min-width: 0; }
+figcaption b { font-size: 15px; }
+figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
+.n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pink2); }
+.phone { width: 100%; max-width: 300px; aspect-ratio: 300 / 640; background: var(--bg); color: var(--ink); border-radius: 38px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-size: 13px; }
+.screen { position: absolute; inset: 0; padding: 38px 14px 84px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.big { font-size: 28px; font-weight: 700; letter-spacing: -.03em; }
+.nav { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink2); }
+.nav b { color: var(--ink); font-size: 14px; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search { background: var(--press); border-radius: 12px; padding: 9px 12px; color: var(--ink); }
+.search i { color: var(--ink3); font-style: normal; }
+.card { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.item { padding: 11px 12px; display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 10px; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.tile { width: 36px; height: 36px; border-radius: 9px; color: #fff; display: grid; place-items: center; font-weight: 600; }
+.k { font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.t { font-weight: 600; font-size: 13.5px; line-height: 1.25; }
+.s { color: var(--ink3); font-size: 11.5px; }
+.q { color: var(--ink2); font-size: 12px; line-height: 1.4; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.q mark { background: color-mix(in srgb, var(--macro) 16%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+.ts { font: 500 10.5px var(--mono); color: var(--ink2); background: var(--press); border-radius: 6px; padding: 1px 5px; }
+.chat { padding: 11px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 3px; }
+.chat:last-child { border-bottom: 0; }
+.chat .top { display: flex; justify-content: space-between; gap: 8px; }
+.chat .when { color: var(--ink3); font-size: 11px; white-space: nowrap; }
+.composer { position: absolute; left: 10px; right: 10px; bottom: 84px; background: var(--surface); border-radius: 22px; padding: 8px 8px 8px 14px;
+  display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05); }
+.composer .ph { flex: 1; color: var(--ink3); }
+.globe { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--press); color: var(--ink2); font-size: 14px; }
+.globe.on { background: var(--web); color: #fff; }
+.send { width: 30px; height: 30px; border-radius: 50%; background: var(--chrome); color: var(--onChrome); display: grid; place-items: center; font-weight: 700; }
+.mine { align-self: flex-end; max-width: 82%; background: var(--press); border-radius: 16px 16px 4px 16px; padding: 9px 12px; line-height: 1.4; }
+.answer { display: grid; gap: 12px; }
+.sec { display: grid; gap: 5px; }
+.lab { font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; }
+.lab.lib { color: var(--macro); } .lab.bg { color: var(--ink3); } .lab.web { color: var(--web); }
+.sec p { margin: 0; line-height: 1.5; font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--ink2); white-space: nowrap; }
+.chip.web { color: var(--web); }
+.acts { display: flex; gap: 8px; }
+.btn2 { background: var(--press); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 12px; color: var(--ink); }
+.searching { color: var(--ink3); font-size: 12px; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; border-top: 1px solid var(--line); background: var(--bg);
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 9px; font-size: 9.5px; color: var(--ink3); text-align: center; }
+.tabbar .on { color: var(--ink); font-weight: 600; }
+.dot { width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 6px; border: 1.6px solid currentColor; }
+.on .dot { background: currentColor; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: 22px 22px 0 0; padding: 10px 16px 28px;
+  display: grid; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,.18); }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 4px; }
+.field { display: grid; gap: 4px; }
+.field label { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.field div { background: var(--bg); border-radius: 10px; padding: 9px 11px; line-height: 1.4; }
+.primary { background: var(--chrome); color: var(--onChrome); border-radius: 14px; padding: 11px; text-align: center; font-weight: 600; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+.about { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 11.5px; color: var(--ink2); }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 132px; background: var(--chrome); color: var(--onChrome); border-radius: 999px; padding: 7px 14px; font-size: 12px; white-space: nowrap; }
+.read { line-height: 1.55; color: var(--ink); }
+.read h4 { margin: 0 0 4px; font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); }
+</style>
+
+<header>
+  <span class="n">ARCHIE · M7</span>
+  <h1>Search and Ask</h1>
+  <p>Library search that matches by meaning and shows why, an Ask tab with saved chats, answers labelled by where they came from, Make a card, and Ask about this from any item.</p>
+</header>
+
+<div class="row">
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="big">Library</div>
+      <div class="search">who controls money printing<i>|</i></div>
+      <div class="card">
+        <div class="item"><span class="tile" style="background:var(--macro)">O</span><div><div class="k" style="color:var(--macro)">Macro</div><div class="t">How the Fed Actually Creates Money</div><div class="s">Podcast · Odd Lots</div>
+          <div class="q"><span class="ts">31:20</span> …the Fed doesn't <mark>print money</mark> in the sense people think; it creates reserves when it buys…</div></div></div>
+        <div class="item"><span class="tile" style="background:var(--macro)">◆</span><div><div class="k" style="color:var(--macro)">Macro · Topic primer</div><div class="t">Monetary plumbing</div><div class="s">Primer</div>
+          <div class="q">Primer · Central banks set the price of reserves; commercial banks create most of the money…</div></div></div>
+        <div class="item"><span class="tile" style="background:var(--history)">M</span><div><div class="k" style="color:var(--history)">History</div><div class="t">☕ Panicky vibes</div><div class="s">Newsletter · Morning Brew</div>
+          <div class="q">…Powell said the committee would keep <mark>printing</mark> off the table until…</div></div></div>
+      </div>
+    </div>
+    <nav class="tabbar"><span class="on"><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">01 · LIBRARY SEARCH</span><b>Items, each with the passage that matched</b><span>Matches by meaning and by words. A podcast hit shows its time and opens there. Offline it falls back to today's on-phone matching.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="big">Ask</div>
+      <div class="card">
+        <div class="chat"><div class="top"><span class="t">Is $400B a lot for a buyback?</span><span class="when">2h</span></div><div class="s">Background: Apple's buybacks have run about $90B a year…</div></div>
+        <div class="chat"><div class="top"><span class="t">What did Graham mean by staying upwind?</span><span class="when">Yesterday</span></div><div class="s">Your library: working on problems that open more…</div></div>
+        <div class="chat"><div class="top"><span class="t">Who runs the BoE now?</span><span class="when">Tue</span></div><div class="s">Web: Andrew Bailey has been governor since…</div></div>
+      </div>
+    </div>
+    <div class="composer"><span class="ph">Ask about anything</span><span class="globe">🌐</span><span class="send">↑</span></div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">02 · ASK TAB</span><b>Saved chats and a box to start one</b><span>Newest first, swipe to delete, readable offline. Offline the box says Ask needs a connection.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Ask</span><b>How does the Fed create money?</b><span></span></div>
+      <div class="mine">How does the Fed actually create money? And is that "printing"?</div>
+      <div class="answer">
+        <div class="sec"><span class="lab lib">Your library</span>
+          <p>It buys bonds from banks and pays with new reserves. Those reserves sit at the Fed; they aren't cash in anyone's pocket.</p>
+          <div class="chips"><span class="chip">Odd Lots · 31:20</span><span class="chip">Monetary plumbing · Primer</span></div></div>
+        <div class="sec"><span class="lab bg">Background</span>
+          <p>"Printing money" is shorthand. Physical cash is a small slice of the money supply.</p></div>
+        <div class="sec"><span class="lab web">Web</span>
+          <p>The Fed's balance sheet is about $6.6T this month, down from $9T in 2022.</p>
+          <div class="chips"><span class="chip web">federalreserve.gov</span></div></div>
+        <div class="acts"><span class="btn2">Make a card</span></div>
+      </div>
+    </div>
+    <div class="composer"><span class="ph">Ask a follow-up</span><span class="globe on">🌐</span><span class="send">↑</span></div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">03 · AN ANSWER</span><b>Labelled by where it came from</b><span>Your library sections cite items (tap to open, at the time for audio). Web sections link out. Uncited text is Background. The globe forces a web search.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Ask</span><b>How does the Fed create money?</b><span></span></div>
+      <div class="mine">How does the Fed actually create money? And is that "printing"?</div>
+      <div class="answer"><div class="sec"><span class="lab lib">Your library</span><p>It buys bonds from banks and pays with new reserves…</p></div></div>
+    </div>
+    <div class="dim"></div>
+    <div class="sheet"><div class="grab"></div><b style="font-size:15px">Make a card</b>
+      <div class="field"><label>Question</label><div>How does the Fed create money when it buys bonds?</div></div>
+      <div class="field"><label>Answer</label><div>It pays banks with newly created reserves held at the Fed, not printed cash.</div></div>
+      <div class="primary">Save</div></div>
+    </div>
+    <figcaption><span class="n">04 · MAKE A CARD</span><b>Drafted from the answer, edited, saved</b><span>Save adds it to Review with a "Card added to Review" toast. In Review it shows as FROM ASK.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Library</span><span>☆ ···</span></div>
+      <div class="k" style="color:var(--ai)">AI · Podcast</div>
+      <div class="t" style="font-size:20px">The Scaling Hypothesis, Revisited</div>
+      <div class="s">Dwarkesh Podcast · 1h 42m</div>
+      <div class="acts"><span class="btn2">Primer</span></div>
+      <div class="read"><h4>Gist</h4>Compute keeps paying off, but data is the bottleneck…</div>
+      <div style="flex:1"></div>
+    </div>
+    <div class="dim"></div>
+    <div class="sheet"><div class="grab"></div>
+      <div class="card" style="background:var(--bg)">
+        <div class="chat"><span class="t">Ask about this</span></div>
+        <div class="chat"><span>Make review cards</span></div>
+        <div class="chat"><span>Change topic</span></div>
+        <div class="chat"><span style="color:#B04A3C">Delete</span></div>
+      </div>
+    </div>
+    </div>
+    <figcaption><span class="n">05 · ASK ABOUT THIS</span><b>In the item's ••• menu</b><span>On source, topic and take pages (other rows illustrative). Opens a new chat with an "About: …" chip above the box; that item's passages rank first.</span></figcaption>
+  </figure>
+</div>

@@ -13,6 +13,7 @@ import {
 } from "@/db/actions";
 import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
+import { useTakesData } from "@/takes/useTakesData";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
@@ -39,8 +40,11 @@ import {
   type LibraryEntry,
   type LibraryFilter,
 } from "./sections";
+import { renderableResults, SearchResultsView } from "./SearchResultsView";
 import { formatReturnTime } from "./snooze";
+import { localExtras } from "./serverSearch";
 import { SwipeRow, type SwipeAction } from "./SwipeRow";
+import { useServerSearch } from "./useServerSearch";
 import { statusTag, upNext, type QueueEntry } from "./visibility";
 
 type LibraryListProps = {
@@ -243,22 +247,44 @@ function SnoozedSection(props: { entries: LibraryEntry[]; filter: LibraryFilter;
 }
 
 function SearchResults(props: { data: LibraryData; query: string; rowActions: RowActions }) {
-  const matches = props.data.sources.filter((source) => matchesQuery(searchText(source), props.query));
+  const { view, results } = useServerSearch(props.query);
+  const offlineLine = view.offlineLine ? (
+    <Text testID="search-offline" variant="secondary" tone="ink3">
+      Offline · searching titles and notes
+    </Text>
+  ) : null;
+  const takes = useTakesData();
+  const localMatches = props.data.sources.filter((source) => matchesQuery(searchText(source), props.query));
+  const serverRows = view.mode === "server" ? renderableResults({ results, data: props.data, takes }) : [];
 
-  if (matches.length === 0) {
+  // The server indexes only passage text, so on-phone matches it didn't return (no text yet, notes, titles) follow it.
+  const localIds = localMatches.map((source) => source.id);
+  const extraIds = new Set(view.mode === "server" ? localExtras(results, localIds) : localIds);
+  const extras = localMatches.filter((source) => extraIds.has(source.id));
+
+  if (serverRows.length === 0 && extras.length === 0) {
     return (
-      <Text testID="library-search-empty" tone="ink2">
-        No matches for “{props.query.trim()}”
-      </Text>
+      <View style={{ gap: 8 }}>
+        {offlineLine}
+        <Text testID="library-search-empty" tone="ink2">
+          No matches for “{props.query.trim()}”
+        </Text>
+      </View>
     );
   }
 
   return (
-    <GroupedList>
-      {matches.map((source) => (
-        <EntryRow key={source.id} entry={{ kind: "source", source }} filter="all" rowActions={props.rowActions} />
-      ))}
-    </GroupedList>
+    <View style={{ gap: 8 }}>
+      {offlineLine}
+      {serverRows.length > 0 ? <SearchResultsView data={props.data} results={serverRows} /> : null}
+      {extras.length > 0 ? (
+        <GroupedList>
+          {extras.map((source) => (
+            <EntryRow key={source.id} entry={{ kind: "source", source }} filter="all" rowActions={props.rowActions} />
+          ))}
+        </GroupedList>
+      ) : null}
+    </View>
   );
 }
 

@@ -149,7 +149,7 @@ def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, 
     yield Event(name=EventName.DONE, data={"message_id": str(message_id)}).sse()
 
 
-def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress) -> Iterator[Event]:
+def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress) -> Generator[Event, None, None]:
     """The tool loop; the last round may not call tools, so it has to answer."""
     client = anthropic.Anthropic(api_key=request.anthropic_key, max_retries=0, timeout=REQUEST_TIMEOUT_SECONDS)
     context = llm.CallContext(user_id=request.user_id, source_id=None, job_id=None, step=llm.ASK_STEP)

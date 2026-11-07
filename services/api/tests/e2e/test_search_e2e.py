@@ -7,6 +7,7 @@ real response; re-record `search_query` by deleting it and running
 
 from __future__ import annotations
 
+import json
 import pathlib
 import uuid
 from typing import Any
@@ -113,13 +114,13 @@ def test_meaning_search_finds_a_passage_without_the_words_and_costs_one_embed_ca
 ) -> None:
     """A whitelisted query is embedded once; a chunk with an embedding comes back though no word matches."""
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
-    axis = [0.0] * models.EMBEDDING_DIMENSIONS
-    axis[0] = 1.0
+    # The passage is seeded with the recorded query embedding itself: meaning search drops anything far from the query.
+    query_embedding = _recorded_query_embedding()
     source_id = _seed(
         live_stack,
         user_id=_user_id(authed),
         title="Monetary plumbing",
-        chunks=[{"text": "Central banks set the price of reserves.", "embedding": axis}],
+        chunks=[{"text": "Central banks set the price of reserves.", "embedding": query_embedding}],
     )
 
     recorder = recording.vcr_for(request, cassette_dir=CASSETTE_DIR)
@@ -143,6 +144,15 @@ def test_a_bad_query_is_422_and_signed_out_is_401(live_stack: LiveStack) -> None
     assert authed.get("/search", params={"q": "x", "limit": 0}).status_code == 422
     assert authed.get("/search", params={"q": "x", "limit": 51}).status_code == 422
     assert live_stack.client.get("/search", params={"q": "x"}).status_code == 401
+
+
+def _recorded_query_embedding() -> list[float]:
+    # The cassette's response body is one single-quoted JSON line, so it can be read without a YAML parser.
+    lines = (CASSETTE_DIR / "search_query.yaml").read_text().splitlines()
+    line = next(line for line in lines if "embedding" in line and "string:" in line)
+    body = json.loads(line.split("string: ", 1)[1].strip().removeprefix("'").removesuffix("'"))
+    embedding: list[float] = body["data"][0]["embedding"]
+    return embedding
 
 
 def _llm_calls(live_stack: LiveStack) -> list[models.LlmCall]:

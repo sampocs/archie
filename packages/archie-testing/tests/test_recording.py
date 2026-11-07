@@ -1,9 +1,10 @@
-"""Audio stripping and chunk matching: the logic that keeps transcription cassettes small and replayable."""
+"""Audio stripping and request matching: the logic that keeps transcription and embeddings cassettes replayable."""
 
 from __future__ import annotations
 
 import _socket  # The real primitives the root conftest's network guard leaves untouched.
 import http.server
+import json
 import pathlib
 import socket
 import threading
@@ -145,3 +146,21 @@ def test_same_path_chunks_replay_out_of_order_from_audio_free_cassette(
     with recorder.use_cassette(str(cassette_path), record_mode=vcr.record_mode.RecordMode.NONE):
         assert upload("chunk_002.mp3") == "heard chunk_002.mp3"
         assert upload("chunk_001.mp3") == "heard chunk_001.mp3"
+
+
+EMBEDDINGS_URL = "https://api.openai.com/v1/embeddings"
+
+
+def _embeddings_request(texts: list[str], model: str = "text-embedding-3-small") -> vcr_request.Request:
+    body = json.dumps({"model": model, "input": texts}).encode()
+    return vcr_request.Request("POST", EMBEDDINGS_URL, body, {"content-type": "application/json"})
+
+
+def test_embeddings_requests_match_on_model_and_inputs() -> None:
+    """Same inputs replay; different inputs or model don't; the transcription matcher leaves them alone."""
+    recorded = _embeddings_request(["a", "b"])
+
+    assert recording._embeddings_match(recorded, _embeddings_request(["a", "b"]))
+    assert not recording._embeddings_match(recorded, _embeddings_request(["a"]))
+    assert not recording._embeddings_match(recorded, _embeddings_request(["a", "b"], model="other"))
+    assert recording._transcription_chunks_match(recorded, _embeddings_request(["zzz"]))

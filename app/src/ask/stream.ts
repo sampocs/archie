@@ -11,7 +11,7 @@ export type AskBody = {
   timezone: string;
 };
 
-const EVENT_TYPES = new Set(["delta", "block", "searching", "done", "error"]);
+const EVENT_TYPES = new Set(["delta", "block", "searching", "done", "error", "editing", "edit"]);
 
 /** Server-sent events from text chunks that may split a frame anywhere. */
 export class SseParser {

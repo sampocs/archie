@@ -184,6 +184,8 @@ def test_topics_topic_primers_and_sources_page_in_position_order(live_stack: Liv
         "take_versions",
         "conversations",
         "messages",
+        "card_versions",
+        "edit_proposals",
     }
 
 

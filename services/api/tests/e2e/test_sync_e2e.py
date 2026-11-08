@@ -855,6 +855,8 @@ def test_pull_pages_across_sources_artifacts_and_cards(live_stack: LiveStack) ->
         "kind",
         "version",
         "content",
+        "origin",
+        "instruction",
         "is_current",
         "created_at",
         "change_seq",

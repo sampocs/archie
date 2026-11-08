@@ -1,9 +1,11 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
 import { requestTopicPrimer, restoreTopic, setPrimerOpened } from "@/db/actions";
 import { db } from "@/db/client";
+import { useTargetVersions } from "@/edits/useTargetVersions";
+import { VersionsSheet } from "@/edits/VersionsSheet";
 import { isLiveTopic } from "@/library/join";
 import { useLibraryData } from "@/library/useLibraryData";
 import { statusTag } from "@/library/visibility";
@@ -17,6 +19,7 @@ import { asDomain } from "@/topics/domains";
 import { TopicMenu } from "@/topics/TopicMenu";
 import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
+import { Toast } from "@/ui/Toast";
 import { Kicker } from "@/ui/Kicker";
 import { Markdown } from "@/ui/Markdown";
 import { useNow } from "@/ui/useNow";
@@ -34,6 +37,10 @@ export default function TopicScreen() {
   const now = useNow();
   const [menuOpen, setMenuOpen] = useState(false);
   const [primerOpen, setPrimerOpen] = useState(false);
+  const primerVersions = useTargetVersions("topic_primer", id).entries.length;
+  const [versionsOpen, setVersionsOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const hideToast = useCallback(() => setToast(null), []);
 
   const topic = data.topics.find((candidate) => candidate.id === id);
   const primer = data.topicPrimers.find((candidate) => candidate.topicId === id);
@@ -69,6 +76,7 @@ export default function TopicScreen() {
   ) : undefined;
 
   return (
+    <View style={{ flex: 1 }}>
     <Screen title="" onBack={router.back} headerRight={menuButton}>
       <View style={{ gap: theme.spacing.sm }}>
         <Kicker domain={topic.domain} suffix="Topic" />
@@ -151,7 +159,16 @@ export default function TopicScreen() {
         onClose={() => setMenuOpen(false)}
         followMerge
         askPrimer={primer ? { id: primer.id, title: topic.name } : undefined}
+        onPrimerVersions={primerVersions > 1 ? () => setVersionsOpen(true) : undefined}
+      />
+      <VersionsSheet
+        target={{ kind: "topic_primer", id }}
+        visible={versionsOpen}
+        onClose={() => setVersionsOpen(false)}
+        onRestored={(version) => setToast(`Restored version ${version}`)}
       />
     </Screen>
+    {toast ? <Toast message={toast} onHide={hideToast} /> : null}
+    </View>
   );
 }

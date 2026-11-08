@@ -1,4 +1,5 @@
-"""The capture pipeline's shared state: artifact versions, a source's processing status, and which steps to retry.
+"""The capture pipeline's shared state: artifact versions (and the rule that Archie never replaces an owner-chosen
+one), a source's processing status, and which steps to retry.
 
 Every function that writes expects the caller to hold `changes.lock_user_writes` for the source's user.
 """
@@ -56,10 +57,20 @@ def write_artifact(
     content: dict[str, Any],
     model: str | None,
     prompt_version: str | None,
+    origin: models.VersionOrigin = models.VersionOrigin.ARCHIE,
+    derived_from_id: uuid.UUID | None = None,
+    instruction: str | None = None,
+    hands_back: bool = False,
 ) -> models.SourceArtifact:
-    """Add the next version of `kind` as the current one; the previous current version is kept, no longer current."""
+    """Add the next version of `kind`, normally as the current one; the previous current version is kept.
+
+    Archie's rewrite of a version the owner chose is stored but not made current (`keeps_owner_version`), so an Ask
+    edit or a restore is never silently replaced; the owner can still restore Archie's newer version. `hands_back` is
+    Undo returning an item to Archie: the copy is written with origin `archie` but is current regardless.
+    """
     previous = current_artifact(db, source_id=source.id, kind=kind)
-    if previous is not None:
+    becomes_current = hands_back or not keeps_owner_version(db, previous=previous, origin=origin)
+    if previous is not None and becomes_current:
         # Flushed first so the partial unique index never sees two current rows.
         previous.is_current = False
         previous.change_seq = changes.next_change_seq()
@@ -77,14 +88,30 @@ def write_artifact(
         kind=kind.value,
         version=(latest_version or 0) + 1,
         content=content,
-        is_current=True,
+        is_current=becomes_current,
         model=model,
         prompt_version=prompt_version,
+        origin=origin.value,
+        derived_from_id=derived_from_id,
+        instruction=instruction,
         change_seq=changes.next_change_seq(),
     )
     db.add(artifact)
     db.flush()
     return artifact
+
+
+def keeps_owner_version(
+    db: sqlalchemy.orm.Session, *, previous: models.SourceArtifact | None, origin: models.VersionOrigin
+) -> bool:
+    """Whether a new version must leave `previous` current: Archie wrote the new one, the owner chose `previous`, and
+    the source's text hasn't been replaced since (after a re-fetch the owner's edit described other text)."""
+    if origin != models.VersionOrigin.ARCHIE or previous is None:
+        return False
+    if previous.origin not in models.OWNER_CHOSEN_ORIGINS:
+        return False
+    text = current_artifact(db, source_id=previous.source_id, kind=models.ArtifactKind.TEXT)
+    return text is None or text.created_at <= previous.created_at
 
 
 def set_processing(

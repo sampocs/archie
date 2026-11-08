@@ -94,7 +94,7 @@ The ＋ in the Library header opens the add sheet: the same Finished / Queue flo
 - **Works offline**: reviews, reading and capture all work without signal, for example on a plane, and sync when I'm back online.
 
 ### Carl (chat)
-> Shipped in M7 as **Ask**; see `2026-11-06-m7-search-ask-design.md`: saved, synced chats; answer labels per paragraph from citations; Make a card; "Ask about this" in the ••• menus; Sonnet 5.5 with `between_tools` thinking; `text-embedding-3-small` embeddings; items indexed as soon as their text is fetched. Edit through chat is not built.
+> Shipped in M7 as **Ask**; see `2026-11-06-m7-search-ask-design.md`: saved, synced chats; answer labels per paragraph from citations; Make a card; "Ask about this" in the ••• menus; Sonnet 5.5 with `between_tools` thinking; `text-embedding-3-small` embeddings; items indexed as soon as their text is fetched. Edit through chat shipped too; see `2026-11-08-chat-edits-design.md`: Ask proposes edits to summaries, primers, topic primers, takes and cards, the owner taps Apply (Undo after), every change is a version with Restore, and Archie's rewrites never replace an owner-chosen version.
 
 - Ask about anything in the library, including unread inbox items. Answers cite sources.
 - Explains things in plain language and adds context ("is $400B a lot?").

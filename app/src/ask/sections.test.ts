@@ -63,7 +63,7 @@ describe("applyEvent and liveView", () => {
     ] as const;
     const streaming = events.reduce(applyEvent, EMPTY_LIVE);
 
-    expect(liveView(streaming)).toEqual({ sections: [], streamingText: "It buys bonds.", searching: null });
+    expect(liveView(streaming)).toEqual({ sections: [], streamingText: "It buys bonds.", searching: null, editing: false });
 
     const finished = applyEvent(streaming, { type: "block", block: 0, label: "library", citations: [library()] });
     expect(liveView(finished).sections).toEqual([{ label: "library", text: "It buys bonds.", citations: [library()] }]);
@@ -74,6 +74,60 @@ describe("applyEvent and liveView", () => {
   it("shows the searching line until text arrives", () => {
     const live = applyEvent(EMPTY_LIVE, { type: "searching", kind: "web", query: "fed funds rate" });
     expect(liveView(live).searching).toBe("web");
+  });
+
+  it("an editing event shows the drafting line and an edit event adds its proposal once", () => {
+    const wire = {
+      id: "p1",
+      target_kind: "summary" as const,
+      target_id: "s1",
+      title: "Index funds",
+      description: "Drop the fees idea",
+      base_version: 1,
+      before: {},
+      after: {},
+      status: "proposed" as const,
+    };
+    const drafting = applyEvent(EMPTY_LIVE, { type: "editing", target_kind: null });
+    expect(drafting.editing).toBe(true);
+
+    const proposed = applyEvent(applyEvent(drafting, { type: "edit", ...wire }), { type: "edit", ...wire });
+    expect(proposed.proposals).toEqual([wire]);
+    expect(proposed.editing).toBe(false);
+    expect(liveView(proposed).editing).toBe(false);
+
+    const searched = applyEvent(drafting, { type: "searching", kind: "library", query: "x" });
+    expect(searched.editing).toBe(false);
+    expect(searched.searching).toBe("library");
+  });
+});
+
+describe("edit events for one target", () => {
+  const base = {
+    type: "edit" as const,
+    target_kind: "summary" as const,
+    target_id: "s1",
+    title: "T",
+    description: "D",
+    base_version: 1,
+    before: {},
+    after: {},
+    status: "proposed" as const,
+  };
+
+  it("supersedes the earlier proposed one, keeps other targets, and doesn't duplicate a repeated id", () => {
+    const same = applyEvent(applyEvent(EMPTY_LIVE, { ...base, id: "a" }), { ...base, id: "b" });
+    expect(same.proposals.map((proposal) => [proposal.id, proposal.status])).toEqual([
+      ["a", "superseded"],
+      ["b", "proposed"],
+    ]);
+
+    const other = applyEvent(applyEvent(EMPTY_LIVE, { ...base, id: "a" }), { ...base, id: "b", target_id: "s2" });
+    expect(other.proposals.map((proposal) => proposal.status)).toEqual(["proposed", "proposed"]);
+
+    const repeated = applyEvent(applyEvent(EMPTY_LIVE, { ...base, id: "a" }), { ...base, id: "a" });
+    expect(repeated.proposals).toHaveLength(1);
+    expect(repeated.proposals[0].status).toBe("proposed");
   });
 });
 

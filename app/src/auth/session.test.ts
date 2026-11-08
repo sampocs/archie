@@ -127,6 +127,24 @@ describe("clearSession", () => {
     db.insert(schema.takeVersions).values({ id: "v1", takeId: "k1", version: 1, body: "b", rawBody: "b", cleaned: 0, createdAt: "x" }).run();
     db.insert(schema.conversations).values({ id: "chat1", title: "T", createdAt: "x", updatedAt: "x" }).run();
     db.insert(schema.messages).values({ id: "m1", conversationId: "chat1", role: "user", text: "q", status: "complete", createdAt: "x" }).run();
+    db.insert(schema.cardVersions).values({ id: "cv1", cardId: "c1", version: 1, question: "q", answer: "a", origin: "archie", createdAt: "x" }).run();
+    db.insert(schema.editProposals)
+      .values({
+        id: "e1",
+        conversationId: "chat1",
+        messageId: "m1",
+        targetKind: "card",
+        targetId: "c1",
+        title: "q",
+        description: "d",
+        baseVersion: 1,
+        before: "{}",
+        after: "{}",
+        status: "proposed",
+        createdAt: "x",
+        updatedAt: "x",
+      })
+      .run();
     mockKeychain.set(COLLECTIONS_SLOT, '[{"id":"col1","name":"Bears hype"}]');
     mockKeychain.set(LAST_COLLECTION_SLOT, "col1");
   });
@@ -154,6 +172,8 @@ describe("clearSession", () => {
     expect(db.select().from(schema.takeVersions).all()).toEqual([]);
     expect(db.select().from(schema.conversations).all()).toEqual([]);
     expect(db.select().from(schema.messages).all()).toEqual([]);
+    expect(db.select().from(schema.cardVersions).all()).toEqual([]);
+    expect(db.select().from(schema.editProposals).all()).toEqual([]);
     expect(db.select().from(schema.syncState).get()).toMatchObject({ position: 0 });
   });
 

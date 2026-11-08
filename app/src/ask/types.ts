@@ -1,4 +1,5 @@
 import type * as schema from "@/db/schema";
+import type { EditProposalWire } from "@/edits/types";
 
 /** Where an answer's text came from, read off its citations (never the model's own claim). */
 export type AnswerLabel = "library" | "web" | "background";
@@ -26,7 +27,9 @@ export type AskEvent =
   | { type: "block"; block: number; label: AnswerLabel; citations: Citation[] }
   | { type: "searching"; kind: "library" | "web"; query: string }
   | { type: "done"; message_id: string }
-  | { type: "error"; message: string };
+  | { type: "error"; message: string }
+  | { type: "editing"; target_kind: string | null }
+  | ({ type: "edit" } & EditProposalWire);
 
 export type ConversationRow = typeof schema.conversations.$inferSelect;
 export type MessageRow = typeof schema.messages.$inferSelect;

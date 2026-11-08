@@ -22,10 +22,12 @@ type TopicMenuProps = {
   followMerge?: boolean;
   // Set on the topic page when the topic has a current primer: the row starts a chat about it.
   askPrimer?: { id: string; title: string };
+  // Set on the topic page when the primer has earlier versions: the row opens the versions sheet.
+  onPrimerVersions?: () => void;
 };
 
 /** Rename / Merge into… / Remove for a topic, from a chip's long press or the topic page's ••• button. */
-export function TopicMenu({ topic, topics, visible, onClose, onRemoved, followMerge, askPrimer }: TopicMenuProps) {
+export function TopicMenu({ topic, topics, visible, onClose, onRemoved, followMerge, askPrimer, onPrimerVersions }: TopicMenuProps) {
   const router = useRouter();
   const [renaming, setRenaming] = useState(false);
   const [merging, setMerging] = useState(false);
@@ -58,6 +60,9 @@ export function TopicMenu({ topic, topics, visible, onClose, onRemoved, followMe
                   onPress: () => openChat(router, { kind: "topic_primer", id: askPrimer.id, title: askPrimer.title }),
                 },
               ]
+            : []),
+          ...(onPrimerVersions
+            ? [{ label: "Primer versions", testID: "topic-menu-primer-versions", onPress: onPrimerVersions }]
             : []),
           { label: "Rename", testID: "topic-menu-rename", onPress: () => setRenaming(true) },
           { label: "Merge into…", testID: "topic-menu-merge", onPress: () => setMerging(true) },

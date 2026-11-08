@@ -20,6 +20,7 @@ dependencies = [
 
 [project.scripts]
 archie-launch = "archie_api.launch:main"
+archie-issue-session = "archie_api.auth.issue_session:main"
 
 [tool.uv.sources]
 archie-shared = { workspace = true }

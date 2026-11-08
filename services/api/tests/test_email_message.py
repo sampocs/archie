@@ -173,3 +173,26 @@ def test_a_forged_gmail_forwarding_subject_from_another_sender_is_not_a_confirma
     message.set_content("https://mail-settings.google.com/mail/vf-forged")
 
     assert email_message.parse(message.as_bytes()).confirm_url is None
+
+
+def test_the_substack_fixture_yields_its_sender_address_and_list_id() -> None:
+    """The allowlist matches on the lower-cased From address and the List-Id's bracketed part."""
+    parsed = email_message.parse((FIXTURES / "substack_bytebytego.eml").read_bytes())
+
+    assert (parsed.sender_address, parsed.list_id) == ("bytebytego@substack.com", "bytebytego.substack.com")
+
+
+def test_the_morning_brew_fixture_has_an_address_and_no_list_id() -> None:
+    """No List-Id header means no list id; the address is still read."""
+    parsed = email_message.parse((FIXTURES / "morning_brew.eml").read_bytes())
+
+    assert (parsed.sender_address, parsed.list_id) == ("crew@morningbrew.com", None)
+
+
+def test_a_sender_address_is_lower_cased_and_a_missing_from_gives_none() -> None:
+    """Addresses are case-insensitive in practice; a message with no From has no address."""
+    with_from = email_message.parse(b"From: Writer <Writer@Example.COM>\nSubject: Hi\n\nBody text.\n")
+    without_from = email_message.parse(b"Subject: Hi\n\nBody text.\n")
+
+    assert with_from.sender_address == "writer@example.com"
+    assert (without_from.sender_address, without_from.sender, without_from.list_id) == (None, None, None)

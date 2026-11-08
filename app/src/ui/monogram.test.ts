@@ -17,4 +17,8 @@ describe("monogramFor", () => {
   it("falls back to a question mark", () => {
     expect(monogramFor({ ...base, url: "not a url" })).toBe("?");
   });
+
+  it("uses a pencil glyph for notes", () => {
+    expect(monogramFor({ ...base, kind: "note", title: "Zed" })).toBe("✎");
+  });
 });

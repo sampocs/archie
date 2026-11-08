@@ -35,6 +35,11 @@ const source = (overrides: Partial<SourceRow>): SourceRow => ({
   favoritedAt: null,
   publishedAt: null,
   confirmUrl: null,
+  noteMarkdown: null,
+  noteEditedAt: null,
+  refreshedAt: null,
+  refreshedFromQueue: 0,
+  refreshSkippedAt: null,
   ...overrides,
 });
 

@@ -104,7 +104,7 @@ def fetch_preview(*, video_id: str) -> content.LinkPreview:
         )
     except (httpx.HTTPError, TimeoutError):
         oembed = _fetch_oembed(video_id=video_id)
-        if oembed is None:
+        if oembed is None or oembed.title is None:
             raise
         return content.LinkPreview(
             title=oembed.title, author=oembed.author, image_url=thumbnail_url(video_id), duration_seconds=None
@@ -139,6 +139,9 @@ def _fetch_oembed(*, video_id: str) -> _OEmbed | None:
         data = json.loads(body)
     except (httpx.HTTPError, TimeoutError, ValueError):
         _logger.info("No oEmbed for video %s", video_id)
+        return None
+
+    if not isinstance(data, dict):
         return None
 
     return _OEmbed(title=_clean_text(data.get("title")), author=_clean_text(data.get("author_name")))

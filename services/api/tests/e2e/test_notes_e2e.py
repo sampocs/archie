@@ -364,3 +364,94 @@ def test_skip_note_applies_to_a_cards_off_note(owner: httpx.Client) -> None:
     skipped = _push(owner, _action("skip_note", {"id": source_id, "at": _now()}))
 
     assert skipped[0]["result"] == "applied"
+
+
+_QUEUEING_ACTIONS = [
+    ("go_deeper", {}),
+    ("read_later", {}),
+    ("finish_source", {}),
+    ("queue_primer", {"queued": True}),
+    ("snooze", {"target": "source", "until": "2099-01-01T00:00:00+00:00"}),
+    ("set_queue_position", {"position": 1.0, "target": "source"}),
+    ("set_queue_position", {"position": 1.0, "target": "source_primer"}),
+    ("return_to_inbox", {}),
+    ("request_primer", {}),
+    ("set_read", {"read": True}),
+]
+
+
+def _note_snapshot(live_stack: LiveStack, source_id: str) -> tuple[Any, ...]:
+    with _db(live_stack) as db:
+        source = db.get_one(models.Source, uuid.UUID(source_id))
+        job_count = db.scalar(sqlalchemy.select(sqlalchemy.func.count()).select_from(models.Job))
+        return (
+            source.state,
+            source.queue_position,
+            source.primer_queue_position,
+            source.snoozed_until,
+            source.read_at,
+            source.processing,
+            job_count,
+        )
+
+
+@pytest.mark.parametrize(("action_type", "extra"), _QUEUEING_ACTIONS)
+def test_queueing_actions_are_refused_for_a_cards_note(
+    live_stack: LiveStack, authed: httpx.Client, action_type: str, extra: dict[str, Any]
+) -> None:
+    """Notes never enter the queue or the analyze/primer pipeline; the refresher is their only schedule."""
+    source_id = _import(authed, _note("NOTE-1", mark="cards"))[0]["id"]
+    before = _note_snapshot(live_stack, source_id)
+
+    results = _push(authed, _action(action_type, {"id": source_id, **extra}))
+
+    assert results[0]["result"] == "rejected"
+    assert _note_snapshot(live_stack, source_id) == before
+
+
+def test_set_favorite_still_applies_to_a_note(authed: httpx.Client) -> None:
+    """Favorites aren't scheduling, so notes keep them."""
+    source_id = _import(authed, _note("NOTE-1", mark="cards"))[0]["id"]
+
+    results = _push(authed, _action("set_favorite", {"id": source_id, "favorited": True}))
+
+    assert results[0]["result"] == "applied"
+    assert _source(authed, source_id)["favorited_at"] is not None
+
+
+def _clear_jobs(live_stack: LiveStack) -> None:
+    with _db(live_stack) as db:
+        db.execute(sqlalchemy.delete(models.Job))
+        db.commit()
+
+
+def test_cards_on_for_an_unrefreshed_note_queues_nothing(live_stack: LiveStack, authed: httpx.Client) -> None:
+    """The refresher writes an unrefreshed note's cards, so turning cards on only flips the flag."""
+    source_id = _import(authed, _note(mark="import"))[0]["id"]
+    _clear_jobs(live_stack)
+
+    results = _push(authed, _action("set_cards_off", {"id": source_id, "off": False}))
+
+    assert results[0]["result"] == "applied"
+    assert _source(authed, source_id)["cards_off"] is False
+    with _db(live_stack) as db:
+        assert db.scalar(sqlalchemy.select(sqlalchemy.func.count()).select_from(models.Job)) == 0
+
+
+def test_cards_on_for_a_refreshed_note_queues_note_cards_not_analyze(
+    live_stack: LiveStack, owner: httpx.Client
+) -> None:
+    """A refreshed note gets its note_cards job back, once, and never the article analysis."""
+    source_id = _import(owner, _note())[0]["id"]
+    _seed_write_up(owner, source_id)
+    _push(owner, _action("refresh_note", {"id": source_id, "counted": True, "at": _now()}))
+    _push(owner, _action("set_cards_off", {"id": source_id, "off": True}))
+    _clear_jobs(live_stack)
+
+    first = _push(owner, _action("set_cards_off", {"id": source_id, "off": False}))
+    second = _push(owner, _action("set_cards_off", {"id": source_id, "off": False}))
+
+    assert [result["result"] for result in first + second] == ["applied", "applied"]
+    assert len(_jobs(live_stack, models.JobKind.NOTE_CARDS)) == 1
+    assert not _jobs(live_stack, models.JobKind.ANALYZE)
+    assert _source(owner, source_id)["processing"] == "ready"

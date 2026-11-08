@@ -457,3 +457,42 @@ def test_0014_keeps_existing_sources_with_no_confirm_url(test_database_url: str)
         )
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
     engine.dispose()
+
+
+def test_0015_keeps_existing_sources_and_adds_note_columns(test_database_url: str) -> None:
+    """A source stored before 0015 keeps its row with the note columns empty; one Bear id per user is enforced."""
+    migrate.downgrade(test_database_url)
+    migrate.upgrade(test_database_url, "0014")
+    engine = session.engine_for(test_database_url)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, change_seq) "
+                "SELECT gen_random_uuid(), users.id, 'https://example.com/a', 'https://example.com/a', 'article', "
+                "'consumed', 'finished', nextval('change_seq') FROM users"
+            )
+        )
+
+    migrate.upgrade(test_database_url)
+
+    with engine.begin() as connection:
+        row = connection.execute(
+            sqlalchemy.text(
+                "SELECT bear_id, note_markdown, note_tags, note_edited_at, refreshed_at, refreshed_from_queue, "
+                "refresh_skipped_at FROM sources"
+            )
+        ).one()
+        assert tuple(row) == (None, None, None, None, None, False, None)
+
+        insert_note = sqlalchemy.text(
+            "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, change_seq, bear_id) "
+            "SELECT gen_random_uuid(), users.id, 'bear:B1', 'bear:B1', 'note', 'inbox', 'finished', "
+            "nextval('change_seq'), 'B1' FROM users"
+        )
+        connection.execute(insert_note)
+    with pytest.raises(sqlalchemy.exc.IntegrityError), engine.begin() as connection:
+        connection.execute(insert_note)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
+    engine.dispose()

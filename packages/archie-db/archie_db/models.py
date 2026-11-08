@@ -42,6 +42,7 @@ class SourceKind(StrEnum):
     YOUTUBE = "youtube"
     PODCAST = "podcast"
     NEWSLETTER = "newsletter"
+    NOTE = "note"
 
 
 class CollectionItemKind(StrEnum):
@@ -172,6 +173,8 @@ class JobKind(StrEnum):
     FETCH_COLLECTION_ITEM = "fetch_collection_item"
     CLEAN_TAKE = "clean_take"
     TAKE_CARDS = "take_cards"
+    WRITE_NOTE = "write_note"
+    NOTE_CARDS = "note_cards"
     EMBED = "embed"
 
 
@@ -347,6 +350,8 @@ class Source(Base):
         sqlalchemy.Index("ix_sources_user_id_normalized_url", "user_id", "normalized_url"),
         # A newsletter delivered twice (Cloudflare retries) maps to one source.
         sqlalchemy.Index("uq_sources_user_id_newsletter_message_id", "user_id", "newsletter_message_id", unique=True),
+        # A note imported twice maps to one source (nulls never collide).
+        sqlalchemy.Index("uq_sources_user_id_bear_id", "user_id", "bear_id", unique=True),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
@@ -398,6 +403,21 @@ class Source(Base):
     # Set on a newsletter that is a signup confirmation: the https link that confirms it. Such a source is ready at
     # once, never processed, and left out of briefs; the phone shows it as a confirm card.
     confirm_url: Mapped[str | None] = mapped_column(sqlalchemy.String(2048))
+    # Notes only (kind `note`): Bear's id for the note, unique per user so a re-import updates instead of duplicating;
+    # server only, like `episode_guid`.
+    bear_id: Mapped[str | None] = mapped_column(sqlalchemy.String(64))
+    # The note as the owner wrote it in Bear (markdown); synced, so "See original note" works offline.
+    note_markdown: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    # Server only: Bear's tags, hints for the write-up and filing.
+    note_tags: Mapped[list[str] | None] = mapped_column(postgresql.ARRAY(sqlalchemy.Text))
+    # When the note was last edited in Bear; orders the refresher and shows as "last edited".
+    note_edited_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    # When the owner tapped Done on the note (its cards are written then), and whether that Done was one of the day's
+    # two refresher picks (an early refresh from Library is not).
+    refreshed_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    refreshed_from_queue: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
+    # Set by Skip: a skipped note goes to the end of the refresher queue.
+    refresh_skipped_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     # Server only (never pulled): the feed guid the user chose with "Wrong episode?".
     episode_guid: Mapped[str | None] = mapped_column(sqlalchemy.String(1024))
     # Always assigned via changes.next_change_seq() under changes.lock_user_writes(); see changes.py for why.

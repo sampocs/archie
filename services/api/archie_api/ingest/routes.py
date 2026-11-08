@@ -87,8 +87,13 @@ def find_recipient(db: orm.Session, *, local_part: str) -> models.User | None:
 
 
 def _insert_newsletter(db: orm.Session, *, user: models.User, parsed: email_message.ParsedEmail) -> None:
-    """Add the source and its captured text, and queue fetch_content (which only has to analyze a capture)."""
+    """Add the source and its captured text, and queue fetch_content (which only has to analyze a capture).
+
+    A signup confirmation (`parsed.confirm_url`) is stored the same way but is `ready` at once and queues nothing: it
+    is never summarised, carded, embedded or briefed, and the owner opens its link from the phone.
+    """
     text, subject = parsed.text, parsed.subject
+    confirm_url = parsed.confirm_url
     web_url = parsed.web_url if parsed.web_url and len(parsed.web_url) <= MAX_URL_LENGTH else None
     url = web_url or f"{_NEWSLETTER_URL_PREFIX}{parsed.message_id}"
     readable = bool(text.strip())
@@ -104,8 +109,9 @@ def _insert_newsletter(db: orm.Session, *, user: models.User, parsed: email_mess
         title=subject[:MAX_TITLE_LENGTH] if subject else None,
         sender=parsed.sender[:MAX_SENDER_LENGTH] if parsed.sender else None,
         newsletter_message_id=parsed.message_id,
-        processing=(models.ProcessingStatus.PENDING if readable else models.ProcessingStatus.FAILED).value,
-        processing_error=None if readable else UNREADABLE_EMAIL_ERROR,
+        confirm_url=confirm_url,
+        processing=_newsletter_processing(readable=readable, is_confirmation=confirm_url is not None).value,
+        processing_error=None if readable or confirm_url else UNREADABLE_EMAIL_ERROR,
         change_seq=changes.next_change_seq(),
     )
     db.add(source)
@@ -115,7 +121,15 @@ def _insert_newsletter(db: orm.Session, *, user: models.User, parsed: email_mess
         return
     db.add(models.SourceCapture(source_id=source.id, title=subject, text=text))
     db.flush()
+    if confirm_url:
+        return
     pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.FETCH_CONTENT])
+
+
+def _newsletter_processing(*, readable: bool, is_confirmation: bool) -> models.ProcessingStatus:
+    if is_confirmation:
+        return models.ProcessingStatus.READY
+    return models.ProcessingStatus.PENDING if readable else models.ProcessingStatus.FAILED
 
 
 def _unauthorized() -> fastapi.HTTPException:

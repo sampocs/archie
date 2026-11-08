@@ -19,7 +19,7 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_api.ingest import routes
-from archie_db import ingest_address, models, session
+from archie_db import briefs, ingest_address, models, pipeline, session
 from archie_testing import recording
 from archie_testing.harness import LiveStack
 
@@ -211,6 +211,90 @@ def test_a_chosen_address_delivers_to_its_user(live_stack: LiveStack) -> None:
     assert authed.get("/me").json()["ingest_address"] == f"news@{INGEST_DOMAIN}"
     assert len(authed.get("/sync/pull", params={"since": 0}).json()["rows"]["sources"]) == 1
     assert other.get("/sync/pull", params={"since": 0}).json()["rows"]["sources"] == []
+
+
+def test_a_tldr_signup_email_is_a_ready_confirmation_with_no_jobs_and_is_never_briefed(
+    live_stack: LiveStack,
+) -> None:
+    """A confirmation keeps its capture and its link, is ready at once, queues nothing and stays out of the brief."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    address = authed.get("/me").json()["ingest_address"]
+    ordinary = _ordinary_newsletter(message_id="ordinary@example.com")
+
+    assert _deliver(live_stack, raw=_fixture("tldr_confirm"), to=address).status_code == 202
+    assert _deliver(live_stack, raw=ordinary, to=address).status_code == 202
+    ordinary_row = next(row for row in _source_rows(live_stack) if row.newsletter_message_id == "ordinary@example.com")
+    _mark_ready(live_stack, source_id=ordinary_row.id)
+
+    confirmation = next(row for row in _source_rows(live_stack) if row.confirm_url is not None)
+    assert confirmation.confirm_url == "https://example.com/confirm-signup"
+    assert (confirmation.processing, confirmation.processing_error) == ("ready", None)
+    assert (confirmation.kind, confirmation.state, confirmation.title) == (
+        "newsletter",
+        "inbox",
+        "TLDR - Confirm your signup",
+    )
+    [capture] = _query(
+        live_stack, sqlalchemy.select(models.SourceCapture).where(models.SourceCapture.source_id == confirmation.id)
+    )
+    assert capture.text.strip()
+    # Only the ordinary newsletter queued fetch_content.
+    jobs = _query(live_stack, sqlalchemy.select(models.Job))
+    assert {job.payload[pipeline.SOURCE_ID_KEY] for job in jobs} == {str(ordinary_row.id)}
+
+    covered = _query_with(live_stack, lambda db: briefs.covered_newsletters(db, user_id=confirmation.user_id))
+    assert [source.id for source in covered] == [ordinary_row.id]
+
+    pulled = authed.get("/sync/pull", params={"since": 0}).json()["rows"]["sources"]
+    assert {row["id"]: row["confirm_url"] for row in pulled} == {
+        str(confirmation.id): "https://example.com/confirm-signup",
+        str(ordinary_row.id): None,
+    }
+
+
+def test_a_gmail_forwarding_confirmation_is_stored_with_its_vf_link_and_no_jobs(live_stack: LiveStack) -> None:
+    """Gmail's mail is a plain-text confirmation; the `vf-` link is kept, the `uf-` cancel link is not."""
+    address = _ingest_address(live_stack)
+
+    assert _deliver(live_stack, raw=_fixture("gmail_forwarding"), to=address).status_code == 202
+
+    [source] = _source_rows(live_stack)
+    assert source.confirm_url == "https://mail-settings.google.com/mail/vf-example"
+    assert (source.processing, source.processing_error) == ("ready", None)
+    assert _query(live_stack, sqlalchemy.select(models.Job)) == []
+
+
+def _ordinary_newsletter(*, message_id: str) -> bytes:
+    message = email.message.EmailMessage()
+    message["From"] = "writer@example.com"
+    message["Subject"] = "An ordinary issue"
+    message["Message-ID"] = f"<{message_id}>"
+    message.set_content("Just a short plain note.")
+    return message.as_bytes()
+
+
+def _mark_ready(live_stack: LiveStack, *, source_id: Any) -> None:
+    """Stand in for the worker finishing a source, so the test needs no model call."""
+    engine = session.engine_for(live_stack.database_url)
+    try:
+        with sqlalchemy.orm.Session(engine) as db:
+            db.execute(
+                sqlalchemy.update(models.Source)
+                .where(models.Source.id == source_id)
+                .values(processing=models.ProcessingStatus.READY.value)
+            )
+            db.commit()
+    finally:
+        engine.dispose()
+
+
+def _query_with(live_stack: LiveStack, run: Any) -> Any:
+    engine = session.engine_for(live_stack.database_url)
+    try:
+        with sqlalchemy.orm.Session(engine) as db:
+            return run(db)
+    finally:
+        engine.dispose()
 
 
 def _fixture(name: str) -> bytes:

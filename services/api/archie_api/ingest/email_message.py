@@ -1,7 +1,9 @@
 """Turn a raw RFC 822 email into the few fields a newsletter source needs.
 
 The message is outside input: it is parsed as data, its HTML is reduced to markdown by trafilatura (headings and
-paragraphs kept), and nothing in it is ever executed or followed.
+paragraphs kept), and nothing in it is ever executed or followed. A signup confirmation (a newsletter's "confirm your
+signup" mail, or Gmail's forwarding confirmation) is recognised here and its link is kept in `confirm_url`; the link
+is only stored, never fetched.
 """
 
 from __future__ import annotations
@@ -32,6 +34,39 @@ _WEB_URL_IN_BODY = re.compile(r"View this post on the web at (https://\S+)")
 _WEB_VERSION_LINK_TEXTS = frozenset(
     {"view online", "view in browser", "view in your browser", "read online", "view this email in your browser"}
 )
+# The text of a signup-confirmation link, compared the same way.
+_CONFIRM_LINK_TEXTS = frozenset(
+    {
+        "confirm signup",
+        "confirm sign up",
+        "confirm your signup",
+        "confirm subscription",
+        "confirm your subscription",
+        "confirm my subscription",
+        "confirm your email",
+        "confirm email",
+        "confirm email address",
+        "confirm your email address",
+        "verify email",
+        "verify your email",
+        "verify email address",
+        "verify your email address",
+        "yes, subscribe me",
+        "yes, subscribe me to this list",
+        "activate",
+        "activate account",
+        "activate your account",
+        "activate subscription",
+        "activate your subscription",
+    }
+)
+# A regular issue can carry a stray "Confirm subscription" link, so the subject has to say it too (lower-cased).
+_CONFIRM_SUBJECT_WORDS = ("confirm", "verify", "activate")
+MAX_CONFIRM_URL_LENGTH = 2048  # the width of the `Source.confirm_url` column
+_GMAIL_FORWARDING_SENDER = "forwarding-noreply@google.com"
+_GMAIL_FORWARDING_SUBJECT = "Forwarding Confirmation"
+# The `vf-` link confirms; the `uf-` link next to it cancels and is never taken.
+_GMAIL_CONFIRM_URL = re.compile(r"https://mail-settings\.google\.com/mail/vf-[^\s<>\"]+")
 _HTTPS_PREFIX = "https://"
 _ANCHOR_TAG = "a"
 _HREF_ATTRIBUTE = "href"
@@ -48,6 +83,8 @@ class ParsedEmail:
     message_id: str
     web_url: str | None
     text: str
+    # Set when this is a signup confirmation: the https link that confirms it (see `_confirm_url`).
+    confirm_url: str | None
 
 
 def parse(raw: bytes) -> ParsedEmail:
@@ -56,12 +93,15 @@ def parse(raw: bytes) -> ParsedEmail:
     plain = _body_text(message, subtype="plain")
     html = _body_text(message, subtype="html")
 
+    subject = _header_text(message, "Subject")
+
     return ParsedEmail(
-        subject=_header_text(message, "Subject"),
+        subject=subject,
         sender=_sender(message),
         message_id=_message_id(message, raw=raw),
         web_url=_web_url(message, plain=plain, html=html),
         text=_without_nul(_readable_text(html=html, plain=plain)[:MAX_TEXT_LENGTH]),
+        confirm_url=_confirm_url(message, subject=subject, plain=plain, html=html),
     )
 
 
@@ -118,20 +158,48 @@ def _web_url(message: email.message.Message, *, plain: str, html: str) -> str | 
     return _web_version_link(html) if html else None
 
 
+def _confirm_url(message: email.message.Message, *, subject: str | None, plain: str, html: str) -> str | None:
+    """The link that confirms a signup, when this email is a confirmation request; None for any other email.
+
+    Gmail's forwarding confirmation is recognised by its sender and subject; any other email needs a confirmation
+    link in its HTML and a subject that says confirm, verify or activate.
+    """
+    if subject is None:
+        return None
+
+    _, from_address = email.utils.parseaddr(_header_text(message, "From") or "")
+    if from_address.lower() == _GMAIL_FORWARDING_SENDER and _GMAIL_FORWARDING_SUBJECT in subject:
+        gmail_link = _GMAIL_CONFIRM_URL.search(plain)
+        return _confirm_link_within_limit(gmail_link.group(0) if gmail_link else None)
+
+    if html and any(word in subject.lower() for word in _CONFIRM_SUBJECT_WORDS):
+        return _confirm_link_within_limit(_first_link(html, link_texts=_CONFIRM_LINK_TEXTS))
+    return None
+
+
+def _confirm_link_within_limit(url: str | None) -> str | None:
+    return url if url and len(url) <= MAX_CONFIRM_URL_LENGTH else None
+
+
 def _web_version_link(html_text: str) -> str | None:
     """The https target of the first link whose text names the web version."""
-    finder = _WebVersionLinkFinder()
+    return _first_link(html_text, link_texts=_WEB_VERSION_LINK_TEXTS)
+
+
+def _first_link(html_text: str, *, link_texts: frozenset[str]) -> str | None:
+    finder = _LinkFinder(link_texts=link_texts)
     finder.feed(html_text)
     finder.close()
     return finder.url
 
 
-class _WebVersionLinkFinder(html.parser.HTMLParser):
-    """Collects each link's text and keeps the first https one whose text names the web version."""
+class _LinkFinder(html.parser.HTMLParser):
+    """Collects each link's text and keeps the first https one whose text is one of `link_texts`."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, link_texts: frozenset[str]) -> None:
         super().__init__()
         self.url: str | None = None
+        self._link_texts = link_texts
         self._href: str | None = None
         self._text: list[str] = []
 
@@ -151,7 +219,7 @@ class _WebVersionLinkFinder(html.parser.HTMLParser):
 
         link_text = " ".join("".join(self._text).split()).lower()
         href = self._href.strip()
-        if self.url is None and link_text in _WEB_VERSION_LINK_TEXTS and href.startswith(_HTTPS_PREFIX):
+        if self.url is None and link_text in self._link_texts and href.startswith(_HTTPS_PREFIX):
             self.url = href
         self._href = None
 

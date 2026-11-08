@@ -10,7 +10,7 @@ import sqlalchemy
 import sqlalchemy.orm
 from archie_api import deps
 from archie_api.auth import issue_session
-from archie_db import models, session
+from archie_db import jobs, models, session
 from archie_testing.harness import LiveStack
 
 pytestmark = pytest.mark.postgres
@@ -158,11 +158,16 @@ def test_reimporting_is_idempotent(live_stack: LiveStack, authed: httpx.Client) 
     assert len(_texts(live_stack, source_id)) == 1
 
     edited = _note(markdown="# Proof of stake\n\n- New line\n")
+    with _db(live_stack) as db:
+        for job in db.scalars(sqlalchemy.select(models.Job).where(models.Job.kind == models.JobKind.EMBED.value)):
+            job.status = models.JobStatus.DONE.value
+        db.commit()
     assert _import(authed, edited)[0]["status"] == "updated"
     texts = _texts(live_stack, source_id)
     assert [(text.version, text.is_current) for text in texts] == [(1, False), (2, True)]
     assert texts[1].content == {"text": edited["markdown"]}
-    assert _jobs(live_stack, models.JobKind.EMBED)
+    queued = [job for job in _jobs(live_stack, models.JobKind.EMBED) if job.status == models.JobStatus.QUEUED.value]
+    assert [job.payload[jobs.ITEM_ID_KEY] for job in queued] == [source_id]
 
     assert _import(authed, _note(markdown=edited["markdown"], mark="import"))[0]["status"] == "updated"
     row = _source(authed, source_id)
@@ -350,3 +355,12 @@ def test_issue_session_signs_in_the_user_with_that_email(live_stack: LiveStack) 
     response = live_stack.authed(key).get("/me")
     assert response.status_code == 200
     assert response.json()["user_id"] == user_id
+
+
+def test_skip_note_applies_to_a_cards_off_note(owner: httpx.Client) -> None:
+    """Skipping only needs a live note, so an import-mark note (cards off) can still be skipped."""
+    source_id = _import(owner, _note(mark="import"))[0]["id"]
+
+    skipped = _push(owner, _action("skip_note", {"id": source_id, "at": _now()}))
+
+    assert skipped[0]["result"] == "applied"

@@ -38,9 +38,7 @@ def refresh_note(db: orm.Session, *, user: models.User, payload: dict[str, objec
         return rows.MALFORMED
 
     source = rows.owned_source(db, user=user, source_id=parsed.id)
-    reason = _skippable_reason(source=source)
-    if reason is None and source is not None:
-        reason = _write_up_reason(db, source=source)
+    reason = _refreshable_reason(db, source=source)
     if reason is not None:
         return reason
     assert source is not None
@@ -60,7 +58,7 @@ def skip_note(db: orm.Session, *, user: models.User, payload: dict[str, object])
         return rows.MALFORMED
 
     source = rows.owned_source(db, user=user, source_id=parsed.id)
-    reason = _skippable_reason(source=source)
+    reason = _note_reason(source=source)
     if reason is not None:
         return reason
     assert source is not None
@@ -70,21 +68,25 @@ def skip_note(db: orm.Session, *, user: models.User, payload: dict[str, object])
     return None
 
 
-def _skippable_reason(*, source: models.Source | None) -> str | None:
-    """Why the note can't be refreshed or skipped, from the row alone."""
+def _note_reason(*, source: models.Source | None) -> str | None:
+    """Why the row can't be refreshed or skipped: missing, not a note, or already refreshed."""
     if source is None:
         return rows.NO_SOURCE
     if source.kind != models.SourceKind.NOTE:
         return _NOT_A_NOTE
     if source.refreshed_at is not None:
         return _ALREADY_REFRESHED
-    if source.cards_off:
-        return _CARDS_OFF
     return None
 
 
-def _write_up_reason(db: orm.Session, *, source: models.Source) -> str | None:
-    """Refreshing also needs the write-up the refresher shows."""
+def _refreshable_reason(db: orm.Session, *, source: models.Source | None) -> str | None:
+    """Refreshing also needs cards on and the write-up the refresher shows."""
+    reason = _note_reason(source=source)
+    if reason is not None:
+        return reason
+    assert source is not None
+    if source.cards_off:
+        return _CARDS_OFF
     if pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.SUMMARY) is None:
         return _NO_WRITE_UP
     return None

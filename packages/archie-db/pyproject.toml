@@ -8,11 +8,13 @@ dependencies = [
   "psycopg[binary]>=3.2",
   "sqlalchemy>=2.0.36",
   "archie-shared",
+  "publicsuffixlist>=1.1.2.20261107",
 ]
 
 [project.scripts]
 archie-db = "archie_db.migrate:main"
 archie-set-ingest-address = "archie_db.ingest_address:main"
+archie-allow-sender = "archie_db.allow_sender:main"
 
 [tool.uv.sources]
 archie-shared = { workspace = true }

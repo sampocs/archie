@@ -1,0 +1,15 @@
+appId: com.sampocs.archie
+---
+# Run after run_sender_allowlist.sh has re-delivered Morning Brew's newsletter (new Message-ID) to a blocked sender:
+# the server drops it, so no card may appear once the phone has synced.
+# Relaunching the app (state and keychain kept) makes it sync on start.
+- launchApp
+- tapOn:
+    id: "tab-library"
+# Nothing visible changes when the email is dropped, so give the start-up sync time to finish (and to show the card, if
+# the server had held the email) before checking.
+- extendedWaitUntil:
+    visible: ".*New sender: Morning Brew.*"
+    timeout: 20000
+    optional: true
+- assertNotVisible: ".*New sender: Morning Brew.*"

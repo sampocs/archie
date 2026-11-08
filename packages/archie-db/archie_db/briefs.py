@@ -21,7 +21,8 @@ UPDATE_MAX_ATTEMPTS = 2
 def covered_newsletters(db: sqlalchemy.orm.Session, *, user_id: int) -> list[models.Source]:
     """What a brief covers now: every one of the user's ready, live inbox newsletters, however old, oldest first.
 
-    Signup confirmations (`confirm_url` set) are ready too but are never briefed.
+    Signup confirmations (`confirm_url` set) and mail from senders nobody allowed yet (`sender_pending`) are ready too
+    but are never briefed.
     """
     return list(
         db.scalars(
@@ -33,6 +34,7 @@ def covered_newsletters(db: sqlalchemy.orm.Session, *, user_id: int) -> list[mod
                 models.Source.processing == models.ProcessingStatus.READY.value,
                 models.Source.deleted_at.is_(None),
                 models.Source.confirm_url.is_(None),
+                models.Source.sender_pending.is_(False),
             )
             .order_by(models.Source.created_at, models.Source.id)
         )

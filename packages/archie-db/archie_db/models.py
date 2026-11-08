@@ -23,6 +23,8 @@ from archie_db import vector
 
 TIMESTAMP = sqlalchemy.DateTime(timezone=True)
 CHANGE_SEQ_NAME = "change_seq"
+# The `processing_error` of a newsletter whose email had no readable text (also written by the worker, see its errors).
+UNREADABLE_EMAIL_ERROR = "Couldn't read this email."
 
 
 class Base(DeclarativeBase):
@@ -181,6 +183,22 @@ class TopicOrigin(StrEnum):
     STARTER = "starter"
     ARCHIE = "archie"
     USER = "user"
+
+
+class SenderStatus(StrEnum):
+    """What the owner decided about a newsletter sender; a sender nobody decided on has no row."""
+
+    ALLOWED = "allowed"
+    BLOCKED = "blocked"
+
+
+class IdentifierKind(StrEnum):
+    """What one identifier of a newsletter sender is: its registrable domain, address, List-Id or display name."""
+
+    DOMAIN = "domain"
+    ADDRESS = "address"
+    LIST_ID = "list_id"
+    NAME = "name"
 
 
 class NewsletterKind(StrEnum):
@@ -398,10 +416,56 @@ class Source(Base):
     # Set on a newsletter that is a signup confirmation: the https link that confirms it. Such a source is ready at
     # once, never processed, and left out of briefs; the phone shows it as a confirm card.
     confirm_url: Mapped[str | None] = mapped_column(sqlalchemy.String(2048))
+    # Newsletters only: the From address and List-Id, lower-cased (what the sender allowlist matches on). Only the
+    # address is pulled.
+    sender_address: Mapped[str | None] = mapped_column(sqlalchemy.String(320))
+    list_id: Mapped[str | None] = mapped_column(sqlalchemy.String(998))
+    # Set on a newsletter from a sender nobody has allowed or blocked yet: stored with its capture, ready, never
+    # processed. Allowing the sender starts processing; blocking deletes it.
+    sender_pending: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
     # Server only (never pulled): the feed guid the user chose with "Wrong episode?".
     episode_guid: Mapped[str | None] = mapped_column(sqlalchemy.String(1024))
     # Always assigned via changes.next_change_seq() under changes.lock_user_writes(); see changes.py for why.
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class NewsletterSender(Base):
+    """A newsletter sender the owner allowed or blocked; the identifiers that make it up are server only.
+
+    Never deleted: Unblock sets `allowed`. What it is matched on lives in `NewsletterSenderIdentifier`.
+    """
+
+    __tablename__ = "newsletter_senders"
+    __table_args__ = (sqlalchemy.Index("ix_newsletter_senders_user_id_change_seq", "user_id", "change_seq"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    # What the phone shows: the display name, else the address or domain.
+    label: Mapped[str] = mapped_column(sqlalchemy.Text)
+    status: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class NewsletterSenderIdentifier(Base):
+    """One thing an email can be matched to a sender by; each belongs to one sender per user. Server only."""
+
+    __tablename__ = "newsletter_sender_identifiers"
+    __table_args__ = (
+        sqlalchemy.Index(
+            "uq_newsletter_sender_identifiers_user_id_kind_value", "user_id", "kind", "value", unique=True
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.Identity(), primary_key=True)
+    sender_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("newsletter_senders.id", ondelete="CASCADE")
+    )
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    value: Mapped[str] = mapped_column(sqlalchemy.String(998))
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
 
 
 class Topic(Base):

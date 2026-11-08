@@ -68,7 +68,7 @@ appId: com.sampocs.archie
 # The proposal card sits below the answer; Apply turns on once the answer is saved.
 - scrollUntilVisible:
     element:
-      id: "edit-proposal-.*"
+      id: "edit-apply-.*"
     direction: DOWN
     timeout: 120000
 - extendedWaitUntil:

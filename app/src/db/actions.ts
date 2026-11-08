@@ -53,7 +53,10 @@ export type ActionType =
   | "update_take"
   | "restore_take_version"
   | "retry_take_cleanup"
-  | "delete_conversation";
+  | "delete_conversation"
+  | "set_sender_status";
+// What the owner decides about a newsletter sender.
+export type SenderStatus = "allowed" | "blocked";
 export type PrimerTarget = "source" | "topic_primer";
 // What a snooze applies to: a source, a topic primer, or a source's queued primer.
 export type SnoozeTarget = PrimerTarget | "source_primer";
@@ -332,6 +335,50 @@ export function deleteSource(db: AppDb, sourceId: string): void {
   db.transaction((tx) => {
     updateSource(tx, sourceId, { deletedAt: new Date().toISOString() });
     enqueue(tx, "delete_source", { id: sourceId });
+  });
+}
+
+const sameSender = (first: string | null, second: string | null) =>
+  Boolean(first?.trim()) && first?.trim().toLowerCase() === second?.trim().toLowerCase();
+
+/**
+ * Allow or Block the sender of a newsletter waiting on that decision. Locally it takes effect on the tapped source and
+ * on every other pending source from the same sender (same display name, ignoring case and padding, or same address),
+ * so their cards go at once: Allow un-pends them and shows them processing, Block deletes them. The server applies the
+ * same decision to every identifier it knows, and the next pull corrects whatever this missed.
+ */
+export function judgeSender(db: AppDb, sourceId: string, status: SenderStatus): void {
+  db.transaction((tx) => {
+    const tapped = tx.select().from(schema.sources).where(eq(schema.sources.id, sourceId)).get();
+    const pending = tx
+      .select()
+      .from(schema.sources)
+      .where(and(eq(schema.sources.senderPending, true), isNull(schema.sources.deletedAt)))
+      .all();
+    const affected = pending.filter(
+      (source) =>
+        source.id === sourceId ||
+        (tapped !== undefined &&
+          (sameSender(source.sender, tapped.sender) || sameSender(source.senderAddress, tapped.senderAddress))),
+    );
+    const effect: SQLiteUpdateSetSource<typeof schema.sources> =
+      status === "allowed"
+        ? { senderPending: false, processing: "pending" }
+        : { deletedAt: new Date().toISOString() };
+    for (const source of affected) updateSource(tx, source.id, effect);
+
+    enqueue(tx, "set_sender_status", { source_id: sourceId, status });
+  });
+}
+
+/** Unblock (or re-block) a sender from Settings. */
+export function setSenderStatus(db: AppDb, senderId: string, status: SenderStatus): void {
+  db.transaction((tx) => {
+    tx.update(schema.newsletterSenders)
+      .set({ status, updatedAt: new Date().toISOString() })
+      .where(eq(schema.newsletterSenders.id, senderId))
+      .run();
+    enqueue(tx, "set_sender_status", { sender_id: senderId, status });
   });
 }
 

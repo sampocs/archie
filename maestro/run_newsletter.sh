@@ -16,6 +16,23 @@ maestro test maestro/newsletter_1_login.yaml
 TOKEN=$(docker compose exec -T postgres psql -q -U archie archie -tAc "SELECT ingest_token FROM users WHERE apple_sub = 'test-user'" | tr -d '[:space:]')
 SECRET=$(grep '^INGEST_SECRET=' .env | cut -d= -f2-)
 
+# A fresh database knows no senders, so each newsletter waits for approval; allow the fixture's sender by display name
+# (the test user has no email, which `archie-allow-sender` needs, so this inserts the same rows it would).
+allow_sender() {
+  docker compose exec -T postgres psql -q -U archie archie -v ON_ERROR_STOP=1 -v name="$1" <<'SQL'
+WITH owner AS (SELECT id FROM users WHERE apple_sub = 'test-user'),
+  created AS (
+    INSERT INTO newsletter_senders (id, user_id, label, status, change_seq)
+    SELECT gen_random_uuid(), id, :'name', 'allowed', nextval('change_seq') FROM owner
+    RETURNING id, user_id
+  )
+INSERT INTO newsletter_sender_identifiers (sender_id, user_id, kind, value)
+SELECT id, user_id, 'name', lower(btrim(regexp_replace(:'name', '[\t\n\v\f\r\x1c-\x1f \x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+', ' ', 'g'), ' ')) FROM created;
+SQL
+}
+
+allow_sender "Morning Brew"
+
 curl -fsS -X POST http://localhost:8000/ingest/email \
   -H "content-type: message/rfc822" \
   -H "x-ingest-secret: $SECRET" \

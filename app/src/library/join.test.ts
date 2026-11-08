@@ -40,6 +40,8 @@ const source = (overrides: Partial<SourceRow>): SourceRow => ({
   refreshedAt: null,
   refreshedFromQueue: 0,
   refreshSkippedAt: null,
+  senderAddress: null,
+  senderPending: false,
   ...overrides,
 });
 
@@ -125,6 +127,25 @@ describe("joinLibrary", () => {
     expect(data.sources.map((row) => row.id)).toEqual(["plain"]);
     expect(data.confirmations.map((row) => row.id)).toEqual(["new", "old"]);
     expect(data.confirmations[0]).toMatchObject({ topic: null, summary: null });
+    expect(data.pendingSenders).toEqual([]);
+  });
+
+  it("splits sources awaiting a sender decision out into pendingSenders, newest first, and a confirmation is never pending", () => {
+    const data = joinLibrary({
+      sources: [
+        source({ id: "old", senderPending: true, createdAt: "2026-11-02T00:00:00Z" }),
+        source({ id: "plain" }),
+        source({ id: "new", senderPending: true, createdAt: "2026-11-05T00:00:00Z" }),
+        source({ id: "confirm", senderPending: true, confirmUrl: "https://example.com/c" }),
+      ],
+      artifacts: [],
+      topics: [],
+      topicPrimers: [],
+    });
+
+    expect(data.sources.map((row) => row.id)).toEqual(["plain"]);
+    expect(data.pendingSenders.map((row) => row.id)).toEqual(["new", "old"]);
+    expect(data.confirmations.map((row) => row.id)).toEqual(["confirm"]);
   });
 
   it("gives each source its live card count, 0 when it has none", () => {

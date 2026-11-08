@@ -11,6 +11,7 @@ import {
   finishPrimer,
   finishSource,
   goDeeper,
+  judgeSender,
   mergeTopic,
   queuePrimer,
   readLater,
@@ -25,6 +26,7 @@ import {
   refreshNote,
   setFavorite,
   setQueuePosition,
+  setSenderStatus,
   setSourceTopic,
   skipNote,
   snooze,
@@ -46,7 +48,8 @@ function createTables(outboxCheck: string): string {
       read_at text, snoozed_until text, primer_opened_at text, newsletter_kind text, primer_queue_position real,
       primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL, favorited_at text, published_at text, confirm_url text,
       note_markdown text, note_edited_at text, refreshed_at text, refreshed_from_queue integer DEFAULT 0 NOT NULL,
-      refresh_skipped_at text
+      refresh_skipped_at text,
+      sender_address text, sender_pending integer DEFAULT 0 NOT NULL
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
@@ -806,5 +809,80 @@ describe("skipNote", () => {
     expect(entry.type).toBe("skip_note");
     expect(entry.payload).toMatchObject({ id: "s1", at: row.refreshSkippedAt });
     expect(new Date(row.refreshSkippedAt!).toISOString()).toBe(row.refreshSkippedAt);
+  });
+});
+
+describe("judgeSender", () => {
+  // The tapped issue, one with the same name spelled differently, one with the same address under another name, an
+  // unrelated sender, a source with no sender at all, and a non-pending source with the same name.
+  const seedPending = (db: AppDb) => {
+    seedSource(db, { id: "tapped", kind: "newsletter", sender: "Example Weekly", senderAddress: "hi@example.com", senderPending: true, processing: "ready" });
+    seedSource(db, { id: "same-name", kind: "newsletter", sender: "  example weekly ", senderAddress: null, senderPending: true, processing: "ready" });
+    seedSource(db, { id: "same-address", kind: "newsletter", sender: "Renamed", senderAddress: "hi@example.com", senderPending: true, processing: "ready" });
+    seedSource(db, { id: "other", kind: "newsletter", sender: "Other Digest", senderAddress: "x@example.org", senderPending: true, processing: "ready" });
+    seedSource(db, { id: "nameless", kind: "newsletter", sender: null, senderAddress: null, senderPending: true, processing: "ready" });
+    seedSource(db, { id: "allowed-already", kind: "newsletter", sender: "Example Weekly", senderPending: false, processing: "ready" });
+  };
+
+  it("allowing un-pends the tapped source and its sender's other pending sources, and queues the decision", () => {
+    const db = makeTestDb();
+    seedPending(db);
+
+    judgeSender(db, "tapped", "allowed");
+
+    for (const id of ["tapped", "same-name", "same-address"]) {
+      expect(sourceById(db, id)).toMatchObject({ senderPending: false, processing: "pending", deletedAt: null });
+    }
+    expect(sourceById(db, "other")).toMatchObject({ senderPending: true, processing: "ready" });
+    expect(sourceById(db, "nameless")).toMatchObject({ senderPending: true, processing: "ready" });
+    expect(sourceById(db, "allowed-already")).toMatchObject({ senderPending: false, processing: "ready" });
+    expect(outboxEntries(db)).toEqual([{ type: "set_sender_status", payload: { source_id: "tapped", status: "allowed" } }]);
+  });
+
+  it("blocking deletes the tapped source and its sender's other pending sources only", () => {
+    const db = makeTestDb();
+    seedPending(db);
+
+    judgeSender(db, "tapped", "blocked");
+
+    for (const id of ["tapped", "same-name", "same-address"]) {
+      expect(sourceById(db, id)?.deletedAt).not.toBeNull();
+      expect(sourceById(db, id)).toMatchObject({ senderPending: true, processing: "ready" });
+    }
+    for (const id of ["other", "nameless", "allowed-already"]) expect(sourceById(db, id)?.deletedAt).toBeNull();
+    expect(outboxEntries(db)).toEqual([{ type: "set_sender_status", payload: { source_id: "tapped", status: "blocked" } }]);
+  });
+
+  it("a source with no sender and no address is judged alone", () => {
+    const db = makeTestDb();
+    seedPending(db);
+    seedSource(db, { id: "nameless-2", kind: "newsletter", sender: null, senderAddress: null, senderPending: true, processing: "ready" });
+
+    judgeSender(db, "nameless", "blocked");
+
+    expect(sourceById(db, "nameless")?.deletedAt).not.toBeNull();
+    expect(sourceById(db, "nameless-2")?.deletedAt).toBeNull();
+  });
+});
+
+describe("setSenderStatus", () => {
+  const seedSender = (db: AppDb, id: string, status: string) =>
+    db
+      .insert(schema.newsletterSenders)
+      .values({ id, label: id, status, createdAt: "2026-11-01T00:00:00Z", updatedAt: "2026-11-01T00:00:00Z", changeSeq: 1 })
+      .run();
+  const statusOf = (db: AppDb, id: string) =>
+    db.select().from(schema.newsletterSenders).where(eq(schema.newsletterSenders.id, id)).get()?.status;
+
+  it("sets the sender's status locally and queues it by sender_id, leaving other senders alone", () => {
+    const db = makeTestDb();
+    seedSender(db, "n1", "blocked");
+    seedSender(db, "n2", "blocked");
+
+    setSenderStatus(db, "n1", "allowed");
+
+    expect(statusOf(db, "n1")).toBe("allowed");
+    expect(statusOf(db, "n2")).toBe("blocked");
+    expect(outboxEntries(db)).toEqual([{ type: "set_sender_status", payload: { sender_id: "n1", status: "allowed" } }]);
   });
 });

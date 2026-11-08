@@ -1,4 +1,4 @@
-"""YouTube captions through `fetch_content`: real jobs in Postgres, captions and the watch page replayed from cassettes.
+"""YouTube captions through `fetch_content`: real jobs in Postgres, captions and the oEmbed replayed from cassettes.
 
 Re-record `youtube_powell.yaml` from a residential IP (YouTube blocks cloud ranges): delete it, then
 `uv run pytest services/worker/tests/test_youtube_e2e.py --record-mode=once -m postgres` with `TEST_DATABASE_URL` set.
@@ -23,6 +23,7 @@ pytestmark = pytest.mark.postgres
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 MIN_WORDS = 100
+POWELL_TITLE = "Jay Powell and the Fed Pause in 60 Seconds"
 
 
 @pytest.fixture
@@ -39,14 +40,16 @@ def replay(request: pytest.FixtureRequest) -> vcr_module.VCR:
     return recording.vcr_for(request, cassette_dir=CASSETTE_DIR)
 
 
-def test_captions_become_timed_text_titled_from_the_watch_page(
-    engine: sqlalchemy.Engine, replay: vcr_module.VCR
-) -> None:
-    """A video's captions are stored as a text artifact with ordered segments; analyze and primer are queued."""
+def test_captions_become_timed_text_titled_from_oembed(engine: sqlalchemy.Engine, replay: vcr_module.VCR) -> None:
+    """A video's captions are stored as a text artifact with ordered segments; analyze and primer are queued.
+
+    The untitled source gets its title from YouTube's small oEmbed endpoint, not the watch page cloud hosts get refused.
+    """
     source_id = _add_youtube_source(engine, url=media.YOUTUBE_VIDEO_URL)
 
-    with replay.use_cassette("youtube_powell.yaml", allow_playback_repeats=True):
+    with replay.use_cassette("youtube_powell.yaml", allow_playback_repeats=True) as cassette:
         loop.run_one(engine, handlers=handlers.HANDLERS)
+        played = [cassette.data[index][0].uri for index in cassette.play_counts]
 
     with sqlalchemy.orm.Session(engine) as db:
         source = db.get_one(models.Source, source_id)
@@ -61,7 +64,8 @@ def test_captions_become_timed_text_titled_from_the_watch_page(
     starts = [segment["start"] for segment in artifact.content["segments"]]
     assert len(starts) > 5
     assert starts == sorted(starts)
-    assert source.title and source.title != media.YOUTUBE_VIDEO_URL
+    assert source.title == POWELL_TITLE
+    assert any("youtube.com/oembed" in uri for uri in played)
     assert source.image_url == "https://i.ytimg.com/vi/e0gVE3YxZs8/hqdefault.jpg"
     assert source.processing == models.ProcessingStatus.PROCESSING
     assert queued == sorted([models.JobKind.EMBED, models.JobKind.ANALYZE, models.JobKind.PRIMER])

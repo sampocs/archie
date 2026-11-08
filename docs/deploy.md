@@ -30,7 +30,7 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
 
 ## M8
 
-- **Migration 0015** adds the note columns. **Release order: server first, then the phone build** (phone migration 0015
+- **Migration 0016** adds the note columns. **Release order: server first, then the phone build** (phone migration 0016
   re-pulls everything).
 - **Importing Bear notes** is run by the owner from the Mac:
 
@@ -67,6 +67,11 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
   database, with the email the account signed in with (the account sheet shows it):
   `railway ssh --service archie -- uv run --no-sync archie-set-ingest-address --email <owner email> --address news`.
   It refuses an address another user already holds, and an email that matches no user or more than one.
+- **Allowed newsletter senders.** Mail from a sender the owner hasn't allowed waits on the phone for Allow or Block.
+  After the first deploy of the allowlist, existing subscriptions are already allowed by display name (the migration);
+  to pre-allow another before its first email, run in the deployed container:
+  `railway ssh --service archie -- uv run --no-sync archie-allow-sender --email <owner email> --sender <domain, address, List-Id or name> [--kind domain|address|list_id|name]`.
+  Shared platforms (Substack and the like) can't be allowed by domain: pass the sender's full address.
 - **ffmpeg.** The image now installs it (podcast audio is split with it); nothing to configure.
 - **The newsletter Worker.** Deploy it from `workers/newsletter/README.md` only after the API is live with
   `INGEST_SECRET` set, then switch Email Routing to it.

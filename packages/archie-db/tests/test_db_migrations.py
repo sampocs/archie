@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import importlib.util
+import pathlib
 import re
+from typing import Any
 
 import alembic.autogenerate
 import alembic.migration
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import migrate, models, session
+from archie_db import migrate, models, senders, session
 
 pytestmark = pytest.mark.postgres
 
@@ -459,10 +462,122 @@ def test_0014_keeps_existing_sources_with_no_confirm_url(test_database_url: str)
     engine.dispose()
 
 
-def test_0015_keeps_existing_sources_and_adds_note_columns(test_database_url: str) -> None:
-    """A source stored before 0015 keeps its row with the note columns empty; one Bear id per user is enforced."""
+def test_0015_keeps_existing_sources_and_allows_live_newsletter_display_names(test_database_url: str) -> None:
+    """Existing sources get no address and aren't pending; live newsletters' display names become allowed senders.
+
+    Names that differ only in case or spacing make one sender (labelled by the oldest spelling), a deleted newsletter's
+    and a confirmation's names make none, and each user gets their own.
+    """
     migrate.downgrade(test_database_url)
     migrate.upgrade(test_database_url, "0014")
+    engine = session.engine_for(test_database_url)
+    with engine.begin() as connection:
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO users (apple_sub, ingest_token) VALUES ('one', 'token-one'), ('two', 'token-two')"
+            )
+        )
+        _insert_newsletter_0014(connection, apple_sub="one", sender=" Morning  Brew", created_at="2026-01-02")
+        _insert_newsletter_0014(connection, apple_sub="one", sender="morning brew", created_at="2026-01-03")
+        _insert_newsletter_0014(connection, apple_sub="one", sender="Deleted One", deleted=True)
+        _insert_newsletter_0014(connection, apple_sub="one", sender="Confirm Co", confirm_url="https://example.com/c")
+        _insert_newsletter_0014(connection, apple_sub="two", sender="Morning Brew")
+
+    migrate.upgrade(test_database_url)
+
+    with engine.begin() as connection:
+        sources = connection.execute(
+            sqlalchemy.text("SELECT sender_address, list_id, sender_pending FROM sources")
+        ).all()
+        assert {(row.sender_address, row.list_id, row.sender_pending) for row in sources} == {(None, None, False)}
+
+        senders = connection.execute(
+            sqlalchemy.text(
+                "SELECT users.apple_sub, newsletter_senders.label, newsletter_senders.status, "
+                "newsletter_sender_identifiers.kind, newsletter_sender_identifiers.value "
+                "FROM newsletter_senders "
+                "JOIN newsletter_sender_identifiers ON sender_id = newsletter_senders.id "
+                "JOIN users ON users.id = newsletter_senders.user_id ORDER BY users.apple_sub"
+            )
+        ).all()
+        assert [tuple(row) for row in senders] == [
+            ("one", " Morning  Brew", "allowed", "name", "morning brew"),
+            ("two", "Morning Brew", "allowed", "name", "morning brew"),
+        ]
+        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
+    engine.dispose()
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        " Morning  Brew",
+        "The   Hustle ",
+        "TLDR",
+        "Milk Road Daily",
+        "  mixed Case\tTabs ",
+        "\tLeading",
+        "Morning\xa0Brew",
+        "Trailing\n",
+        "Wide\u3000\u2003Gap\x85End\x1c",
+    ],
+)
+def test_the_backfill_sql_normalises_a_name_as_the_python_does(test_database_url: str, name: str) -> None:
+    """Backfilled `name` identifiers must equal what ingest computes for the same display name."""
+    migrate.upgrade(test_database_url)
+    engine = session.engine_for(test_database_url)
+    with engine.connect() as connection:
+        in_sql: str = connection.execute(
+            sqlalchemy.text(f"SELECT {_migration_0015().normalised_name_sql('CAST(:name AS text)')}"),
+            {"name": name},
+        ).scalar_one()
+    engine.dispose()
+
+    assert in_sql == senders.normalize_name(name)
+
+
+def _migration_0015() -> Any:
+    """The 0015 migration module, to run the exact normalising SQL its backfill uses."""
+    path = pathlib.Path(migrate.__file__).parent / "migrations" / "versions" / "0015_newsletter_senders.py"
+    spec = importlib.util.spec_from_file_location("migration_0015", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _insert_newsletter_0014(
+    connection: sqlalchemy.Connection,
+    *,
+    apple_sub: str,
+    sender: str,
+    created_at: str = "2026-01-01",
+    deleted: bool = False,
+    confirm_url: str | None = None,
+) -> None:
+    connection.execute(
+        sqlalchemy.text(
+            "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, sender, confirm_url, "
+            "created_at, deleted_at, change_seq) "
+            "SELECT gen_random_uuid(), users.id, :url, :url, 'newsletter', 'inbox', 'queue', :sender, :confirm_url, "
+            "CAST(:created_at AS timestamptz), "
+            "CASE WHEN :deleted THEN now() END, nextval('change_seq') FROM users WHERE apple_sub = :apple_sub"
+        ),
+        {
+            "url": f"newsletter:{apple_sub}:{sender}",
+            "sender": sender,
+            "confirm_url": confirm_url,
+            "created_at": created_at,
+            "deleted": deleted,
+            "apple_sub": apple_sub,
+        },
+    )
+
+
+def test_0016_keeps_existing_sources_and_adds_note_columns(test_database_url: str) -> None:
+    """A source stored before 0016 keeps its row with the note columns empty; one Bear id per user is enforced."""
+    migrate.downgrade(test_database_url)
+    migrate.upgrade(test_database_url, "0015")
     engine = session.engine_for(test_database_url)
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))

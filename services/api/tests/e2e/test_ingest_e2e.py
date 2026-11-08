@@ -19,8 +19,8 @@ import httpx
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_api.ingest import routes
-from archie_db import briefs, ingest_address, models, pipeline, session
+from archie_api.ingest import email_message
+from archie_db import briefs, changes, ingest_address, models, pipeline, senders, session
 from archie_testing import recording
 from archie_testing.harness import LiveStack
 
@@ -136,12 +136,14 @@ def test_an_email_with_no_readable_text_is_stored_as_a_failed_source_without_a_c
     message["Subject"] = "Just a picture"
     message["Message-ID"] = "<picture-only@example.com>"
     message.set_content(b"\x89PNG\r\n", maintype="image", subtype="png", filename="photo.png")
+    address = _ingest_address(live_stack)
+    _allow(live_stack, address="writer@example.com")
 
-    response = _deliver(live_stack, raw=message.as_bytes(), to=_ingest_address(live_stack))
+    response = _deliver(live_stack, raw=message.as_bytes(), to=address)
 
     assert response.status_code == 202
     [source] = _source_rows(live_stack)
-    assert (source.processing, source.processing_error) == ("failed", routes.UNREADABLE_EMAIL_ERROR)
+    assert (source.processing, source.processing_error) == ("failed", models.UNREADABLE_EMAIL_ERROR)
     assert _query(live_stack, sqlalchemy.select(models.SourceCapture)) == []
     assert _query(live_stack, sqlalchemy.select(models.Job)) == []
 
@@ -154,6 +156,7 @@ def test_a_substack_post_becomes_a_ready_inbox_source_with_only_a_summary(
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     address = authed.get("/me").json()["ingest_address"]
     assert address.endswith(f"@{INGEST_DOMAIN}")
+    _allow_fixture(live_stack, "substack_bytebytego")
 
     with _replay(request, "ingest_substack"):
         response = _deliver(live_stack, raw=_fixture("substack_bytebytego"), to=address)
@@ -183,6 +186,7 @@ def test_a_morning_brew_issue_links_to_its_web_version_and_is_analyzed_from_clea
     """The "View Online" link is the url; the referral block is cleaned out of the text the summary came from."""
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     address = authed.get("/me").json()["ingest_address"]
+    _allow_fixture(live_stack, "morning_brew")
 
     with _replay(request, "ingest_morning_brew"):
         assert _deliver(live_stack, raw=_fixture("morning_brew"), to=address).status_code == 202
@@ -223,6 +227,7 @@ def test_a_tldr_signup_email_is_a_ready_confirmation_with_no_jobs_and_is_never_b
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     address = authed.get("/me").json()["ingest_address"]
     ordinary = _ordinary_newsletter(message_id="ordinary@example.com")
+    _allow(live_stack, address="writer@example.com")
 
     assert _deliver(live_stack, raw=_fixture("tldr_confirm"), to=address).status_code == 202
     assert _deliver(live_stack, raw=ordinary, to=address).status_code == 202
@@ -241,6 +246,11 @@ def test_a_tldr_signup_email_is_a_ready_confirmation_with_no_jobs_and_is_never_b
         live_stack, sqlalchemy.select(models.SourceCapture).where(models.SourceCapture.source_id == confirmation.id)
     )
     assert capture.text.strip()
+    # Nobody decided on TLDR, yet the confirmation shows at once: it is not pending and writes no sender.
+    assert confirmation.sender_pending is False
+    assert (confirmation.sender_address, confirmation.sender) == ("dan@tldrnewsletter.com", "TLDR")
+    recorded = _query(live_stack, sqlalchemy.select(models.NewsletterSenderIdentifier))
+    assert {(row.kind, row.value) for row in recorded} == {("domain", "example.com")}
     # "Open the full email" reads the capture, since a confirmation has no text artifact.
     full_text = authed.get(f"/sources/{confirmation.id}/text")
     assert full_text.status_code == 200
@@ -271,9 +281,205 @@ def test_a_gmail_forwarding_confirmation_is_stored_with_its_vf_link_and_no_jobs(
     assert _query(live_stack, sqlalchemy.select(models.Job)) == []
 
 
+def test_an_email_from_an_unknown_sender_waits_pending_with_its_capture_and_costs_nothing(
+    live_stack: LiveStack,
+) -> None:
+    """Stored and readable, ready (so nothing shows Processing), no jobs, out of the brief, pulled as pending."""
+    authed = live_stack.authed(live_stack.sign_in())
+    address = authed.get("/me").json()["ingest_address"]
+    unreadable = email.message.EmailMessage()
+    unreadable["From"] = "Pic Writer <pics@example.com>"
+    unreadable["Subject"] = "Just a picture"
+    unreadable["Message-ID"] = "<pic@example.com>"
+    unreadable.set_content(b"\x89PNG\r\n", maintype="image", subtype="png", filename="photo.png")
+
+    assert _deliver(live_stack, raw=_ordinary_newsletter(message_id="a@example.com"), to=address).status_code == 202
+    assert _deliver(live_stack, raw=unreadable.as_bytes(), to=address).status_code == 202
+
+    readable, picture = sorted(_source_rows(live_stack), key=lambda row: row.newsletter_message_id or "")
+    assert (readable.sender_pending, readable.processing, readable.processing_error) == (True, "ready", None)
+    assert (readable.sender, readable.sender_address) == ("Writer Name", "writer@example.com")
+    assert _query(
+        live_stack, sqlalchemy.select(models.SourceCapture).where(models.SourceCapture.source_id == readable.id)
+    )
+    # An unreadable email from an unknown sender is not an error yet either.
+    assert (picture.sender_pending, picture.processing, picture.processing_error) == (True, "ready", None)
+    assert _query(live_stack, sqlalchemy.select(models.Job)) == []
+    assert _query_with(live_stack, lambda db: briefs.covered_newsletters(db, user_id=readable.user_id)) == []
+    # "Open the full email" works for a pending source, which has no text artifact.
+    assert authed.get(f"/sources/{readable.id}/text").json()["text"].strip() == "Just a short plain note."
+
+    pulled = {row["id"]: row for row in authed.get("/sync/pull", params={"since": 0}).json()["rows"]["sources"]}
+    assert pulled[str(readable.id)]["sender_pending"] is True
+    assert pulled[str(readable.id)]["sender_address"] == "writer@example.com"
+    assert "list_id" not in pulled[str(readable.id)]
+
+
+def test_an_email_from_an_allowed_sender_is_processed_as_before_and_keeps_its_address_and_list_id(
+    live_stack: LiveStack,
+) -> None:
+    """Allowed mail queues fetch_content, is not pending, and stores the identifiers for later decisions."""
+    address = _ingest_address(live_stack)
+    _allow(live_stack, address="writer@example.com")
+    raw = _built_email(
+        from_header="Writer Name <Writer@Example.com>", message_id="a@example.com", list_id="<Issues.Example.Invalid>"
+    )
+
+    assert _deliver(live_stack, raw=raw, to=address).status_code == 202
+
+    [source] = _source_rows(live_stack)
+    assert (source.sender_pending, source.processing) == (False, "pending")
+    assert (source.sender_address, source.list_id) == ("writer@example.com", "issues.example.invalid")
+    [job] = _query(live_stack, sqlalchemy.select(models.Job))
+    assert (job.kind, job.payload[pipeline.SOURCE_ID_KEY]) == ("fetch_content", str(source.id))
+
+
+def test_an_email_from_a_blocked_sender_is_accepted_and_dropped(live_stack: LiveStack) -> None:
+    """A blocked sender costs nothing and shows nothing; its mail is acknowledged so Cloudflare doesn't retry."""
+    address = _ingest_address(live_stack)
+    _decide(live_stack, address="writer@example.com", status=models.SenderStatus.BLOCKED)
+
+    response = _deliver(live_stack, raw=_ordinary_newsletter(message_id="a@example.com"), to=address)
+
+    assert response.status_code == 202
+    assert _source_rows(live_stack) == []
+    assert _query(live_stack, sqlalchemy.select(models.Job)) == []
+
+
+def test_an_email_with_no_sender_identifiers_is_accepted_and_dropped(live_stack: LiveStack) -> None:
+    """With no From there is nothing to decide on, so it can't be shown for approval either."""
+    address = _ingest_address(live_stack)
+    message = email.message.EmailMessage()
+    message["Subject"] = "Who sent this"
+    message["Message-ID"] = "<anonymous@example.com>"
+    message.set_content("Just a short plain note.")
+
+    response = _deliver(live_stack, raw=message.as_bytes(), to=address)
+
+    assert response.status_code == 202
+    assert _source_rows(live_stack) == []
+
+
+def test_a_sibling_domain_passes_by_display_name_and_by_list_id(live_stack: LiveStack) -> None:
+    """Matching is lenient: any one identifier is enough, and an email sharing none of them is still unknown."""
+    address = _ingest_address(live_stack)
+    mb = email_message_for(FIXTURE_DIR / "morning_brew.eml")
+    _allow(live_stack, address=mb.sender_address, name=mb.sender, list_id="<newsletter.example.invalid>")
+
+    by_name = _built_email(from_header="Morning Brew <crew@brew-mail.example>", message_id="name@example.com")
+    by_list_id = _built_email(
+        from_header="Someone Else <x@other.example>",
+        message_id="list@example.com",
+        list_id="<newsletter.example.invalid>",
+    )
+    stranger = _built_email(from_header="Someone Else <x@other.example>", message_id="stranger@example.com")
+    for raw in (by_name, by_list_id, stranger):
+        assert _deliver(live_stack, raw=raw, to=address).status_code == 202
+
+    pending_by_message_id = {row.newsletter_message_id: row.sender_pending for row in _source_rows(live_stack)}
+    assert pending_by_message_id == {"name@example.com": False, "list@example.com": False, "stranger@example.com": True}
+
+
+def test_allowing_a_substack_sender_allows_only_its_own_address(live_stack: LiveStack) -> None:
+    """ByteByteGo's address, List-Id and name pass; another Substack publication stays unknown."""
+    address = _ingest_address(live_stack)
+    bytebytego = email_message_for(FIXTURE_DIR / "substack_bytebytego.eml")
+    _allow(live_stack, address=bytebytego.sender_address, name=bytebytego.sender, list_id=bytebytego.list_id)
+
+    same_address = _built_email(from_header="BBG <bytebytego@substack.com>", message_id="same@example.com")
+    other = _built_email(
+        from_header="Other Writer <other@substack.com>", message_id="other@example.com", list_id="<other.substack.com>"
+    )
+    for raw in (same_address, other):
+        assert _deliver(live_stack, raw=raw, to=address).status_code == 202
+
+    pending_by_message_id = {row.newsletter_message_id: row.sender_pending for row in _source_rows(live_stack)}
+    assert pending_by_message_id == {"same@example.com": False, "other@example.com": True}
+    # The bare platform domain was never recorded.
+    recorded = _query(live_stack, sqlalchemy.select(models.NewsletterSenderIdentifier))
+    assert {(row.kind, row.value) for row in recorded} == {
+        ("address", "bytebytego@substack.com"),
+        ("list_id", "bytebytego.substack.com"),
+        ("name", "bytebytego"),
+    }
+
+
+def test_allowed_beats_blocked_when_identifiers_disagree(live_stack: LiveStack) -> None:
+    """One blocked and one allowed identifier on the same email: when in doubt, process it."""
+    address = _ingest_address(live_stack)
+    _decide(live_stack, address="a@blocked-sender-example.com", status=models.SenderStatus.BLOCKED)
+    _decide(live_stack, address=None, name="Friendly Name", status=models.SenderStatus.ALLOWED)
+
+    raw = _built_email(from_header="Friendly Name <a@blocked-sender-example.com>", message_id="mixed@example.com")
+    assert _deliver(live_stack, raw=raw, to=address).status_code == 202
+
+    [source] = _source_rows(live_stack)
+    assert (source.sender_pending, source.processing) == (False, "pending")
+
+
+def test_an_address_too_long_for_its_column_is_not_truncated_into_a_trusted_domain(live_stack: LiveStack) -> None:
+    """A prefix of the From address that ends in an allowed domain must not pass: the whole address is what counts."""
+    address = _ingest_address(live_stack)
+    _allow(live_stack, address="crew@morningbrew.com")
+    padding = "a" * (senders.MAX_ADDRESS_LENGTH - len("@morningbrew.com"))
+    from_header = f'"Someone" <{padding}@morningbrew.com.attacker.example>'
+
+    raw = _built_email(from_header=from_header, message_id="long@example.com")
+    assert _deliver(live_stack, raw=raw, to=address).status_code == 202
+
+    [source] = _source_rows(live_stack)
+    assert (source.sender_pending, source.sender_address) == (True, None)
+    assert _query(live_stack, sqlalchemy.select(models.Job)) == []
+
+
+def email_message_for(path: pathlib.Path) -> email_message.ParsedEmail:
+    """The fixture parsed as ingest does, for the identifiers a test allows."""
+    return email_message.parse(path.read_bytes())
+
+
+def _built_email(*, from_header: str, message_id: str, list_id: str | None = None) -> bytes:
+    message = email.message.EmailMessage()
+    message["From"] = from_header
+    message["Subject"] = "An issue"
+    message["Message-ID"] = f"<{message_id}>"
+    if list_id:
+        message["List-Id"] = list_id
+    message.set_content("Just a short plain note.")
+    return message.as_bytes()
+
+
+def _allow_fixture(live_stack: LiveStack, name: str) -> None:
+    parsed = email_message_for(FIXTURE_DIR / f"{name}.eml")
+    _allow(live_stack, address=parsed.sender_address, name=parsed.sender, list_id=parsed.list_id)
+
+
+def _allow(live_stack: LiveStack, *, address: str | None, name: str | None = None, list_id: str | None = None) -> None:
+    _decide(live_stack, address=address, name=name, list_id=list_id, status=models.SenderStatus.ALLOWED)
+
+
+def _decide(
+    live_stack: LiveStack,
+    *,
+    address: str | None,
+    status: models.SenderStatus,
+    name: str | None = None,
+    list_id: str | None = None,
+) -> None:
+    """Record a decision for the test user (the only one), as the phone's Allow or Block would."""
+    identifiers = senders.identifiers_for(address=address, list_id=list_id, name=name)
+
+    def run(db: sqlalchemy.orm.Session) -> None:
+        user_id = db.scalars(sqlalchemy.select(models.User.id)).one()
+        changes.lock_user_writes(db, user_id)
+        senders.record(db, user_id=user_id, identifiers=identifiers, status=status, label=name or address or "")
+        db.commit()
+
+    _query_with(live_stack, run)
+
+
 def _ordinary_newsletter(*, message_id: str) -> bytes:
     message = email.message.EmailMessage()
-    message["From"] = "writer@example.com"
+    message["From"] = "Writer Name <writer@example.com>"
     message["Subject"] = "An ordinary issue"
     message["Message-ID"] = f"<{message_id}>"
     message.set_content("Just a short plain note.")

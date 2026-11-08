@@ -56,6 +56,7 @@ SOURCE_KEYS_ADDED_BY_NOTES = {
     "refreshed_from_queue",
     "refresh_skipped_at",
 }
+SOURCE_KEYS_ADDED_BY_SENDER_ALLOWLIST = {"sender_address", "sender_pending"}
 
 
 def _add_source(url: str, *, intent: str = "queue") -> dict[str, Any]:
@@ -137,6 +138,7 @@ def test_a_pulled_source_carries_the_library_columns_and_hides_the_episode_guid(
         | SOURCE_KEYS_ADDED_BY_ITEM_DATES
         | SOURCE_KEYS_ADDED_BY_CONFIRM_EMAILS
         | SOURCE_KEYS_ADDED_BY_NOTES
+        | SOURCE_KEYS_ADDED_BY_SENDER_ALLOWLIST
     )
 
 
@@ -196,6 +198,7 @@ def test_topics_topic_primers_and_sources_page_in_position_order(live_stack: Liv
         "messages",
         "card_versions",
         "edit_proposals",
+        "newsletter_senders",
     }
 
 

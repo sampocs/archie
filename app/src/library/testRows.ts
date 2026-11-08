@@ -37,6 +37,8 @@ export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => (
   refreshedAt: null,
   refreshedFromQueue: 0,
   refreshSkippedAt: null,
+  senderAddress: null,
+  senderPending: false,
   topic: null,
   summary: null,
   primerCreatedAt: null,

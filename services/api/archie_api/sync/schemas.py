@@ -56,6 +56,8 @@ class ActionType(StrEnum):
     # Notes
     REFRESH_NOTE = "refresh_note"
     SKIP_NOTE = "skip_note"
+    # Newsletter senders
+    SET_SENDER_STATUS = "set_sender_status"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 
@@ -124,6 +126,8 @@ class SourceOut(pydantic.BaseModel):
     refreshed_at: datetime.datetime | None
     refreshed_from_queue: bool
     refresh_skipped_at: datetime.datetime | None
+    sender_address: str | None
+    sender_pending: bool
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None
@@ -263,6 +267,19 @@ class CollectionItemOut(pydantic.BaseModel):
     change_seq: int
 
 
+class NewsletterSenderOut(pydantic.BaseModel):
+    """A newsletter sender the owner allowed or blocked, as the phone stores it; its identifiers stay on the server."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    label: str
+    status: str
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    change_seq: int
+
+
 class TakeOut(pydantic.BaseModel):
     """A take as the phone stores it; its body lives in its versions."""
 
@@ -383,6 +400,7 @@ class PulledRows(pydantic.BaseModel):
     messages: list[MessageOut]
     card_versions: list[CardVersionOut]
     edit_proposals: list[EditProposalOut]
+    newsletter_senders: list[NewsletterSenderOut]
 
 
 class PullResponse(pydantic.BaseModel):

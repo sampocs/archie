@@ -47,10 +47,10 @@ adds its review cards.
   ordered by topic runs starting from the most recently edited, with Skip. Reorder is a follow-up.
 - **Sharing a Bear note to Archie is a follow-up** (see Not in scope).
 
-## Data (server migration 0015, phone drizzle 0015)
+## Data (server migration 0016, phone drizzle 0016)
 
-> Numbered after `0014_confirm_url`. If `sender-allowlist` merges first with its own 0015, this becomes 0016 (server
-> revision `"0016"`, down `"0015"`; phone `0016`) on rebase.
+> Numbered after `sender-allowlist`'s `0015_newsletter_senders` (server revision `"0016"`, down `"0015"`; phone
+> `0016_notes`).
 
 New nullable columns on `sources` (none on other tables):
 

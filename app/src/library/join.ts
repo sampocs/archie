@@ -23,6 +23,8 @@ export type LibraryData = {
   sources: LibrarySource[];
   // Signup-confirmation emails (sources with a confirmUrl), newest first; never in `sources`.
   confirmations: LibrarySource[];
+  // Newsletters from a sender the owner hasn't allowed yet (senderPending), newest first; never in `sources`.
+  pendingSenders: LibrarySource[];
   topics: TopicRow[];
   topicPrimers: TopicPrimerRow[];
 };
@@ -33,7 +35,8 @@ export function isLiveTopic(topic: TopicRow): boolean {
 
 /**
  * Attaches each source's topic, current summary and primer time and length, and its live card count; `artifacts` must be current ones only.
- * Sources with a confirmUrl are split out into `confirmations` so every reader of `sources` skips them.
+ * Sources with a confirmUrl are split out into `confirmations`, and those awaiting a sender decision into
+ * `pendingSenders`, so every reader of `sources` skips them. A confirmation is never pending.
  */
 export function joinLibrary(input: {
   sources: SourceRow[];
@@ -62,13 +65,16 @@ export function joinLibrary(input: {
     primerWords: primers.get(source.id)?.words ?? null,
     cardCount: input.cardCounts.get(source.id) ?? 0,
   }));
-  const confirmations = joined
-    .filter((source) => source.confirmUrl !== null)
-    .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
+  const newestFirst = (first: LibrarySource, second: LibrarySource) => second.createdAt.localeCompare(first.createdAt);
+  const confirmations = joined.filter((source) => source.confirmUrl !== null).sort(newestFirst);
+  const pendingSenders = joined
+    .filter((source) => source.confirmUrl === null && source.senderPending)
+    .sort(newestFirst);
 
   return {
-    sources: joined.filter((source) => source.confirmUrl === null),
+    sources: joined.filter((source) => source.confirmUrl === null && !source.senderPending),
     confirmations,
+    pendingSenders,
     topics: input.topics,
     topicPrimers: input.topicPrimers,
   };

@@ -31,10 +31,11 @@ function brief(overrides: Partial<BriefRow> = {}): BriefRow {
 }
 
 type NewsletterFields = {
-  state: string; createdAt: string; processing: string; kind: string; confirmUrl: string | null;
+  state: string; createdAt: string; processing: string; kind: string; confirmUrl: string | null; senderPending: boolean;
 };
 const newsletter = (overrides: Partial<NewsletterFields> = {}) => ({
   kind: "newsletter", state: "inbox", processing: "ready", createdAt: new Date(2026, 10, 3, 8).toISOString(), confirmUrl: null,
+  senderPending: false,
   ...overrides,
 });
 
@@ -138,6 +139,14 @@ describe("todayBrief", () => {
 
     expect(todayBrief([], [confirmation])).toBeNull();
     expect(todayBrief([], [confirmation, newsletter()])).toEqual({ kind: "writing", newsletters: 1 });
+  });
+
+  it("never counts a newsletter still waiting on its sender, but counts it once the sender is allowed", () => {
+    const pending = newsletter({ senderPending: true });
+
+    expect(todayBrief([], [pending])).toBeNull();
+    expect(todayBrief([], [pending, newsletter()])).toEqual({ kind: "writing", newsletters: 1 });
+    expect(todayBrief([], [{ ...pending, senderPending: false }])).toEqual({ kind: "writing", newsletters: 1 });
   });
 
   it("shows nothing when nothing is unbriefed, even with a done brief", () => {

@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 
 import { db } from "@/db/client";
@@ -74,6 +74,9 @@ export default function SourceScreen() {
   const [emailOpen, setEmailOpen] = useState(false);
   const [originalOpen, setOriginalOpen] = useState(false);
   const [queuedToast, setQueuedToast] = useState(false);
+  // The ref blocks a second tap within the same render; the state disables the button once it re-renders.
+  const refreshStarted = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
   const hideToast = useCallback(() => setQueuedToast(false), []);
   const summaryVersions = useTargetVersions("summary", id).entries.length;
   const primerVersions = useTargetVersions("primer", id).entries.length;
@@ -103,6 +106,11 @@ export default function SourceScreen() {
   const canRefresh = isNote && source.cardsOff === 0 && source.refreshedAt === null && summaryContent !== null;
 
   function refresh(): void {
+    // Done acts once per visit: a double tap must not refresh twice (the second could reset the queue count).
+    if (refreshStarted.current) return;
+    refreshStarted.current = true;
+    setRefreshing(true);
+
     const today = todayRefresher(libraryData.sources, new Date());
     const counted = today?.kind === "pick" && today.note.id === source.id;
 
@@ -126,7 +134,7 @@ export default function SourceScreen() {
         title=""
         onBack={router.back}
         footer={
-          canRefresh ? <Button testID="note-done" label="Done, add review cards" onPress={refresh} /> : undefined
+          canRefresh ? <Button testID="note-done" label="Done, add review cards" disabled={refreshing} onPress={refresh} /> : undefined
         }
         headerRight={
           isConfirmation ? undefined : (

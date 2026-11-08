@@ -7,9 +7,10 @@ export function isSnoozed(item: { snoozedUntil: string | null }, now: Date): boo
 }
 
 /** The Library row's tag: the pipeline's state wins while it is working or failed, then the reading state. */
-export function statusTag(source: { state: string; processing: string; readAt: string | null }): StatusTag {
+export function statusTag(source: { kind: string; state: string; processing: string; readAt: string | null }): StatusTag {
   if (source.processing === "pending" || source.processing === "processing") return "Processing";
   if (source.processing === "failed") return "Failed";
+  if (source.kind === "note" && source.state !== "consumed") return "Read";
   if (source.state === "queued") return "Queued";
   if (source.state === "consumed") return "Done";
   if (source.state === "briefed") return "Briefed";

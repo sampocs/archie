@@ -10,14 +10,16 @@ const source = sourceRow;
 
 describe("statusTag", () => {
   it.each([
-    [{ state: "queued", processing: "pending", readAt: null }, "Processing"],
-    [{ state: "consumed", processing: "processing", readAt: null }, "Processing"],
-    [{ state: "queued", processing: "failed", readAt: null }, "Failed"],
-    [{ state: "queued", processing: "ready", readAt: null }, "Queued"],
-    [{ state: "consumed", processing: "ready", readAt: null }, "Done"],
-    [{ state: "briefed", processing: "ready", readAt: null }, "Briefed"],
-    [{ state: "inbox", processing: "ready", readAt: null }, "Unread"],
-    [{ state: "inbox", processing: "ready", readAt: PAST }, "Read"],
+    [{ kind: "article", state: "queued", processing: "pending", readAt: null }, "Processing"],
+    [{ kind: "article", state: "consumed", processing: "processing", readAt: null }, "Processing"],
+    [{ kind: "article", state: "queued", processing: "failed", readAt: null }, "Failed"],
+    [{ kind: "article", state: "queued", processing: "ready", readAt: null }, "Queued"],
+    [{ kind: "article", state: "consumed", processing: "ready", readAt: null }, "Done"],
+    [{ kind: "article", state: "briefed", processing: "ready", readAt: null }, "Briefed"],
+    [{ kind: "article", state: "inbox", processing: "ready", readAt: null }, "Unread"],
+    [{ kind: "article", state: "inbox", processing: "ready", readAt: PAST }, "Read"],
+    [{ kind: "note", state: "inbox", processing: "ready", readAt: null }, "Read"],
+    [{ kind: "note", state: "consumed", processing: "ready", readAt: null }, "Done"],
   ] as const)("%p → %s", (row, expected) => {
     expect(statusTag(row)).toBe(expected);
   });

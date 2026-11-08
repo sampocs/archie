@@ -85,6 +85,7 @@ describe("joinLibrary", () => {
       ],
       topics: [topic],
       topicPrimers: [],
+      cardCounts: new Map(),
     });
 
     expect(data.sources[0]).toMatchObject({
@@ -102,6 +103,7 @@ describe("joinLibrary", () => {
       artifacts: [artifact({})],
       topics: [topic],
       topicPrimers: [],
+      cardCounts: new Map(),
     });
 
     expect(data.sources[0]).toMatchObject({ topic: null, summary: null, primerCreatedAt: null, primerWords: null });
@@ -117,10 +119,23 @@ describe("joinLibrary", () => {
       artifacts: [],
       topics: [],
       topicPrimers: [],
+      cardCounts: new Map(),
     });
 
     expect(data.sources.map((row) => row.id)).toEqual(["plain"]);
     expect(data.confirmations.map((row) => row.id)).toEqual(["new", "old"]);
     expect(data.confirmations[0]).toMatchObject({ topic: null, summary: null });
+  });
+
+  it("gives each source its live card count, 0 when it has none", () => {
+    const data = joinLibrary({
+      sources: [source({ id: "with" }), source({ id: "without" })],
+      artifacts: [],
+      topics: [],
+      topicPrimers: [],
+      cardCounts: new Map([["with", 5]]),
+    });
+
+    expect(data.sources.map((row) => row.cardCount)).toEqual([5, 0]);
   });
 });

@@ -12,7 +12,8 @@ from __future__ import annotations
 import email.message
 import pathlib
 import time
-from typing import Any
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 import httpx
 import pytest
@@ -24,6 +25,8 @@ from archie_testing import recording
 from archie_testing.harness import LiveStack
 
 pytestmark = pytest.mark.postgres
+
+T = TypeVar("T")
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 FIXTURE_DIR = pathlib.Path(__file__).parents[1] / "fixtures" / "newsletters"
@@ -292,7 +295,7 @@ def _mark_ready(live_stack: LiveStack, *, source_id: Any) -> None:
         engine.dispose()
 
 
-def _query_with(live_stack: LiveStack, run: Any) -> Any:
+def _query_with(live_stack: LiveStack, run: Callable[[sqlalchemy.orm.Session], T]) -> T:
     engine = session.engine_for(live_stack.database_url)
     try:
         with sqlalchemy.orm.Session(engine) as db:

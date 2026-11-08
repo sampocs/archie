@@ -42,8 +42,7 @@ function ConfirmCard({ source, onConfirmed }: { source: LibrarySource; onConfirm
   const now = useNow();
 
   async function confirm(): Promise<void> {
-    await confirmSignup(source);
-    onConfirmed(confirmToast(source));
+    if (await confirmSignup(source)) onConfirmed(confirmToast(source));
   }
 
   return (

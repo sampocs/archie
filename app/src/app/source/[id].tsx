@@ -200,8 +200,7 @@ function ConfirmationPrompt({ source, onDone }: { source: SourceRow; onDone: () 
   const theme = useTheme();
 
   async function confirm(): Promise<void> {
-    await confirmSignup(source);
-    onDone();
+    if (await confirmSignup(source)) onDone();
   }
 
   return (

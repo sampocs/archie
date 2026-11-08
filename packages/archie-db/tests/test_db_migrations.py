@@ -429,3 +429,31 @@ def test_0013_keeps_versions_with_their_defaults_and_cascades_proposals(test_dat
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
     engine.dispose()
+
+
+def test_0014_keeps_existing_sources_with_no_confirm_url(test_database_url: str) -> None:
+    """A source stored before 0014 keeps its row and reads as not a confirmation; the new column takes a link."""
+    migrate.downgrade(test_database_url)
+    migrate.upgrade(test_database_url, "0013")
+    engine = session.engine_for(test_database_url)
+    with engine.begin() as connection:
+        connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))
+        connection.execute(
+            sqlalchemy.text(
+                "INSERT INTO sources (id, user_id, url, normalized_url, kind, state, intent, change_seq) "
+                "SELECT gen_random_uuid(), users.id, 'newsletter:1', 'newsletter:1', 'newsletter', 'inbox', 'queue', "
+                "nextval('change_seq') FROM users"
+            )
+        )
+
+    migrate.upgrade(test_database_url)
+
+    with engine.begin() as connection:
+        rows = connection.execute(sqlalchemy.text("SELECT url, confirm_url FROM sources")).all()
+        assert [(row.url, row.confirm_url) for row in rows] == [("newsletter:1", None)]
+        connection.execute(sqlalchemy.text("UPDATE sources SET confirm_url = 'https://example.com/confirm'"))
+        assert connection.execute(sqlalchemy.text("SELECT confirm_url FROM sources")).scalar_one() == (
+            "https://example.com/confirm"
+        )
+        connection.execute(sqlalchemy.text("TRUNCATE users RESTART IDENTITY CASCADE"))
+    engine.dispose()

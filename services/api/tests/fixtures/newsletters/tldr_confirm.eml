@@ -1,0 +1,78 @@
+From: TLDR <dan@tldrnewsletter.com>
+Date: Sun, 08 Nov 2026 18:35:38 +0000
+Subject: TLDR - Confirm your signup
+Message-Id: <b66cae23a7751c712e8c400d@example.invalid>
+MIME-Version: 1.0
+To: reader@example.invalid
+List-Unsubscribe: <https://example.invalid/unsubscribe>
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: quoted-printable
+
+
+  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.=
+w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html>
+    <head>
+        <title>Thanks for subscribing!</title>
+    </head>
+    <body>
+    <table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0" style=3D"font-f=
+amily: Arial, Helvetica, sans-serif; max-width: 700px; margin: 0 auto; paddin=
+g: 15px;">
+        <tr>
+            <td>
+                <p style=3D"font-size: 16px;"><b>Welcome to TLDR!</b> Before =
+we get into what to expect, finalize your set-up:</p>
+            </td>
+        </tr>
+        <tr>
+            <td align=3D"center">
+                <table cellspacing=3D"0" cellpadding=3D"0">
+                    <tr>
+                        <td align=3D"center" style=3D"border-radius: 5px;">
+                            <a href=3Dhttps://example.com/confirm-signup styl=
+e=3D"background-color: #5a19ff; background: linear-gradient(-225deg, #ac32e4 =
+0%, #7918f2 48%, #5a19ff 100%); color: white; font-size: 16px; font-family: A=
+rial, sans-serif; text-decoration: none; padding: 10px 20px; display: block;"=
+>Confirm Signup</a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p style=3D"font-size: 16px;">Two more steps that keep us out=
+ of your spam folder:</p>
+                <p style=3D"font-size: 16px;"><b>Reply 'OK' to this email.</b=
+> (You can skip this if you're signing up an RSS reader, Google Group, or Sla=
+ck Group.)</p>
+                <p style=3D"font-size: 16px;">If this email is in spam or Pro=
+motions, <b>move it to your primary inbox.</b> Here's how:</p>
+                <p><b>For Gmail on your phone:</b> Hit the 3 dots at top righ=
+t corner, click "Move to" then "Primary."</p>
+                <p><b>For Gmail on your computer:</b> Back out of this email =
+then drag and drop this email into the "Primary" tab near the top left of you=
+r screen.</p>
+                <p><b>For Apple mail users:</b> Tap on our email address at t=
+he top of this email (next to "From:" on mobile) and click "Add to VIPs."</p>
+                <p><b>For everyone else:</b> <a href=3D"https://example.inval=
+id/tracked">Please follow these instructions</a>.</p>
+                <p style=3D"font-size: 16px;"><b>What to expect once you're c=
+onfirmed:</b> Every issue of TLDR takes about 5 minutes to read. Skimming is =
+fine, the headlines give you the gist. You can also reply to any issue with q=
+uestions or feedback. I read everything.</p>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <br>
+                <p style=3D"font-size: 16px;">PS: If you did not subscribe to=
+ TLDR, please <a href=3D"https://example.invalid/tracked">click here</a> to u=
+nsubscribe.</p>
+            </td>
+        </tr>
+      </table>
+      <img src=3D"https://example.invalid/tracked" width=3D"1" height=3D"1" b=
+order=3D"0" alt=3D"" /></body>
+    </html>

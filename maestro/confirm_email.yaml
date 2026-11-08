@@ -1,0 +1,23 @@
+appId: com.sampocs.archie
+---
+# Run after run_confirm_email.sh has delivered TLDR's signup confirmation. Free: no model runs for a confirmation.
+- tapOn:
+    id: "tab-library"
+# The card arrives with the next sync; it sits above the list on every filter. Its text reads as one label with the
+# tile, so it is matched by pattern.
+- extendedWaitUntil:
+    visible: ".*Confirm your TLDR signup.*"
+    timeout: 60000
+- assertVisible: ".*TLDR · .*"
+# Confirm opens the link (example.com) in the in-app browser sheet; Done closes it.
+- tapOn:
+    id: "confirm-card-confirm"
+- extendedWaitUntil:
+    visible: "Done"
+    timeout: 20000
+- tapOn: "Done"
+# Closing the sheet deletes the email, so the card goes and the toast says it worked.
+- extendedWaitUntil:
+    visible: ".*TLDR signup confirmed.*"
+    timeout: 10000
+- assertNotVisible: ".*Confirm your TLDR signup.*"

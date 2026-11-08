@@ -10,6 +10,9 @@ import * as schema from "@/db/schema";
 import { useTargetVersions } from "@/edits/useTargetVersions";
 import { VersionsSheet } from "@/edits/VersionsSheet";
 import { CardsSection } from "@/item/CardsSection";
+import { confirmExplanation, confirmPrompt } from "@/library/confirmations";
+import { confirmSignup, dismissSignup } from "@/library/confirmActions";
+import { ConfirmPills } from "@/library/ConfirmCard";
 import { FullEmailSheet } from "@/item/FullEmailSheet";
 import { ItemActions } from "@/item/ItemActions";
 import { ItemBadgeLine } from "@/item/ItemBadgeLine";
@@ -79,6 +82,7 @@ export default function SourceScreen() {
   if (!source || source.deletedAt) return <Screen title="Source" />;
 
   const starred = source.favoritedAt !== null;
+  const isConfirmation = source.confirmUrl !== null;
   const summary = artifacts.find((artifact) => artifact.kind === "summary");
   const primer = artifacts.find((artifact) => artifact.kind === "primer");
   const summaryContent = summary ? parseSummary(summary.content) : null;
@@ -97,60 +101,80 @@ export default function SourceScreen() {
         title=""
         onBack={router.back}
         headerRight={
-          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}>
-            <Pressable
-              testID="item-favorite"
-              accessibilityLabel={starred ? "Remove from favorites" : "Add to favorites"}
-              onPress={() => {
-                haptic("selection");
-                setFavorite(db, source.id, !starred);
-                requestSync();
-              }}
-              hitSlop={12}
-            >
-              <Ionicons
-                name={starred ? "star" : "star-outline"}
-                size={24}
-                color={starred ? theme.signals.favorite : theme.colors.ink}
-              />
-            </Pressable>
-            <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
-              <Text variant="largeTitle">•••</Text>
-            </Pressable>
-          </View>
+          isConfirmation ? undefined : (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}>
+              <Pressable
+                testID="item-favorite"
+                accessibilityLabel={starred ? "Remove from favorites" : "Add to favorites"}
+                onPress={() => {
+                  haptic("selection");
+                  setFavorite(db, source.id, !starred);
+                  requestSync();
+                }}
+                hitSlop={12}
+              >
+                <Ionicons
+                  name={starred ? "star" : "star-outline"}
+                  size={24}
+                  color={starred ? theme.signals.favorite : theme.colors.ink}
+                />
+              </Pressable>
+              <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
+                <Text variant="largeTitle">•••</Text>
+              </Pressable>
+            </View>
+          )
         }
       >
-        <ItemHeader source={source} topicName={topics[0]?.name ?? null} />
+        <ItemHeader
+          source={source}
+          topicName={topics[0]?.name ?? null}
+          kicker={isConfirmation ? { label: "Newsletter", suffix: "Signup confirmation" } : undefined}
+        />
         <Text testID="item-title" variant="articleTitle">
           {source.title ?? source.url}
         </Text>
-        <ItemBadgeLine source={source} onAddToQueue={addToQueue} />
-        <ItemActions source={source} primerWords={primerWords} onFinish={() => setFinishOpen(true)} />
-        {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
+        {isConfirmation ? (
+          <ConfirmationPrompt source={source} onDone={router.back} />
+        ) : (
+          <>
+            <ItemBadgeLine source={source} onAddToQueue={addToQueue} />
+            <ItemActions source={source} primerWords={primerWords} onFinish={() => setFinishOpen(true)} />
+            {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
+          </>
+        )}
         {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
-        <NoteSection reaction={source.reaction} note={source.note} />
-        <CardsSection of={{ kind: "source", id: source.id }} />
-        <FinishSheet
-          sourceId={source.id}
-          primerWords={primerWords}
-          visible={finishOpen}
-          onClose={() => setFinishOpen(false)}
-        />
-        <ItemMenu
-          source={source}
-          cardCount={cards.length}
-          summaryVersions={summaryVersions}
-          primerVersions={primerVersions}
-          onOpenVersions={setVersionsOf}
-          visible={menuOpen}
-          onClose={() => setMenuOpen(false)}
-        />
-        <VersionsSheet
-          target={versionsOf ? { kind: versionsOf, id: source.id } : null}
-          visible={versionsOf !== null}
-          onClose={() => setVersionsOf(null)}
-          onRestored={(version) => setRestoredToast(`Restored version ${version}`)}
-        />
+        {isConfirmation ? null : (
+          <>
+            <NoteSection reaction={source.reaction} note={source.note} />
+            <CardsSection of={{ kind: "source", id: source.id }} />
+          </>
+        )}
+        {isConfirmation ? null : (
+          <>
+            <FinishSheet
+              sourceId={source.id}
+              primerWords={primerWords}
+              visible={finishOpen}
+              onClose={() => setFinishOpen(false)}
+            />
+            <ItemMenu
+              source={source}
+              cardCount={cards.length}
+              summaryVersions={summaryVersions}
+              primerVersions={primerVersions}
+              onOpenVersions={setVersionsOf}
+              visible={menuOpen}
+              onClose={() => setMenuOpen(false)}
+            />
+            <VersionsSheet
+              target={versionsOf ? { kind: versionsOf, id: source.id } : null}
+              visible={versionsOf !== null}
+              onClose={() => setVersionsOf(null)}
+              onRestored={(version) => setRestoredToast(`Restored version ${version}`)}
+            />
+          </>
+        )}
         <FullEmailSheet sourceId={source.id} visible={emailOpen} onClose={() => setEmailOpen(false)} />
       </Screen>
       {/* Undo sends the reverse action rather than cancelling the first, which may already have synced. */}
@@ -168,6 +192,33 @@ export default function SourceScreen() {
         />
       ) : null}
     </View>
+  );
+}
+
+/** A signup confirmation's page: what the email asks, and Confirm / Dismiss; either one deletes it and goes back. */
+function ConfirmationPrompt({ source, onDone }: { source: SourceRow; onDone: () => void }) {
+  const theme = useTheme();
+
+  async function confirm(): Promise<void> {
+    if (await confirmSignup(source)) onDone();
+  }
+
+  return (
+    <Card style={{ gap: theme.spacing.md }}>
+      <Text testID="item-confirm-prompt" variant="headline">
+        {confirmPrompt(source)}
+      </Text>
+      <Text tone="ink2">{confirmExplanation(source)}</Text>
+      <ConfirmPills
+        confirmTestID="item-confirm"
+        dismissTestID="item-dismiss"
+        onConfirm={() => void confirm()}
+        onDismiss={() => {
+          dismissSignup(source.id);
+          onDone();
+        }}
+      />
+    </Card>
   );
 }
 

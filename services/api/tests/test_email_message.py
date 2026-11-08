@@ -114,3 +114,62 @@ def test_html_with_an_xml_encoding_declaration_still_yields_its_text() -> None:
     message.set_content(html, subtype="html")
 
     assert email_message.parse(message.as_bytes()).text.startswith("word word")
+
+
+def test_a_tldr_signup_email_yields_its_unquoted_confirm_link() -> None:
+    """TLDR writes `<a href=https://…>Confirm Signup</a>` with no quotes; the subject says confirm."""
+    parsed = email_message.parse((FIXTURES / "tldr_confirm.eml").read_bytes())
+
+    assert parsed.confirm_url == "https://example.com/confirm-signup"
+
+
+def test_gmail_forwarding_confirmation_takes_the_vf_link_and_never_the_cancel_link() -> None:
+    """Both links are in the plain text; only `vf-` confirms."""
+    parsed = email_message.parse((FIXTURES / "gmail_forwarding.eml").read_bytes())
+
+    assert parsed.confirm_url == "https://mail-settings.google.com/mail/vf-example"
+
+
+def test_ordinary_newsletters_are_not_confirmations() -> None:
+    """Morning Brew and the Substack post have no confirm link."""
+    for name in ("morning_brew", "substack_bytebytego"):
+        assert email_message.parse((FIXTURES / f"{name}.eml").read_bytes()).confirm_url is None
+
+
+def _html_email(*, subject: str, link_text: str, href: str, sender: str = "writer@example.com") -> bytes:
+    message = email.message.EmailMessage()
+    message["From"] = sender
+    message["Subject"] = subject
+    message.set_content("Plain fallback.")
+    message.add_alternative(f'<html><body><p>Hi.</p><a href="{href}">  {link_text}\n</a></body></html>', subtype="html")
+    return message.as_bytes()
+
+
+@pytest.mark.parametrize(
+    ("subject", "link_text", "href", "expected"),
+    [
+        ("Your weekly issue", "Confirm subscription", "https://example.com/c", None),
+        ("Please confirm", "Confirm subscription", "http://example.com/c", None),
+        ("Please confirm", "Confirm subscription", "https://example.com/" + "a" * 2048, None),
+        ("Please confirm", "Read the issue", "https://example.com/c", None),
+        ("Please verify", "Verify   your\nEmail", "https://example.com/verify", "https://example.com/verify"),
+        ("Activate now", "ACTIVATE", "https://example.com/go", "https://example.com/go"),
+    ],
+)
+def test_a_generic_confirmation_needs_an_https_link_with_a_known_text_and_a_matching_subject(
+    subject: str, link_text: str, href: str, expected: str | None
+) -> None:
+    """The subject keeps a stray link in a regular issue out; http, over-long and unknown-text links don't count."""
+    parsed = email_message.parse(_html_email(subject=subject, link_text=link_text, href=href))
+
+    assert parsed.confirm_url == expected
+
+
+def test_a_forged_gmail_forwarding_subject_from_another_sender_is_not_a_confirmation() -> None:
+    """The Gmail rule needs Google's From address as well as the subject."""
+    message = email.message.EmailMessage()
+    message["From"] = "someone@example.com"
+    message["Subject"] = "Gmail Forwarding Confirmation"
+    message.set_content("https://mail-settings.google.com/mail/vf-forged")
+
+    assert email_message.parse(message.as_bytes()).confirm_url is None

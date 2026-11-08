@@ -1,0 +1,204 @@
+<title>Archie Signup Confirmations</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of numbered phone mocks (wrapping to one column on a phone), each with a short caption under it. */
+:root {
+  --page: #E9E6DE; --pink: #1C1B18; --pink2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --macro: #3F7262; --ai: #6A5A9C; --history: #8E5468; --web: #3D6690;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --pink: #F1EFE9; --pink2: #A9A59B; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --pink: #F1EFE9; --pink2: #A9A59B; color-scheme: dark }
+body { background: var(--page); color: var(--pink); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+header { max-width: 1280px; margin: 0 auto 26px; display: grid; gap: 6px; }
+h1 { font-size: 28px; letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--pink2); max-width: 70ch; line-height: 1.5; font-size: 15px; }
+.row { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px 26px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; min-width: 0; }
+figcaption b { font-size: 15px; }
+figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
+.n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pink2); }
+.phone { width: 100%; max-width: 300px; aspect-ratio: 300 / 640; background: var(--bg); color: var(--ink); border-radius: 38px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-size: 13px; }
+.screen { position: absolute; inset: 0; padding: 38px 14px 84px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.big { font-size: 28px; font-weight: 700; letter-spacing: -.03em; }
+.nav { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink2); }
+.nav b { color: var(--ink); font-size: 14px; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search { background: var(--press); border-radius: 12px; padding: 9px 12px; color: var(--ink); }
+.search i { color: var(--ink3); font-style: normal; }
+.card { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.item { padding: 11px 12px; display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 10px; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.tile { width: 36px; height: 36px; border-radius: 9px; color: #fff; display: grid; place-items: center; font-weight: 600; }
+.k { font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.t { font-weight: 600; font-size: 13.5px; line-height: 1.25; }
+.s { color: var(--ink3); font-size: 11.5px; }
+.q { color: var(--ink2); font-size: 12px; line-height: 1.4; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.q mark { background: color-mix(in srgb, var(--macro) 16%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+.ts { font: 500 10.5px var(--mono); color: var(--ink2); background: var(--press); border-radius: 6px; padding: 1px 5px; }
+.chat { padding: 11px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 3px; }
+.chat:last-child { border-bottom: 0; }
+.chat .top { display: flex; justify-content: space-between; gap: 8px; }
+.chat .when { color: var(--ink3); font-size: 11px; white-space: nowrap; }
+.composer { position: absolute; left: 10px; right: 10px; bottom: 84px; background: var(--surface); border-radius: 22px; padding: 8px 8px 8px 14px;
+  display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05); }
+.composer .ph { flex: 1; color: var(--ink3); }
+.globe { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--press); color: var(--ink2); font-size: 14px; }
+.globe.on { background: var(--web); color: #fff; }
+.send { width: 30px; height: 30px; border-radius: 50%; background: var(--chrome); color: var(--onChrome); display: grid; place-items: center; font-weight: 700; }
+.mine { align-self: flex-end; max-width: 82%; background: var(--press); border-radius: 16px 16px 4px 16px; padding: 9px 12px; line-height: 1.4; }
+.answer { display: grid; gap: 12px; }
+.sec { display: grid; gap: 5px; }
+.lab { font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; }
+.lab.lib { color: var(--macro); } .lab.bg { color: var(--ink3); } .lab.web { color: var(--web); }
+.sec p { margin: 0; line-height: 1.5; font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--ink2); white-space: nowrap; }
+.chip.web { color: var(--web); }
+.acts { display: flex; gap: 8px; }
+.btn2 { background: var(--press); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 12px; color: var(--ink); }
+.searching { color: var(--ink3); font-size: 12px; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; border-top: 1px solid var(--line); background: var(--bg);
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 9px; font-size: 9.5px; color: var(--ink3); text-align: center; }
+.tabbar .on { color: var(--ink); font-weight: 600; }
+.dot { width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 6px; border: 1.6px solid currentColor; }
+.on .dot { background: currentColor; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: 22px 22px 0 0; padding: 10px 16px 28px;
+  display: grid; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,.18); }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 4px; }
+.field { display: grid; gap: 4px; }
+.field label { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.field div { background: var(--bg); border-radius: 10px; padding: 9px 11px; line-height: 1.4; }
+.primary { background: var(--chrome); color: var(--onChrome); border-radius: 14px; padding: 11px; text-align: center; font-weight: 600; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+.about { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 11.5px; color: var(--ink2); }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 132px; background: var(--chrome); color: var(--onChrome); border-radius: 999px; padding: 7px 14px; font-size: 12px; white-space: nowrap; }
+.read { line-height: 1.55; color: var(--ink); }
+.read h4 { margin: 0 0 4px; font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); }
+</style>
+<style>
+<style>
+:root { --got: #3F7262; --news: #A0612E; }
+.fchips { display: flex; gap: 5px; }
+.fchips span { font-size: 11.5px; font-weight: 550; padding: 5px 10px; border-radius: 999px; background: var(--surface); color: var(--ink2); white-space: nowrap; }
+.fchips span.on { background: var(--chrome); color: var(--onChrome); }
+.fchips .c { opacity: .55; margin-left: 2px; }
+.conf { background: var(--surface); border-radius: 16px; padding: 11px 12px; display: grid; gap: 8px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--news) 35%, transparent); }
+.conf .top { display: grid; grid-template-columns: 30px minmax(0,1fr); gap: 10px; align-items: center; }
+.env { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: color-mix(in srgb, var(--news) 14%, transparent); color: var(--news); font-size: 15px; }
+.conf .btns { padding-left: 40px; }
+.sect { font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); margin-top: 4px; }
+.status { font-size: 10.5px; font-weight: 600; padding: 3px 6px; border-radius: 6px; color: var(--ink2); background: var(--press); white-space: nowrap; align-self: center; }
+.irow { padding: 10px 12px; display: grid; grid-template-columns: 36px minmax(0,1fr) auto; gap: 10px; border-bottom: 1px solid var(--line); }
+.irow:last-child { border-bottom: 0; }
+.browser { position: absolute; inset: 26px 0 0; background: var(--surface); border-radius: 16px 16px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,.2); display: flex; flex-direction: column; overflow: hidden; }
+.bbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.bbar b { color: var(--web); }
+.bbar .url { color: var(--ink3); font-size: 11.5px; }
+.bpage { padding: 30px 20px; display: grid; gap: 10px; text-align: center; justify-items: center; background: #fff; color: #111; flex: 1; align-content: start; }
+.bpage .logo { font: 800 22px var(--sans); letter-spacing: -.03em; background: linear-gradient(-225deg, #ac32e4, #5a19ff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.bpage .ok { font-size: 18px; font-weight: 700; }
+.bpage p { margin: 0; color: #555; line-height: 1.45; font-size: 12.5px; }
+.prompt { background: var(--surface); border-radius: 16px; padding: 14px; display: grid; gap: 9px; }
+.prompt p { margin: 0; color: var(--ink2); line-height: 1.45; }
+.wide { display: flex; gap: 8px; }
+.wide span { flex: 1; text-align: center; padding: 9px; }
+.notes { max-width: 1280px; margin: 34px auto 0; display: grid; gap: 8px; color: var(--pink2); font-size: 14px; line-height: 1.5; }
+.notes b { color: var(--pink); }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 80ch; }
+</style>
+<header>
+  <span class="n">ARCHIE · SIGNUP CONFIRMATIONS</span>
+  <h1>Confirm a newsletter signup</h1>
+  <p>When you subscribe with your Archie address, the newsletter's "confirm your signup" email shows up as a small card at the top of Library, not as something to read. Confirm opens the link; the card goes away once you're back.</p>
+</header>
+<div class="row">
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="big">Library</div>
+      <div class="search"><i>Search your library</i></div>
+      <div class="fchips"><span class="on">All</span><span>Queued<span class="c">9</span></span><span>Done<span class="c">31</span></span><span>Inbox<span class="c">4</span></span></div>
+      <div class="conf">
+        <div class="top"><span class="env">✉︎</span><div><div class="t">Confirm your TLDR signup</div><div class="s">TLDR · 6:35 PM</div></div></div>
+        <div class="btns"><span class="btnp">Confirm</span><span class="btn2">Dismiss</span></div>
+      </div>
+      <div class="conf">
+        <div class="top"><span class="env">✉︎</span><div><div class="t">Confirm Gmail forwarding</div><div class="s">From you@gmail.com · Yesterday</div></div></div>
+        <div class="btns"><span class="btnp">Confirm</span><span class="btn2">Dismiss</span></div>
+      </div>
+      <div class="sect">Up next</div>
+      <div class="card">
+        <div class="irow"><span class="tile" style="background:#3F7262">▶</span><div><div class="t">How the Fed Actually Creates Money</div><div class="s">Odd Lots · 48m</div></div><span class="status">Queued</span></div>
+        <div class="irow"><span class="tile" style="background:#3D6690">A</span><div><div class="t">The Bitter Lesson, revisited</div><div class="s">Article · 12 min</div></div><span class="status">Queued</span></div>
+      </div>
+    </div>
+    <nav class="tabbar"><span class="on"><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">WAITING</span><b>A card at the top of Library</b><span>Shown on every Library filter until you act on it. It's never summarised, never gets review cards, and doesn't count toward "newsletters waiting for your brief" on Today.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen" style="filter: brightness(.82)">
+      <div class="big">Library</div>
+      <div class="search"><i>Search your library</i></div>
+    </div>
+    <div class="browser">
+      <div class="bbar"><b>Done</b><span class="url">🔒 onboarding.tldr.tech</span><span>↻</span></div>
+      <div class="bpage">
+        <span class="logo">TLDR</span>
+        <span class="ok">You're confirmed!</span>
+        <p>Your first issue of TLDR arrives tomorrow morning at news@example.com.</p>
+      </div>
+    </div>
+    </div>
+    <figcaption><span class="n">CONFIRM</span><b>The link opens in a browser sheet</b><span>Inside Archie, so you don't leave the app. Pages that need a second click (some do) work, because you're looking at the page. Tap Done when it says you're in.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="big">Library</div>
+      <div class="search"><i>Search your library</i></div>
+      <div class="fchips"><span class="on">All</span><span>Queued<span class="c">9</span></span><span>Done<span class="c">31</span></span><span>Inbox<span class="c">3</span></span></div>
+      <div class="conf">
+        <div class="top"><span class="env">✉︎</span><div><div class="t">Confirm Gmail forwarding</div><div class="s">From you@gmail.com · Yesterday</div></div></div>
+        <div class="btns"><span class="btnp">Confirm</span><span class="btn2">Dismiss</span></div>
+      </div>
+      <div class="sect">Up next</div>
+      <div class="card">
+        <div class="irow"><span class="tile" style="background:#3F7262">▶</span><div><div class="t">How the Fed Actually Creates Money</div><div class="s">Odd Lots · 48m</div></div><span class="status">Queued</span></div>
+        <div class="irow"><span class="tile" style="background:#3D6690">A</span><div><div class="t">The Bitter Lesson, revisited</div><div class="s">Article · 12 min</div></div><span class="status">Queued</span></div>
+      </div>
+    </div>
+    <div class="toast">TLDR signup confirmed</div>
+    <nav class="tabbar"><span class="on"><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">DONE</span><b>Back in Library, the card is gone</b><span>Closing the sheet deletes the confirmation email from Archie. Dismiss deletes it without opening anything. Like any delete, it syncs, and works offline.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Search</span><span>···</span></div>
+      <div class="k" style="color:var(--news)">Newsletter · Signup confirmation</div>
+      <div class="t" style="font-size:20px">TLDR - Confirm your signup</div>
+      <div class="s">TLDR · Today, 6:35 PM</div>
+      <div class="prompt">
+        <div class="t">This email asks you to confirm your TLDR signup.</div>
+        <p>Confirm opens the newsletter's link. Once you're done, Archie deletes this email, and TLDR's issues start arriving as normal newsletters.</p>
+        <div class="wide"><span class="btnp">Confirm</span><span class="btn2">Dismiss</span></div>
+      </div>
+      <span class="link" style="align-self:flex-start">Show full email</span>
+    </div>
+    <nav class="tabbar"><span class="on"><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">ITEM PAGE</span><b>Opened from search or the Inbox filter</b><span>The same Confirm and Dismiss replace the summary. "Show full email" still opens the original text, as on any newsletter.</span></figcaption>
+  </figure>
+</div>
+<div class="notes">
+  <b>How Archie decides it's a confirmation email</b>
+  <ul>
+    <li>The email has an https link whose text reads like Confirm signup, Confirm subscription, Verify email, Yes, subscribe me or Activate, <i>and</i> the subject mentions confirming or verifying. A regular issue with a stray "confirm" link doesn't qualify.</li>
+    <li>Gmail's forwarding confirmation is recognised by its sender and subject; its link is in the plain text.</li>
+    <li>Archie's server never opens the link itself. Only you do, from the phone.</li>
+  </ul>
+</div>

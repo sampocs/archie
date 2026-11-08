@@ -17,13 +17,22 @@ export type LibrarySource = SourceRow & {
   primerWords: number | null;
 };
 
-export type LibraryData = { sources: LibrarySource[]; topics: TopicRow[]; topicPrimers: TopicPrimerRow[] };
+export type LibraryData = {
+  sources: LibrarySource[];
+  // Signup-confirmation emails (sources with a confirmUrl), newest first; never in `sources`.
+  confirmations: LibrarySource[];
+  topics: TopicRow[];
+  topicPrimers: TopicPrimerRow[];
+};
 
 export function isLiveTopic(topic: TopicRow): boolean {
   return !topic.removedAt && !topic.mergedIntoId;
 }
 
-/** Attaches each source's topic, current summary and primer time and length; `artifacts` must be current ones only. */
+/**
+ * Attaches each source's topic, current summary and primer time and length; `artifacts` must be current ones only.
+ * Sources with a confirmUrl are split out into `confirmations` so every reader of `sources` skips them.
+ */
 export function joinLibrary(input: {
   sources: SourceRow[];
   artifacts: ArtifactRow[];
@@ -41,14 +50,20 @@ export function joinLibrary(input: {
     }
   }
 
+  const joined = input.sources.map((source) => ({
+    ...source,
+    topic: source.topicId ? (topicsById.get(source.topicId) ?? null) : null,
+    summary: summaries.get(source.id) ?? null,
+    primerCreatedAt: primers.get(source.id)?.createdAt ?? null,
+    primerWords: primers.get(source.id)?.words ?? null,
+  }));
+  const confirmations = joined
+    .filter((source) => source.confirmUrl !== null)
+    .sort((first, second) => second.createdAt.localeCompare(first.createdAt));
+
   return {
-    sources: input.sources.map((source) => ({
-      ...source,
-      topic: source.topicId ? (topicsById.get(source.topicId) ?? null) : null,
-      summary: summaries.get(source.id) ?? null,
-      primerCreatedAt: primers.get(source.id)?.createdAt ?? null,
-      primerWords: primers.get(source.id)?.words ?? null,
-    })),
+    sources: joined.filter((source) => source.confirmUrl === null),
+    confirmations,
     topics: input.topics,
     topicPrimers: input.topicPrimers,
   };

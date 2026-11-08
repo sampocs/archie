@@ -37,7 +37,10 @@ def source_text(
     db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
     user: Annotated[models.User, fastapi.Depends(deps.current_user)],
 ) -> SourceTextView:
-    """The caller's newsletter text; 404 for any other source, someone else's, or one without text yet."""
+    """The caller's newsletter text; 404 for any other source, someone else's, or one without text yet.
+
+    A signup confirmation never gets a text artifact (that would embed it into Ask), so its capture is served instead.
+    """
     source = db.get(models.Source, source_id)
     if source is None or source.user_id != user.id or source.deleted_at is not None:
         raise _not_found()
@@ -45,9 +48,15 @@ def source_text(
         raise _not_found()
 
     artifact = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT)
-    if artifact is None:
+    if artifact is not None:
+        return SourceTextView(text=artifact.content[_TEXT_KEY])
+    if source.confirm_url is None:
         raise _not_found()
-    return SourceTextView(text=artifact.content[_TEXT_KEY])
+
+    capture = db.get(models.SourceCapture, source.id)
+    if capture is None:
+        raise _not_found()
+    return SourceTextView(text=capture.text)
 
 
 class EpisodeView(pydantic.BaseModel):

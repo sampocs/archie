@@ -395,6 +395,9 @@ class Source(Base):
     # When an article or episode came out (its page's or feed item's day); null when unknown and for newsletters,
     # which are sent and saved the same day (`created_at`).
     published_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    # Set on a newsletter that is a signup confirmation: the https link that confirms it. Such a source is ready at
+    # once, never processed, and left out of briefs; the phone shows it as a confirm card.
+    confirm_url: Mapped[str | None] = mapped_column(sqlalchemy.String(2048))
     # Server only (never pulled): the feed guid the user chose with "Wrong episode?".
     episode_guid: Mapped[str | None] = mapped_column(sqlalchemy.String(1024))
     # Always assigned via changes.next_change_seq() under changes.lock_user_writes(); see changes.py for why.

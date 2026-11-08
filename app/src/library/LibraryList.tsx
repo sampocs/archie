@@ -27,6 +27,7 @@ import { SourceRow } from "@/ui/SourceRow";
 import { StatusTagView } from "@/ui/StatusTagView";
 import { useNow } from "@/ui/useNow";
 
+import { ConfirmCards } from "./ConfirmCard";
 import type { LibraryData, LibrarySource, TopicPrimerRow, TopicRow } from "./join";
 import { ReorderableQueue } from "./ReorderableQueue";
 import { matchesQuery, searchText } from "./search";
@@ -93,6 +94,8 @@ export function LibraryList({ data, query, filter, onFilterChange }: LibraryList
       ) : (
         <>
           <FilterChips filter={filter} counts={filterCounts(data, now)} onChange={onFilterChange} />
+          {/* Waiting signup confirmations sit above the list on every chip. */}
+          <ConfirmCards confirmations={data.confirmations} />
           {filter === "queued" ? (
             <QueueBody data={data} now={now} rowActions={rowActions} />
           ) : (

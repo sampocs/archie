@@ -39,7 +39,16 @@ function Chip({ testID, label, onPress }: { testID: string; label: string; onPre
 }
 
 /** Cover, kicker, dated by-line and the reaction/topic chips. */
-export function ItemHeader({ source, topicName }: { source: SourceRow; topicName: string | null }) {
+export function ItemHeader({
+  source,
+  topicName,
+  kicker,
+}: {
+  source: SourceRow;
+  topicName: string | null;
+  // Replaces the domain-and-kind kicker, e.g. a signup confirmation's "Newsletter · Signup confirmation".
+  kicker?: { label: string; suffix: string };
+}) {
   const theme = useTheme();
   const router = useRouter();
   const now = useNow();
@@ -56,7 +65,7 @@ export function ItemHeader({ source, topicName }: { source: SourceRow; topicName
           circle={source.kind === "x"}
         />
         <View style={{ flex: 1, gap: theme.spacing.xs }}>
-          <Kicker domain={source.domain} suffix={kindLabel(source.kind)} />
+          <Kicker domain={source.domain} label={kicker?.label} suffix={kicker?.suffix ?? kindLabel(source.kind)} />
           <Text testID="item-byline" variant="secondary" tone="ink2">
             {/* The star is repeated in the by-line so it's visible below the navbar too. */}
             {`${datedByline(source, now)}${source.favoritedAt ? " · ★ Favorite" : ""}`}

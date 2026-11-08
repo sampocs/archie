@@ -30,9 +30,11 @@ function brief(overrides: Partial<BriefRow> = {}): BriefRow {
   };
 }
 
-type NewsletterFields = { state: string; createdAt: string; processing: string; kind: string };
+type NewsletterFields = {
+  state: string; createdAt: string; processing: string; kind: string; confirmUrl: string | null;
+};
 const newsletter = (overrides: Partial<NewsletterFields> = {}) => ({
-  kind: "newsletter", state: "inbox", processing: "ready", createdAt: new Date(2026, 10, 3, 8).toISOString(),
+  kind: "newsletter", state: "inbox", processing: "ready", createdAt: new Date(2026, 10, 3, 8).toISOString(), confirmUrl: null,
   ...overrides,
 });
 
@@ -129,6 +131,13 @@ describe("todayBrief", () => {
 
     expect(todayBrief([brief()], sources)).toEqual({ kind: "writing", newsletters: 3 });
     expect(todayBrief([], sources)).toEqual({ kind: "writing", newsletters: 3 });
+  });
+
+  it("never counts a signup confirmation, so one alone makes no brief and a real newsletter still counts once", () => {
+    const confirmation = newsletter({ confirmUrl: "https://example.com/confirm-signup" });
+
+    expect(todayBrief([], [confirmation])).toBeNull();
+    expect(todayBrief([], [confirmation, newsletter()])).toEqual({ kind: "writing", newsletters: 1 });
   });
 
   it("shows nothing when nothing is unbriefed, even with a done brief", () => {

@@ -53,3 +53,17 @@ def test_at_most_eight_links_and_trailing_punctuation_dropped() -> None:
     links = note_links.links_in(" ".join(f"(https://example.com/{n})." for n in range(12)))
 
     assert [link.url for link in links] == [f"https://example.com/{n}" for n in range(8)]
+
+
+def test_parentheses_inside_a_url_are_kept() -> None:
+    """Wikipedia-style URLs end in `)`; only an unbalanced closing bracket (prose around the link) is dropped."""
+    links = note_links.links_in(
+        "[x](https://en.wikipedia.org/wiki/Mercury_(planet)) and https://en.wikipedia.org/wiki/Venus_(planet). "
+        "also (https://example.com/n)."
+    )
+
+    assert [link.url for link in links] == [
+        "https://en.wikipedia.org/wiki/Mercury_(planet)",
+        "https://en.wikipedia.org/wiki/Venus_(planet)",
+        "https://example.com/n",
+    ]

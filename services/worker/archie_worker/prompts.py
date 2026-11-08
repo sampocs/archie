@@ -676,7 +676,6 @@ def note_write_up_message(
     for reference in references:
         text = reference.text.replace("</reference>", "</ reference>")
         title = reference.title.replace('"', "'")
-        message += (
-            f'\n\n<reference url="{reference.url}" title="{title}" kind="{reference.kind}">\n{text}\n</reference>'
-        )
+        url = reference.url.replace('"', "%22")
+        message += f'\n\n<reference url="{url}" title="{title}" kind="{reference.kind}">\n{text}\n</reference>'
     return message

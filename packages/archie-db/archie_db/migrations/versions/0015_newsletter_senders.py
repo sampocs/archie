@@ -22,13 +22,24 @@ depends_on: str | None = None
 
 _TIMESTAMP = sqlalchemy.DateTime(timezone=True)
 
+# Mirrors `archie_db.senders.normalize_name` (`" ".join(name.split()).lower()`), frozen here so the migration never
+# changes with the app: collapse every run of the whitespace Python's `str.split()` splits on (Postgres's own class
+# misses NBSP and the other Unicode spaces) into one space, then trim that space, then lower-case.
+_WHITESPACE = "[\\t\\n\\v\\f\\r\\x1c-\\x1f \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000]+"
+
+
+def normalised_name_sql(expression: str) -> str:
+    """The SQL that normalises a display name the way `senders.normalize_name` does."""
+    return f"lower(btrim(regexp_replace({expression}, '{_WHITESPACE}', ' ', 'g'), ' '))"
+
+
 # One sender per (user, normalised display name), labelled with the oldest newsletter's original spelling. The CTE is
 # read twice, so Postgres computes it once and both inserts share the generated ids.
-_BACKFILL_SENDERS = """
+_BACKFILL_SENDERS = f"""
 WITH named AS (
     SELECT DISTINCT ON (user_id, name) gen_random_uuid() AS id, user_id, name, sender AS label
     FROM (
-        SELECT user_id, sender, created_at, lower(regexp_replace(trim(sender), '\\s+', ' ', 'g')) AS name
+        SELECT user_id, sender, created_at, {normalised_name_sql("sender")} AS name
         FROM sources
         WHERE kind = 'newsletter' AND deleted_at IS NULL AND confirm_url IS NULL AND sender IS NOT NULL
     ) AS normalised

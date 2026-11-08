@@ -101,7 +101,11 @@ def find_recipient(db: orm.Session, *, local_part: str) -> models.User | None:
 
 @dataclass(frozen=True)
 class _Sender:
-    """The sender fields as stored on the source (truncated to their columns), and the identifiers they give."""
+    """The sender fields as stored on the source, and the identifiers they give.
+
+    The name is truncated to its column. An address or List-Id too long for its column is stored as None, never as a
+    prefix: a prefix could end in a trusted domain the real value does not, and would give that domain's identifier.
+    """
 
     name: str | None
     address: str | None
@@ -111,10 +115,15 @@ class _Sender:
     @classmethod
     def of(cls, parsed: email_message.ParsedEmail) -> _Sender:
         name = parsed.sender[:MAX_SENDER_LENGTH] if parsed.sender else None
-        address = parsed.sender_address[: senders.MAX_ADDRESS_LENGTH] if parsed.sender_address else None
-        list_id = parsed.list_id[: senders.MAX_VALUE_LENGTH] if parsed.list_id else None
+        address = _fitting(parsed.sender_address, limit=senders.MAX_ADDRESS_LENGTH)
+        list_id = _fitting(parsed.list_id, limit=senders.MAX_VALUE_LENGTH)
         identifiers = senders.identifiers_for(address=address, list_id=list_id, name=name)
         return cls(name=name, address=address, list_id=list_id, identifiers=identifiers)
+
+
+def _fitting(value: str | None, *, limit: int) -> str | None:
+    """The value, or None when it is empty or too long for its column."""
+    return value if value and len(value) <= limit else None
 
 
 def _insert_newsletter(

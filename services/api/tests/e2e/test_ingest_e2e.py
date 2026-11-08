@@ -417,6 +417,21 @@ def test_allowed_beats_blocked_when_identifiers_disagree(live_stack: LiveStack) 
     assert (source.sender_pending, source.processing) == (False, "pending")
 
 
+def test_an_address_too_long_for_its_column_is_not_truncated_into_a_trusted_domain(live_stack: LiveStack) -> None:
+    """A prefix of the From address that ends in an allowed domain must not pass: the whole address is what counts."""
+    address = _ingest_address(live_stack)
+    _allow(live_stack, address="crew@morningbrew.com")
+    padding = "a" * (senders.MAX_ADDRESS_LENGTH - len("@morningbrew.com"))
+    from_header = f'"Someone" <{padding}@morningbrew.com.attacker.example>'
+
+    raw = _built_email(from_header=from_header, message_id="long@example.com")
+    assert _deliver(live_stack, raw=raw, to=address).status_code == 202
+
+    [source] = _source_rows(live_stack)
+    assert (source.sender_pending, source.sender_address) == (True, None)
+    assert _query(live_stack, sqlalchemy.select(models.Job)) == []
+
+
 def email_message_for(path: pathlib.Path) -> email_message.ParsedEmail:
     """The fixture parsed as ingest does, for the identifiers a test allows."""
     return email_message.parse(path.read_bytes())

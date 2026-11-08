@@ -7,16 +7,28 @@ import { requestSync } from "@/sync/useSync";
 
 import type { SourceRow } from "./join";
 
+let confirmInFlight = false;
+
 /**
  * Opens the confirmation link in the in-app browser sheet and, once it closes (whatever the result), deletes the
- * email: the owner has seen the page, so the card has done its job.
+ * email: the owner has seen the page, so the card has done its job. Resolves true only when the email was deleted.
  */
-export async function confirmSignup(source: Pick<SourceRow, "id" | "confirmUrl">): Promise<void> {
-  if (!source.confirmUrl) return;
+export async function confirmSignup(source: Pick<SourceRow, "id" | "confirmUrl">): Promise<boolean> {
+  if (!source.confirmUrl || confirmInFlight) return false;
 
+  confirmInFlight = true;
   haptic("light");
-  await WebBrowser.openBrowserAsync(source.confirmUrl);
+  try {
+    await WebBrowser.openBrowserAsync(source.confirmUrl);
+  } catch {
+    // The sheet never opened (e.g. another browser is presenting), so the owner hasn't seen the page: keep the email.
+    return false;
+  } finally {
+    confirmInFlight = false;
+  }
+
   dismissSignup(source.id);
+  return true;
 }
 
 /** Deletes a confirmation email without opening its link. */

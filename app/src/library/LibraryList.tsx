@@ -176,7 +176,7 @@ function QueueBody({ data, now, rowActions }: { data: LibraryData; now: Date; ro
   return (
     <>
       {queue.length > 0 ? (
-        <GroupedList title="Your queue · drag to reorder">
+        <GroupedList>
           <ReorderableQueue
             entries={queue}
             renderRow={(entry, _index, handle) => (

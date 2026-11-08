@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import importlib.util
+import pathlib
 import re
+from typing import Any
 
 import alembic.autogenerate
 import alembic.migration
@@ -505,19 +508,42 @@ def test_0015_keeps_existing_sources_and_allows_live_newsletter_display_names(te
     engine.dispose()
 
 
-@pytest.mark.parametrize("name", [" Morning  Brew", "The   Hustle ", "TLDR", "Milk Road Daily", "  mixed Case\tTabs "])
+@pytest.mark.parametrize(
+    "name",
+    [
+        " Morning  Brew",
+        "The   Hustle ",
+        "TLDR",
+        "Milk Road Daily",
+        "  mixed Case\tTabs ",
+        "\tLeading",
+        "Morning\xa0Brew",
+        "Trailing\n",
+        "Wide\u3000\u2003Gap\x85End\x1c",
+    ],
+)
 def test_the_backfill_sql_normalises_a_name_as_the_python_does(test_database_url: str, name: str) -> None:
     """Backfilled `name` identifiers must equal what ingest computes for the same display name."""
     migrate.upgrade(test_database_url)
     engine = session.engine_for(test_database_url)
     with engine.connect() as connection:
         in_sql: str = connection.execute(
-            sqlalchemy.text("SELECT lower(regexp_replace(trim(CAST(:name AS text)), '\\s+', ' ', 'g'))"),
+            sqlalchemy.text(f"SELECT {_migration_0015().normalised_name_sql('CAST(:name AS text)')}"),
             {"name": name},
         ).scalar_one()
     engine.dispose()
 
     assert in_sql == senders.normalize_name(name)
+
+
+def _migration_0015() -> Any:
+    """The 0015 migration module, to run the exact normalising SQL its backfill uses."""
+    path = pathlib.Path(migrate.__file__).parent / "migrations" / "versions" / "0015_newsletter_senders.py"
+    spec = importlib.util.spec_from_file_location("migration_0015", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _insert_newsletter_0014(

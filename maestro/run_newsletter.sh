@@ -27,7 +27,7 @@ WITH owner AS (SELECT id FROM users WHERE apple_sub = 'test-user'),
     RETURNING id, user_id
   )
 INSERT INTO newsletter_sender_identifiers (sender_id, user_id, kind, value)
-SELECT id, user_id, 'name', lower(regexp_replace(trim(:'name'), '\s+', ' ', 'g')) FROM created;
+SELECT id, user_id, 'name', lower(btrim(regexp_replace(:'name', '[\t\n\v\f\r\x1c-\x1f \x85\xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+', ' ', 'g'), ' ')) FROM created;
 SQL
 }
 

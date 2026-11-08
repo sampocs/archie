@@ -21,6 +21,7 @@ from archie_worker.handlers import (
     topic_primer,
     transcribe,
     update_brief,
+    write_note,
 )
 from archie_worker.loop import HandlerSpec
 
@@ -69,4 +70,6 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.TAKE_CARDS: HandlerSpec(run=take_cards.handle),
     # No failure hook: an item without chunks is only missing from search until its next save or the backfill.
     models.JobKind.EMBED: HandlerSpec(run=embed.handle),
+    # A note's write-up is its whole reading view, so a final failure shows on the note with Try again.
+    models.JobKind.WRITE_NOTE: HandlerSpec(run=write_note.handle, on_final_failure=mark_source_failed),
 }

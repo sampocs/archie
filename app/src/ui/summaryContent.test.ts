@@ -22,3 +22,11 @@ test("reads the gist, key ideas and numbers from under the stored analysis's sum
   expect(summary.key_ideas).toEqual([{ idea: "A baby alligator walked into a bagel shop.", timestamp: "00:00" }]);
   expect(summary.numbers).toHaveLength(1);
 });
+
+test("carries a note write-up's top-level sources, and leaves them off when there are none", () => {
+  const sources = [{ url: "https://example.com/guide", title: "A Guide" }];
+  const withSources = parseSummary(JSON.stringify({ summary: { gist: "g", key_ideas: [], numbers: [] }, sources }));
+
+  expect(withSources.sources).toEqual(sources);
+  expect(parseSummary(STORED).sources).toBeUndefined();
+});

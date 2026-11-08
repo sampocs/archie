@@ -43,6 +43,7 @@ export function ItemMenu({
   const [panel, setPanel] = useState<Panel>(null);
   const inInbox = source.state === "inbox" || source.state === "briefed";
   const isRead = source.readAt !== null;
+  const isNote = source.kind === "note";
   const primerQueued = source.primerQueuePosition !== null;
   const makeCards = makeCardsAction(source, cardCount);
 
@@ -52,7 +53,10 @@ export function ItemMenu({
       label: "Ask about this",
       onPress: () => openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }),
     },
-    { testID: "menu-snooze", label: "Remind me later…", startsGroup: true, onPress: () => setPanel("snooze") },
+    // A note is read in Today's refresher, not queued or snoozed.
+    ...(isNote
+      ? []
+      : [{ testID: "menu-snooze", label: "Remind me later…", startsGroup: true, onPress: () => setPanel("snooze") }]),
     ...(source.kind === "newsletter" && inInbox
       ? [
           {
@@ -65,17 +69,21 @@ export function ItemMenu({
           },
         ]
       : []),
-    {
-      testID: "menu-queue-primer",
-      label: primerQueued ? "Primer is queued" : "Queue the primer",
-      subtitle: primerQueued ? undefined : "Adds it to your queue as its own item",
-      startsGroup: true,
-      onPress: () => {
-        queuePrimer(db, source.id, !primerQueued);
-        haptic("success");
-        requestSync();
-      },
-    },
+    ...(isNote
+      ? []
+      : [
+          {
+            testID: "menu-queue-primer",
+            label: primerQueued ? "Primer is queued" : "Queue the primer",
+            subtitle: primerQueued ? undefined : "Adds it to your queue as its own item",
+            startsGroup: true,
+            onPress: () => {
+              queuePrimer(db, source.id, !primerQueued);
+              haptic("success");
+              requestSync();
+            },
+          },
+        ]),
     ...(makeCards
       ? [
           {

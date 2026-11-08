@@ -50,7 +50,10 @@ export function filterEntries(data: LibraryData, filter: LibraryFilter): Library
     return [...sources((source) => source.state === "queued"), ...queuedPrimers];
   }
   if (filter === "done") return sources((source) => source.state === "consumed");
-  if (filter === "inbox") return sources((source) => source.state === "inbox" || source.state === "briefed");
+  // Notes wait in Today's refresher, not the inbox.
+  if (filter === "inbox") {
+    return sources((source) => source.kind !== "note" && (source.state === "inbox" || source.state === "briefed"));
+  }
   if (filter === "primers") {
     return [...sources((source) => source.primerCreatedAt !== null), ...topicPrimerEntries(data)];
   }

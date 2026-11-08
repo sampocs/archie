@@ -47,7 +47,7 @@ export function ItemHeader({
   source: SourceRow;
   topicName: string | null;
   // Replaces the domain-and-kind kicker, e.g. a signup confirmation's "Newsletter · Signup confirmation".
-  kicker?: { label: string; suffix: string };
+  kicker?: { label: string; suffix?: string };
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -65,7 +65,7 @@ export function ItemHeader({
           circle={source.kind === "x"}
         />
         <View style={{ flex: 1, gap: theme.spacing.xs }}>
-          <Kicker domain={source.domain} label={kicker?.label} suffix={kicker?.suffix ?? kindLabel(source.kind)} />
+          <Kicker domain={source.domain} label={kicker?.label} suffix={kicker ? kicker.suffix : kindLabel(source.kind)} />
           <Text testID="item-byline" variant="secondary" tone="ink2">
             {/* The star is repeated in the by-line so it's visible below the navbar too. */}
             {`${datedByline(source, now)}${source.favoritedAt ? " · ★ Favorite" : ""}`}

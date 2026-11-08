@@ -8,7 +8,9 @@ import { todayBrief } from "@/brief/brief";
 import { BriefPreviewCard } from "@/brief/BriefPreviewCard";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
-import { requestNewsQuiz } from "@/db/actions";
+import { requestNewsQuiz, skipNote } from "@/db/actions";
+import { RefresherCard } from "@/notes/RefresherCard";
+import { todayRefresher } from "@/notes/refresher";
 import { upNext } from "@/library/visibility";
 import { useLibraryData } from "@/library/useLibraryData";
 import { quizOffer, weekStartFor } from "@/review/newsQuiz";
@@ -24,6 +26,7 @@ import { todayDate } from "@/today/todayLabels";
 import { GroupedList } from "@/ui/GroupedList";
 import { QueuedPrimerRow } from "@/ui/QueuedPrimerRow";
 import { SourceRow } from "@/ui/SourceRow";
+import { haptic } from "@/ui/haptics";
 import { useNow } from "@/ui/useNow";
 
 const UP_NEXT_COUNT = 3;
@@ -59,7 +62,9 @@ export default function TodayScreen() {
   const brief = todayBrief(briefs, data.sources);
   const due = dueSummary(reviewData, now);
   const quiz = quizOffer(reviewData, now);
-  const isEmpty = upNextItems.length === 0 && brief === null && due.count === 0 && quiz === null;
+  const refresher = todayRefresher(data.sources, now);
+  const isEmpty =
+    upNextItems.length === 0 && brief === null && due.count === 0 && quiz === null && refresher === null;
 
   const dateLabel = (
     <Text testID="today-date" variant="monoLabel" tone="ink3">
@@ -75,6 +80,18 @@ export default function TodayScreen() {
           count={due.count}
           foundations={due.foundations}
           onPress={() => router.push({ pathname: "/review/session", params: { mode: "due" } })}
+        />
+      ) : null}
+
+      {refresher ? (
+        <RefresherCard
+          state={refresher}
+          onOpen={(id) => router.push({ pathname: "/source/[id]", params: { id } })}
+          onSkip={(id) => {
+            skipNote(db, id);
+            haptic("light");
+            requestSync();
+          }}
         />
       ) : null}
 

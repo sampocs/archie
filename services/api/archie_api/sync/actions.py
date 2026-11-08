@@ -16,6 +16,7 @@ from archie_api.sync import (
     note_actions,
     review_actions,
     schemas,
+    sender_actions,
     source_actions,
     take_actions,
     topic_actions,
@@ -80,6 +81,8 @@ HANDLERS: dict[schemas.ActionType, ActionHandler] = {
     schemas.ActionType.SKIP_NOTE: note_actions.skip_note,
     # Ask
     schemas.ActionType.DELETE_CONVERSATION: conversation_actions.delete_conversation,
+    # Newsletter senders
+    schemas.ActionType.SET_SENDER_STATUS: sender_actions.set_sender_status,
 }
 
 

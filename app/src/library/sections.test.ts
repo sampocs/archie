@@ -8,6 +8,7 @@ const PAST = "2026-11-04T14:00:00Z";
 
 const data: LibraryData = {
   confirmations: [],
+  pendingSenders: [],
   sources: [
     sourceRow({ id: "queued", state: "queued" }),
     sourceRow({ id: "queued-snoozed", state: "queued", snoozedUntil: FUTURE }),

@@ -41,6 +41,17 @@ export type PulledSource = {
   refreshed_at?: string | null;
   refreshed_from_queue?: boolean;
   refresh_skipped_at?: string | null;
+  // Absent when pulling from a server older than the sender allowlist.
+  sender_address?: string | null;
+  sender_pending?: boolean;
+};
+export type PulledNewsletterSender = {
+  id: string;
+  label: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  change_seq: number;
 };
 export type PulledArtifact = {
   id: string;
@@ -233,6 +244,8 @@ export type PullPage = {
     // Absent when pulling from a server older than chat edits.
     card_versions?: PulledCardVersion[];
     edit_proposals?: PulledEditProposal[];
+    // Absent when pulling from a server older than the sender allowlist.
+    newsletter_senders?: PulledNewsletterSender[];
   };
   position: number;
   more: boolean;

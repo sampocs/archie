@@ -46,6 +46,10 @@ export const sources = sqliteTable("sources", {
   refreshedFromQueue: integer("refreshed_from_queue").notNull().default(0),
   // When the user skipped a refresh prompt for the note; null = never.
   refreshSkippedAt: text("refresh_skipped_at"),
+  // The sender's address (lower-cased) when the server saw one; null for other kinds and older newsletters.
+  senderAddress: text("sender_address"),
+  // A newsletter from a sender the owner hasn't allowed yet: stored and unread until Allow or Block.
+  senderPending: integer("sender_pending", { mode: "boolean" }).notNull().default(false),
 });
 
 export const artifacts = sqliteTable("artifacts", {
@@ -180,6 +184,19 @@ export const reviewSettings = sqliteTable("review_settings", {
   reminderEnabled: integer("reminder_enabled").notNull(),
   // Minutes after local midnight.
   reminderMinutes: integer("reminder_minutes").notNull(),
+});
+
+// Newsletter senders the owner has decided on; only the server makes the rows (Allow / Block on a source), the phone
+// reads them for Settings → Blocked senders and flips a row's status on Unblock.
+export const newsletterSenders = sqliteTable("newsletter_senders", {
+  id: text("id").primaryKey(),
+  // What the phone shows: the display name, else the address or domain.
+  label: text("label").notNull(),
+  // allowed | blocked
+  status: text("status").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+  changeSeq: integer("change_seq").notNull(),
 });
 
 // Collections (Library → Saved): just-for-fun scrapbooks. Their posts live in their own table and are never sources,

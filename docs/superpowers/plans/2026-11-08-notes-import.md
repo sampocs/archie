@@ -35,8 +35,8 @@ every name and copy string below.
   Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
   Claude-Session: https://claude.ai/code/session_01XcYDkHG569wyzZcbNoxSyL
   ```
-- Migration numbering: server `0015_notes` (revision `"0015"`, down `"0014"`), phone `0015_notes`. (Renumbered on
-  rebase by the main agent if another 0015 lands first; implementers don't handle that.)
+- Migration numbering: server `0016_notes` (revision `"0016"`, down `"0015"`), phone `0016_notes` (renumbered after
+  `sender-allowlist`'s `0015_newsletter_senders` landed first).
 - Copy strings (verbatim): `Notes`, `Refresh a note · {n} of 2 today`, `Refresh a note · Done for today`,
   `Next up: {A}, {B}`, `Next up tomorrow: {A}`, `Skip`, `Done, add review cards`, `See original note ›`,
   `Your original note`, `From Bear · last edited {Mon D, YYYY}`, `From Bear · edited {Mon D, YYYY}`,
@@ -51,7 +51,7 @@ every name and copy string below.
 
 **Files:**
 - Modify: `packages/archie-db/archie_db/models.py` (enums, `Source` columns)
-- Create: `packages/archie-db/archie_db/migrations/versions/0015_notes.py`
+- Create: `packages/archie-db/archie_db/migrations/versions/0016_notes.py`
 - Modify: `packages/archie-db/archie_db/pipeline.py` (`required_artifacts`, `steps_after_text`, `_STEP_OUTPUTS`)
 - Modify: `services/api/archie_api/sync/schemas.py` (`SourceOut` fields, `ActionType`)
 - Modify: `conftest.py` only if a new table were added (none is; leave it)
@@ -74,10 +74,10 @@ every name and copy string below.
   `test_0014_keeps_existing_sources_with_no_confirm_url`):
 
 ```python
-def test_0015_keeps_existing_sources_and_adds_note_columns(test_database_url: str) -> None:
-    """A source stored before 0015 keeps its row with the note columns empty; one Bear id per user is enforced."""
+def test_0016_keeps_existing_sources_and_adds_note_columns(test_database_url: str) -> None:
+    """A source stored before 0016 keeps its row with the note columns empty; one Bear id per user is enforced."""
     migrate.downgrade(test_database_url)
-    migrate.upgrade(test_database_url, "0014")
+    migrate.upgrade(test_database_url, "0015")
     engine = session.engine_for(test_database_url)
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text("INSERT INTO users (apple_sub, ingest_token) VALUES ('sub', 'token')"))
@@ -115,8 +115,8 @@ def test_0015_keeps_existing_sources_and_adds_note_columns(test_database_url: st
 
 (Import `pytest` at the top if the file doesn't already.)
 
-- [ ] **Step 2: Run it, expect FAIL** (no revision 0015 / columns):
-  `TEST_DATABASE_URL=…archie_test_notes uv run pytest packages/archie-db/tests/test_db_migrations.py -m postgres -k 0015`
+- [ ] **Step 2: Run it, expect FAIL** (no revision 0016 / columns):
+  `TEST_DATABASE_URL=…archie_test_notes uv run pytest packages/archie-db/tests/test_db_migrations.py -m postgres -k 0016`
 
 - [ ] **Step 3: Add the enums and columns to `models.py`.** `SourceKind.NOTE = "note"` (docstring stays). In
   `JobKind`: `WRITE_NOTE = "write_note"`, `NOTE_CARDS = "note_cards"`. On `Source`, after `confirm_url`, with comments
@@ -144,7 +144,7 @@ def test_0015_keeps_existing_sources_and_adds_note_columns(test_database_url: st
   `sqlalchemy.Index("uq_sources_user_id_bear_id", "user_id", "bear_id", unique=True),` with the comment `# A note
   imported twice maps to one source (nulls never collide).`
 
-- [ ] **Step 4: Write the migration** `0015_notes.py` (docstring header as 0014's; revision `"0015"`, down `"0014"`):
+- [ ] **Step 4: Write the migration** `0016_notes.py` (docstring header as 0015's; revision `"0016"`, down `"0015"`):
 
 ```python
 def upgrade() -> None:
@@ -203,7 +203,7 @@ def downgrade() -> None:
 - [ ] **Step 7: Run tests**: the migration test (PASS), then `uv run pytest packages/archie-db -m postgres` with the
   notes database, and `make lint`.
 
-- [ ] **Step 8: Commit** `Notes: note kind, columns and migration 0015` (with the trailer).
+- [ ] **Step 8: Commit** `Notes: note kind, columns and migration 0016` (with the trailer).
 
 ### Task 2: Notes API (import, write-ups, refresh/skip actions, test route, session CLI)
 
@@ -472,11 +472,11 @@ def main(argv: list[str] | None = None) -> None:
 ### Task 3: Phone data layer (migration, schema, sync, actions, labels, Markdown)
 
 **Files:**
-- Create: `app/drizzle/0015_notes.sql`, `app/drizzle/meta/0015_snapshot.json`; Modify: `app/drizzle/meta/_journal.json`,
+- Create: `app/drizzle/0016_notes.sql`, `app/drizzle/meta/0016_snapshot.json`; Modify: `app/drizzle/meta/_journal.json`,
   `app/drizzle/migrations.js` (generate with `cd app && npx drizzle-kit generate --name notes` after editing
   `schema.ts`, then append the re-pull line to the SQL, exactly as `0014_confirm_url.sql` does)
 - Modify: `app/src/db/schema.ts`, `app/src/sync/engine.ts`, `app/src/sync/transport.ts`, `app/src/sync/engine.test.ts`
-  (mapping test + add `"0015_notes"` to the "ends by resetting a saved position" list), `app/src/db/actions.ts`,
+  (mapping test + add `"0016_notes"` to the "ends by resetting a saved position" list), `app/src/db/actions.ts`,
   `app/src/db/actions.test.ts`, `app/src/library/testRows.ts`, `app/src/ui/sourceLabels.ts` (+ `sourceLabels.test.ts`),
   `app/src/ui/monogram.ts` (+ test), `app/src/ui/Markdown.tsx` (+ `Markdown.test.ts`)
 
@@ -1012,8 +1012,8 @@ export function refresherQueue(sources: LibrarySource[]): LibrarySource[] {
   Liquid Staking` (60 s; the worker writes the cards with Haiku).
 - [ ] **Step 4: Make + README + docs.** `maestro-notes: reset-local-data` → `@maestro/run_notes.sh` with the comment
   `# Notes: the refresher, the note page and Done; Done's cards spend a fraction of a cent (one Haiku call).`; README
-  row in the same table format. `docs/deploy.md` `## M8`: migration 0015 (server first, then the phone build: phone
-  migration 0015 re-pulls); the owner's commands, verbatim:
+  row in the same table format. `docs/deploy.md` `## M8`: migration 0016 (server first, then the phone build: phone
+  migration 0016 re-pulls); the owner's commands, verbatim:
   ```
   railway ssh --service archie -- uv run --no-sync archie-issue-session --email <owner email>
   export ARCHIE_SESSION_KEY=<the printed key>

@@ -2,8 +2,8 @@
 
 Existing sources keep null note columns (and `refreshed_from_queue` false).
 
-Revision ID: 0015
-Revises: 0014
+Revision ID: 0016
+Revises: 0015
 Create Date: 2026-11-08
 """
 
@@ -13,8 +13,8 @@ import sqlalchemy
 from alembic import op
 from sqlalchemy.dialects import postgresql
 
-revision = "0015"
-down_revision: str | None = "0014"
+revision = "0016"
+down_revision: str | None = "0015"
 branch_labels: str | None = None
 depends_on: str | None = None
 

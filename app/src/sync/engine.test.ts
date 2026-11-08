@@ -739,6 +739,69 @@ describe("database SyncStore", () => {
     });
   });
 
+  it("stores a pulled source's sender_address and sender_pending, and missing ones as null and false", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: {
+        sources: [pulledSource({ sender_address: "crew@example.com", sender_pending: true })],
+        artifacts: [],
+        cards: [],
+      },
+      position: 1,
+      more: false,
+    });
+    expect(sourceRow(db)).toMatchObject({ senderAddress: "crew@example.com", senderPending: true });
+
+    await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 2, more: false });
+    expect(sourceRow(db)).toMatchObject({ senderAddress: null, senderPending: false });
+  });
+
+  it("stores pulled newsletter senders, updates one on a later pull, and reads a missing table as none", async () => {
+    const { db, store } = makeDbStore();
+    const sender = (overrides: Record<string, unknown>) => ({
+      id: "n1", label: "Example Weekly", status: "blocked", created_at: "2026-11-01T00:00:00Z",
+      updated_at: "2026-11-01T00:00:00Z", change_seq: 4, ...overrides,
+    });
+    const rows = () => db.select().from(schema.newsletterSenders).all();
+
+    await store.applyPage({
+      rows: { sources: [], artifacts: [], cards: [], newsletter_senders: [sender({})] },
+      position: 1,
+      more: false,
+    });
+    expect(rows()).toEqual([
+      { id: "n1", label: "Example Weekly", status: "blocked", createdAt: "2026-11-01T00:00:00Z", updatedAt: "2026-11-01T00:00:00Z", changeSeq: 4 },
+    ]);
+
+    await store.applyPage({
+      rows: { sources: [], artifacts: [], cards: [], newsletter_senders: [sender({ status: "allowed", change_seq: 9 })] },
+      position: 2,
+      more: false,
+    });
+    expect(rows()).toMatchObject([{ status: "allowed", changeSeq: 9 }]);
+
+    await store.applyPage({ rows: { sources: [], artifacts: [], cards: [] }, position: 3, more: false });
+    expect(rows()).toHaveLength(1);
+  });
+
+  it("a rejected set_sender_status rewinds the position and marks no source", async () => {
+    const { db, store } = makeDbStore();
+    db.insert(schema.sources).values({
+      id: "s1", url: "newsletter:x", kind: "newsletter", state: "inbox", intent: "queue",
+      createdAt: "2026-11-01T00:00:00Z", updatedAt: "2026-11-01T00:00:00Z", processing: "pending",
+    }).run();
+    db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
+    db.insert(schema.outbox).values({
+      id: "o1", type: "set_sender_status", payload: JSON.stringify({ source_id: "s1", status: "allowed" }),
+      createdAt: "2026-11-01T00:00:00Z", status: "pending",
+    }).run();
+
+    await store.rejectAction("o1", "unknown source");
+
+    expect(await store.getPosition()).toBe(0);
+    expect(sourceRow(db)?.syncError).toBeNull();
+  });
+
   it("a re-pull of a source with an unsent set_favorite keeps the local star", async () => {
     const { db, store } = makeDbStore();
     await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 1, more: false });
@@ -1047,7 +1110,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at", "0013_chat_edits", "0014_confirm_url", "0015_notes"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at", "0013_chat_edits", "0014_confirm_url", "0015_newsletter_senders", "0016_notes"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;

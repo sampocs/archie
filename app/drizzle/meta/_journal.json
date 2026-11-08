@@ -110,8 +110,15 @@
     {
       "idx": 15,
       "version": "6",
-      "when": 1794176478480,
-      "tag": "0015_notes",
+      "when": 1794175013130,
+      "tag": "0015_newsletter_senders",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1794178180269,
+      "tag": "0016_notes",
       "breakpoints": true
     }
   ]

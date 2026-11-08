@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fa4681ec-23bf-4bcb-abd5-8ccffebb067f",
+  "id": "200c5bf4-a5c5-4de4-92f8-8908cb75dc83",
   "prevId": "06ee93a3-2d1b-46a3-bb9a-692fd39186f9",
   "tables": {
     "artifacts": {
@@ -787,6 +787,58 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "newsletter_senders": {
+      "name": "newsletter_senders",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "change_seq": {
+          "name": "change_seq",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "outbox": {
       "name": "outbox",
       "columns": {
@@ -1172,41 +1224,20 @@
           "notNull": false,
           "autoincrement": false
         },
-        "note_markdown": {
-          "name": "note_markdown",
+        "sender_address": {
+          "name": "sender_address",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
         },
-        "note_edited_at": {
-          "name": "note_edited_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "refreshed_at": {
-          "name": "refreshed_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "refreshed_from_queue": {
-          "name": "refreshed_from_queue",
+        "sender_pending": {
+          "name": "sender_pending",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": 0
-        },
-        "refresh_skipped_at": {
-          "name": "refresh_skipped_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
+          "default": false
         }
       },
       "indexes": {},

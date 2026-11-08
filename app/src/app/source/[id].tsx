@@ -12,7 +12,9 @@ import { VersionsSheet } from "@/edits/VersionsSheet";
 import { CardsSection } from "@/item/CardsSection";
 import { confirmExplanation, confirmPrompt } from "@/library/confirmations";
 import { confirmSignup, dismissSignup } from "@/library/confirmActions";
-import { ConfirmPills } from "@/library/ConfirmCard";
+import { ConfirmPills, SenderPills } from "@/library/ConfirmCard";
+import { judgeNewsletterSender } from "@/library/senderActions";
+import { SENDER_EXPLANATION, SENDER_KICKER_SUFFIX, senderPrompt } from "@/library/senders";
 import { FullEmailSheet } from "@/item/FullEmailSheet";
 import { ItemActions } from "@/item/ItemActions";
 import { ItemBadgeLine } from "@/item/ItemBadgeLine";
@@ -97,6 +99,9 @@ export default function SourceScreen() {
   const starred = source.favoritedAt !== null;
   const isConfirmation = source.confirmUrl !== null;
   const isNote = source.kind === "note";
+  const isPendingSender = source.senderPending && !isConfirmation;
+  // Both kinds of notice page are bare: no star, menu, badges, actions, summary, note or cards.
+  const isNotice = isConfirmation || isPendingSender;
   const summary = artifacts.find((artifact) => artifact.kind === "summary");
   const primer = artifacts.find((artifact) => artifact.kind === "primer");
   const summaryContent = summary ? parseSummary(summary.content) : null;
@@ -137,7 +142,7 @@ export default function SourceScreen() {
           canRefresh ? <Button testID="note-done" label="Done, add review cards" disabled={refreshing} onPress={refresh} /> : undefined
         }
         headerRight={
-          isConfirmation ? undefined : (
+          isNotice ? undefined : (
             <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}>
               <Pressable
                 testID="item-favorite"
@@ -168,9 +173,11 @@ export default function SourceScreen() {
           kicker={
             isConfirmation
               ? { label: "Newsletter", suffix: "Signup confirmation" }
-              : isNote
-                ? { label: "Notes", suffix: source.domain ? asDomain(source.domain) : undefined }
-                : undefined
+              : isPendingSender
+                ? { label: "Newsletter", suffix: SENDER_KICKER_SUFFIX }
+                : isNote
+                  ? { label: "Notes", suffix: source.domain ? asDomain(source.domain) : undefined }
+                  : undefined
           }
         />
         <Text testID="item-title" variant="articleTitle">
@@ -178,6 +185,8 @@ export default function SourceScreen() {
         </Text>
         {isConfirmation ? (
           <ConfirmationPrompt source={source} onDone={router.back} />
+        ) : isPendingSender ? (
+          <SenderPrompt source={source} onBlocked={router.back} />
         ) : isNote ? (
           <>
             {summaryContent ? (
@@ -207,13 +216,13 @@ export default function SourceScreen() {
           </>
         )}
         {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
-        {isConfirmation ? null : (
+        {isNotice ? null : (
           <>
             {isNote ? null : <NoteSection reaction={source.reaction} note={source.note} />}
             <CardsSection of={{ kind: "source", id: source.id }} />
           </>
         )}
-        {isConfirmation ? null : (
+        {isNotice ? null : (
           <>
             {isNote ? null : (
               <FinishSheet
@@ -289,6 +298,34 @@ function ConfirmationPrompt({ source, onDone }: { source: SourceRow; onDone: () 
         onDismiss={() => {
           dismissSignup(source.id);
           onDone();
+        }}
+      />
+    </Card>
+  );
+}
+
+/**
+ * A newsletter from a sender nobody has decided on: what the email is, and Allow / Block. Allow leaves the page
+ * (it becomes the normal processing page); Block deletes the email and goes back.
+ */
+function SenderPrompt(props: { source: SourceRow; onBlocked: () => void }) {
+  const theme = useTheme();
+
+  return (
+    <Card style={{ gap: theme.spacing.md }}>
+      <Text testID="item-sender-prompt" variant="headline">
+        {senderPrompt(props.source)}
+      </Text>
+      <Text tone="ink2">{SENDER_EXPLANATION}</Text>
+      <SenderPills
+        allowTestID="item-allow"
+        blockTestID="item-block"
+        onAllow={() => {
+          judgeNewsletterSender(props.source.id, "allowed");
+        }}
+        onBlock={() => {
+          judgeNewsletterSender(props.source.id, "blocked");
+          props.onBlocked();
         }}
       />
     </Card>

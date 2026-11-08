@@ -28,7 +28,7 @@ import { SourceRow } from "@/ui/SourceRow";
 import { StatusTagView } from "@/ui/StatusTagView";
 import { useNow } from "@/ui/useNow";
 
-import { ConfirmCards } from "./ConfirmCard";
+import { ConfirmCards, SenderCards } from "./ConfirmCard";
 import type { LibraryData, LibrarySource, TopicPrimerRow, TopicRow } from "./join";
 import { ReorderableQueue } from "./ReorderableQueue";
 import { matchesQuery, searchText } from "./search";
@@ -107,6 +107,8 @@ function LibraryListBody({ data, query, filter, onFilterChange }: LibraryListPro
           <FilterChips filter={filter} counts={filterCounts(data, now)} onChange={onFilterChange} />
           {/* Waiting signup confirmations sit above the list on every chip. */}
           <ConfirmCards confirmations={data.confirmations} />
+          {/* Newsletters from a sender nobody has allowed yet wait below them, also on every chip. */}
+          <SenderCards pendingSenders={data.pendingSenders} />
           {filter === "queued" ? (
             <QueueBody data={data} now={now} rowActions={rowActions} />
           ) : (
@@ -187,7 +189,7 @@ function QueueBody({ data, now, rowActions }: { data: LibraryData; now: Date; ro
   return (
     <>
       {queue.length > 0 ? (
-        <GroupedList title="Your queue · drag to reorder">
+        <GroupedList>
           <ReorderableQueue
             entries={queue}
             renderRow={(entry, _index, handle) => (

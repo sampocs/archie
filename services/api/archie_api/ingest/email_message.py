@@ -20,6 +20,7 @@ from dataclasses import dataclass
 import lxml.etree
 import lxml.html
 import trafilatura
+from archie_db import senders
 
 MAX_TEXT_LENGTH = 400_000
 MIN_HTML_WORDS = 50
@@ -80,6 +81,9 @@ class ParsedEmail:
 
     subject: str | None
     sender: str | None
+    # The From address and the List-Id header's id, both lower-cased: what the sender allowlist matches on.
+    sender_address: str | None
+    list_id: str | None
     message_id: str
     web_url: str | None
     text: str
@@ -98,6 +102,8 @@ def parse(raw: bytes) -> ParsedEmail:
     return ParsedEmail(
         subject=subject,
         sender=_sender(message),
+        sender_address=_sender_address(message),
+        list_id=senders.normalize_list_id(_header_text(message, "List-Id")),
         message_id=_message_id(message, raw=raw),
         web_url=_web_url(message, plain=plain, html=html),
         text=_without_nul(_readable_text(html=html, plain=plain)[:MAX_TEXT_LENGTH]),
@@ -131,6 +137,12 @@ def _sender(message: email.message.Message) -> str | None:
 
     display_name, address = email.utils.parseaddr(from_header)
     return display_name.strip() or address or from_header
+
+
+def _sender_address(message: email.message.Message) -> str | None:
+    """The From address, lower-cased."""
+    _, address = email.utils.parseaddr(_header_text(message, "From") or "")
+    return address.strip().lower() or None
 
 
 def _message_id(message: email.message.Message, *, raw: bytes) -> str:

@@ -115,6 +115,7 @@ class SourceOut(pydantic.BaseModel):
     cards_off: bool
     favorited_at: datetime.datetime | None
     published_at: datetime.datetime | None
+    confirm_url: str | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None

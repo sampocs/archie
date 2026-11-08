@@ -166,6 +166,11 @@ class DateFilter:
         }
 
 
+def any_terms(query: str) -> str:
+    """The query's words joined with `or`, so `websearch_to_tsquery` matches text holding any one of them."""
+    return " or ".join(_TERM.findall(query))
+
+
 def search_chunks(
     db: sqlalchemy.orm.Session,
     *,
@@ -186,7 +191,7 @@ def search_chunks(
     `dates` keeps only items saved or published within its days; None keeps every date.
     """
     common = {"user_id": user_id, **(dates or DateFilter()).params()}
-    keyword_query = " or ".join(_TERM.findall(query)) if match_any else query
+    keyword_query = any_terms(query) if match_any else query
     keyword_rows = (
         db.execute(_KEYWORD_SQL, {**common, "query": keyword_query, "limit": KEYWORD_CANDIDATES}).all()
         if keyword_query.strip()

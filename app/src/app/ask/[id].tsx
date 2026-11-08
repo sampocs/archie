@@ -12,6 +12,9 @@ import { parseSegments, type AboutKind } from "@/ask/types";
 import { useAskAvailable } from "@/ask/useAskAvailable";
 import { useChat } from "@/ask/useChats";
 import { useChatSession } from "@/ask/useChatSession";
+import { EditProposalCard } from "@/edits/EditProposalCard";
+import { viewOfWire } from "@/edits/types";
+import { useConversationProposals } from "@/edits/useProposals";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
@@ -32,6 +35,9 @@ export default function ChatScreen() {
     [params.aboutKind, params.aboutId],
   );
   const { pending, send } = useChatSession({ conversationId: params.id, messages, about });
+  const proposals = useConversationProposals(params.id);
+  // Targets with a proposal in the live answer: older still-proposed ones for them are superseded.
+  const liveTargets = new Set((pending?.live.proposals ?? []).map((wire) => `${wire.target_kind}:${wire.target_id}`));
   const [cardFor, setCardFor] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   // Stable, so a re-render (a pull landing) doesn't restart the toast's timer.
@@ -93,7 +99,18 @@ export default function ChatScreen() {
                 failed={message.status === "failed"}
                 onRetry={() => retry(turns, index, send)}
                 onMakeCard={message.status === "complete" ? () => setCardFor(message.id) : undefined}
-              />
+              >
+                {(proposals.get(message.id) ?? []).map((proposal) => (
+                  <EditProposalCard
+                    key={proposal.id}
+                    proposal={proposal}
+                    ready
+                    online={online}
+                    supersededLive={liveTargets.has(`${proposal.targetKind}:${proposal.targetId}`)}
+                    onToast={setToast}
+                  />
+                ))}
+              </AnswerView>
             ),
           )}
           {pending ? (
@@ -104,7 +121,17 @@ export default function ChatScreen() {
                 {...liveView(pending.live)}
                 failed={pending.live.failed}
                 onRetry={() => send(pending.text, pending.webSearch)}
-              />
+              >
+                {pending.live.proposals.map((wire) => (
+                  <EditProposalCard
+                    key={wire.id}
+                    proposal={viewOfWire(wire)}
+                    ready={pending.live.messageId !== null}
+                    online={online}
+                    onToast={setToast}
+                  />
+                ))}
+              </AnswerView>
             </>
           ) : null}
         </View>

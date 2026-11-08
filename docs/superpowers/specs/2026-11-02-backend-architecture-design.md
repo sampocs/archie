@@ -60,7 +60,7 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - content (jsonb): domains with their stories (headline, body, why, detail, importance, source ids), the "Also happening" lines, and the essays with their one-line pitch
   - source_ids: every newsletter the current content covers; since: the oldest one's created_at
   - version, bumped on every rewrite; done_at; synced to the phone like other tables
-- **source_artifacts:** generated content for a source.
+- **source_artifacts:** generated content for a source, and who made it (`origin`); Archie's rewrites never replace an owner-chosen current version (see the chat-edits spec).
   - One row per (source, kind, version). Kind is transcript, summary, primer, etc.
   - Each row records how it was made: the model, prompt version, the user's instruction for a chat edit, and the version it was derived from.
   - The *current* version is a pointer on the source/kind. Edits and re-runs insert a new row, so the original is never lost and the user can revert.
@@ -71,7 +71,7 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - source↔topic links, allowing more than one domain per source
   - source↔source links
 - **cards:**
-  - question and answer
+  - question and answer, and its version, with `card_versions` once a card has changed (an Ask edit, a care rewrite, a restore)
   - its origin: a source, a topic primer or a brief (quiz cards), and the source position (timestamp or section)
   - FSRS state: stability, difficulty, due date, reps, lapses, written by the phone
   - `expires_at` (quiz cards); there is no suspended flag, Drop soft-deletes the card
@@ -150,7 +150,7 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - **When it searches the web:** when the library and Claude's own knowledge can't answer, or when the question is about something recent or a fact that changes often (prices, deals, who runs what).
   - **Forcing it:** a "search the web" toggle in chat, or saying "look it up," makes it search every time.
   - **Labels:** every answer labels its sources as **your library** (with source and timestamp), **background**, or **web** (with links).
-- **Edits through chat** ("remove this bullet") create a new version of the source's content (see Data model).
+- **Edits through chat** ("remove this bullet") create a new version of the source's content (see Data model); built as proposals the owner applies, see `2026-11-08-chat-edits-design.md`.
 - **Cost:** web search is about $0.01 per search plus tokens, well under $5/mo even with heavy use.
 
 ## Newsletters

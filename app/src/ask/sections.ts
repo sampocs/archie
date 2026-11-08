@@ -1,3 +1,5 @@
+import type { EditProposalWire } from "@/edits/types";
+
 import { ANSWER_LABEL_TEXT, formatClock, type AnswerLabel, type AnswerSegment, type AskEvent, type Citation } from "./types";
 
 /** A labelled run of an answer: consecutive blocks with the same label shown as one section. */
@@ -11,12 +13,22 @@ export type LiveAnswer = {
   searching: "library" | "web" | null;
   messageId: string | null;
   failed: boolean;
+  // Edits Ask proposed so far, and whether it is drafting one now.
+  proposals: EditProposalWire[];
+  editing: boolean;
 };
 
 /** A question sent from this screen, with the answer streaming for it. */
 export type PendingQuestion = { userMessageId: string; text: string; webSearch: boolean; live: LiveAnswer };
 
-export const EMPTY_LIVE: LiveAnswer = { blocks: [], searching: null, messageId: null, failed: false };
+export const EMPTY_LIVE: LiveAnswer = {
+  blocks: [],
+  searching: null,
+  messageId: null,
+  failed: false,
+  proposals: [],
+  editing: false,
+};
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -57,7 +69,7 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
       const blocks = [...live.blocks];
       const block = blocks[event.block] ?? { text: "", label: null, citations: [] };
       blocks[event.block] = { ...block, text: block.text + event.text };
-      return { ...live, blocks, searching: null };
+      return { ...live, blocks, searching: null, editing: false };
     }
     case "block": {
       const blocks = [...live.blocks];
@@ -66,18 +78,33 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
       return { ...live, blocks };
     }
     case "searching":
-      return { ...live, searching: event.kind };
+      return { ...live, searching: event.kind, editing: false };
     case "done":
-      return { ...live, messageId: event.message_id, searching: null };
+      return { ...live, messageId: event.message_id, searching: null, editing: false };
     case "error":
-      return { ...live, failed: true, searching: null };
+      return { ...live, failed: true, searching: null, editing: false };
+    case "editing":
+      return { ...live, editing: true, searching: null };
+    case "edit": {
+      const { type: _type, ...wire } = event;
+      // A repeated event (a retried read of the stream) replaces the proposal rather than adding it twice. A newer
+      // proposal for the same target supersedes the still-proposed older ones, as the server does when it saves it.
+      const earlier = live.proposals
+        .filter((proposal) => proposal.id !== wire.id)
+        .map((proposal) =>
+          proposal.status === "proposed" && proposal.target_kind === wire.target_kind && proposal.target_id === wire.target_id
+            ? { ...proposal, status: "superseded" as const }
+            : proposal,
+        );
+      return { ...live, editing: false, proposals: [...earlier, wire] };
+    }
   }
 }
 
 /** A stream that ended without a `done` or `error` event (the connection closed mid-answer) has failed. */
 export function endOfStream(live: LiveAnswer): LiveAnswer {
   if (live.messageId !== null || live.failed) return live;
-  return { ...live, failed: true, searching: null };
+  return { ...live, failed: true, searching: null, editing: false };
 }
 
 /**
@@ -101,6 +128,7 @@ export function liveView(live: LiveAnswer): {
   sections: Section[];
   streamingText: string;
   searching: "library" | "web" | null;
+  editing: boolean;
 } {
   const finished = live.blocks.filter((block): block is LiveBlock & { label: AnswerLabel } => block.label !== null);
   return {
@@ -110,6 +138,7 @@ export function liveView(live: LiveAnswer): {
       .map((block) => block.text)
       .join(""),
     searching: live.searching,
+    editing: live.editing,
   };
 }
 

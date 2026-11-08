@@ -15,14 +15,30 @@ import { makeCardsAction } from "./cardsMenu";
 import { EpisodesSheet } from "./EpisodesSheet";
 
 type SourceRow = typeof schema.sources.$inferSelect;
-type ItemMenuProps = { source: SourceRow; cardCount: number; visible: boolean; onClose: () => void };
+type ItemMenuProps = {
+  source: SourceRow;
+  cardCount: number;
+  summaryVersions: number;
+  primerVersions: number;
+  onOpenVersions: (kind: "summary" | "primer") => void;
+  visible: boolean;
+  onClose: () => void;
+};
 type Panel = "topic" | "snooze" | "episodes" | null;
 
 /**
  * The ••• menu, grouped by how often each is used: [Ask about this] [Remind me later…, Mark as read/unread]
- * [Queue the primer, Make review cards, No cards for this, Change topic, Wrong episode?] [Delete]; and the sheets its entries open.
+ * [Queue the primer, Make review cards, No cards for this, Change topic, Summary versions, Primer versions, Wrong episode?] [Delete]; and the sheets its entries open.
  */
-export function ItemMenu({ source, cardCount, visible, onClose }: ItemMenuProps) {
+export function ItemMenu({
+  source,
+  cardCount,
+  summaryVersions,
+  primerVersions,
+  onOpenVersions,
+  visible,
+  onClose,
+}: ItemMenuProps) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>(null);
   const inInbox = source.state === "inbox" || source.state === "briefed";
@@ -90,6 +106,12 @@ export function ItemMenu({ source, cardCount, visible, onClose }: ItemMenuProps)
         ]
       : []),
     { testID: "menu-change-topic", label: "Change topic", onPress: () => setPanel("topic") },
+    ...(summaryVersions > 1
+      ? [{ testID: "menu-summary-versions", label: "Summary versions", onPress: () => onOpenVersions("summary") }]
+      : []),
+    ...(primerVersions > 1
+      ? [{ testID: "menu-primer-versions", label: "Primer versions", onPress: () => onOpenVersions("primer") }]
+      : []),
     ...(source.kind === "podcast"
       ? [{ testID: "menu-episode", label: "Wrong episode?", onPress: () => setPanel("episodes") }]
       : []),

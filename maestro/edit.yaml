@@ -1,0 +1,113 @@
+# Edits through chat: finish an article, open Ask about it from its ••• menu, ask to drop a key idea, Apply, Undo,
+# and find three Summary versions. Needs the owner's keys in .env (analyze, primer, embeddings and Sonnet 5.5: a few
+# cents); local backend only; run it through `make maestro-edit`.
+appId: com.sampocs.archie
+---
+- runFlow: login.yaml
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "library-add"
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "library-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "https://paulgraham.com/hwh.html"
+- tapOn:
+    id: "intent-finished"
+- tapOn:
+    id: "add-save"
+- extendedWaitUntil:
+    visible: ".*How to Work Hard.*"
+    timeout: 90000
+# The summary must exist before Ask can edit it (the row's status settles when analyze and the primer are done).
+- extendedWaitUntil:
+    notVisible: ".*Processing.*"
+    timeout: 180000
+- tapOn: ".*How to Work Hard.*"
+- extendedWaitUntil:
+    visible:
+      id: "source-gist"
+    timeout: 30000
+- tapOn:
+    id: "item-more"
+- tapOn:
+    id: "menu-ask"
+# A new chat has no messages yet, so wait for its About line (the empty message list isn't on screen).
+- extendedWaitUntil:
+    visible:
+      id: "chat-about"
+    timeout: 5000
+- tapOn:
+    id: "ask-composer-input"
+- inputText: "Remove the first key idea from the summary."
+- tapOn:
+    id: "ask-send"
+# The keyboard stays up after sending and would cover the card's buttons; dragging the page puts it away.
+- swipe:
+    start: "50%, 30%"
+    end: "50%, 60%"
+# The proposal card sits below the answer; Apply turns on once the answer is saved.
+- scrollUntilVisible:
+    element:
+      id: "edit-apply-.*"
+    direction: DOWN
+    timeout: 120000
+- extendedWaitUntil:
+    visible:
+      id: "edit-apply-.*"
+      enabled: true
+    timeout: 180000
+- assertVisible: "Edit · Summary"
+- tapOn:
+    id: "edit-apply-.*"
+- extendedWaitUntil:
+    visible: "Applied"
+    timeout: 15000
+- tapOn:
+    id: "edit-undo-.*"
+- extendedWaitUntil:
+    visible: "Undone"
+    timeout: 15000
+- tapOn:
+    id: "screen-back"
+- extendedWaitUntil:
+    visible:
+      id: "item-more"
+    timeout: 10000
+- tapOn:
+    id: "item-more"
+- tapOn:
+    id: "menu-summary-versions"
+- extendedWaitUntil:
+    visible:
+      id: "version-row-3"
+    timeout: 10000
+- assertVisible:
+    id: "version-current-3"
+- assertVisible:
+    id: "version-row-1"
+- tapOn:
+    id: "version-row-2"
+- assertVisible:
+    id: "version-preview"
+- assertVisible:
+    id: "version-restore"

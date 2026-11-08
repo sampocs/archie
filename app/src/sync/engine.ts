@@ -42,6 +42,9 @@ export type PulledArtifact = {
   content: unknown;
   is_current: boolean;
   created_at: string;
+  // Absent when pulling from a server older than chat edits.
+  origin?: string;
+  instruction?: string | null;
 };
 export type PulledCard = {
   id: string;
@@ -68,6 +71,8 @@ export type PulledCard = {
   // Absent when pulling from a server older than M7.
   conversation_id?: string | null;
   message_id?: string | null;
+  // Absent when pulling from a server older than chat edits.
+  version?: number;
 };
 export type PulledTopic = {
   id: string;
@@ -88,6 +93,9 @@ export type PulledTopicPrimer = {
   opened_at: string | null;
   snoozed_until: string | null;
   created_at: string;
+  // Absent when pulling from a server older than chat edits.
+  origin?: string;
+  instruction?: string | null;
 };
 export type PulledBrief = {
   id: string;
@@ -141,6 +149,8 @@ export type PulledTakeVersion = {
   cleaned: boolean;
   clean_failed: boolean;
   created_at: string;
+  // Absent when pulling from a server older than chat edits.
+  origin?: string;
 };
 export type PulledConversation = {
   id: string;
@@ -165,6 +175,34 @@ export type PulledMessage = {
   created_at: string;
   change_seq: number;
 };
+export type PulledCardVersion = {
+  id: string;
+  card_id: string;
+  version: number;
+  question: string;
+  answer: string;
+  origin: string;
+  instruction: string | null;
+  created_at: string;
+  change_seq: number;
+};
+export type PulledEditProposal = {
+  id: string;
+  conversation_id: string;
+  message_id: string;
+  target_kind: string;
+  target_id: string;
+  title: string;
+  description: string;
+  base_version: number;
+  before: unknown;
+  after: unknown;
+  status: string;
+  applied_version: number | null;
+  created_at: string;
+  updated_at: string;
+  change_seq: number;
+};
 export type PullPage = {
   rows: {
     sources: PulledSource[];
@@ -184,6 +222,9 @@ export type PullPage = {
     // Absent when pulling from a server older than M7.
     conversations?: PulledConversation[];
     messages?: PulledMessage[];
+    // Absent when pulling from a server older than chat edits.
+    card_versions?: PulledCardVersion[];
+    edit_proposals?: PulledEditProposal[];
   };
   position: number;
   more: boolean;

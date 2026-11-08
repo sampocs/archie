@@ -26,6 +26,7 @@ HIT = search.ChunkHit(
     keyword_match=True,
 )
 PASSAGES = {citations.source_key(HIT): HIT}
+HIT_TAG = f"[source {HIT.item.id}]"
 NEW_YORK = zoneinfo.ZoneInfo("America/New_York")
 
 
@@ -182,7 +183,8 @@ def test_a_heading_with_nothing_after_it_stays_background_and_waits_to_be_sent()
 
 
 def test_a_library_result_is_titled_with_who_its_from_its_dates_and_where_it_sits() -> None:
-    """A newsletter shows its sender and the day it came; a timed passage keeps its timestamp after the date.
+    """A newsletter shows its sender and the day it came; a timed passage keeps its timestamp after the date; each
+    title ends with the item's tag, which the model edits by.
 
     The day is the owner's: an issue that came at 10pm in New York is Wednesday there and already Thursday in UTC.
     """
@@ -197,13 +199,13 @@ def test_a_library_result_is_titled_with_who_its_from_its_dates_and_where_it_sit
     )
 
     assert citations.search_result_block(newsletter, day_zone=NEW_YORK)["title"] == (
-        "☕ Panicky vibes · Morning Brew · Wed 4 Nov 2026 (Archie's summary)"
+        f"☕ Panicky vibes · Morning Brew · Wed 4 Nov 2026 (Archie's summary) {HIT_TAG}"
     )
     assert citations.search_result_block(newsletter, day_zone=datetime.UTC)["title"] == (
-        "☕ Panicky vibes · Morning Brew · Thu 5 Nov 2026 (Archie's summary)"
+        f"☕ Panicky vibes · Morning Brew · Thu 5 Nov 2026 (Archie's summary) {HIT_TAG}"
     )
     assert citations.search_result_block(HIT, day_zone=NEW_YORK)["title"] == (
-        "Odd Lots · open.spotify.com · Mon 2 Nov 2026 (at 31:20)"
+        f"Odd Lots · open.spotify.com · Mon 2 Nov 2026 (at 31:20) {HIT_TAG}"
     )
 
 
@@ -227,9 +229,9 @@ def test_an_article_published_on_another_day_shows_both_dates_and_a_year_only_da
     ]
 
     assert titles == [
-        "How to Do Great Work · paulgraham.com · published 2023 · saved Thu 5 Nov 2026",
-        "How to Do Great Work · paulgraham.com · published 30 Oct 2026 · saved Thu 5 Nov 2026",
-        "How to Do Great Work · paulgraham.com · Thu 5 Nov 2026",
+        f"How to Do Great Work · paulgraham.com · published 2023 · saved Thu 5 Nov 2026 {HIT_TAG}",
+        f"How to Do Great Work · paulgraham.com · published 30 Oct 2026 · saved Thu 5 Nov 2026 {HIT_TAG}",
+        f"How to Do Great Work · paulgraham.com · Thu 5 Nov 2026 {HIT_TAG}",
     ]
 
 

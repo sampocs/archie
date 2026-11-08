@@ -9,6 +9,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `add_podcast.yaml` | Dev login as the owner's user, add a Spotify episode, open it from Library, wait for the primer, see the gist, a timestamp chip and the primer button (real keys, a few cents) |
 | `library_queue.yaml` | Library queue: reorder by drag, snooze from a swipe; Snoozed · 1 |
 | `library_search.yaml` | Library search finds the item on the server and shows its matching quote, then the empty state for a query nothing matches (free) |
+| `edit.yaml` | Finish an article, Ask about it from its ••• menu, ask to drop a key idea, Apply, Undo, and find three Summary versions (real keys, a few cents; `make maestro-edit`) |
 | `ask.yaml` | Finish an article, ask about it on the Ask tab, see the Your library section, Make a card, Save, and find the chat in the list (real keys, a few cents; `make maestro-ask`) |
 | `favorites.yaml` | Star an item from its page, find it under Library → Saved → Other, unstar it with a swipe; Saved shows its empty state |
 | `collections.yaml` | Save a link from the Library ＋ into a new collection, see it on the collection page and not in All, delete the collection from its tile |
@@ -43,7 +44,8 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 5. `make maestro-review` with the backend up (`make start-local`): runs `review.yaml`, which waits up to 4 minutes for the finished article's cards to reach Today. Needs the owner's keys in `.env`; spends a few cents (analyze, primer, one Haiku grade).
 6. `make maestro-takes-clean` with the backend up (`make start-local`): runs `takes_clean.yaml`, which waits up to 2.5 minutes each for the Sonnet cleanup and the Haiku cards. Needs the owner's keys in `.env`; spends a few cents.
 7. `make maestro-ask` with the backend up (`make start-local`): runs `ask.yaml`, which waits for analyze and embeddings, then a Sonnet 5.5 answer and one Haiku card draft. Needs the owner's keys in `.env` (`OPENAI_API_KEY` too, for embeddings); spends a few cents.
-8. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
+8. `make maestro-edit` with the backend up (`make start-local`): runs `edit.yaml`, which waits for analyze and the primer, then a Sonnet 5.5 answer that proposes an edit; it taps Apply and Undo and opens Summary versions. Same `.env` needs as `maestro-ask`; spends a few cents.
+9. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
 
 These targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
 

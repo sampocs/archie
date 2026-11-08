@@ -15,7 +15,14 @@ export const API_URL: string = resolveApiUrl();
 
 export class UnauthorizedError extends Error {}
 // A 4xx other than 401: the server understood the request and refused it, so retrying it unchanged cannot help.
-export class ClientError extends Error {}
+export class ClientError extends Error {
+  constructor(
+    message: string,
+    readonly status: number | null = null,
+  ) {
+    super(message);
+  }
+}
 export class NetworkError extends Error {}
 
 type FetchInit = { method?: string; body?: unknown; sessionKey: string | null; signal?: AbortSignal };
@@ -47,7 +54,7 @@ export async function apiUpload(
 async function responseBody(response: Response, path: string): Promise<unknown> {
   if (response.status === 401) throw new UnauthorizedError(`401 from ${path}`);
   if (response.status >= 500) throw new NetworkError(`${response.status} from ${path}`);
-  if (!response.ok) throw new ClientError(`${response.status} from ${path}`);
+  if (!response.ok) throw new ClientError(`${response.status} from ${path}`, response.status);
 
   return response.status === 204 ? null : response.json();
 }

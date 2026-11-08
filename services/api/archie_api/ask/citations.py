@@ -203,17 +203,19 @@ _OWNER_NAMES = {
 
 
 def _result_title(hit: search.ChunkHit, *, day_zone: datetime.tzinfo) -> str:
-    """The item's title, who it's from and its dates, then where in the item the passage sits.
+    """The item's title, who it's from and its dates, where in the item the passage sits, then the item's tag for edits.
 
-    e.g. "☕ Panicky vibes · Morning Brew · Wed 5 Nov 2026" (a newsletter is sent and saved the same day), or
-    "How to Do Great Work · paulgraham.com · published 2023 · saved Wed 5 Nov 2026".
+    e.g. "☕ Panicky vibes · Morning Brew · Wed 5 Nov 2026 [source <id>]" (a newsletter is sent and saved the same
+    day), or "How to Do Great Work · paulgraham.com · published 2023 · saved Wed 5 Nov 2026 (Archie's summary)
+    [source <id>]". Citation chips use `ChunkHit.title`, so the phone never sees the tag.
     """
     named = " · ".join(part for part in (hit.title, _byline(hit), _dates(hit, day_zone=day_zone)) if part)
+    tag = f"[{hit.item.kind.value} {hit.item.id}]"
     if hit.owner_kind == models.ChunkOwner.SOURCE_TEXT and hit.start_seconds is not None:
         minutes, seconds = divmod(int(hit.start_seconds), 60)
-        return f"{named} (at {minutes}:{seconds:02d})"
+        return f"{named} (at {minutes}:{seconds:02d}) {tag}"
     name = _OWNER_NAMES.get(hit.owner_kind)
-    return f"{named} ({name})" if name else named
+    return f"{named} ({name}) {tag}" if name else f"{named} {tag}"
 
 
 def _byline(hit: search.ChunkHit) -> str | None:

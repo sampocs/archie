@@ -59,6 +59,8 @@ const artifact = (overrides: Partial<ArtifactRow>): ArtifactRow => ({
   content: JSON.stringify({ summary }),
   isCurrent: 1,
   createdAt: "2026-11-02T00:00:00Z",
+  origin: "archie",
+  instruction: null,
   ...overrides,
 });
 

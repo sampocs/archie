@@ -238,6 +238,10 @@ def test_a_tldr_signup_email_is_a_ready_confirmation_with_no_jobs_and_is_never_b
         live_stack, sqlalchemy.select(models.SourceCapture).where(models.SourceCapture.source_id == confirmation.id)
     )
     assert capture.text.strip()
+    # "Open the full email" reads the capture, since a confirmation has no text artifact.
+    full_text = authed.get(f"/sources/{confirmation.id}/text")
+    assert full_text.status_code == 200
+    assert full_text.json()["text"].strip()
     # Only the ordinary newsletter queued fetch_content.
     jobs = _query(live_stack, sqlalchemy.select(models.Job))
     assert {job.payload[pipeline.SOURCE_ID_KEY] for job in jobs} == {str(ordinary_row.id)}

@@ -101,27 +101,29 @@ export default function SourceScreen() {
         title=""
         onBack={router.back}
         headerRight={
-          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}>
-            <Pressable
-              testID="item-favorite"
-              accessibilityLabel={starred ? "Remove from favorites" : "Add to favorites"}
-              onPress={() => {
-                haptic("selection");
-                setFavorite(db, source.id, !starred);
-                requestSync();
-              }}
-              hitSlop={12}
-            >
-              <Ionicons
-                name={starred ? "star" : "star-outline"}
-                size={24}
-                color={starred ? theme.signals.favorite : theme.colors.ink}
-              />
-            </Pressable>
-            <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
-              <Text variant="largeTitle">•••</Text>
-            </Pressable>
-          </View>
+          isConfirmation ? undefined : (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}>
+              <Pressable
+                testID="item-favorite"
+                accessibilityLabel={starred ? "Remove from favorites" : "Add to favorites"}
+                onPress={() => {
+                  haptic("selection");
+                  setFavorite(db, source.id, !starred);
+                  requestSync();
+                }}
+                hitSlop={12}
+              >
+                <Ionicons
+                  name={starred ? "star" : "star-outline"}
+                  size={24}
+                  color={starred ? theme.signals.favorite : theme.colors.ink}
+                />
+              </Pressable>
+              <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
+                <Text variant="largeTitle">•••</Text>
+              </Pressable>
+            </View>
+          )
         }
       >
         <ItemHeader
@@ -148,27 +150,31 @@ export default function SourceScreen() {
             <CardsSection of={{ kind: "source", id: source.id }} />
           </>
         )}
-        <FinishSheet
-          sourceId={source.id}
-          primerWords={primerWords}
-          visible={finishOpen}
-          onClose={() => setFinishOpen(false)}
-        />
-        <ItemMenu
-          source={source}
-          cardCount={cards.length}
-          summaryVersions={summaryVersions}
-          primerVersions={primerVersions}
-          onOpenVersions={setVersionsOf}
-          visible={menuOpen}
-          onClose={() => setMenuOpen(false)}
-        />
-        <VersionsSheet
-          target={versionsOf ? { kind: versionsOf, id: source.id } : null}
-          visible={versionsOf !== null}
-          onClose={() => setVersionsOf(null)}
-          onRestored={(version) => setRestoredToast(`Restored version ${version}`)}
-        />
+        {isConfirmation ? null : (
+          <>
+            <FinishSheet
+              sourceId={source.id}
+              primerWords={primerWords}
+              visible={finishOpen}
+              onClose={() => setFinishOpen(false)}
+            />
+            <ItemMenu
+              source={source}
+              cardCount={cards.length}
+              summaryVersions={summaryVersions}
+              primerVersions={primerVersions}
+              onOpenVersions={setVersionsOf}
+              visible={menuOpen}
+              onClose={() => setMenuOpen(false)}
+            />
+            <VersionsSheet
+              target={versionsOf ? { kind: versionsOf, id: source.id } : null}
+              visible={versionsOf !== null}
+              onClose={() => setVersionsOf(null)}
+              onRestored={(version) => setRestoredToast(`Restored version ${version}`)}
+            />
+          </>
+        )}
         <FullEmailSheet sourceId={source.id} visible={emailOpen} onClose={() => setEmailOpen(false)} />
       </Screen>
       {/* Undo sends the reverse action rather than cancelling the first, which may already have synced. */}

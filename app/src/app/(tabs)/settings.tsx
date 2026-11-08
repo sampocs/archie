@@ -51,6 +51,14 @@ export default function SettingsScreen() {
           onPress={() => router.push("/settings/removed-topics")}
         />
       </GroupedList>
+      <GroupedList title="NEWSLETTERS">
+        <SettingsRow
+          testID="blocked-senders-link"
+          label="Blocked senders"
+          trailing="›"
+          onPress={() => router.push("/settings/newsletters")}
+        />
+      </GroupedList>
       <GroupedList title="ACCOUNT">
         <SettingsRow testID="sign-out" label="Sign out" onPress={signOut} />
       </GroupedList>

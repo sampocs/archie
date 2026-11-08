@@ -75,7 +75,9 @@ def seed_note_write_up(
     source_id: uuid.UUID, request: SeedWriteUpRequest, db: Annotated[orm.Session, fastapi.Depends(deps.get_db)]
 ) -> None:
     """Store `summary` as the note's current write-up, file it under `domain`, and mark it ready."""
-    source = db.get_one(models.Source, source_id)
+    source = db.get(models.Source, source_id)
+    if source is None:
+        raise fastapi.HTTPException(status_code=fastapi.status.HTTP_404_NOT_FOUND)
     changes.lock_user_writes(db, source.user_id)
 
     pipeline.write_artifact(

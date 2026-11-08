@@ -34,6 +34,7 @@ const source = (overrides: Partial<SourceRow>): SourceRow => ({
   cardsOff: 0,
   favoritedAt: null,
   publishedAt: null,
+  confirmUrl: null,
   ...overrides,
 });
 
@@ -99,5 +100,22 @@ describe("joinLibrary", () => {
     });
 
     expect(data.sources[0]).toMatchObject({ topic: null, summary: null, primerCreatedAt: null, primerWords: null });
+  });
+
+  it("splits confirmation emails out of sources into confirmations, newest first", () => {
+    const data = joinLibrary({
+      sources: [
+        source({ id: "old", confirmUrl: "https://example.com/a", createdAt: "2026-11-02T00:00:00Z" }),
+        source({ id: "plain" }),
+        source({ id: "new", confirmUrl: "https://example.com/b", createdAt: "2026-11-05T00:00:00Z" }),
+      ],
+      artifacts: [],
+      topics: [],
+      topicPrimers: [],
+    });
+
+    expect(data.sources.map((row) => row.id)).toEqual(["plain"]);
+    expect(data.confirmations.map((row) => row.id)).toEqual(["new", "old"]);
+    expect(data.confirmations[0]).toMatchObject({ topic: null, summary: null });
   });
 });

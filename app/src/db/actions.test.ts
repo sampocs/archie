@@ -42,7 +42,7 @@ function createTables(outboxCheck: string): string {
       processing text DEFAULT 'pending' NOT NULL, processing_error text, reaction text, note text,
       merged_into_id text, sender text, domain text, topic_id text, image_url text, queue_position real,
       read_at text, snoozed_until text, primer_opened_at text, newsletter_kind text, primer_queue_position real,
-      primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL, favorited_at text, published_at text
+      primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL, favorited_at text, published_at text, confirm_url text
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,

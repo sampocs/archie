@@ -281,6 +281,7 @@ export function createDbSyncStore(
             cardsOff: source.cards_off ? 1 : 0,
             favoritedAt: source.favorited_at ?? null,
             publishedAt: source.published_at ?? null,
+            confirmUrl: source.confirm_url ?? null,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })

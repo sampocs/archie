@@ -104,6 +104,10 @@ maestro-podcast: reset-local-data
 maestro-newsletter: reset-local-data
 	@maestro/run_newsletter.sh
 
+# Delivers a signup confirmation email through the ingest endpoint and confirms it (needs INGEST_SECRET in .env; free).
+maestro-confirm: reset-local-data
+	@maestro/run_confirm_email.sh
+
 # Delivers a news newsletter and an essay, then reads the brief (needs INGEST_SECRET and the owner's keys in .env; a few cents).
 maestro-brief: reset-local-data
 	@maestro/run_brief.sh
@@ -129,4 +133,4 @@ maestro-edit: reset-local-data
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-brief maestro-review maestro-takes-clean maestro-ask maestro-edit maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-confirm maestro-brief maestro-review maestro-takes-clean maestro-ask maestro-edit maestro-offline

@@ -106,11 +106,11 @@ export function previewLines(content: BriefContent): PreviewLines {
 
 /**
  * Today's brief card. The open brief's content wins; without it, newsletters the server will brief (inbox, not failed,
- * however old) mean one is being written. `sources` are the phone's non-deleted ones.
+ * however old, and not a signup confirmation, which is never briefed) mean one is being written. `sources` are the phone's non-deleted ones.
  */
 export function todayBrief(
   briefs: BriefRow[],
-  sources: Pick<SourceRow, "kind" | "state" | "processing">[],
+  sources: Pick<SourceRow, "kind" | "state" | "processing" | "confirmUrl">[],
 ): TodayBrief {
   const open = briefs.find((brief) => brief.status === BRIEF_STATUS_OPEN);
   const content = open ? parseBriefContent(open.content) : null;
@@ -120,6 +120,7 @@ export function todayBrief(
     (source) =>
       source.kind === "newsletter" &&
       source.state === "inbox" &&
+      source.confirmUrl === null &&
       !UNBRIEFABLE_PROCESSING.has(source.processing),
   ).length;
   return newsletters > 0 ? { kind: "writing", newsletters } : null;

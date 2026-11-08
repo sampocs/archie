@@ -79,3 +79,25 @@ def test_og_image_is_made_absolute_and_must_be_http(content: str, expected: str 
 def test_a_page_without_og_image_has_no_image() -> None:
     """No og:image means no artwork."""
     assert fetch_title.extract_image(page="<title>x</title>", base_url="https://site.example/") is None
+
+
+def test_the_description_prefers_og_description_over_the_meta_description() -> None:
+    """What a site chooses to show when shared wins, in either order in the head."""
+    page = '<meta name="description" content="Plain"><meta property="og:description" content="Shared">'
+
+    assert fetch_title.extract_description(page=page) == "Shared"
+
+
+def test_the_description_falls_back_to_the_meta_description() -> None:
+    """Whitespace is collapsed."""
+    page = '<meta name="description" content="  A  show\n about   things ">'
+
+    assert fetch_title.extract_description(page=page) == "A show about things"
+
+
+def test_a_long_description_is_capped_and_a_missing_one_is_none() -> None:
+    """A hostile page cannot feed the model an unbounded description."""
+    long_page = f'<meta name="description" content="{"x" * 1500}">'
+
+    assert fetch_title.extract_description(page=long_page) == "x" * 1000
+    assert fetch_title.extract_description(page="<title>Only a title</title>") is None

@@ -1419,8 +1419,6 @@ interactions:
       - ESF
       Strict-Transport-Security:
       - max-age=31536000
-      Transfer-Encoding:
-      - chunked
       Vary:
       - Sec-CH-Viewport-Width, Sec-CH-DPR, Device-Memory
       X-Content-Type-Options:
@@ -2299,8 +2297,6 @@ interactions:
       - Wed, 04 Nov 2026 04:19:37 GMT
       Server:
       - scaffolding on HTTPServer2
-      Transfer-Encoding:
-      - chunked
       Vary:
       - Origin
       - X-Origin
@@ -2376,8 +2372,6 @@ interactions:
       - no-cache
       Server:
       - video-timedtext
-      Transfer-Encoding:
-      - chunked
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
@@ -2770,6 +2764,55 @@ interactions:
       - Accept-Encoding
       x-robots-tag:
       - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - www.youtube.com
+      user-agent:
+      - python-httpx/0.28.1
+    method: GET
+    uri: https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3De0gVE3YxZs8&format=json
+  response:
+    body:
+      string: '{"title":"Jay Powell and the Fed Pause in 60 Seconds","author_name":"Bloomberg
+        Television","author_url":"https://www.youtube.com/@markets","type":"video","height":113,"width":200,"version":"1.0","provider_name":"YouTube","provider_url":"https://www.youtube.com/","thumbnail_height":360,"thumbnail_width":480,"thumbnail_url":"https://i.ytimg.com/vi/e0gVE3YxZs8/hqdefault.jpg","html":"\u003ciframe
+        width=\u0022200\u0022 height=\u0022113\u0022 src=\u0022https://www.youtube.com/embed/e0gVE3YxZs8?feature=oembed\u0022
+        frameborder=\u00220\u0022 allow=\u0022accelerometer; autoplay; clipboard-write;
+        encrypted-media; gyroscope; picture-in-picture; web-share\u0022 referrerpolicy=\u0022strict-origin-when-cross-origin\u0022
+        allowfullscreen title=\u0022Jay Powell and the Fed Pause in 60 Seconds\u0022\u003e\u003c/iframe\u003e"}'
+    headers:
+      alt-svc:
+      - h3=":443"; ma=2592000,h3-29=":443"; ma=2592000
+      content-length:
+      - '820'
+      content-type:
+      - application/json
+      date:
+      - Sun, 08 Nov 2026 22:12:57 GMT
+      server:
+      - scaffolding on HTTPServer2
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      - X-Origin
+      - Referer
+      x-content-type-options:
+      - nosniff
+      x-frame-options:
+      - SAMEORIGIN
+      x-xss-protection:
+      - '0'
     status:
       code: 200
       message: OK

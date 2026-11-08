@@ -70,7 +70,6 @@ def _record_source_sender(
     if not identifiers:
         return _NO_IDENTIFIERS
 
-    senders.record(
-        db, user_id=user.id, identifiers=identifiers, status=status, label=source.sender or source.sender_address or ""
-    )
+    label = source.sender or source.sender_address or source.list_id or ""
+    senders.record(db, user_id=user.id, identifiers=identifiers, status=status, label=label)
     return None

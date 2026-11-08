@@ -88,7 +88,10 @@ def main(argv: list[str] | None = None) -> None:
     kind = models.IdentifierKind(args.kind) if args.kind else None
     engine = session.engine_for(config.get_settings().require_database_url())
     with sqlalchemy.orm.Session(engine) as db:
-        identifiers = allow_sender(db, email=args.email, sender=args.sender, kind=kind)
+        try:
+            identifiers = allow_sender(db, email=args.email, sender=args.sender, kind=kind)
+        except AllowSenderError as error:
+            parser.exit(status=1, message=f"{error}\n")
     recorded = ", ".join(f"{identifier.kind}={identifier.value}" for identifier in identifiers)
     print(f"Allowed ({recorded}); waiting newsletters from them are now processed.")
 

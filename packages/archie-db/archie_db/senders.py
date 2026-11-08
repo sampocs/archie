@@ -134,7 +134,8 @@ def record(
 
     The senders that already own any identifier are merged into the oldest: each gets `status` (touched only if it
     changed) and the identifiers nobody owns yet are attached to the oldest. With no owner, one new sender is made.
-    Repeating a call changes nothing.
+    Recording `blocked` therefore also blocks any already-allowed sender that shares one of the identifiers: every
+    owning sender takes the new status. Repeating a call changes nothing.
     """
     owners = _owning_senders(db, user_id=user_id, identifiers=identifiers)
 

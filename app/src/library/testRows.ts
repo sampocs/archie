@@ -41,8 +41,22 @@ export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => (
   summary: null,
   primerCreatedAt: null,
   primerWords: null,
+  cardCount: 0,
   ...overrides,
 });
+
+/** A live note with cards on and a write-up, waiting in the refresher. */
+export const noteSource = (overrides: Partial<LibrarySource>): LibrarySource =>
+  sourceRow({
+    kind: "note",
+    state: "inbox",
+    processing: "ready",
+    cardsOff: 0,
+    summary: { gist: "One line", key_ideas: [], numbers: [] },
+    noteEditedAt: "2026-01-01T12:00:00Z",
+    cardCount: 0,
+    ...overrides,
+  });
 
 export const topicRow = (overrides: Partial<TopicRow>): TopicRow => ({
   id: "t1",

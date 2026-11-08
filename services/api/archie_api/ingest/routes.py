@@ -5,11 +5,12 @@ from __future__ import annotations
 import hmac
 import logging
 import uuid
+from dataclasses import dataclass
 from typing import Annotated
 
 import fastapi
 import sqlalchemy
-from archie_db import changes, models, pipeline
+from archie_db import changes, models, pipeline, senders
 from archie_shared import config, urls
 from sqlalchemy import orm
 
@@ -20,7 +21,6 @@ INGEST_MAX_BYTES = 10 * 1024 * 1024
 MAX_URL_LENGTH = 2048
 MAX_TITLE_LENGTH = 500
 MAX_SENDER_LENGTH = 320
-UNREADABLE_EMAIL_ERROR = "Couldn't read this email."
 
 _ACCEPTED = {"status": "accepted"}
 _NEWSLETTER_URL_PREFIX = "newsletter:"
@@ -76,7 +76,20 @@ def ingest_email(
     if already_delivered is not None:
         return _ACCEPTED
 
-    _insert_newsletter(db, user=user, parsed=parsed)
+    sender = _Sender.of(parsed)
+    if not sender.identifiers:
+        logger.info("Dropped email with no sender identifiers for user %s", user.id)
+        return _ACCEPTED
+
+    status = senders.status_for(db, user_id=user.id, identifiers=sender.identifiers)
+    if status == models.SenderStatus.BLOCKED:
+        logger.info("Dropped email from a blocked sender for user %s", user.id)
+        return _ACCEPTED
+
+    # Mail from a sender nobody decided on waits for the owner, unless it is a signup confirmation: those are shown
+    # at once so the owner can confirm, and cost nothing.
+    pending = status is None and parsed.confirm_url is None
+    _insert_newsletter(db, user=user, parsed=parsed, sender=sender, pending=pending)
     db.commit()
     return _ACCEPTED
 
@@ -86,11 +99,42 @@ def find_recipient(db: orm.Session, *, local_part: str) -> models.User | None:
     return db.scalars(sqlalchemy.select(models.User).where(models.User.ingest_token == local_part)).one_or_none()
 
 
-def _insert_newsletter(db: orm.Session, *, user: models.User, parsed: email_message.ParsedEmail) -> None:
+@dataclass(frozen=True)
+class _Sender:
+    """The sender fields as stored on the source, and the identifiers they give.
+
+    The name is truncated to its column. An address or List-Id too long for its column is stored as None, never as a
+    prefix: a prefix could end in a trusted domain the real value does not, and would give that domain's identifier.
+    """
+
+    name: str | None
+    address: str | None
+    list_id: str | None
+    identifiers: list[senders.SenderIdentifier]
+
+    @classmethod
+    def of(cls, parsed: email_message.ParsedEmail) -> _Sender:
+        name = parsed.sender[:MAX_SENDER_LENGTH] if parsed.sender else None
+        address = _fitting(parsed.sender_address, limit=senders.MAX_ADDRESS_LENGTH)
+        list_id = _fitting(parsed.list_id, limit=senders.MAX_VALUE_LENGTH)
+        identifiers = senders.identifiers_for(address=address, list_id=list_id, name=name)
+        return cls(name=name, address=address, list_id=list_id, identifiers=identifiers)
+
+
+def _fitting(value: str | None, *, limit: int) -> str | None:
+    """The value, or None when it is empty or too long for its column."""
+    return value if value and len(value) <= limit else None
+
+
+def _insert_newsletter(
+    db: orm.Session, *, user: models.User, parsed: email_message.ParsedEmail, sender: _Sender, pending: bool
+) -> None:
     """Add the source and its captured text, and queue fetch_content (which only has to analyze a capture).
 
     A signup confirmation (`parsed.confirm_url`) is stored the same way but is `ready` at once and queues nothing: it
-    is never summarised, carded, embedded or briefed, and the owner opens its link from the phone.
+    is never summarised, carded, embedded or briefed, and the owner opens its link from the phone. So is mail from a
+    sender nobody has allowed yet (`pending`): ready at once, with no error even when unreadable, and no jobs, until
+    the owner allows the sender (see `senders.resolve_pending`) or blocks it.
     """
     text, subject = parsed.text, parsed.subject
     confirm_url = parsed.confirm_url
@@ -107,11 +151,14 @@ def _insert_newsletter(db: orm.Session, *, user: models.User, parsed: email_mess
         url=url,
         normalized_url=urls.normalize_url(web_url) if web_url else url,
         title=subject[:MAX_TITLE_LENGTH] if subject else None,
-        sender=parsed.sender[:MAX_SENDER_LENGTH] if parsed.sender else None,
+        sender=sender.name,
+        sender_address=sender.address,
+        list_id=sender.list_id,
+        sender_pending=pending,
         newsletter_message_id=parsed.message_id,
         confirm_url=confirm_url,
-        processing=_newsletter_processing(readable=readable, is_confirmation=confirm_url is not None).value,
-        processing_error=None if readable or confirm_url else UNREADABLE_EMAIL_ERROR,
+        processing=_newsletter_processing(readable=readable, ready_unprocessed=bool(confirm_url) or pending).value,
+        processing_error=None if readable or confirm_url or pending else models.UNREADABLE_EMAIL_ERROR,
         change_seq=changes.next_change_seq(),
     )
     db.add(source)
@@ -121,13 +168,13 @@ def _insert_newsletter(db: orm.Session, *, user: models.User, parsed: email_mess
         return
     db.add(models.SourceCapture(source_id=source.id, title=subject, text=text))
     db.flush()
-    if confirm_url:
+    if confirm_url or pending:
         return
     pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.FETCH_CONTENT])
 
 
-def _newsletter_processing(*, readable: bool, is_confirmation: bool) -> models.ProcessingStatus:
-    if is_confirmation:
+def _newsletter_processing(*, readable: bool, ready_unprocessed: bool) -> models.ProcessingStatus:
+    if ready_unprocessed:
         return models.ProcessingStatus.READY
     return models.ProcessingStatus.PENDING if readable else models.ProcessingStatus.FAILED
 

@@ -1,0 +1,221 @@
+<title>Archie Notes Import</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of numbered phone mocks (wrapping to one column on a phone), each with a short caption under it. */
+:root {
+  --page: #E9E6DE; --pink: #1C1B18; --pink2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --macro: #3F7262; --ai: #6A5A9C; --history: #8E5468; --web: #3D6690;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --pink: #F1EFE9; --pink2: #A9A59B; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --pink: #F1EFE9; --pink2: #A9A59B; color-scheme: dark }
+body { background: var(--page); color: var(--pink); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+header { max-width: 1280px; margin: 0 auto 26px; display: grid; gap: 6px; }
+h1 { font-size: 28px; letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--pink2); max-width: 70ch; line-height: 1.5; font-size: 15px; }
+.row { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px 26px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; min-width: 0; }
+figcaption b { font-size: 15px; }
+figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
+.n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pink2); }
+.phone { width: 100%; max-width: 300px; aspect-ratio: 300 / 640; background: var(--bg); color: var(--ink); border-radius: 38px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-size: 13px; }
+.screen { position: absolute; inset: 0; padding: 38px 14px 84px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.big { font-size: 28px; font-weight: 700; letter-spacing: -.03em; }
+.nav { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink2); }
+.nav b { color: var(--ink); font-size: 14px; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search { background: var(--press); border-radius: 12px; padding: 9px 12px; color: var(--ink); }
+.search i { color: var(--ink3); font-style: normal; }
+.card { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.item { padding: 11px 12px; display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 10px; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.tile { width: 36px; height: 36px; border-radius: 9px; color: #fff; display: grid; place-items: center; font-weight: 600; }
+.k { font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.t { font-weight: 600; font-size: 13.5px; line-height: 1.25; }
+.s { color: var(--ink3); font-size: 11.5px; }
+.q { color: var(--ink2); font-size: 12px; line-height: 1.4; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.q mark { background: color-mix(in srgb, var(--macro) 16%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+.ts { font: 500 10.5px var(--mono); color: var(--ink2); background: var(--press); border-radius: 6px; padding: 1px 5px; }
+.chat { padding: 11px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 3px; }
+.chat:last-child { border-bottom: 0; }
+.chat .top { display: flex; justify-content: space-between; gap: 8px; }
+.chat .when { color: var(--ink3); font-size: 11px; white-space: nowrap; }
+.composer { position: absolute; left: 10px; right: 10px; bottom: 84px; background: var(--surface); border-radius: 22px; padding: 8px 8px 8px 14px;
+  display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05); }
+.composer .ph { flex: 1; color: var(--ink3); }
+.globe { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--press); color: var(--ink2); font-size: 14px; }
+.globe.on { background: var(--web); color: #fff; }
+.send { width: 30px; height: 30px; border-radius: 50%; background: var(--chrome); color: var(--onChrome); display: grid; place-items: center; font-weight: 700; }
+.mine { align-self: flex-end; max-width: 82%; background: var(--press); border-radius: 16px 16px 4px 16px; padding: 9px 12px; line-height: 1.4; }
+.answer { display: grid; gap: 12px; }
+.sec { display: grid; gap: 5px; }
+.lab { font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; }
+.lab.lib { color: var(--macro); } .lab.bg { color: var(--ink3); } .lab.web { color: var(--web); }
+.sec p { margin: 0; line-height: 1.5; font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--ink2); white-space: nowrap; }
+.chip.web { color: var(--web); }
+.acts { display: flex; gap: 8px; }
+.btn2 { background: var(--press); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 12px; color: var(--ink); }
+.searching { color: var(--ink3); font-size: 12px; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; border-top: 1px solid var(--line); background: var(--bg);
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 9px; font-size: 9.5px; color: var(--ink3); text-align: center; }
+.tabbar .on { color: var(--ink); font-weight: 600; }
+.dot { width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 6px; border: 1.6px solid currentColor; }
+.on .dot { background: currentColor; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: 22px 22px 0 0; padding: 10px 16px 28px;
+  display: grid; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,.18); }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 4px; }
+.field { display: grid; gap: 4px; }
+.field label { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.field div { background: var(--bg); border-radius: 10px; padding: 9px 11px; line-height: 1.4; }
+.primary { background: var(--chrome); color: var(--onChrome); border-radius: 14px; padding: 11px; text-align: center; font-weight: 600; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+.about { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 11.5px; color: var(--ink2); }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 132px; background: var(--chrome); color: var(--onChrome); border-radius: 999px; padding: 7px 14px; font-size: 12px; white-space: nowrap; }
+.read { line-height: 1.55; color: var(--ink); }
+.read h4 { margin: 0 0 4px; font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); }
+</style>
+<style>
+<style>
+:root { --review: #3F7262; --notes: #8A6A2E; }
+.hdr { display: flex; justify-content: space-between; align-items: baseline; }
+.date { color: var(--ink3); font-size: 12px; }
+.brief { background: var(--surface); border-radius: 16px; padding: 12px 13px; display: grid; gap: 3px; }
+.revcard { background: var(--review); color: #fff; border-radius: 16px; padding: 13px; display: flex; justify-content: space-between; align-items: center; }
+.revcard .go { width: 32px; height: 32px; border-radius: 10px; background: #fff; color: var(--review); display: grid; place-items: center; font-weight: 700; }
+.refresh { background: var(--surface); border-radius: 16px; padding: 12px 13px; display: grid; gap: 8px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--notes) 30%, transparent); }
+.refresh .kick { font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; color: var(--notes); }
+.refresh .rrow { display: grid; grid-template-columns: 36px minmax(0,1fr) auto; gap: 10px; align-items: center; }
+.ntile { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; background: color-mix(in srgb, var(--notes) 14%, transparent); color: var(--notes); font-weight: 700; }
+.chev { color: var(--ink3); }
+.tiny { color: var(--ink3); font-size: 11px; }
+.badge { font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--notes); }
+.read p { margin: 0 0 8px; }
+.read ul { margin: 0 0 8px; padding-left: 16px; display: grid; gap: 5px; }
+.srcs { display: grid; gap: 5px; }
+.src { background: var(--surface); border-radius: 10px; padding: 8px 10px; display: grid; gap: 1px; font-size: 12px; }
+.src .host { color: var(--ink3); font-size: 10.5px; }
+.orig { color: var(--ink2); font-weight: 600; font-size: 12.5px; text-decoration: underline; }
+.donebar { position: absolute; left: 10px; right: 10px; bottom: 84px; background: var(--chrome); color: var(--onChrome); border-radius: 14px; padding: 11px; text-align: center; font-weight: 600; }
+.mono { font-family: var(--mono); font-size: 11px; line-height: 1.55; color: var(--ink); white-space: pre-wrap; background: var(--bg); border-radius: 10px; padding: 10px; }
+.donecard { background: var(--surface); border-radius: 16px; padding: 12px 13px; display: grid; gap: 4px; }
+.donecard .ok { color: var(--review); font-weight: 600; }
+.notes { max-width: 1280px; margin: 34px auto 0; display: grid; gap: 8px; color: var(--pink2); font-size: 14px; line-height: 1.5; }
+.notes b { color: var(--pink); }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 82ch; }
+</style>
+<header>
+  <span class="n">ARCHIE · M8 NOTES IMPORT</span>
+  <h1>Bring in your notes, a couple a day</h1>
+  <p>The 91 Bear notes you marked become Notes items. Each one is searchable and in Ask from day one. Twice a day Today offers one to refresh: you read Archie's write-up, tap Done, and only then do its review cards join your reviews.</p>
+</header>
+<div class="row">
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><span class="big">Today</span><span class="date">Sun · Nov 8</span></div>
+      <div class="brief"><span class="t">Your brief</span><span class="s">5 stories · 2 min · Read the brief ›</span></div>
+      <div class="revcard"><div><div class="t" style="color:#fff">Review</div><div style="font-size:12px;opacity:.85">14 cards · about 5 min</div></div><span class="go">›</span></div>
+      <div class="refresh">
+        <span class="kick">Refresh a note · 1 of 2 today</span>
+        <div class="rrow"><span class="ntile">✎</span><div><div class="t">Liquid Staking</div><div class="s">Notes · Crypto · 4 min read</div></div><span class="chev">›</span></div>
+        <span class="tiny">Next up: Liquid Restaking Tokens, EigenLayer</span>
+      </div>
+    </div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span class="on"><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">TODAY</span><b>One note to refresh, twice a day</b><span>Sits under the review card. Notes come in topic runs, so related ones arrive back to back. "Next up" shows what's coming. After the day's two, the card says "Done for today" until tomorrow.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Today</span><span>☆ ···</span></div>
+      <span class="badge">Notes · Crypto</span>
+      <div class="t" style="font-size:20px">Liquid Staking</div>
+      <div class="read">
+        <p>When you stake a token like ATOM, it's locked: it earns rewards but you can't use it. Liquid staking hands you a receipt token (stATOM) that keeps earning while you trade it, lend it, or use it as collateral.</p>
+        <h4>Key ideas</h4>
+        <ul><li><b>The receipt grows, not your balance.</b> One stATOM redeems for slightly more ATOM each day as rewards pile up.</li><li><b>Unbonding is the catch.</b> Redeeming the real token takes the chain's unbonding period, around 21 days on Cosmos, so most people swap on a DEX instead.</li></ul>
+      </div>
+      <span class="orig">See original note</span>
+    </div>
+    <div class="donebar">Done, add review cards</div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span class="on"><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">THE NOTE PAGE</span><b>Archie's write-up comes first</b><span>Written fresh, as of today, with your note setting what it covers. It never mentions the note. The Done button only shows while the note is in your refresher queue; opened any other way (search, Library) it's just a normal item.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Today</span><span>☆ ···</span></div>
+      <span class="badge">Notes · Crypto</span>
+      <div class="t" style="font-size:20px">Ethereum Rollups</div>
+      <div class="read"><p>…rollups post their data to Ethereum so anyone can rebuild the state and challenge a bad batch.</p></div>
+      <h4 style="margin:4px 0 0;font:600 9.5px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)">Sources</h4>
+      <div class="srcs">
+        <div class="src"><span class="host">vitalik.eth.limo</span><span>An Incomplete Guide to Rollups</span></div>
+        <div class="src"><span class="host">open.spotify.com</span><span>Bankless · episode</span></div>
+      </div>
+      <span class="orig">See original note</span>
+    </div>
+    <div class="donebar">Done, add review cards</div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span class="on"><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">SOURCES</span><b>Links from your note, used and listed</b><span>When a note has links, Archie reads the pages (episode links: title and description only) and lists them at the end. Tapping one opens it in the browser sheet.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen" style="filter: brightness(.82)">
+      <div class="nav"><span>‹ Today</span><span>☆ ···</span></div>
+      <div class="t" style="font-size:20px">Liquid Staking</div>
+    </div>
+    <div class="dim"></div>
+    <div class="sheet" style="top:90px"><div class="grab"></div>
+      <div class="t">Your original note</div>
+      <span class="s">From Bear · last edited Feb 13, 2024</span>
+      <div class="read" style="background:var(--bg);border-radius:10px;padding:10px 12px"><div class="t" style="font-size:15px;margin-bottom:6px">Liquid Staking</div><h4>Overview</h4><ul><li>Stake w/ provider, get LST back</li><li>LST accrues → <b>redemption rate</b> goes up</li><li>Unbonding ~21d on most Cosmos chains</li></ul><h4>Risks</h4><ul><li>Slashing, depeg on DEX</li></ul></div>
+    </div>
+    </div>
+    <figcaption><span class="n">ORIGINAL</span><b>See original note</b><span>Your Bear note as you wrote it, rendered as formatted markdown (headings, bullets, bold, links), in a sheet like "Show full email" on newsletters. Read-only: Bear stays where you edit it.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="hdr"><span class="big">Today</span><span class="date">Sun · Nov 8</span></div>
+      <div class="brief"><span class="t">Your brief</span><span class="s">5 stories · 2 min · Read the brief ›</span></div>
+      <div class="revcard"><div><div class="t" style="color:#fff">Review</div><div style="font-size:12px;opacity:.85">14 cards · about 5 min</div></div><span class="go">›</span></div>
+      <div class="refresh">
+        <span class="kick">Refresh a note · 2 of 2 today</span>
+        <div class="rrow"><span class="ntile">✎</span><div><div class="t">Liquid Restaking Tokens</div><div class="s">Notes · Crypto · 5 min read</div></div><span class="chev">›</span></div>
+      </div>
+    </div>
+    <div class="toast">5 review cards added from Liquid Staking</div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span class="on"><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">DONE</span><b>Cards join review, the next note steps up</b><span>The new cards are due over the next few days like any fresh cards. Want more than two today? Open any note from Library and tap Done there: the refresher just skips it.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="big">Library</div>
+      <div class="search"><i>Search your library</i></div>
+      <div class="sect" style="font:600 9.5px var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)">Crypto · Liquid staking</div>
+      <div class="card">
+        <div class="item"><span class="ntile">✎</span><div><div class="t">Liquid Staking</div><div class="s">Notes · refreshed today · 5 cards</div></div></div>
+        <div class="item"><span class="ntile">✎</span><div><div class="t">Liquid Restaking Tokens</div><div class="s">Notes · up next</div></div></div>
+        <div class="item"><span class="tile" style="background:#3F7262">▶</span><div><div class="t">Why stake when you can restake?</div><div class="s">Bankless · 1h 12m</div></div></div>
+      </div>
+    </div>
+    <nav class="tabbar"><span class="on"><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">LIBRARY</span><b>Notes live with everything else</b><span>Filed under their domain and topic beside podcasts and articles, labelled Notes. They don't go in the regular queue; the refresher is their only schedule. They count as Done items once refreshed.</span></figcaption>
+  </figure>
+</div>
+<div class="notes">
+  <b>Behind the scenes</b>
+  <ul>
+    <li><b>Import</b>: a script on your Mac reads Bear (read-only) and your saved marks, and uploads the 91 notes. Nothing else from Bear leaves the Mac.</li>
+    <li><b>Write-ups</b> are generated once, at import, in the reading voice you pick from the sampler, so search and Ask are good from day one. Cards are generated at Done, from what your note chose to cover.</li>
+    <li><b>Order</b>: by topic run, starting from your most recently edited notes; you can reorder or skip like the queue.</li>
+    <li><b>Later notes</b>: share a Bear note to Archie with the share sheet and it joins the refresher queue. No ongoing Bear sync.</li>
+  </ul>
+</div>

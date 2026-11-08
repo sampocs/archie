@@ -141,6 +141,7 @@ describe("joinLibrary", () => {
       artifacts: [],
       topics: [],
       topicPrimers: [],
+      cardCounts: new Map(),
     });
 
     expect(data.sources.map((row) => row.id)).toEqual(["plain"]);

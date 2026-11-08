@@ -59,4 +59,32 @@ describe("parseMarkdown", () => {
   it("leaves unmatched asterisks as plain text", () => {
     expect(parseMarkdown("2 * 3 = 6")).toEqual([{ type: "paragraph", spans: [{ text: "2 * 3 = 6" }] }]);
   });
+
+  it("keeps a link's address on its span", () => {
+    expect(parseMarkdown("See [the guide](https://example.com/g) now")).toEqual([
+      {
+        type: "paragraph",
+        spans: [{ text: "See " }, { text: "the guide", href: "https://example.com/g" }, { text: " now" }],
+      },
+    ]);
+  });
+
+  it("caps deeper headings at level 3", () => {
+    expect(parseMarkdown("#### Deep")).toEqual([{ type: "heading", level: 3, spans: [{ text: "Deep" }] }]);
+  });
+
+  it("parses task items and + bullets as lists", () => {
+    expect(parseMarkdown("- [ ] todo\n- [x] done")).toEqual([
+      { type: "list", ordered: false, items: [[{ text: "☐ todo" }], [{ text: "☑ done" }]] },
+    ]);
+    expect(parseMarkdown("+ plus")).toEqual([{ type: "list", ordered: false, items: [[{ text: "plus" }]] }]);
+  });
+
+  it("drops highlight and strikethrough markers", () => {
+    expect(parseMarkdown("==hi== and ~gone~")).toEqual([{ type: "paragraph", spans: [{ text: "hi and gone" }] }]);
+  });
+
+  it("leaves a Bear tag as a paragraph", () => {
+    expect(parseMarkdown("#crypto/staking")).toEqual([{ type: "paragraph", spans: [{ text: "#crypto/staking" }] }]);
+  });
 });

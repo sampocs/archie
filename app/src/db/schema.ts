@@ -38,6 +38,14 @@ export const sources = sqliteTable("sources", {
   publishedAt: text("published_at"),
   // The link a signup-confirmation email asks the owner to open; null for every other source.
   confirmUrl: text("confirm_url"),
+  // A Bear note's Markdown body, and when it was last edited in Bear; null for every other source.
+  noteMarkdown: text("note_markdown"),
+  noteEditedAt: text("note_edited_at"),
+  // When the user refreshed the note (re-imported it from Bear), and whether that came from the queue; null = never.
+  refreshedAt: text("refreshed_at"),
+  refreshedFromQueue: integer("refreshed_from_queue").notNull().default(0),
+  // When the user skipped a refresh prompt for the note; null = never.
+  refreshSkippedAt: text("refresh_skipped_at"),
 });
 
 export const artifacts = sqliteTable("artifacts", {

@@ -15,6 +15,7 @@ function hostname(url: string): string | null {
 /** The letter shown when a source has no artwork: sender, else title, else site; "▶" for YouTube. */
 export function monogramFor(item: MonogramItem): string {
   if (item.kind === "youtube") return "▶";
+  if (item.kind === "note") return "✎";
   return (
     firstLetterOrDigit(item.sender) ?? firstLetterOrDigit(item.title) ?? firstLetterOrDigit(hostname(item.url)) ?? "?"
   );

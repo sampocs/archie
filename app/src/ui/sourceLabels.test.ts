@@ -1,4 +1,4 @@
-import { datedByline, itemBadge, kindLabel, sourceByline, sourceMeta } from "./sourceLabels";
+import { datedByline, itemBadge, kindLabel, longDate, sourceByline, sourceMeta } from "./sourceLabels";
 
 describe("sourceByline", () => {
   it("uses a newsletter's sender, or 'Newsletter' without one", () => {
@@ -68,5 +68,29 @@ describe("itemBadge", () => {
     ["consumed", "Done"],
   ])("%s → %s", (state, badge) => {
     expect(itemBadge(state)).toBe(badge);
+  });
+});
+
+describe("notes", () => {
+  const note = { kind: "note", url: "bear://x-callback-url/open-note?id=1", sender: null };
+
+  it("labels a note as Notes from Bear, with its edit date", () => {
+    const edited = new Date(2024, 1, 13, 12).toISOString();
+    expect(kindLabel("note")).toBe("Notes");
+    expect(sourceByline(note)).toBe("Bear");
+    expect(datedByline({ ...note, createdAt: "2025-01-01T00:00:00Z", noteEditedAt: edited }, new Date())).toBe(
+      "From Bear · edited Feb 13, 2024",
+    );
+  });
+
+  it("falls back to the created date when the edit date is missing", () => {
+    const created = new Date(2024, 1, 13, 12).toISOString();
+    expect(datedByline({ ...note, createdAt: created, noteEditedAt: null }, new Date())).toBe(
+      "From Bear · edited Feb 13, 2024",
+    );
+  });
+
+  it("formats a long date in local time", () => {
+    expect(longDate(new Date(2024, 1, 13, 12).toISOString())).toBe("Feb 13, 2024");
   });
 });

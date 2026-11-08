@@ -130,6 +130,7 @@ dependencies = [
     { name = "alembic" },
     { name = "archie-shared" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "publicsuffixlist" },
     { name = "sqlalchemy" },
 ]
 
@@ -138,6 +139,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.14" },
     { name = "archie-shared", editable = "packages/archie-shared" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
+    { name = "publicsuffixlist", specifier = ">=1.1.2.20261107" },
     { name = "sqlalchemy", specifier = ">=2.0.36" },
 ]
 
@@ -1212,6 +1214,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/57/b0/dae410a3c17f634f18f7f6bb1003a9986b2a52347593d87deaf509dd7056/psycopg_binary-3.3.7-cp315-cp315-musllinux_1_2_riscv64.whl", hash = "sha256:f3e0ba732d49cebe08f62e8ba8995e7cf82c74f6b43b880d4f05bc592415787a", size = 4039869, upload-time = "2026-11-03T03:57:56.388Z" },
     { url = "https://files.pythonhosted.org/packages/0e/3c/daadb40466b98e0465c767006c72bd3eda3e2d581822cd4212debd5273f2/psycopg_binary-3.3.7-cp315-cp315-musllinux_1_2_x86_64.whl", hash = "sha256:48528deb18273d53fc49382cf4eaf309c3013f1a2aa8e22b0fdec580ba235189", size = 4349380, upload-time = "2026-11-03T03:58:00.373Z" },
     { url = "https://files.pythonhosted.org/packages/1c/85/728f34d24afdb135a1cd7bfe79dd76da3ee7a6089a1ddd61ee737f158300/psycopg_binary-3.3.7-cp315-cp315-win_amd64.whl", hash = "sha256:5ca2e91d166c1cdd44073fac07c6dd1dd80011e474650d24778086bb57f59a22", size = 3716314, upload-time = "2026-11-03T03:58:06.014Z" },
+]
+
+[[package]]
+name = "publicsuffixlist"
+version = "1.1.2.20261107"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/10/1d/5e5a298fd7f70911054c3107a2f1a34c5392db31ed159c4d537fe4127b6b/publicsuffixlist-1.1.2.20261107.tar.gz", hash = "sha256:8dfd2ddfe3b14f16a18fc785ffd6986685b47c8ae3e9c09c7cb5ff8c240a9dd3", size = 106705, upload-time = "2026-11-07T09:56:33.878Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/50/83/cd048836ffde199af911767d99979f65170e7cae1d20e403ceb454451e62/publicsuffixlist-1.1.2.20261107-py3-none-any.whl", hash = "sha256:1fe45aa1902b28c7ddf6f185644fb69acc5fa8134fe394d0fdf97b034a08c910", size = 109464, upload-time = "2026-11-07T09:56:32.855Z" },
 ]
 
 [[package]]

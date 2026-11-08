@@ -10,7 +10,7 @@ from enum import StrEnum
 
 import pydantic
 import sqlalchemy
-from archie_db import changes, models, pipeline
+from archie_db import changes, models, pipeline, source_rows
 from sqlalchemy import orm
 
 from archie_api.sync import capture, rows
@@ -257,17 +257,7 @@ def delete_source(db: orm.Session, *, user: models.User, payload: dict[str, obje
     if source is None:
         return rows.NO_SOURCE
 
-    source.deleted_at = sqlalchemy.func.now()
-    changes.touch(source)
-    db.execute(
-        sqlalchemy.update(models.Card)
-        .where(models.Card.source_id == source.id, models.Card.deleted_at.is_(None))
-        .values(
-            deleted_at=sqlalchemy.func.now(),
-            updated_at=sqlalchemy.func.now(),
-            change_seq=changes.next_change_seq(),
-        )
-    )
+    source_rows.soft_delete_source(db, source=source)
     return None
 
 

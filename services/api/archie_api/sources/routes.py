@@ -39,7 +39,8 @@ def source_text(
 ) -> SourceTextView:
     """The caller's newsletter text; 404 for any other source, someone else's, or one without text yet.
 
-    A signup confirmation never gets a text artifact (that would embed it into Ask), so its capture is served instead.
+    A signup confirmation, or a newsletter from a sender nobody has allowed yet, never gets a text artifact (that
+    would embed it into Ask), so its capture is served instead.
     """
     source = db.get(models.Source, source_id)
     if source is None or source.user_id != user.id or source.deleted_at is not None:
@@ -50,7 +51,7 @@ def source_text(
     artifact = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT)
     if artifact is not None:
         return SourceTextView(text=artifact.content[_TEXT_KEY])
-    if source.confirm_url is None:
+    if source.confirm_url is None and not source.sender_pending:
         raise _not_found()
 
     capture = db.get(models.SourceCapture, source.id)

@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import re
 import time
+from dataclasses import dataclass
 from typing import Any
 
 import httpx
@@ -22,6 +23,7 @@ from archie_worker.handlers import fetch_title as title_page
 SUPADATA_URL = "https://api.supadata.ai/v1/transcript"
 SUPADATA_JOB_URL = "https://api.supadata.ai/v1/transcript/{job_id}"
 WATCH_URL = "https://www.youtube.com/watch?v={video_id}"
+OEMBED_URL = "https://www.youtube.com/oembed"
 THUMBNAIL_URL = "https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"
 
 _SUPADATA_TIMEOUT_SECONDS = 30
@@ -34,6 +36,9 @@ _STATUS_TRANSCRIPT_UNAVAILABLE = 206
 _UNAVAILABLE_STATUSES = frozenset({403, 404})
 _PAGE_TIMEOUT_SECONDS = 15
 _PAGE_MAX_BYTES = 5_000_000
+_OEMBED_TIMEOUT_SECONDS = 5
+_OEMBED_MAX_BYTES = 20_000
+_MAX_TITLE_LENGTH = 500
 _SOUND_ONLY_SNIPPETS = frozenset({"[music]", "[applause]", "[laughter]"})
 
 _logger = logging.get_logger(logging.LoggerName.WORKER, "youtube")
@@ -66,7 +71,11 @@ def thumbnail_url(video_id: str) -> str:
 
 
 def fetch_title(*, video_id: str) -> str | None:
-    """The watch page's title; None when the page can't be fetched (the source keeps its URL as title)."""
+    """The video's title from oEmbed, else the watch page; None when both fail (the source keeps its URL as title)."""
+    oembed = _fetch_oembed(video_id=video_id)
+    if oembed is not None and oembed.title:
+        return oembed.title
+
     try:
         page = title_page.fetch_page(
             url=WATCH_URL.format(video_id=video_id), timeout_seconds=_PAGE_TIMEOUT_SECONDS, max_bytes=_PAGE_MAX_BYTES
@@ -84,10 +93,23 @@ _OWNER_CHANNEL_NAME = re.compile(r'"ownerChannelName":"((?:[^"\\]|\\.)*)"')
 
 
 def fetch_preview(*, video_id: str) -> content.LinkPreview:
-    """The watch page's title, channel and length, with the standard thumbnail; raises if the page can't be fetched."""
-    page = title_page.fetch_page(
-        url=WATCH_URL.format(video_id=video_id), timeout_seconds=_PAGE_TIMEOUT_SECONDS, max_bytes=_PAGE_MAX_BYTES
-    )
+    """The video's title, channel and length, with the standard thumbnail; raises if neither lookup works.
+
+    The watch page is the only source of the length, but it is the lookup YouTube refuses from cloud hosts, so
+    oEmbed's title and channel stand in for it (without a length) rather than failing the preview.
+    """
+    try:
+        page = title_page.fetch_page(
+            url=WATCH_URL.format(video_id=video_id), timeout_seconds=_PAGE_TIMEOUT_SECONDS, max_bytes=_PAGE_MAX_BYTES
+        )
+    except (httpx.HTTPError, TimeoutError):
+        oembed = _fetch_oembed(video_id=video_id)
+        if oembed is None or oembed.title is None:
+            raise
+        return content.LinkPreview(
+            title=oembed.title, author=oembed.author, image_url=thumbnail_url(video_id), duration_seconds=None
+        )
+
     length = _LENGTH_SECONDS.search(page)
     owner = _OWNER_CHANNEL_NAME.search(page)
     return content.LinkPreview(
@@ -97,6 +119,39 @@ def fetch_preview(*, video_id: str) -> content.LinkPreview:
         image_url=thumbnail_url(video_id),
         duration_seconds=int(length.group(1)) if length else None,
     )
+
+
+@dataclass(frozen=True)
+class _OEmbed:
+    title: str | None
+    author: str | None
+
+
+def _fetch_oembed(*, video_id: str) -> _OEmbed | None:
+    """The video's title and channel from YouTube's tiny oEmbed endpoint; None when it can't be read."""
+    try:
+        body = title_page.fetch_bytes(
+            url=OEMBED_URL,
+            params={"url": WATCH_URL.format(video_id=video_id), "format": "json"},
+            timeout_seconds=_OEMBED_TIMEOUT_SECONDS,
+            max_bytes=_OEMBED_MAX_BYTES,
+        )
+        data = json.loads(body)
+    except (httpx.HTTPError, TimeoutError, ValueError):
+        _logger.info("No oEmbed for video %s", video_id)
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    return _OEmbed(title=_clean_text(data.get("title")), author=_clean_text(data.get("author_name")))
+
+
+def _clean_text(value: Any) -> str | None:
+    """`value` as NUL-free text with whitespace collapsed, or None when it is not text or is blank."""
+    if not isinstance(value, str):
+        return None
+    return " ".join(content.strip_nul(value).split())[:_MAX_TITLE_LENGTH] or None
 
 
 def _fetch_supadata(*, video_id: str, api_key: str) -> list[Segment]:

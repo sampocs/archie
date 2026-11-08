@@ -74,6 +74,8 @@ const REWOUND_SOURCE_ACTIONS = new Set([
   "return_to_inbox",
   "set_cards_off",
   "set_favorite",
+  "refresh_note",
+  "skip_note",
 ]);
 
 export function createDbSyncStore(
@@ -282,6 +284,11 @@ export function createDbSyncStore(
             favoritedAt: source.favorited_at ?? null,
             publishedAt: source.published_at ?? null,
             confirmUrl: source.confirm_url ?? null,
+            noteMarkdown: source.note_markdown ?? null,
+            noteEditedAt: source.note_edited_at ?? null,
+            refreshedAt: source.refreshed_at ?? null,
+            refreshedFromQueue: source.refreshed_from_queue ? 1 : 0,
+            refreshSkippedAt: source.refresh_skipped_at ?? null,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })

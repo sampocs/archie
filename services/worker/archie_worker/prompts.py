@@ -8,6 +8,7 @@ prompt version.
 
 from __future__ import annotations
 
+import copy
 import datetime
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -603,3 +604,29 @@ TAKE_CARDS_SCHEMA: dict[str, Any] = {
 def take_cards_message(*, kind: models.TakeKind, title: str, body: str) -> str:
     """The take's kind, title and body, as the page shows it."""
     return f"Kind: {takes.KIND_NAMES[kind]}\nTitle: {title}\n\n<take>\n{body}\n</take>"
+
+
+NOTE_CARDS_PROMPT_VERSION = "note-cards-v1"
+
+NOTE_CARDS_SYSTEM = """You write review cards for a personal learning app from an explanation of a subject the user \
+chose to study, so they remember it. The user's own notes on it show what they chose to cover; ask about that.
+
+Write 3-5 open-recall cards of kind concept, mechanism ("why does X cause Y") or number (a rough figure worth \
+knowing). Each card asks ONE focused question, never a compound one with several parts. Each answer is what a good \
+response would cover in 1-3 sentences, worded from the explanation. Avoid trivia. When nothing in it is worth \
+remembering (personal admin, a list of errands), cards is an empty list. Never mention the notes or the explanation \
+in a card."""
+
+NOTE_CARDS_SCHEMA: dict[str, Any] = copy.deepcopy(
+    {
+        "type": "object",
+        "properties": {"cards": ANALYSIS_SCHEMA["properties"]["cards"]},
+        "required": ["cards"],
+        "additionalProperties": False,
+    }
+)
+
+
+def note_cards_message(*, title: str, markdown: str, write_up: Mapping[str, Any]) -> str:
+    """The note's title and own text, then the write-up the cards are written from."""
+    return f"Title: {title}\n\n<notes>\n{markdown}\n</notes>\n\n<explanation>\n{summary_text(write_up)}\n</explanation>"

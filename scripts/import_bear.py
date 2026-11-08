@@ -36,6 +36,10 @@ SESSION_KEY_VARIABLE = "ARCHIE_SESSION_KEY"
 BATCH_SIZE = 25
 REQUEST_TIMEOUT_SECONDS = 60
 MAX_TITLE_LENGTH = 500
+MAX_BEAR_ID_LENGTH = 64
+MAX_MARKDOWN_LENGTH = 200_000
+MAX_TAGS = 50
+MAX_TAG_LENGTH = 200
 UNTITLED = "Untitled"
 CORE_DATA_EPOCH = datetime.datetime(2001, 1, 1, tzinfo=datetime.UTC)
 
@@ -50,6 +54,7 @@ STATUS_DELETED = "deleted"
 
 _TAG = r"(#[^\s#][^#\n]*#|#[\w/\-]+)"
 _TAG_LINE = re.compile(rf"^\s*{_TAG}(\s+{_TAG})*\s*$")
+_CODE_FENCE = "```"
 
 _TAGS_QUERY = "select t.Z_5NOTES, g.ZTITLE from Z_5TAGS t join ZSFNOTETAG g on g.Z_PK = t.Z_13TAGS"
 _NOTES_QUERY = """
@@ -79,6 +84,7 @@ class MarkedNotes:
     to_import: list[tuple[BearNote, str]]
     missing: int
     encrypted: int
+    too_large: int
 
 
 @dataclasses.dataclass(frozen=True)
@@ -92,7 +98,11 @@ class ImportTally:
 
 
 def read_bear(db_path: pathlib.Path) -> list[BearNote]:
-    """Read every live (not trashed, archived or deleted) note from a Bear database, read-only."""
+    """Read every live (not trashed, archived or deleted) note from a Bear database, read-only.
+
+    Notes without a usable id (NULL or longer than the server accepts) are skipped; a NULL edit date falls back to the
+    creation date.
+    """
     connection = sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)
     try:
         tags_by_note: dict[int, list[str]] = {}
@@ -110,19 +120,21 @@ def read_bear(db_path: pathlib.Path) -> list[BearNote]:
             markdown=text or "",
             tags=sorted(tags_by_note.get(note_pk, [])),
             created_at=_from_core_data(created),
-            edited_at=_from_core_data(modified),
+            edited_at=_from_core_data(created if modified is None else modified),
             encrypted=bool(encrypted),
         )
         for note_pk, bear_id, title, text, created, modified, encrypted in rows
+        if bear_id is not None and len(bear_id) <= MAX_BEAR_ID_LENGTH
     ]
 
 
 def marked_notes(notes: Sequence[BearNote], marks: Mapping[str, str]) -> MarkedNotes:
-    """Pair the notes marked import or cards with their mark, counting marked ids that are missing or encrypted."""
+    """Pair notes marked import or cards with their mark, counting those missing, encrypted or over server limits."""
     by_id = {note.bear_id: note for note in notes}
     to_import: list[tuple[BearNote, str]] = []
     missing = 0
     encrypted = 0
+    too_large = 0
 
     for bear_id, mark in marks.items():
         if mark not in UPLOADED_MARKS:
@@ -133,10 +145,12 @@ def marked_notes(notes: Sequence[BearNote], marks: Mapping[str, str]) -> MarkedN
             missing += 1
         elif note.encrypted:
             encrypted += 1
+        elif _exceeds_server_limits(note):
+            too_large += 1
         else:
             to_import.append((note, mark))
 
-    return MarkedNotes(to_import=to_import, missing=missing, encrypted=encrypted)
+    return MarkedNotes(to_import=to_import, missing=missing, encrypted=encrypted, too_large=too_large)
 
 
 def note_payload(note: BearNote, mark: str) -> dict[str, object]:
@@ -153,9 +167,21 @@ def note_payload(note: BearNote, mark: str) -> dict[str, object]:
 
 
 def strip_tag_lines(markdown: str) -> str:
-    """Drop lines made only of Bear tags (the tags travel separately); headings keep their space after the #."""
-    lines = markdown.splitlines(keepends=True)
-    return "".join(line for line in lines if not _TAG_LINE.match(line))
+    """Drop lines made only of Bear tags (the tags travel separately), except inside fenced code blocks.
+
+    Headings keep their space after the #.
+    """
+    kept: list[str] = []
+    in_code_block = False
+
+    for line in markdown.splitlines(keepends=True):
+        # A "#tag" line inside a fenced code block is code (a shell comment, say), not a Bear tag.
+        if line.lstrip().startswith(_CODE_FENCE):
+            in_code_block = not in_code_block
+        if in_code_block or not _TAG_LINE.match(line):
+            kept.append(line)
+
+    return "".join(kept)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -168,7 +194,8 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"Marked in the file: {counts.count(MARK_IMPORT)} import, {counts.count(MARK_CARDS)} cards; "
         f"found in Bear: {len(marked.to_import) + marked.encrypted}; missing from Bear: {marked.missing}; "
-        f"skipped as encrypted: {marked.encrypted}."
+        f"skipped as encrypted: {marked.encrypted}; "
+        f"skipped as over the server's size limits: {marked.too_large}."
     )
     if args.dry_run:
         return 0
@@ -180,10 +207,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         tally = _upload(marked=marked, api_url=args.api_url, session_key=session_key)
-        print(
-            f"Imported: created {tally.created}, updated {tally.updated}, unchanged {tally.unchanged}, "
-            f"deleted in Archie {tally.deleted}."
-        )
+        print(f"Imported: {_format_tally(tally)}")
         if args.write:
             queued = _post(api_url=args.api_url, path="/notes/write-ups", body=None, session_key=session_key)
             print(f"Queued {queued['queued']} write-ups (about one a minute).")
@@ -195,7 +219,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 class _RequestFailedError(Exception):
-    """An HTTP error from the API, carrying only the status and the server's detail."""
+    """A failed API request, carrying only the path, the status and the server's plain detail - never note text."""
 
 
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
@@ -210,7 +234,22 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 def _load_marks(path: pathlib.Path) -> dict[str, str]:
     entries = json.loads(path.read_text())
-    return {entry["id"]: entry["mark"] for entry in entries}
+    marks: dict[str, str] = {}
+
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict) or "id" not in entry or "mark" not in entry:
+            raise SystemExit(f"Marks file entry {index} needs an id and a mark.")
+        marks[entry["id"]] = entry["mark"]
+
+    return marks
+
+
+def _exceeds_server_limits(note: BearNote) -> bool:
+    return (
+        len(strip_tag_lines(note.markdown)) > MAX_MARKDOWN_LENGTH
+        or len(note.tags) > MAX_TAGS
+        or any(len(tag) > MAX_TAG_LENGTH for tag in note.tags)
+    )
 
 
 def _upload(marked: MarkedNotes, api_url: str, session_key: str) -> ImportTally:
@@ -218,14 +257,30 @@ def _upload(marked: MarkedNotes, api_url: str, session_key: str) -> ImportTally:
     for start in range(0, len(marked.to_import), BATCH_SIZE):
         batch = marked.to_import[start : start + BATCH_SIZE]
         body = {"notes": [note_payload(note, mark) for note, mark in batch]}
-        response = _post(api_url=api_url, path="/notes/import", body=body, session_key=session_key)
+        try:
+            response = _post(api_url=api_url, path="/notes/import", body=body, session_key=session_key)
+        except _RequestFailedError:
+            # Earlier batches are already committed; say so before the failure message.
+            print(f"Stopped part-way; already imported: {_format_tally(_tally(statuses))}", file=sys.stderr)
+            raise
         statuses.extend(result["status"] for result in response["results"])
 
+    return _tally(statuses)
+
+
+def _tally(statuses: list[str]) -> ImportTally:
     return ImportTally(
         created=statuses.count(STATUS_CREATED),
         updated=statuses.count(STATUS_UPDATED),
         unchanged=statuses.count(STATUS_UNCHANGED),
         deleted=statuses.count(STATUS_DELETED),
+    )
+
+
+def _format_tally(tally: ImportTally) -> str:
+    return (
+        f"created {tally.created}, updated {tally.updated}, unchanged {tally.unchanged}, "
+        f"deleted in Archie {tally.deleted}."
     )
 
 
@@ -241,12 +296,22 @@ def _post(api_url: str, path: str, body: dict[str, object] | None, session_key: 
             return json.loads(response.read())
     except urllib.error.HTTPError as error:
         raise _RequestFailedError(f"{path} failed with HTTP {error.code}: {_error_detail(error)}") from None
+    except (urllib.error.URLError, TimeoutError):
+        # No body text: the reason string of a URLError can echo the request URL.
+        raise _RequestFailedError(f"{path} failed: could not reach the server") from None
 
 
 def _error_detail(error: urllib.error.HTTPError) -> str:
+    """The server's detail when it is a plain string, else only the field locations and messages of a 422.
+
+    A 422's entries carry an ``input`` key holding the submitted note text, so it is never read.
+    """
     try:
-        return str(json.loads(error.read()).get("detail", ""))
-    except (ValueError, AttributeError):
+        detail = json.loads(error.read()).get("detail", "")
+        if isinstance(detail, str):
+            return detail
+        return "; ".join(f"{'.'.join(str(part) for part in item['loc'])}: {item['msg']}" for item in detail)
+    except (ValueError, AttributeError, KeyError, TypeError):
         return ""
 
 

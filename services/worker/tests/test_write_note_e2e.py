@@ -2,7 +2,8 @@
 
 Re-record `write_note_staking` by deleting it and running
 `uv run pytest services/worker/tests/test_write_note_e2e.py --record-mode=once -m postgres` with `TEST_DATABASE_URL`
-set (a few cents of Sonnet; needs ANTHROPIC_API_KEY in the repo root .env; fetches two public pages).
+set (a few cents of Sonnet; needs ANTHROPIC_API_KEY in the repo root .env; fetches a Wikipedia page and a YouTube
+watch page).
 """
 
 from __future__ import annotations
@@ -30,7 +31,9 @@ Replay = Callable[[str], contextlib.AbstractContextManager[object]]
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 
 WIKIPEDIA_URL = "https://en.wikipedia.org/wiki/Proof_of_stake"
-SPOTIFY_URL = "https://open.spotify.com/episode/4rOoJ6Egrf8K2IrywzwOMk"
+EPISODE_URL = "https://www.youtube.com/watch?v=x83EVUZ_EWo"
+# The page's recorded og:title, which the source entry must carry (not the host).
+EPISODE_TITLE = "What is Proof of Stake? How it works (Animated) + Ethereum 2.0 Upgrade!"
 NOTE_MARKDOWN = (
     "# Proof of stake\n\n"
     "## Basics\n"
@@ -39,7 +42,7 @@ NOTE_MARKDOWN = (
     "- Rewards ~4%/yr?\n\n"
     "## Links\n"
     f"- [PoS on Wikipedia]({WIKIPEDIA_URL})\n"
-    f"- {SPOTIFY_URL}\n"
+    f"- {EPISODE_URL}\n"
 )
 NOTE_WORD = re.compile(r"\bnotes?\b", re.IGNORECASE)
 
@@ -77,8 +80,9 @@ def test_a_note_is_written_up_fresh_with_its_links_as_sources(engine: sqlalchemy
     content = summary.content
     assert summary.prompt_version == "note-write-up-v1"
     assert content["cards"] == []
-    assert [entry["url"] for entry in content["sources"]] == [WIKIPEDIA_URL, SPOTIFY_URL]
-    assert all(entry["title"].strip() for entry in content["sources"])
+    assert [entry["url"] for entry in content["sources"]] == [WIKIPEDIA_URL, EPISODE_URL]
+    assert content["sources"][1]["title"] == EPISODE_TITLE
+    assert content["sources"][0]["title"].strip()
     assert content["is_educational"] is True
 
     # The contract: the write-up reads as an explanation from scratch.

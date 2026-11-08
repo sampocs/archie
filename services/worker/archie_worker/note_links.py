@@ -10,8 +10,9 @@ from archie_shared import urls
 
 MAX_NOTE_LINKS = 8
 
-_MARKDOWN_LINK = re.compile(r"\[([^\]]*)\]\((https?://[^)\s]+)\)")
-_BARE_URL = re.compile(r"https?://[^\s<>\[\]()\"']+")
+# One level of balanced parentheses is allowed inside a URL (Wikipedia's `Mercury_(planet)`).
+_MARKDOWN_LINK = re.compile(r"\[([^\]]*)\]\((https?://(?:[^()\s]|\([^()\s]*\))+)\)")
+_BARE_URL = re.compile(r"https?://[^\s<>\[\]\"']+")
 _TRAILING_PUNCTUATION = ".,;:!?"
 
 
@@ -44,12 +45,20 @@ def links_in(markdown: str) -> list[NoteLink]:
     # Blanked out (not cut) so the bare scan never re-finds a markdown link's URL and positions stay true.
     remaining = _MARKDOWN_LINK.sub(lambda match: " " * len(match.group(0)), markdown)
     for match in _BARE_URL.finditer(remaining):
-        found.append((match.start(), _link(url=match.group(0).rstrip(_TRAILING_PUNCTUATION), text=None)))
+        found.append((match.start(), _link(url=_trim_bare_url(match.group(0)), text=None)))
 
     distinct: dict[str, NoteLink] = {}
     for _, link in sorted(found, key=lambda entry: entry[0]):
         distinct.setdefault(_identity(link.url), link)
     return list(distinct.values())[:MAX_NOTE_LINKS]
+
+
+def _trim_bare_url(url: str) -> str:
+    """Drops sentence punctuation, and a closing parenthesis only when it has no opening one in the URL."""
+    url = url.rstrip(_TRAILING_PUNCTUATION)
+    while url.endswith(")") and url.count(")") > url.count("("):
+        url = url[:-1].rstrip(_TRAILING_PUNCTUATION)
+    return url
 
 
 def _link(*, url: str, text: str | None) -> NoteLink:

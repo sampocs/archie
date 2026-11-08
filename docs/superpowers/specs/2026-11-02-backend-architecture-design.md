@@ -141,6 +141,10 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
 - **Conflicts:** the latest write wins, field by field. Conflicts are rare in practice: the server only adds generated content, and only one person edits.
 - **Offline:** reading, reviewing any card (due, ahead or by topic) and capturing all work. Chat, Pulse and chat edits need a connection.
 
+## Notes
+
+> M8: imported Bear notes are `note` sources (no fetch, own write-up and refresh flow); `2026-11-08-notes-import-design.md` is the source of truth.
+
 ## Search and chat
 
 > Shipped in M7; `2026-11-06-m7-search-ask-design.md` is the source of truth where it differs: saved, synced conversations; labels computed per paragraph from citations; card drafts (Make a card); Sonnet 5.5 with `between_tools` thinking; `text-embedding-3-small` (1536 dims); chunks indexed when a source's text is fetched, not only after analyze.

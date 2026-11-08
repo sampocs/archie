@@ -9,7 +9,7 @@ class FailureReason(StrEnum):
     """User-facing text stored as a source's `processing_error` when its pipeline fails."""
 
     TEXT_MISSING = "Couldn't read this page. Share it from Safari to capture it."
-    # Same text as the API's `UNREADABLE_EMAIL_ERROR`, which marks an email the API already found unreadable.
+    # Same text as the `models.UNREADABLE_EMAIL_ERROR`, which marks an email the API already found unreadable.
     NEWSLETTER_UNREADABLE = "Couldn't read this email."
     NEEDS_API_KEY = "Add your own API key in Settings (coming soon)."
     GAVE_UP = "Processing failed. Tap Retry."

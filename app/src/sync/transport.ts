@@ -62,6 +62,10 @@ const TAKE_ACTIONS = new Set(["update_take", "retry_take_cleanup"]);
 // Actions whose payload id is an Ask chat: a rejection re-pulls the server's copy and touches no source.
 const CONVERSATION_ACTIONS = new Set(["delete_conversation"]);
 
+// Sender actions carry a source_id or sender_id, not an id: a rejection re-pulls the server's copy of whatever the
+// optimistic edit changed (pending sources, the sender's status) and touches no source's syncError.
+const SENDER_ACTIONS = new Set(["set_sender_status"]);
+
 // Take actions that add a version on the phone: a rejection removes it (the server never made it).
 const TAKE_VERSION_ACTIONS = new Set(["save_take", "restore_take_version"]);
 
@@ -174,14 +178,15 @@ export function createDbSyncStore(
         // still surface syncError on the source below. A rejected finish_brief (a brief already closed) re-pulls the brief
         // and the newsletters it marked briefed; a rejected card action re-pulls the card's schedule or undoes its drop;
         // a rejected collection edit re-pulls the collection or post; a rejected take edit re-pulls the take; a rejected
-        // chat delete re-pulls the chat.
+        // chat delete re-pulls the chat; a rejected sender decision re-pulls the sources and the sender.
         const rowIsNotSource =
           TOPIC_ACTIONS.has(entry.type) ||
           BRIEF_ACTIONS.has(entry.type) ||
           CARD_ACTIONS.has(entry.type) ||
           COLLECTION_ACTIONS.has(entry.type) ||
           TAKE_ACTIONS.has(entry.type) ||
-          CONVERSATION_ACTIONS.has(entry.type);
+          CONVERSATION_ACTIONS.has(entry.type) ||
+          SENDER_ACTIONS.has(entry.type);
         const rewind =
           rowIsNotSource ||
           payload.target === "topic_primer" ||
@@ -282,6 +287,8 @@ export function createDbSyncStore(
             favoritedAt: source.favorited_at ?? null,
             publishedAt: source.published_at ?? null,
             confirmUrl: source.confirm_url ?? null,
+            senderAddress: source.sender_address ?? null,
+            senderPending: source.sender_pending ?? false,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })
@@ -512,6 +519,20 @@ export function createDbSyncStore(
           tx.insert(schema.editProposals)
             .values({ id: proposal.id, ...values })
             .onConflictDoUpdate({ target: schema.editProposals.id, set: values })
+            .run();
+        }
+
+        for (const sender of page.rows.newsletter_senders ?? []) {
+          const values = {
+            label: sender.label,
+            status: sender.status,
+            createdAt: sender.created_at,
+            updatedAt: sender.updated_at,
+            changeSeq: sender.change_seq,
+          };
+          tx.insert(schema.newsletterSenders)
+            .values({ id: sender.id, ...values })
+            .onConflictDoUpdate({ target: schema.newsletterSenders.id, set: values })
             .run();
         }
 

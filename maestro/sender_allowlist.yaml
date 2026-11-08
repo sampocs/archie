@@ -1,0 +1,28 @@
+appId: com.sampocs.archie
+---
+# Run after run_sender_allowlist.sh has delivered Morning Brew's newsletter to a fresh database, where the sender is
+# unknown. Free: a held email queues no model work, and Block deletes it.
+- tapOn:
+    id: "tab-library"
+# The card arrives with the next sync; it sits above the list on every filter. Its text reads as one label with the
+# tile, so it is matched by pattern.
+- extendedWaitUntil:
+    visible: ".*New sender: Morning Brew.*"
+    timeout: 60000
+- assertVisible: ".*crew@morningbrew.com · .*"
+- tapOn:
+    id: "sender-card-block"
+# Block deletes the held email at once, so the card goes and the toast says it worked.
+- extendedWaitUntil:
+    visible: ".*Morning Brew blocked.*"
+    timeout: 10000
+- assertNotVisible: ".*New sender: Morning Brew.*"
+# Settings lists the blocked sender, so it can be unblocked later.
+- tapOn:
+    id: "tab-settings"
+- scrollUntilVisible:
+    element:
+      id: "blocked-senders-link"
+- tapOn:
+    id: "blocked-senders-link"
+- assertVisible: "Morning Brew"

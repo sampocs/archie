@@ -20,6 +20,7 @@ const source = (overrides: Record<string, unknown>) => ({ state: "inbox", domain
 const data = (sources: LibrarySource[], topics: TopicRow[], topicPrimers: TopicPrimerRow[] = []): LibraryData => ({
   sources,
   confirmations: [],
+  pendingSenders: [],
   topics,
   topicPrimers,
 });

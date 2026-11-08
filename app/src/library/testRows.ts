@@ -32,6 +32,8 @@ export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => (
   favoritedAt: null,
   publishedAt: null,
   confirmUrl: null,
+  senderAddress: null,
+  senderPending: false,
   topic: null,
   summary: null,
   primerCreatedAt: null,

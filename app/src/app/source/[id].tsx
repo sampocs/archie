@@ -10,6 +10,9 @@ import * as schema from "@/db/schema";
 import { useTargetVersions } from "@/edits/useTargetVersions";
 import { VersionsSheet } from "@/edits/VersionsSheet";
 import { CardsSection } from "@/item/CardsSection";
+import { confirmExplanation, confirmPrompt } from "@/library/confirmations";
+import { confirmSignup, dismissSignup } from "@/library/confirmActions";
+import { ConfirmPills } from "@/library/ConfirmCard";
 import { FullEmailSheet } from "@/item/FullEmailSheet";
 import { ItemActions } from "@/item/ItemActions";
 import { ItemBadgeLine } from "@/item/ItemBadgeLine";
@@ -79,6 +82,7 @@ export default function SourceScreen() {
   if (!source || source.deletedAt) return <Screen title="Source" />;
 
   const starred = source.favoritedAt !== null;
+  const isConfirmation = source.confirmUrl !== null;
   const summary = artifacts.find((artifact) => artifact.kind === "summary");
   const primer = artifacts.find((artifact) => artifact.kind === "primer");
   const summaryContent = summary ? parseSummary(summary.content) : null;
@@ -120,16 +124,30 @@ export default function SourceScreen() {
           </View>
         }
       >
-        <ItemHeader source={source} topicName={topics[0]?.name ?? null} />
+        <ItemHeader
+          source={source}
+          topicName={topics[0]?.name ?? null}
+          kicker={isConfirmation ? { label: "Newsletter", suffix: "Signup confirmation" } : undefined}
+        />
         <Text testID="item-title" variant="articleTitle">
           {source.title ?? source.url}
         </Text>
-        <ItemBadgeLine source={source} onAddToQueue={addToQueue} />
-        <ItemActions source={source} primerWords={primerWords} onFinish={() => setFinishOpen(true)} />
-        {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
+        {isConfirmation ? (
+          <ConfirmationPrompt source={source} onDone={router.back} />
+        ) : (
+          <>
+            <ItemBadgeLine source={source} onAddToQueue={addToQueue} />
+            <ItemActions source={source} primerWords={primerWords} onFinish={() => setFinishOpen(true)} />
+            {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
+          </>
+        )}
         {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
-        <NoteSection reaction={source.reaction} note={source.note} />
-        <CardsSection of={{ kind: "source", id: source.id }} />
+        {isConfirmation ? null : (
+          <>
+            <NoteSection reaction={source.reaction} note={source.note} />
+            <CardsSection of={{ kind: "source", id: source.id }} />
+          </>
+        )}
         <FinishSheet
           sourceId={source.id}
           primerWords={primerWords}
@@ -168,6 +186,34 @@ export default function SourceScreen() {
         />
       ) : null}
     </View>
+  );
+}
+
+/** A signup confirmation's page: what the email asks, and Confirm / Dismiss; either one deletes it and goes back. */
+function ConfirmationPrompt({ source, onDone }: { source: SourceRow; onDone: () => void }) {
+  const theme = useTheme();
+
+  async function confirm(): Promise<void> {
+    await confirmSignup(source);
+    onDone();
+  }
+
+  return (
+    <Card style={{ gap: theme.spacing.md }}>
+      <Text testID="item-confirm-prompt" variant="headline">
+        {confirmPrompt(source)}
+      </Text>
+      <Text tone="ink2">{confirmExplanation(source)}</Text>
+      <ConfirmPills
+        confirmTestID="item-confirm"
+        dismissTestID="item-dismiss"
+        onConfirm={() => void confirm()}
+        onDismiss={() => {
+          dismissSignup(source.id);
+          onDone();
+        }}
+      />
+    </Card>
   );
 }
 

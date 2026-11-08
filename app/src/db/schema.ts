@@ -36,6 +36,8 @@ export const sources = sqliteTable("sources", {
   favoritedAt: text("favorited_at"),
   // When an article or episode came out; null when unknown and for newsletters (sent and saved the same day).
   publishedAt: text("published_at"),
+  // The link a signup-confirmation email asks the owner to open; null for every other source.
+  confirmUrl: text("confirm_url"),
 });
 
 export const artifacts = sqliteTable("artifacts", {

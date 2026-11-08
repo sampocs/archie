@@ -33,6 +33,8 @@ export type PulledSource = {
   favorited_at?: string | null;
   // Absent when pulling from a server older than item dates.
   published_at?: string | null;
+  // Absent when pulling from a server older than signup confirmations.
+  confirm_url?: string | null;
 };
 export type PulledArtifact = {
   id: string;

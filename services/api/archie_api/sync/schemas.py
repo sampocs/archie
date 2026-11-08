@@ -53,6 +53,9 @@ class ActionType(StrEnum):
     RESTORE_TAKE_VERSION = "restore_take_version"
     RETRY_TAKE_CLEANUP = "retry_take_cleanup"
     DELETE_CONVERSATION = "delete_conversation"
+    # Notes
+    REFRESH_NOTE = "refresh_note"
+    SKIP_NOTE = "skip_note"
     # Removed feature; it stays only so an old phone's pending action is rejected rather than failing the push.
     SET_PREP_ME = "set_prep_me"
 
@@ -116,6 +119,11 @@ class SourceOut(pydantic.BaseModel):
     favorited_at: datetime.datetime | None
     published_at: datetime.datetime | None
     confirm_url: str | None
+    note_markdown: str | None
+    note_edited_at: datetime.datetime | None
+    refreshed_at: datetime.datetime | None
+    refreshed_from_queue: bool
+    refresh_skipped_at: datetime.datetime | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None

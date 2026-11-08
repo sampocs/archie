@@ -24,6 +24,8 @@ MAX_ATTEMPTS: dict[models.JobKind, int] = {
     # One sequential worker would let analyze run on the raw text while a retried clean_text waits its turn; a single
     # attempt means cleaning either happens before analyze or is skipped.
     models.JobKind.CLEAN_TEXT: 1,
+    # A write-up is a long Sonnet call; one retry (on the fallback model) is enough.
+    models.JobKind.WRITE_NOTE: 2,
 }
 
 # True in the content of a `text` artifact `clean_text` wrote (the text before cleaning stays an older version).
@@ -33,6 +35,7 @@ CLEANED_KEY = "cleaned"
 _STEP_OUTPUTS: dict[models.JobKind, models.ArtifactKind] = {
     models.JobKind.ANALYZE: models.ArtifactKind.SUMMARY,
     models.JobKind.PRIMER: models.ArtifactKind.PRIMER,
+    models.JobKind.WRITE_NOTE: models.ArtifactKind.SUMMARY,
 }
 
 
@@ -130,8 +133,11 @@ def set_processing(
 
 
 def required_artifacts(kind: models.SourceKind) -> tuple[models.ArtifactKind, ...]:
-    """The outputs a source of `kind` needs to be READY: newsletters are summary-only, the rest also get a primer."""
-    if kind == models.SourceKind.NEWSLETTER:
+    """The outputs a source of `kind` needs to be READY.
+
+    Newsletters and notes are summary-only, the rest also get a primer.
+    """
+    if kind in (models.SourceKind.NEWSLETTER, models.SourceKind.NOTE):
         return (models.ArtifactKind.SUMMARY,)
     return (models.ArtifactKind.SUMMARY, models.ArtifactKind.PRIMER)
 
@@ -140,8 +146,10 @@ def steps_after_text(kind: models.SourceKind) -> list[models.JobKind]:
     """The jobs that follow a source's text, in order.
 
     Newsletters have their boilerplate cleaned out and are then analyzed (a primer only on request); the rest are
-    analyzed and get a primer.
+    analyzed and get a primer; a note's text is written up.
     """
+    if kind == models.SourceKind.NOTE:
+        return [models.JobKind.WRITE_NOTE]
     if kind == models.SourceKind.NEWSLETTER:
         return [models.JobKind.CLEAN_TEXT, models.JobKind.ANALYZE]
     return [models.JobKind.ANALYZE, models.JobKind.PRIMER]

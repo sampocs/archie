@@ -12,6 +12,7 @@ import { CollectionsMirror } from "@/collections/CollectionsMirror";
 import { SignOutContext } from "@/context/SignOutContext";
 import { db, seedSyncState, useDbMigrations } from "@/db/client";
 import * as schema from "@/db/schema";
+import { RefreshToastRoot } from "@/notes/RefreshToastRoot";
 import { ReminderRoot } from "@/review/ReminderRoot";
 import { SyncRoot } from "@/sync/SyncRoot";
 import { fontAssets } from "@/theme/type";
@@ -43,6 +44,7 @@ export default function RootLayout() {
       {session.status === "signedIn" && <ReminderRoot />}
       {session.status === "signedIn" && <CollectionsMirror />}
       <AppStack />
+      {session.status === "signedIn" && <RefreshToastRoot />}
     </GestureHandlerRootView>
   );
 }

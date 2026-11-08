@@ -15,6 +15,8 @@ export type LibrarySource = SourceRow & {
   primerCreatedAt: string | null;
   // The current primer's length in words, for its reading time; null when the source has no primer.
   primerWords: number | null;
+  // How many live cards the source has; 0 when none.
+  cardCount: number;
 };
 
 export type LibraryData = {
@@ -30,7 +32,7 @@ export function isLiveTopic(topic: TopicRow): boolean {
 }
 
 /**
- * Attaches each source's topic, current summary and primer time and length; `artifacts` must be current ones only.
+ * Attaches each source's topic, current summary and primer time and length, and its live card count; `artifacts` must be current ones only.
  * Sources with a confirmUrl are split out into `confirmations` so every reader of `sources` skips them.
  */
 export function joinLibrary(input: {
@@ -38,6 +40,8 @@ export function joinLibrary(input: {
   artifacts: ArtifactRow[];
   topics: TopicRow[];
   topicPrimers: TopicPrimerRow[];
+  // Live cards per source id; a source without an entry has none.
+  cardCounts: Map<string, number>;
 }): LibraryData {
   const topicsById = new Map(input.topics.map((topic) => [topic.id, topic]));
   const summaries = new Map<string, SummaryContent>();
@@ -56,6 +60,7 @@ export function joinLibrary(input: {
     summary: summaries.get(source.id) ?? null,
     primerCreatedAt: primers.get(source.id)?.createdAt ?? null,
     primerWords: primers.get(source.id)?.words ?? null,
+    cardCount: input.cardCounts.get(source.id) ?? 0,
   }));
   const confirmations = joined
     .filter((source) => source.confirmUrl !== null)

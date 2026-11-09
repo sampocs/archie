@@ -108,6 +108,10 @@ maestro-newsletter: reset-local-data
 maestro-confirm: reset-local-data
 	@maestro/run_confirm_email.sh
 
+# Notes: the refresher, the note page and Done; Done's cards spend a fraction of a cent (one Haiku call).
+maestro-notes: reset-local-data
+	@maestro/run_notes.sh
+
 # Delivers Morning Brew's newsletter as an unknown sender, blocks it from its Library card, then re-delivers it (needs INGEST_SECRET in .env; free).
 maestro-allowlist: reset-local-data
 	@maestro/run_sender_allowlist.sh
@@ -137,4 +141,4 @@ maestro-edit: reset-local-data
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-confirm maestro-allowlist maestro-brief maestro-review maestro-takes-clean maestro-ask maestro-edit maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-confirm maestro-notes maestro-allowlist maestro-brief maestro-review maestro-takes-clean maestro-ask maestro-edit maestro-offline

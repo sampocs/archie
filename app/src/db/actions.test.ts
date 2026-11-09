@@ -23,10 +23,12 @@ import {
   returnToInbox,
   reviewCard,
   setCardsOff,
+  refreshNote,
   setFavorite,
   setQueuePosition,
   setSenderStatus,
   setSourceTopic,
+  skipNote,
   snooze,
 } from "./actions";
 import type { AppDb } from "./client";
@@ -45,6 +47,8 @@ function createTables(outboxCheck: string): string {
       merged_into_id text, sender text, domain text, topic_id text, image_url text, queue_position real,
       read_at text, snoozed_until text, primer_opened_at text, newsletter_kind text, primer_queue_position real,
       primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL, favorited_at text, published_at text, confirm_url text,
+      note_markdown text, note_edited_at text, refreshed_at text, refreshed_from_queue integer DEFAULT 0 NOT NULL,
+      refresh_skipped_at text,
       sender_address text, sender_pending integer DEFAULT 0 NOT NULL
     );
     CREATE TABLE outbox (
@@ -769,6 +773,42 @@ describe("setFavorite", () => {
     setFavorite(db, "s1", true);
 
     expect(sourceById(db, "s1")?.favoritedAt).toBe("2026-11-03T00:00:00Z");
+  });
+});
+
+describe("refreshNote", () => {
+  it.each([
+    [true, 1],
+    [false, 0],
+  ])("marks a note refreshed (counted %s), consumes it and queues refresh_note", (counted, fromQueue) => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "note", state: "queued" });
+
+    refreshNote(db, "s1", counted);
+
+    const row = sourceById(db, "s1")!;
+    expect(row).toMatchObject({ state: "consumed", refreshedFromQueue: fromQueue });
+    const [entry] = outboxEntries(db);
+    expect(entry.type).toBe("refresh_note");
+    expect(entry.payload).toMatchObject({ id: "s1", counted });
+    expect(row.refreshedAt).toBe((entry.payload as { at: string }).at);
+    expect(new Date(row.refreshedAt!).toISOString()).toBe(row.refreshedAt);
+  });
+});
+
+describe("skipNote", () => {
+  it("stamps the skip time and queues skip_note, leaving the state alone", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "note", state: "queued" });
+
+    skipNote(db, "s1");
+
+    const row = sourceById(db, "s1")!;
+    expect(row.state).toBe("queued");
+    const [entry] = outboxEntries(db);
+    expect(entry.type).toBe("skip_note");
+    expect(entry.payload).toMatchObject({ id: "s1", at: row.refreshSkippedAt });
+    expect(new Date(row.refreshSkippedAt!).toISOString()).toBe(row.refreshSkippedAt);
   });
 });
 

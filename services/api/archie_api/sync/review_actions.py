@@ -124,7 +124,11 @@ def drop_card(db: orm.Session, *, user: models.User, payload: dict[str, object])
 
 
 def set_cards_off(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
-    """Cards off retires the source's cards (foundation cards too) and stops new ones; cards on re-runs analyze."""
+    """Cards off retires the source's cards (foundation cards too) and stops new ones; cards on re-runs analyze.
+
+    A note is never analyzed: cards on for a refreshed note re-queues its `note_cards` job, and for an unrefreshed
+    one only flips the flag (the refresher writes its cards when it is refreshed).
+    """
     parsed = rows.parse(_CardsOffPayload, payload)
     if parsed is None:
         return rows.MALFORMED
@@ -138,12 +142,27 @@ def set_cards_off(db: orm.Session, *, user: models.User, payload: dict[str, obje
         card_rows.retire_cards(db, models.Card.source_id == source.id)
         return None
 
+    if source.kind == models.SourceKind.NOTE:
+        _requeue_note_cards(db, source=source)
+        return None
+
     # Only a source with text can be analyzed again; one still fetching gets its cards when its analyze runs.
     has_text = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT) is not None
     if has_text and not rows.has_pending_job(db, source=source, kind=models.JobKind.ANALYZE):
         pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
         pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.ANALYZE])
     return None
+
+
+def _requeue_note_cards(db: orm.Session, *, source: models.Source) -> None:
+    if source.refreshed_at is None or rows.has_pending_job(db, source=source, kind=models.JobKind.NOTE_CARDS):
+        return
+    jobs.enqueue(
+        db,
+        kind=models.JobKind.NOTE_CARDS,
+        user_id=source.user_id,
+        payload={pipeline.SOURCE_ID_KEY: str(source.id)},
+    )
 
 
 def request_news_quiz(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:

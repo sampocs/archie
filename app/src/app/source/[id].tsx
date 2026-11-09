@@ -1,11 +1,11 @@
 import { Ionicons } from "@expo/vector-icons";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 
 import { db } from "@/db/client";
-import { readLater, returnToInbox, setFavorite } from "@/db/actions";
+import { readLater, refreshNote, returnToInbox, setFavorite } from "@/db/actions";
 import * as schema from "@/db/schema";
 import { useTargetVersions } from "@/edits/useTargetVersions";
 import { VersionsSheet } from "@/edits/VersionsSheet";
@@ -21,8 +21,16 @@ import { ItemBadgeLine } from "@/item/ItemBadgeLine";
 import { ItemHeader, REACTION_LABELS } from "@/item/ItemHeader";
 import { ItemMenu } from "@/item/ItemMenu";
 import { timestampUrl } from "@/item/timestampLink";
+import { useLibraryData } from "@/library/useLibraryData";
+import { NoteSources } from "@/notes/NoteSources";
+import { OriginalNoteSheet } from "@/notes/OriginalNoteSheet";
+import { setPendingRefreshToast } from "@/notes/pendingToast";
+import { todayRefresher } from "@/notes/refresher";
+import { Markdown } from "@/ui/Markdown";
+import { asDomain } from "@/topics/domains";
 import { splitFacts } from "@/summary/figures";
 import { requestSync } from "@/sync/useSync";
+import { Button } from "@/theme/components/Button";
 import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
@@ -41,6 +49,7 @@ export default function SourceScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
+  const libraryData = useLibraryData();
   const { data: sources } = useLiveQuery(db.select().from(schema.sources).where(eq(schema.sources.id, id)), [id]);
   const { data: artifacts } = useLiveQuery(
     db
@@ -65,7 +74,11 @@ export default function SourceScreen() {
   const [finishOpen, setFinishOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
+  const [originalOpen, setOriginalOpen] = useState(false);
   const [queuedToast, setQueuedToast] = useState(false);
+  // The ref blocks a second tap within the same render; the state disables the button once it re-renders.
+  const refreshStarted = useRef(false);
+  const [refreshing, setRefreshing] = useState(false);
   const hideToast = useCallback(() => setQueuedToast(false), []);
   const summaryVersions = useTargetVersions("summary", id).entries.length;
   const primerVersions = useTargetVersions("primer", id).entries.length;
@@ -85,6 +98,7 @@ export default function SourceScreen() {
 
   const starred = source.favoritedAt !== null;
   const isConfirmation = source.confirmUrl !== null;
+  const isNote = source.kind === "note";
   const isPendingSender = source.senderPending && !isConfirmation;
   // Both kinds of notice page are bare: no star, menu, badges, actions, summary, note or cards.
   const isNotice = isConfirmation || isPendingSender;
@@ -92,6 +106,25 @@ export default function SourceScreen() {
   const primer = artifacts.find((artifact) => artifact.kind === "primer");
   const summaryContent = summary ? parseSummary(summary.content) : null;
   const primerWords = primer ? wordCount(primerMarkdown(primer.content)) : null;
+
+  // Done shows while the note waits for its refresh: cards on, not refreshed, write-up written.
+  const canRefresh = isNote && source.cardsOff === 0 && source.refreshedAt === null && summaryContent !== null;
+
+  function refresh(): void {
+    // Done acts once per visit: a double tap must not refresh twice (the second could reset the queue count).
+    if (refreshStarted.current) return;
+    refreshStarted.current = true;
+    setRefreshing(true);
+
+    const today = todayRefresher(libraryData.sources, new Date());
+    const counted = today?.kind === "pick" && today.note.id === source.id;
+
+    refreshNote(db, source.id, counted);
+    setPendingRefreshToast({ sourceId: source.id, title: source.title ?? "your note" });
+    haptic("success");
+    requestSync();
+    router.back();
+  }
 
   function addToQueue(): void {
     readLater(db, source.id);
@@ -105,6 +138,9 @@ export default function SourceScreen() {
       <Screen
         title=""
         onBack={router.back}
+        footer={
+          canRefresh ? <Button testID="note-done" label="Done, add review cards" disabled={refreshing} onPress={refresh} /> : undefined
+        }
         headerRight={
           isNotice ? undefined : (
             <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.lg }}>
@@ -139,7 +175,9 @@ export default function SourceScreen() {
               ? { label: "Newsletter", suffix: "Signup confirmation" }
               : isPendingSender
                 ? { label: "Newsletter", suffix: SENDER_KICKER_SUFFIX }
-                : undefined
+                : isNote
+                  ? { label: "Notes", suffix: source.domain ? asDomain(source.domain) : undefined }
+                  : undefined
           }
         />
         <Text testID="item-title" variant="articleTitle">
@@ -149,6 +187,27 @@ export default function SourceScreen() {
           <ConfirmationPrompt source={source} onDone={router.back} />
         ) : isPendingSender ? (
           <SenderPrompt source={source} onBlocked={router.back} />
+        ) : isNote ? (
+          <>
+            {summaryContent ? (
+              <>
+                <SummarySections summary={summaryContent} source={source} />
+                <NoteSources sources={summaryContent.sources ?? []} />
+              </>
+            ) : (
+              <>
+                <Text testID="note-write-up-pending" tone="ink2">
+                  Archie's write-up is on its way
+                </Text>
+                <Markdown text={source.noteMarkdown ?? ""} />
+              </>
+            )}
+            {source.noteMarkdown ? (
+              <Pressable testID="item-original-note" onPress={() => setOriginalOpen(true)} hitSlop={8}>
+                <Text variant="headline">See original note ›</Text>
+              </Pressable>
+            ) : null}
+          </>
         ) : (
           <>
             <ItemBadgeLine source={source} onAddToQueue={addToQueue} />
@@ -159,18 +218,20 @@ export default function SourceScreen() {
         {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
         {isNotice ? null : (
           <>
-            <NoteSection reaction={source.reaction} note={source.note} />
+            {isNote ? null : <NoteSection reaction={source.reaction} note={source.note} />}
             <CardsSection of={{ kind: "source", id: source.id }} />
           </>
         )}
         {isNotice ? null : (
           <>
-            <FinishSheet
-              sourceId={source.id}
-              primerWords={primerWords}
-              visible={finishOpen}
-              onClose={() => setFinishOpen(false)}
-            />
+            {isNote ? null : (
+              <FinishSheet
+                sourceId={source.id}
+                primerWords={primerWords}
+                visible={finishOpen}
+                onClose={() => setFinishOpen(false)}
+              />
+            )}
             <ItemMenu
               source={source}
               cardCount={cards.length}
@@ -188,6 +249,14 @@ export default function SourceScreen() {
             />
           </>
         )}
+        {isNote && source.noteMarkdown ? (
+          <OriginalNoteSheet
+            markdown={source.noteMarkdown}
+            editedAt={source.noteEditedAt ?? source.createdAt}
+            visible={originalOpen}
+            onClose={() => setOriginalOpen(false)}
+          />
+        ) : null}
         <FullEmailSheet sourceId={source.id} visible={emailOpen} onClose={() => setEmailOpen(false)} />
       </Screen>
       {/* Undo sends the reverse action rather than cancelling the first, which may already have synced. */}

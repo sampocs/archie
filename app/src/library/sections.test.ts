@@ -1,6 +1,6 @@
 import type { LibraryData } from "./join";
 import { byWeek, entryKey, filterCounts, filterEntries, type LibraryEntry, type LibraryFilter } from "./sections";
-import { sourceRow, topicPrimerRow, topicRow } from "./testRows";
+import { noteSource, sourceRow, topicPrimerRow, topicRow } from "./testRows";
 
 const NOW = new Date("2026-11-04T15:00:00Z");
 const FUTURE = "2026-11-05T14:00:00Z";
@@ -16,6 +16,7 @@ const data: LibraryData = {
     sourceRow({ id: "done", state: "consumed" }),
     sourceRow({ id: "inbox", state: "inbox", kind: "newsletter" }),
     sourceRow({ id: "briefed", state: "briefed", kind: "newsletter" }),
+    noteSource({ id: "note", state: "inbox" }),
     sourceRow({ id: "queued-with-primer", state: "queued", primerCreatedAt: PAST }),
     sourceRow({ id: "done-with-primer", state: "consumed", primerCreatedAt: PAST, primerQueuePosition: -1 }),
     sourceRow({ id: "primer-writing", state: "consumed", primerQueuePosition: -2 }),
@@ -65,7 +66,7 @@ describe("filterEntries", () => {
     );
   });
 
-  it("Inbox: inbox and briefed", () => {
+  it("Inbox: inbox and briefed, never a note", () => {
     expect(keys("inbox")).toEqual(["source-briefed", "source-inbox"]);
   });
 
@@ -82,7 +83,7 @@ describe("filterEntries", () => {
 describe("filterCounts", () => {
   it("leaves snoozed entries out", () => {
     // Queued: 3 awake sources + 2 awake primers (the snoozed source and the snoozed primer are left out).
-    expect(filterCounts(data, NOW)).toEqual({ all: 10, queued: 5, done: 4, inbox: 2, primers: 3 });
+    expect(filterCounts(data, NOW)).toEqual({ all: 11, queued: 5, done: 4, inbox: 2, primers: 3 });
   });
 });
 

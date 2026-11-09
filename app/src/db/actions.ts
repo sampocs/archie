@@ -43,6 +43,8 @@ export type ActionType =
   | "set_cards_off"
   | "request_news_quiz"
   | "set_favorite"
+  | "refresh_note"
+  | "skip_note"
   | "create_collection"
   | "update_collection"
   | "add_collection_item"
@@ -587,6 +589,24 @@ export function setFavorite(db: AppDb, sourceId: string, favorited: boolean): vo
     const favoritedAt = favorited ? sql`coalesce(${schema.sources.favoritedAt}, ${new Date().toISOString()})` : null;
     updateSource(tx, sourceId, { favoritedAt });
     enqueue(tx, "set_favorite", { id: sourceId, favorited });
+  });
+}
+
+/** Marks a note refreshed from Bear (consuming it); `counted` says whether the refresh came from the queue. */
+export function refreshNote(db: AppDb, sourceId: string, counted: boolean): void {
+  db.transaction((tx) => {
+    const at = new Date().toISOString();
+    updateSource(tx, sourceId, { refreshedAt: at, refreshedFromQueue: counted ? 1 : 0, state: "consumed" });
+    enqueue(tx, "refresh_note", { id: sourceId, counted, at });
+  });
+}
+
+/** Dismisses a note's refresh prompt without refreshing it. */
+export function skipNote(db: AppDb, sourceId: string): void {
+  db.transaction((tx) => {
+    const at = new Date().toISOString();
+    updateSource(tx, sourceId, { refreshSkippedAt: at });
+    enqueue(tx, "skip_note", { id: sourceId, at });
   });
 }
 

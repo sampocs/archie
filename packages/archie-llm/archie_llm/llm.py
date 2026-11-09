@@ -72,6 +72,10 @@ NEWS_QUIZ_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 CLEAN_TAKE_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 TAKE_CARDS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 CARD_DRAFT_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+NOTE_CARDS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+
+# A note's write-up is the whole reading experience of an imported note, so it gets the writing-quality tier.
+NOTE_WRITE_UP_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 
 # For short, latency-sensitive calls where reasoning would only add delay.
 THINKING_DISABLED: dict[str, str] = {"type": "disabled"}

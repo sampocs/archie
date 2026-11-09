@@ -49,6 +49,13 @@ SOURCE_KEYS_ADDED_BY_M6 = {"cards_off"}
 SOURCE_KEYS_ADDED_BY_FAVORITES = {"favorited_at"}
 SOURCE_KEYS_ADDED_BY_ITEM_DATES = {"published_at"}
 SOURCE_KEYS_ADDED_BY_CONFIRM_EMAILS = {"confirm_url"}
+SOURCE_KEYS_ADDED_BY_NOTES = {
+    "note_markdown",
+    "note_edited_at",
+    "refreshed_at",
+    "refreshed_from_queue",
+    "refresh_skipped_at",
+}
 SOURCE_KEYS_ADDED_BY_SENDER_ALLOWLIST = {"sender_address", "sender_pending"}
 
 
@@ -130,6 +137,7 @@ def test_a_pulled_source_carries_the_library_columns_and_hides_the_episode_guid(
         | SOURCE_KEYS_ADDED_BY_FAVORITES
         | SOURCE_KEYS_ADDED_BY_ITEM_DATES
         | SOURCE_KEYS_ADDED_BY_CONFIRM_EMAILS
+        | SOURCE_KEYS_ADDED_BY_NOTES
         | SOURCE_KEYS_ADDED_BY_SENDER_ALLOWLIST
     )
 

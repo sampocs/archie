@@ -23,6 +23,7 @@ import { Toast } from "@/ui/Toast";
 import { Kicker } from "@/ui/Kicker";
 import { Markdown } from "@/ui/Markdown";
 import { useNow } from "@/ui/useNow";
+import { noteMeta, refresherQueue } from "@/notes/refresher";
 import { kindLabel } from "@/ui/sourceLabels";
 import { SourceRow } from "@/ui/SourceRow";
 
@@ -62,6 +63,7 @@ export default function TopicScreen() {
   if (!topic || mergedIntoId) return <Screen title="Topic" onBack={router.back} />;
 
   const sources = data.sources.filter((source) => source.topicId === topic.id);
+  const noteQueue = refresherQueue(data.sources);
   const done = sources.filter((source) => source.state === "consumed").length;
   const queued = sources.filter((source) => source.state === "queued").length;
   const writing =
@@ -146,7 +148,7 @@ export default function TopicScreen() {
               key={source.id}
               source={source}
               testID={`topic-item-${source.id}`}
-              meta={`${kindLabel(source.kind)} · ${statusTag(source)}`}
+              meta={source.kind === "note" ? noteMeta(source, noteQueue, now) : `${kindLabel(source.kind)} · ${statusTag(source)}`}
             />
           ))}
         </GroupedList>

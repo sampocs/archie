@@ -25,6 +25,8 @@ _MAX_BODY_BYTES = 1_000_000
 _MAX_TITLE_LENGTH = 500
 _OG_TITLE_PROPERTY = "og:title"
 _OG_IMAGE_PROPERTY = "og:image"
+_OG_DESCRIPTION_PROPERTY = "og:description"
+_MAX_DESCRIPTION_LENGTH = 1000
 _MAX_IMAGE_URL_LENGTH = 2048
 _IMAGE_SCHEMES = frozenset({"http", "https"})
 # Postgres text columns reject NUL, so a page containing one would fail the job forever.
@@ -34,12 +36,14 @@ _logger = logging.get_logger(logging.LoggerName.WORKER, "fetch_title")
 
 
 class _TitleParser(html.parser.HTMLParser):
-    """Collects the page's `og:title`, first `og:image` and the text of its first `<title>`."""
+    """Collects the page's `og:title`, first `og:image` and description tags and the text of its first `<title>`."""
 
     def __init__(self) -> None:
         super().__init__()
         self.og_title: str | None = None
         self.og_image: str | None = None
+        self.og_description: str | None = None
+        self.meta_description: str | None = None
         self.title_text = ""
         self._in_title = False
         self._title_done = False
@@ -60,6 +64,10 @@ class _TitleParser(html.parser.HTMLParser):
             self.og_title = content
         if attributes.get("property") == _OG_IMAGE_PROPERTY and self.og_image is None:
             self.og_image = content
+        if attributes.get("property") == _OG_DESCRIPTION_PROPERTY and self.og_description is None:
+            self.og_description = content
+        if attributes.get("name") == "description" and self.meta_description is None:
+            self.meta_description = content
 
     def handle_endtag(self, tag: str) -> None:
         """Close the first `<title>`."""
@@ -117,6 +125,21 @@ def extract_title(*, page: str) -> str | None:
     candidates = (" ".join(raw_title.replace(_NUL, "").split()) for raw_title in raw_titles)
     title = next((candidate for candidate in candidates if candidate), None)
     return title[:_MAX_TITLE_LENGTH] if title else None
+
+
+def extract_description(*, page: str) -> str | None:
+    """The page's `og:description`, else its meta description: NUL stripped, whitespace collapsed, capped at 1,000.
+
+    A blank candidate is skipped, so it never hides the next one; None when neither has text.
+    """
+    parser = _TitleParser()
+    parser.feed(page)
+    parser.close()
+
+    raw_descriptions = (parser.og_description or "", parser.meta_description or "")
+    candidates = (" ".join(raw.replace(_NUL, "").split()) for raw in raw_descriptions)
+    description = next((candidate for candidate in candidates if candidate), None)
+    return description[:_MAX_DESCRIPTION_LENGTH] if description else None
 
 
 def extract_image(*, page: str, base_url: str) -> str | None:

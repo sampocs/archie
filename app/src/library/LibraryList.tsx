@@ -23,6 +23,7 @@ import { ItemRow } from "@/ui/ItemRow";
 import { ProcessingLine } from "@/ui/ProcessingLine";
 import { QueuedPrimerRow } from "@/ui/QueuedPrimerRow";
 import { SnoozeSheet } from "@/ui/SnoozeSheet";
+import { NoteMetaProvider, useNoteMeta } from "@/notes/NoteMetaContext";
 import { SourceRow } from "@/ui/SourceRow";
 import { StatusTagView } from "@/ui/StatusTagView";
 import { useNow } from "@/ui/useNow";
@@ -69,7 +70,17 @@ const FILTER_LABELS: Record<LibraryFilter, string> = {
 };
 
 /** The Library list: filter chips over time sections (or the queue), or search results while a query is typed. */
-export function LibraryList({ data, query, filter, onFilterChange }: LibraryListProps) {
+export function LibraryList(props: LibraryListProps) {
+  const now = useNow();
+
+  return (
+    <NoteMetaProvider sources={props.data.sources} now={now}>
+      <LibraryListBody {...props} />
+    </NoteMetaProvider>
+  );
+}
+
+function LibraryListBody({ data, query, filter, onFilterChange }: LibraryListProps) {
   const theme = useTheme();
   const now = useNow();
   const [sheet, setSheet] = useState<Sheet | null>(null);
@@ -313,6 +324,7 @@ function LibraryItem(props: { source: LibrarySource; trailing?: ReactNode; filte
   const theme = useTheme();
   const router = useRouter();
   const asPrimer = props.filter === "primers";
+  const noteMeta = useNoteMeta(source);
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -320,6 +332,7 @@ function LibraryItem(props: { source: LibrarySource; trailing?: ReactNode; filte
       <SourceRow
         source={source}
         testID={`source-row-${source.id}`}
+        meta={noteMeta}
         onPress={
           asPrimer
             ? () => router.push({ pathname: "/primer/[id]", params: { id: source.id } })

@@ -702,6 +702,43 @@ describe("database SyncStore", () => {
     expect(sourceRow(db)?.confirmUrl).toBeNull();
   });
 
+  it("stores a pulled note's markdown, dates and refresh state, and missing ones as defaults", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: {
+        sources: [
+          pulledSource({
+            note_markdown: "# Title\n- one",
+            note_edited_at: "2024-02-13T12:00:00Z",
+            refreshed_at: "2024-03-01T08:00:00Z",
+            refreshed_from_queue: true,
+            refresh_skipped_at: "2024-03-02T08:00:00Z",
+          }),
+        ],
+        artifacts: [],
+        cards: [],
+      },
+      position: 1,
+      more: false,
+    });
+    expect(sourceRow(db)).toMatchObject({
+      noteMarkdown: "# Title\n- one",
+      noteEditedAt: "2024-02-13T12:00:00Z",
+      refreshedAt: "2024-03-01T08:00:00Z",
+      refreshedFromQueue: 1,
+      refreshSkippedAt: "2024-03-02T08:00:00Z",
+    });
+
+    await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 2, more: false });
+    expect(sourceRow(db)).toMatchObject({
+      noteMarkdown: null,
+      noteEditedAt: null,
+      refreshedAt: null,
+      refreshedFromQueue: 0,
+      refreshSkippedAt: null,
+    });
+  });
+
   it("stores a pulled source's sender_address and sender_pending, and missing ones as null and false", async () => {
     const { db, store } = makeDbStore();
     await store.applyPage({
@@ -1073,7 +1110,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at", "0013_chat_edits", "0014_confirm_url", "0015_newsletter_senders"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at", "0013_chat_edits", "0014_confirm_url", "0015_newsletter_senders", "0016_notes"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;

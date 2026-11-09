@@ -1,0 +1,38 @@
+appId: com.sampocs.archie
+---
+# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Done's cards spend a fraction of a cent.
+- tapOn:
+    id: "tab-today"
+# The refresher arrives with the next sync, which can take a few seconds.
+- extendedWaitUntil:
+    visible:
+      id: "today-refresher"
+    timeout: 30000
+- assertVisible: "Refresh a note · 1 of 2 today"
+- assertVisible: ".*Liquid Staking.*"
+- tapOn:
+    id: "today-refresher-note"
+- assertVisible: "Notes · Crypto"
+- assertVisible: ".*Liquid staking lets you stake.*"
+# The original note opens in a sheet showing the rendered markdown, not its source.
+- tapOn:
+    id: "item-original-note"
+- assertVisible:
+    id: "original-note-sheet"
+- assertVisible: "Your original note"
+- assertVisible: "Overview"
+- assertNotVisible: "## Overview"
+# Drag the sheet down to close it.
+- swipe:
+    start: "50%, 30%"
+    end: "50%, 90%"
+- assertNotVisible:
+    id: "original-note-sheet"
+- tapOn:
+    id: "note-done"
+- assertVisible: "Refresh a note · 2 of 2 today"
+- assertVisible: ".*Liquid Restaking Tokens.*"
+# The worker writes the cards with Haiku, then the toast says so.
+- extendedWaitUntil:
+    visible: ".*review cards? added from Liquid Staking.*"
+    timeout: 60000

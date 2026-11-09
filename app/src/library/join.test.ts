@@ -35,6 +35,11 @@ const source = (overrides: Partial<SourceRow>): SourceRow => ({
   favoritedAt: null,
   publishedAt: null,
   confirmUrl: null,
+  noteMarkdown: null,
+  noteEditedAt: null,
+  refreshedAt: null,
+  refreshedFromQueue: 0,
+  refreshSkippedAt: null,
   senderAddress: null,
   senderPending: false,
   ...overrides,
@@ -82,6 +87,7 @@ describe("joinLibrary", () => {
       ],
       topics: [topic],
       topicPrimers: [],
+      cardCounts: new Map(),
     });
 
     expect(data.sources[0]).toMatchObject({
@@ -99,6 +105,7 @@ describe("joinLibrary", () => {
       artifacts: [artifact({})],
       topics: [topic],
       topicPrimers: [],
+      cardCounts: new Map(),
     });
 
     expect(data.sources[0]).toMatchObject({ topic: null, summary: null, primerCreatedAt: null, primerWords: null });
@@ -114,6 +121,7 @@ describe("joinLibrary", () => {
       artifacts: [],
       topics: [],
       topicPrimers: [],
+      cardCounts: new Map(),
     });
 
     expect(data.sources.map((row) => row.id)).toEqual(["plain"]);
@@ -133,10 +141,23 @@ describe("joinLibrary", () => {
       artifacts: [],
       topics: [],
       topicPrimers: [],
+      cardCounts: new Map(),
     });
 
     expect(data.sources.map((row) => row.id)).toEqual(["plain"]);
     expect(data.pendingSenders.map((row) => row.id)).toEqual(["new", "old"]);
     expect(data.confirmations.map((row) => row.id)).toEqual(["confirm"]);
+  });
+
+  it("gives each source its live card count, 0 when it has none", () => {
+    const data = joinLibrary({
+      sources: [source({ id: "with" }), source({ id: "without" })],
+      artifacts: [],
+      topics: [],
+      topicPrimers: [],
+      cardCounts: new Map([["with", 5]]),
+    });
+
+    expect(data.sources.map((row) => row.cardCount)).toEqual([5, 0]);
   });
 });

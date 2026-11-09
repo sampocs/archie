@@ -28,6 +28,23 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
   `railway ssh --service archie -- uv run --no-sync archie-worker backfill-embed` (`railway run` can't reach the
   private `DATABASE_URL`).
 
+## M8
+
+- **Migration 0016** adds the note columns. **Release order: server first, then the phone build** (phone migration 0016
+  re-pulls everything).
+- **Importing Bear notes** is run by the owner from the Mac:
+
+  ```
+  railway ssh --service archie -- uv run --no-sync archie-issue-session --email <owner email>
+  export ARCHIE_SESSION_KEY=<the printed key>
+  uv run python -I scripts/import_bear.py --marks ~/Downloads/bear-marks.json --dry-run
+  uv run python -I scripts/import_bear.py --marks ~/Downloads/bear-marks.json
+  # after choosing the reading voice (prompts.READING_VOICE):
+  uv run python -I scripts/import_bear.py --marks ~/Downloads/bear-marks.json --write
+  ```
+
+- **Cost:** `--write` makes about 91 Sonnet write-ups, a few dollars in all, one a minute. Re-running any step is safe.
+
 ## Not in code
 
 - **Secrets and the owner's email.** The repo is public, so these are `preserve()` in

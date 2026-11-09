@@ -32,4 +32,21 @@ describe("makeCardsAction", () => {
   it("turns cards on for a done item with none", () => {
     expect(makeCardsAction(sourceRow(ready), 0)?.kind).toBe("cards_on");
   });
+
+  it("never goes deeper on a note: hidden while its cards are on, even in the inbox with none", () => {
+    expect(makeCardsAction(sourceRow({ ...ready, kind: "note", state: "inbox" }), 0)).toBeNull();
+  });
+
+  it("turns cards back on for a note whose cards are off", () => {
+    for (const state of ["inbox", "consumed"]) {
+      expect(makeCardsAction(sourceRow({ ...ready, kind: "note", state, cardsOff: 1 }), 0)).toEqual({
+        kind: "cards_on",
+        subtitle: "Writes cards for this again",
+      });
+    }
+  });
+
+  it("hides a note's action until it is ready", () => {
+    expect(makeCardsAction(sourceRow({ ...ready, kind: "note", processing: "processing", cardsOff: 1 }), 0)).toBeNull();
+  });
 });

@@ -35,6 +35,12 @@ export type PulledSource = {
   published_at?: string | null;
   // Absent when pulling from a server older than signup confirmations.
   confirm_url?: string | null;
+  // Absent when pulling from a server older than notes import.
+  note_markdown?: string | null;
+  note_edited_at?: string | null;
+  refreshed_at?: string | null;
+  refreshed_from_queue?: boolean;
+  refresh_skipped_at?: string | null;
   // Absent when pulling from a server older than the sender allowlist.
   sender_address?: string | null;
   sender_pending?: boolean;

@@ -16,11 +16,13 @@ from archie_worker.handlers import (
     fetch_title,
     file_topic,
     news_quiz,
+    note_cards,
     primer,
     take_cards,
     topic_primer,
     transcribe,
     update_brief,
+    write_note,
 )
 from archie_worker.loop import HandlerSpec
 
@@ -67,6 +69,10 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.CLEAN_TAKE: HandlerSpec(run=clean_take.handle, on_final_failure=clean_take.mark_failed),
     # No failure hook: a take without cards still reads fine.
     models.JobKind.TAKE_CARDS: HandlerSpec(run=take_cards.handle),
+    # No failure hook: a note without cards still reads fine.
+    models.JobKind.NOTE_CARDS: HandlerSpec(run=note_cards.handle),
     # No failure hook: an item without chunks is only missing from search until its next save or the backfill.
     models.JobKind.EMBED: HandlerSpec(run=embed.handle),
+    # A note's write-up is its whole reading view, so a final failure shows on the note with Try again.
+    models.JobKind.WRITE_NOTE: HandlerSpec(run=write_note.handle, on_final_failure=mark_source_failed),
 }

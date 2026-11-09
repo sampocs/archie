@@ -3,6 +3,7 @@ import { Linking, Pressable, View } from "react-native";
 
 import { formatClock } from "@/ask/types";
 import { timestampUrl } from "@/item/timestampLink";
+import { useNoteMeta } from "@/notes/NoteMetaContext";
 import { TakeRow } from "@/takes/TakeRow";
 import { useTakesData } from "@/takes/useTakesData";
 import { Text } from "@/theme/components/Text";
@@ -71,6 +72,7 @@ function resultRow(input: {
 function SourceResult(props: { result: ServerSearchResult; source: LibrarySource | null }) {
   const router = useRouter();
   const { result, source } = props;
+  const noteMeta = useNoteMeta(source);
   const openSource = () => router.push({ pathname: "/source/[id]", params: { id: result.itemId } });
 
   // A passage with a time opens the player at that moment where the player supports it (Decision 11).
@@ -81,7 +83,7 @@ function SourceResult(props: { result: ServerSearchResult; source: LibrarySource
   return (
     <View testID={`search-result-${result.itemId}`}>
       {source ? (
-        <SourceRow source={source} testID={`source-row-${source.id}`} />
+        <SourceRow source={source} testID={`source-row-${source.id}`} meta={noteMeta} />
       ) : (
         <ItemRow
           artwork={{ imageUrl: null, domain: null, monogram: result.title.slice(0, 1).toUpperCase() }}

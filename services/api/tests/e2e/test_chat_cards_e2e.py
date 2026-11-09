@@ -245,6 +245,20 @@ def test_save_creates_the_chat_item_with_three_artifacts_and_only_the_kept_cards
     )
 
 
+def test_see_original_serves_the_chat_items_transcript(live_stack: LiveStack, owner: httpx.Client) -> None:
+    """`/sources/{id}/text` returns the item's current transcript to its owner, and 404 to anyone else."""
+    item_id = _save(owner, _seed(owner)["id"], [0]).json()["saved_source_id"]
+    [text] = [artifact for artifact in _artifacts(live_stack, item_id) if artifact.kind == "text"]
+
+    response = owner.get(f"/sources/{item_id}/text")
+
+    assert response.status_code == 200
+    assert response.json() == {"text": text.content["text"]}
+    assert response.json()["text"].endswith(f"**You:** Make cards\n\n**Archie:** Here are cards on {TITLE}.")
+    stranger = live_stack.authed(live_stack.sign_in(apple_sub="stranger"))
+    assert stranger.get(f"/sources/{item_id}/text").status_code == 404
+
+
 def test_a_later_save_in_the_chat_updates_the_same_item(live_stack: LiveStack, owner: httpx.Client) -> None:
     """The second set retitles the item and adds new current versions; an identical kept card stays as it was, a
     changed one is added and an unkept one retired."""

@@ -1,4 +1,5 @@
-"""Per-source reads the phone makes online: a newsletter's full text and a podcast's nearby episodes."""
+"""Per-source reads the phone makes online: a newsletter's or chat item's full text and a podcast's nearby
+episodes."""
 
 from __future__ import annotations
 
@@ -22,11 +23,13 @@ from archie_api import deps
 router = fastapi.APIRouter(prefix="/sources", tags=["sources"])
 
 _TEXT_KEY = "text"  # The `text` artifact's content key (the worker's `content.TEXT_KEY`).
+# The kinds whose stored text the phone shows: a newsletter's full email, a chat item's transcript (See original).
+_TEXT_KINDS = frozenset({models.SourceKind.NEWSLETTER, models.SourceKind.CHAT})
 EPISODE_WINDOW_DAYS = 30
 
 
 class SourceTextView(pydantic.BaseModel):
-    """A newsletter's stored text, for "Open the full email"."""
+    """A newsletter's stored text, for "Open the full email", or a chat item's transcript, for See original."""
 
     text: str
 
@@ -37,7 +40,7 @@ def source_text(
     db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
     user: Annotated[models.User, fastapi.Depends(deps.current_user)],
 ) -> SourceTextView:
-    """The caller's newsletter text; 404 for any other source, someone else's, or one without text yet.
+    """The caller's newsletter text or chat transcript; 404 for any other source, someone else's, or one without text.
 
     A signup confirmation, or a newsletter from a sender nobody has allowed yet, never gets a text artifact (that
     would embed it into Ask), so its capture is served instead.
@@ -45,7 +48,7 @@ def source_text(
     source = db.get(models.Source, source_id)
     if source is None or source.user_id != user.id or source.deleted_at is not None:
         raise _not_found()
-    if source.kind != models.SourceKind.NEWSLETTER:
+    if source.kind not in _TEXT_KINDS:
         raise _not_found()
 
     artifact = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT)

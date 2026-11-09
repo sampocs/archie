@@ -69,6 +69,9 @@ def test_the_gist_is_the_first_prose_paragraph_cut_at_a_word() -> None:
     sheet = "# JWTs\n\n## Basics\n\n- a list\n\n| a | b |\n|---|---|\n\nA JWT is\nsigned.\n\nMore."
     assert card_routes.gist_of(sheet, title="JWTs") == "A JWT is signed."
 
+    numbered = "1. first step\n2. second\n\nA JWT is signed."
+    assert card_routes.gist_of(numbered, title="JWTs") == "A JWT is signed."
+
     long_gist = card_routes.gist_of("word " * 100, title="JWTs")
     assert len(long_gist) <= card_routes.MAX_GIST_CHARACTERS and long_gist.endswith("d…")
 

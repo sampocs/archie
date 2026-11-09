@@ -18,7 +18,8 @@ const HEADING = /^(#{1,6})\s+(.*)$/;
 const TASK = /^[-*]\s+\[( |x|X)\]\s+(.*)$/;
 const BULLET = /^[-*+]\s+(.*)$/;
 const NUMBERED = /^\d+\.\s+(.*)$/;
-const TABLE_ROW = /^\|.*\|$/;
+// A table row has a pipe; the pipes at its ends are optional ("a | b" under "---|---").
+const TABLE_ROW = /\|/;
 // The row under a table's header: "|---|:---:|".
 const TABLE_RULE = /^:?-+:?$/;
 // The opening * must not be followed by a space, so "2 * 3 * 4" stays plain.
@@ -39,14 +40,14 @@ export function parseMarkdown(text: string): Block[] {
     paragraph = [];
   };
 
-  for (const rawLine of text.split("\n")) {
-    const line = rawLine.trim();
+  const lines = text.split("\n").map((rawLine) => rawLine.trim());
+  for (const [index, line] of lines.entries()) {
     const heading = HEADING.exec(line);
     const task = TASK.exec(line);
     const bullet = BULLET.exec(line);
     const numbered = NUMBERED.exec(line);
 
-    if (TABLE_ROW.test(line)) {
+    if (isTableRow(line, { inTable: table !== null, next: lines[index + 1] ?? "" })) {
       flushParagraph();
       const cells = tableCells(line);
       if (table === null) {
@@ -80,9 +81,20 @@ export function parseMarkdown(text: string): Block[] {
   return blocks;
 }
 
+// Piped at both ends is a row on its own; otherwise it needs a table above it or a rule row below it.
+function isTableRow(line: string, { inTable, next }: { inTable: boolean; next: string }): boolean {
+  if (!TABLE_ROW.test(line)) return false;
+  return /^\|.*\|$/.test(line) || inTable || isTableRule(next);
+}
+
+function isTableRule(line: string): boolean {
+  return TABLE_ROW.test(line) && tableCells(line).every((cell) => TABLE_RULE.test(cell));
+}
+
 function tableCells(line: string): string[] {
   return line
-    .slice(1, -1)
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
     .split("|")
     .map((cell) => cell.trim());
 }

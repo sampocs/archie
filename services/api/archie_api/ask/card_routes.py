@@ -10,6 +10,7 @@ reviewed; a reviewed card is never retired, so the owner's review progress survi
 
 from __future__ import annotations
 
+import re
 import uuid
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -30,6 +31,7 @@ MAX_GIST_CHARACTERS = 300
 _SPEAKERS = {models.MessageRole.USER: "You", models.MessageRole.ASSISTANT: "Archie"}
 # Markdown blocks that aren't prose: a heading, a table, a code fence, a rule, a quote or a list.
 _NON_PROSE_STARTS = ("#", "|", "```", "---", "***", ">", "- ", "* ", "+ ")
+_NUMBERED_START = re.compile(r"^\d+\.\s")
 
 router = fastapi.APIRouter(prefix="/ask", tags=["ask"])
 
@@ -100,7 +102,10 @@ def transcript(lines: Sequence[TranscriptLine]) -> str:
 def gist_of(cheat_sheet: str, *, title: str) -> str:
     """The cheat sheet's first prose paragraph on one line, cut at a word to `MAX_GIST_CHARACTERS`; else the title."""
     blocks = (block.strip() for block in cheat_sheet.split("\n\n"))
-    paragraph = next((block for block in blocks if block and not block.startswith(_NON_PROSE_STARTS)), title)
+    prose = (
+        block for block in blocks if block and not block.startswith(_NON_PROSE_STARTS) and not _NUMBERED_START.match(block)
+    )
+    paragraph = next(prose, title)
     text = " ".join(paragraph.split())
     if len(text) <= MAX_GIST_CHARACTERS:
         return text
@@ -161,8 +166,8 @@ def _chat_item(db: orm.Session, *, user: models.User, proposal: models.CardSetPr
 
 def _write_artifacts(db: orm.Session, *, item: models.Source, proposal: models.CardSetProposal, existed: bool) -> None:
     """The cheat sheet as the primer, its gist as the summary and the chat as the text, then queue it for search."""
-    # An update is the owner choosing the new set in the chat, so it replaces even a version they edited.
-    origin = models.VersionOrigin.CHAT_EDIT if existed else models.VersionOrigin.ARCHIE
+    # An update is the owner choosing the new set in the chat, so it becomes current even over a version they edited
+    # (`hands_back`), without being labelled as one of their chat edits.
     summary = {"gist": gist_of(proposal.cheat_sheet, title=proposal.title), "key_ideas": [], "numbers": []}
     contents: dict[models.ArtifactKind, dict[str, Any]] = {
         models.ArtifactKind.PRIMER: {"markdown": proposal.cheat_sheet},
@@ -171,7 +176,7 @@ def _write_artifacts(db: orm.Session, *, item: models.Source, proposal: models.C
     }
     for kind, content in contents.items():
         pipeline.write_artifact(
-            db, source=item, kind=kind, content=content, model=None, prompt_version=None, origin=origin
+            db, source=item, kind=kind, content=content, model=None, prompt_version=None, hands_back=existed
         )
     jobs.enqueue_embed(db, user_id=item.user_id, item_kind=models.SearchItemKind.SOURCE, item_id=item.id)
 

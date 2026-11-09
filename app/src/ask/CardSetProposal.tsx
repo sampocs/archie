@@ -4,7 +4,7 @@ import { Pressable, View } from "react-native";
 
 import { UnauthorizedError } from "@/api/client";
 import { clearSession, useSession } from "@/auth/session";
-import { isConflict } from "@/edits/api";
+import { isConflict, isNotFound } from "@/edits/api";
 import { NETWORK_FAILED } from "@/edits/proposalState";
 import { requestSync } from "@/sync/useSync";
 import { Card } from "@/theme/components/Card";
@@ -46,6 +46,8 @@ const STRUCK = 0.45;
  * A card set Ask proposed: the cheat-sheet line, the cards one at a time (or all in a list) with a Keep tick each, and
  * one footer row with Save K / Update K and Discard. Once it is decided it shrinks to how it ended.
  */
+const CARD_SET_GONE = "This card set is gone";
+
 export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive, updating, onToast }: CardSetProposalProps) {
   const theme = useTheme();
   const router = useRouter();
@@ -76,7 +78,8 @@ export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive
           return;
         }
         // A 409 means the server already moved the set on; the sync below brings its state.
-        if (!isConflict(error)) onToast(NETWORK_FAILED);
+        if (isNotFound(error)) onToast(CARD_SET_GONE);
+        else if (!isConflict(error)) onToast(NETWORK_FAILED);
       })
       .finally(() => {
         setBusy(false);

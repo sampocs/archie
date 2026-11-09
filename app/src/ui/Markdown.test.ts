@@ -102,6 +102,12 @@ describe("parseMarkdown", () => {
     ]);
   });
 
+  it("parses a table written without the outer pipes", () => {
+    expect(parseMarkdown("a | b\n---|---\n1 | 2")).toEqual([
+      { type: "table", header: [[{ text: "a" }], [{ text: "b" }]], rows: [[[{ text: "1" }], [{ text: "2" }]]] },
+    ]);
+  });
+
   it("ends a table at the first line that isn't a row, and starts a new one after", () => {
     const blocks = parseMarkdown("| a | b |\n| 1 | 2 |\nAfter the table\n\n| c |\n| 3 |");
     expect(blocks.map((block) => block.type)).toEqual(["table", "paragraph", "table"]);

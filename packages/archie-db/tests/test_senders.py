@@ -34,6 +34,11 @@ def test_a_subdomain_of_a_shared_platform_is_still_shared() -> None:
     assert _identifiers(address="writer@mail.beehiiv.com") == {(ADDRESS, "writer@mail.beehiiv.com")}
 
 
+def test_a_bulk_email_service_sender_is_identified_by_its_full_address() -> None:
+    """Morning Brew sends through Sailthru; allowing it must not allow everyone else Sailthru sends for."""
+    assert _identifiers(address="morningbrew@mail.sailthru.com") == {(ADDRESS, "morningbrew@mail.sailthru.com")}
+
+
 def test_a_mailbox_provider_address_is_identified_by_the_address() -> None:
     """Everyone with a Gmail address would otherwise count as one sender."""
     assert _identifiers(address="Person@Gmail.com") == {(ADDRESS, "person@gmail.com")}

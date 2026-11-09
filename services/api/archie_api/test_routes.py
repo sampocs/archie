@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import uuid
 from typing import Annotated, Any
 
@@ -12,9 +13,14 @@ from archie_db import changes, models, pipeline, user_topics
 from sqlalchemy import orm
 
 from archie_api import deps
+from archie_api.ask import card_routes, card_set_tools, citations
 from archie_api.auth import sessions
+from archie_api.sync import conversation_actions, schemas
 
 router = fastapi.APIRouter(prefix="/test", tags=["test"])
+
+# The message the phone's Make cards button sends.
+MAKE_CARDS_MESSAGE = "Make cards"
 
 
 class TestSessionRequest(pydantic.BaseModel):
@@ -100,3 +106,93 @@ def seed_note_write_up(
     source.domain = request.domain
     pipeline.set_processing(db, source=source, status=models.ProcessingStatus.READY)
     db.commit()
+
+
+class SeedCardSetRequest(card_set_tools.CardSetIn):
+    """A ready-made card set for a chat, so Maestro needs no model; without `conversation_id` (or with an unknown one)
+    a chat with one exchange about `title` is made first."""
+
+    __test__ = False
+
+    conversation_id: uuid.UUID | None = None
+
+
+@router.post("/card-sets")
+def seed_card_set(
+    request: SeedCardSetRequest,
+    db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
+    user: Annotated[models.User, fastapi.Depends(deps.current_user)],
+) -> schemas.CardSetProposalOut:
+    """Add a `Make cards` question and an answer carrying the card set to the chat, as a real answer would."""
+    changes.lock_user_writes(db, user.id)
+    conversation = _seed_conversation(db, user=user, request=request)
+
+    _seed_message(db, user=user, conversation=conversation, role=models.MessageRole.USER, text=MAKE_CARDS_MESSAGE)
+    answer = _seed_message(
+        db, user=user, conversation=conversation, role=models.MessageRole.ASSISTANT,
+        text=f"Here are cards on {request.title}.",
+    )  # fmt: skip
+    proposal = card_set_tools.add_proposal(
+        db,
+        user_id=user.id,
+        conversation_id=conversation.id,
+        message_id=answer.id,
+        proposal_id=uuid.uuid4(),
+        card_set=request,
+        created_at=datetime.datetime.now(tz=datetime.UTC),
+    )
+    conversation_actions.touch_conversation(conversation)
+
+    db.commit()
+    db.refresh(proposal)
+    return schemas.CardSetProposalOut.model_validate(proposal)
+
+
+def _seed_conversation(db: orm.Session, *, user: models.User, request: SeedCardSetRequest) -> models.Conversation:
+    """The user's live chat `conversation_id`, or a new one (with that id when given) holding one exchange."""
+    if request.conversation_id is not None and db.get(models.Conversation, request.conversation_id) is not None:
+        existing = conversation_actions.owned_conversation(db, user=user, conversation_id=request.conversation_id)
+        if existing is None:
+            raise fastapi.HTTPException(status_code=404, detail=conversation_actions.NO_CONVERSATION)
+        return existing
+
+    question = f"What should I know about {request.title}?"
+    conversation = models.Conversation(
+        id=request.conversation_id or uuid.uuid4(),
+        user_id=user.id,
+        title=question[: models.CONVERSATION_TITLE_LENGTH],
+        change_seq=changes.next_change_seq(),
+    )
+    db.add(conversation)
+    db.flush()
+    _seed_message(db, user=user, conversation=conversation, role=models.MessageRole.USER, text=question)
+    _seed_message(
+        db, user=user, conversation=conversation, role=models.MessageRole.ASSISTANT,
+        text=card_routes.gist_of(request.cheat_sheet, title=request.title),
+    )  # fmt: skip
+    return conversation
+
+
+def _seed_message(
+    db: orm.Session, *, user: models.User, conversation: models.Conversation, role: models.MessageRole, text: str
+) -> models.Message:
+    message = models.Message(
+        id=uuid.uuid4(),
+        user_id=user.id,
+        conversation_id=conversation.id,
+        role=role.value,
+        text=text,
+        segments=None if role == models.MessageRole.USER else [_background_segment(text)],
+        web_search=False,
+        status=models.MessageStatus.COMPLETE.value,
+        # now() is the transaction's start, so messages added together would tie; they must keep their order.
+        created_at=sqlalchemy.func.clock_timestamp(),
+        change_seq=changes.next_change_seq(),
+    )
+    db.add(message)
+    db.flush()
+    return message
+
+
+def _background_segment(text: str) -> dict[str, Any]:
+    return citations.Segment(label=citations.AnswerLabel.BACKGROUND, text=text, citations=[]).to_wire()

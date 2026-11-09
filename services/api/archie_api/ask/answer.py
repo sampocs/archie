@@ -1,11 +1,12 @@
 """One Ask answer: the tool loop against Sonnet 5.5, streamed as server-sent events, then saved.
 
 The server runs up to `MAX_ROUNDS` model requests: `search_library` (run here, results returned as citable
-`search_result` blocks), Anthropic's web search tool (run by Anthropic) and the editing tools of `edit_tools` (run
-here). Text streams as `delta` events; each finished text block becomes a `block` carrying its paragraph's label, sent
-when the paragraph closes; a search shows as `searching`; an editing tool call shows as `editing` when it starts, and
-each proposed edit as an `edit` event, stored with the answer. Uncited paragraphs the model writes before a tool call
-(announcing its search) are streamed but not saved.
+`search_result` blocks), Anthropic's web search tool (run by Anthropic), the editing tools of `edit_tools` and
+`propose_cards` of `card_set_tools` (both run here). Text streams as `delta` events; each finished text block becomes a
+`block` carrying its paragraph's label, sent when the paragraph closes; a search shows as `searching`; an editing tool
+call shows as `editing` when it starts, and each proposed edit as an `edit` event; a `propose_cards` call shows as
+`drafting_cards` when it starts, and each proposed card set as a `cards` event. Proposals are stored with the answer.
+Uncited paragraphs the model writes before a tool call (announcing its search) are streamed but not saved.
 The answer is stored when the stream ends — complete only if the model finished its turn (`end_turn` or a stop
 sequence), else failed with whatever text arrived: a refusal, a cut-off (`max_tokens`), no answer within `MAX_ROUNDS`,
 an API or database error, or the phone hanging up mid-answer. Every model round, finished or not, is recorded in
@@ -33,7 +34,7 @@ from archie_db import changes, models, search
 from archie_llm import embeddings, llm
 from archie_shared import logging
 
-from archie_api.ask import citations, edit_tools, prompts
+from archie_api.ask import card_set_tools, citations, edit_tools, prompts
 from archie_api.sync import conversation_actions
 
 # Room for read, propose a summary edit and its card edit, then answer.
@@ -49,6 +50,8 @@ OUTPUT_CONFIG: anthropic.types.OutputConfigParam = {"effort": "medium"}
 _TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "auto"}
 # The last round may not call tools, so it has to answer.
 _LAST_ROUND_TOOL_CHOICE: anthropic.types.ToolChoiceParam = {"type": "none"}
+# The SDK's tool types don't cover these plain dicts, hence `Any`.
+_TOOLS: list[Any] = [prompts.SEARCH_LIBRARY_TOOL, prompts.WEB_SEARCH_TOOL, *edit_tools.TOOLS, *card_set_tools.TOOLS]
 # The stop reasons of a model that finished its turn; any other (e.g. `max_tokens`) leaves the answer unfinished.
 _FINISHED_STOP_REASONS = frozenset({"end_turn", "stop_sequence"})
 # The `search_library` inputs that bound its results by day.
@@ -71,6 +74,8 @@ class EventName(StrEnum):
     SEARCHING = "searching"
     EDITING = "editing"
     EDIT = "edit"
+    DRAFTING_CARDS = "drafting_cards"
+    CARDS = "cards"
     DONE = "done"
     ERROR = "error"
 
@@ -115,12 +120,16 @@ class _Block:
 
 @dataclass
 class _Progress:
-    """The answer so far: text blocks whose paragraph closed (in wire order), the open paragraph, the streaming text."""
+    """The answer so far: text blocks whose paragraph closed (in wire order), the open paragraph, the streaming text,
+    and the proposals made. The answer's id is fixed up front, so a `cards` event can name the message it is saved on.
+    """
 
     blocks: list[_Block] = field(default_factory=list)
     paragraphs: citations.Paragraphs = field(default_factory=citations.Paragraphs)
     partial: str = ""
     proposals: list[edit_tools.Proposal] = field(default_factory=list)
+    card_sets: list[card_set_tools.Proposal] = field(default_factory=list)
+    message_id: uuid.UUID = field(default_factory=uuid.uuid4)
 
     @property
     def next_block(self) -> int:
@@ -254,7 +263,7 @@ def _round(
         max_tokens=MAX_TOKENS,
         system=request.system,
         messages=messages,
-        tools=[prompts.SEARCH_LIBRARY_TOOL, prompts.WEB_SEARCH_TOOL, *edit_tools.TOOLS],  # type: ignore[list-item]
+        tools=_TOOLS,
         tool_choice=tool_choice,
         thinking=THINKING,
         output_config=OUTPUT_CONFIG,
@@ -287,6 +296,8 @@ def _events_of(stream_event: Any, *, progress: _Progress, passages: dict[str, se
         block = stream_event.content_block
         if block.type == "tool_use" and block.name in edit_tools.TOOL_NAMES:
             yield Event(name=EventName.EDITING, data={"target_kind": None})
+        elif block.type == "tool_use" and block.name in card_set_tools.TOOL_NAMES:
+            yield Event(name=EventName.DRAFTING_CARDS, data={})
         return
     if stream_event.type != "content_block_stop":
         return
@@ -318,7 +329,14 @@ def _run_tool(
     passages: dict[str, search.ChunkHit],
     progress: _Progress,
 ) -> Generator[Event, None, dict[str, Any]]:
-    """One tool call's result block; a proposal is kept for the save and shown at once as an `edit` event."""
+    """One tool call's result block; a proposal is kept for the save and shown at once as an `edit` or `cards` event."""
+    if tool_use.name in card_set_tools.TOOL_NAMES:
+        card_set = card_set_tools.run(tool_use_id=tool_use.id, tool_input=tool_use.input)
+        if card_set.proposal is not None:
+            progress.card_sets.append(card_set.proposal)
+            data = card_set.proposal.to_event(conversation_id=request.conversation_id, message_id=progress.message_id)
+            yield Event(name=EventName.CARDS, data=data)
+        return card_set.result
     if tool_use.name not in edit_tools.TOOL_NAMES:
         return _search_library(engine, request=request, tool_use=tool_use, passages=passages)
 
@@ -429,7 +447,7 @@ def _save(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progr
     # A block cut off mid-stream has no citations yet; keep its words as background so the owner sees them.
     if progress.partial.strip():
         segments.append(citations.Segment(label=citations.AnswerLabel.BACKGROUND, text=progress.partial, citations=[]))
-    message_id = uuid.uuid4()
+    message_id = progress.message_id
 
     with sqlalchemy.orm.Session(engine) as db:
         changes.lock_user_writes(db, request.user_id)
@@ -447,13 +465,21 @@ def _save(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progr
             )
         )
         db.flush()
-        # A failed answer keeps its proposals too: each is checked against its target again on Apply.
+        # A failed answer keeps its proposals too: each edit is checked against its target again on Apply, and a card
+        # set holds everything Save needs.
         edit_tools.save_proposals(
             db,
             user_id=request.user_id,
             conversation_id=request.conversation_id,
             message_id=message_id,
             proposals=progress.proposals,
+        )
+        card_set_tools.save_proposals(
+            db,
+            user_id=request.user_id,
+            conversation_id=request.conversation_id,
+            message_id=message_id,
+            proposals=progress.card_sets,
         )
         question = db.get_one(models.Message, request.user_message_id)
         question.change_seq = changes.next_change_seq()

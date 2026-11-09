@@ -147,7 +147,7 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
 
 ## Search and chat
 
-> Shipped in M7; `2026-11-06-m7-search-ask-design.md` is the source of truth where it differs: saved, synced conversations; labels computed per paragraph from citations; card drafts (Make a card); Sonnet 5.5 with `between_tools` thinking; `text-embedding-3-small` (1536 dims); chunks indexed when a source's text is fetched, not only after analyze.
+> Shipped in M7; `2026-11-06-m7-search-ask-design.md` is the source of truth where it differs: saved, synced conversations; labels computed per paragraph from citations; card drafts (Make a card, since replaced by a `propose_cards` tool and Save/Discard routes; see `2026-11-09-chat-cards-design.md`); Sonnet 5.5 with `between_tools` thinking; `text-embedding-3-small` (1536 dims); chunks indexed when a source's text is fetched, not only after analyze.
 
 - **Search** runs keyword search and meaning search over `chunks` and merges the two result lists with reciprocal rank fusion.
 - **Chat** is Claude with tools: `search_library` and Anthropic's web search tool.

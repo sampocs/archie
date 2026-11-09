@@ -18,7 +18,11 @@ from archie_api.sync import capture, rows
 _NOT_QUEUED = "source is not queued"
 _NOT_IN_INBOX = "source is not in the inbox"
 _NOT_NEWSLETTER = "source is not a newsletter"
-_NOTE_NOT_QUEUEABLE = "notes are refreshed, not queued"
+# Notes go through the refresher and chat items are saved from Ask; neither enters the queue.
+_NOT_QUEUEABLE: dict[str, str] = {
+    models.SourceKind.NOTE: "notes are refreshed, not queued",
+    models.SourceKind.CHAT: "chat items are not queued",
+}
 _NOT_READY = "source is not ready"
 _NO_PRIMER = "topic primer not found"
 _PRIMER_NOT_QUEUED = "primer is not queued"
@@ -98,8 +102,8 @@ def finish_source(db: orm.Session, *, user: models.User, payload: dict[str, obje
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind == models.SourceKind.NOTE:
-        return _NOTE_NOT_QUEUEABLE
+    if source.kind in _NOT_QUEUEABLE:
+        return _NOT_QUEUEABLE[source.kind]
     if source.state != models.SourceState.QUEUED:
         return _NOT_QUEUED
 
@@ -135,8 +139,8 @@ def queue_primer(db: orm.Session, *, user: models.User, payload: dict[str, objec
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind == models.SourceKind.NOTE:
-        return _NOTE_NOT_QUEUEABLE
+    if source.kind in _NOT_QUEUEABLE:
+        return _NOT_QUEUEABLE[source.kind]
 
     if parsed.queued:
         rows.queue_primer(db, source=source)
@@ -214,8 +218,8 @@ def snooze(db: orm.Session, *, user: models.User, payload: dict[str, object]) ->
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind == models.SourceKind.NOTE:
-        return _NOTE_NOT_QUEUEABLE
+    if source.kind in _NOT_QUEUEABLE:
+        return _NOT_QUEUEABLE[source.kind]
 
     if parsed.target == SnoozeTarget.SOURCE_PRIMER:
         if parsed.until is not None and source.primer_queue_position is not None:
@@ -239,8 +243,8 @@ def go_deeper(db: orm.Session, *, user: models.User, payload: dict[str, object])
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind == models.SourceKind.NOTE:
-        return _NOTE_NOT_QUEUEABLE
+    if source.kind in _NOT_QUEUEABLE:
+        return _NOT_QUEUEABLE[source.kind]
     if source.state not in _INBOX_STATES:
         return _NOT_IN_INBOX
     if source.processing != models.ProcessingStatus.READY:
@@ -338,8 +342,8 @@ def set_queue_position(db: orm.Session, *, user: models.User, payload: dict[str,
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind == models.SourceKind.NOTE:
-        return _NOTE_NOT_QUEUEABLE
+    if source.kind in _NOT_QUEUEABLE:
+        return _NOT_QUEUEABLE[source.kind]
 
     if parsed.target == QueueTarget.SOURCE_PRIMER:
         if source.primer_queue_position is None:
@@ -363,8 +367,8 @@ def read_later(db: orm.Session, *, user: models.User, payload: dict[str, object]
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind == models.SourceKind.NOTE:
-        return _NOTE_NOT_QUEUEABLE
+    if source.kind in _NOT_QUEUEABLE:
+        return _NOT_QUEUEABLE[source.kind]
     if source.state not in _INBOX_STATES:
         return _NOT_IN_INBOX
 

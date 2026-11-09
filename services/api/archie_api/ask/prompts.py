@@ -1,12 +1,15 @@
 """Ask's system prompt and tools.
 
-The fixed answer rules come first (so every chat's prompt shares its first 60 characters), then the editing rules.
+The fixed answer rules come first (so every chat's prompt shares its first 60 characters), then the editing rules,
+then the card-set rules.
 """
 
 from __future__ import annotations
 
 import datetime
 from typing import Any
+
+from archie_llm import voice
 
 _ANSWER_RULES = """You are Archie's Ask, answering the owner's questions from their own library first. Archie is \
 their personal library of the articles, newsletters, podcasts and videos they saved, with Archie's summaries and \
@@ -44,8 +47,21 @@ propose a matching card edit too.
 - A take is the owner's own words: change only what they asked, and never add claims of your own.
 - After proposing, say in one short sentence what will change. Don't repeat the new text."""
 
+CARD_SET_RULES = f"""Making cards from the chat:
+- When the owner asks for cards (the message "Make cards", or any wording like "make me cards on this"), call \
+propose_cards once, with the whole conversation in view. Don't search the library first unless the owner asks you to.
+- The cheat sheet is a fresh, self-contained reference the owner will re-read later without the chat: markdown with \
+headings, a comparison table when the chat compared things, and the gotchas. Never refer back to the chat ("as \
+discussed above", "you asked"). Headings and tables are fine here, unlike in answers. {voice.READING_VOICE}
+- Write 3 to 7 open-recall cards on what the chat established, each answerable on its own without the chat or the \
+other cards.
+- When the owner asks to change the proposal ("change card 2", "drop the last one", "add a card on X"), call \
+propose_cards again with the whole new set, copying everything they didn't ask to change. Your earlier proposals in \
+this chat are listed after your answers.
+- Around the proposal, write one or two short sentences at most. Don't repeat the cards or the cheat sheet."""
+
 # The answer rules come first, so every chat's prompt keeps its first 60 characters (the cassette key).
-ASK_SYSTEM = f"{_ANSWER_RULES}\n\n{EDIT_RULES}"
+ASK_SYSTEM = f"{_ANSWER_RULES}\n\n{EDIT_RULES}\n\n{CARD_SET_RULES}"
 
 WEB_REQUIRED = "A web search is required for this question: search the web before you answer."
 

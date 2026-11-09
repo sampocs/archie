@@ -42,6 +42,7 @@ class PulledTable(StrEnum):
     MESSAGES = "messages"
     CARD_VERSIONS = "card_versions"
     EDIT_PROPOSALS = "edit_proposals"
+    CARD_SET_PROPOSALS = "card_set_proposals"
     NEWSLETTER_SENDERS = "newsletter_senders"
 
 
@@ -55,7 +56,7 @@ class MergedPage[RowT: _Positioned]:
 
 
 def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL_PAGE_SIZE) -> schemas.PullResponse:
-    """Rows (deleted ones included) from the fifteen synced tables with a position above `since`, oldest first.
+    """Rows (deleted ones included) from the sixteen synced tables with a position above `since`, oldest first.
 
     Of the briefs, only the open one and those done in the last 7 days are sent.
     """
@@ -83,6 +84,9 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
         PulledTable.MESSAGES: _changed_rows(db, models.Message, user_id=user_id, since=since, limit=limit),
         PulledTable.CARD_VERSIONS: _changed_rows(db, models.CardVersion, user_id=user_id, since=since, limit=limit),
         PulledTable.EDIT_PROPOSALS: _changed_rows(db, models.EditProposal, user_id=user_id, since=since, limit=limit),
+        PulledTable.CARD_SET_PROPOSALS: _changed_rows(
+            db, models.CardSetProposal, user_id=user_id, since=since, limit=limit
+        ),
         PulledTable.NEWSLETTER_SENDERS: _changed_rows(
             db, models.NewsletterSender, user_id=user_id, since=since, limit=limit
         ),
@@ -108,6 +112,9 @@ def pull_changes(db: orm.Session, *, user_id: int, since: int, limit: int = PULL
             card_versions=[schemas.CardVersionOut.model_validate(row) for row in page.rows[PulledTable.CARD_VERSIONS]],
             edit_proposals=[
                 schemas.EditProposalOut.model_validate(row) for row in page.rows[PulledTable.EDIT_PROPOSALS]
+            ],
+            card_set_proposals=[
+                schemas.CardSetProposalOut.model_validate(row) for row in page.rows[PulledTable.CARD_SET_PROPOSALS]
             ],
             newsletter_senders=[
                 schemas.NewsletterSenderOut.model_validate(row) for row in page.rows[PulledTable.NEWSLETTER_SENDERS]
@@ -152,6 +159,7 @@ def _changed_rows[
         models.Message,
         models.CardVersion,
         models.EditProposal,
+        models.CardSetProposal,
         models.NewsletterSender,
     )
 ](

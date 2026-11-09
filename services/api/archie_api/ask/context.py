@@ -23,6 +23,12 @@ _EDIT_STATUS_NOTES: dict[models.EditStatus, str] = {
     models.EditStatus.STALE: "it went stale: the item changed before it was applied",
     models.EditStatus.SUPERSEDED: "replaced by a later proposal",
 }
+_CARD_SET_STATUS_NOTES: dict[models.CardSetStatus, str] = {
+    models.CardSetStatus.PROPOSED: "waiting for the owner to save it",
+    models.CardSetStatus.SAVED: "the owner saved it",
+    models.CardSetStatus.REPLACED: "replaced by a later proposal",
+    models.CardSetStatus.DISCARDED: "the owner discarded it",
+}
 _CITED_ITEM_KEYS = (("source", "source_id"), ("topic_primer", "topic_primer_id"), ("take", "take_id"))
 
 
@@ -51,8 +57,8 @@ def owner_zone(name: str | None) -> datetime.tzinfo:
 def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, Any]]:
     """The conversation's earlier finished exchanges as Messages API turns, oldest first.
 
-    Each answer is followed by lines naming the items it cited and the edits it proposed (with what became of them),
-    so a follow-up like "and fix that card too" can find its target.
+    Each answer is followed by lines naming the items it cited, the edits it proposed and the card sets it proposed
+    (with what became of each), so a follow-up like "and fix that card too" or "change card 2" can find its target.
     """
     stored = db.scalars(
         sqlalchemy.select(models.Message)
@@ -64,9 +70,16 @@ def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, An
         .where(models.EditProposal.conversation_id == conversation_id)
         .order_by(models.EditProposal.created_at)
     ).all()
-    edit_notes: dict[uuid.UUID, list[str]] = {}
+    card_sets = db.scalars(
+        sqlalchemy.select(models.CardSetProposal)
+        .where(models.CardSetProposal.conversation_id == conversation_id)
+        .order_by(models.CardSetProposal.created_at)
+    ).all()
+    proposal_notes: dict[uuid.UUID, list[str]] = {}
     for proposal in proposals:
-        edit_notes.setdefault(proposal.message_id, []).append(proposal_note(proposal))
+        proposal_notes.setdefault(proposal.message_id, []).append(proposal_note(proposal))
+    for card_set in card_sets:
+        proposal_notes.setdefault(card_set.message_id, []).append(card_set_note(card_set))
 
     return history_messages(
         [
@@ -74,7 +87,7 @@ def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, An
                 role=models.MessageRole(row.role),
                 text=row.text,
                 status=models.MessageStatus(row.status),
-                notes=(*citation_notes(row.segments), *edit_notes.get(row.id, [])),
+                notes=(*citation_notes(row.segments), *proposal_notes.get(row.id, [])),
             )
             for row in stored
         ]
@@ -97,6 +110,22 @@ def proposal_note(proposal: models.EditProposal) -> str:
     """A `[edit proposed: …]` line: what the edit does, its target, and what the owner did with it."""
     status = _EDIT_STATUS_NOTES[models.EditStatus(proposal.status)]
     return f"[edit proposed: {proposal.description} — {proposal.target_kind} {proposal.target_id} — {status}]"
+
+
+def card_set_note(card_set: models.CardSetProposal) -> str:
+    """A `[cards proposed: …]` line with what the owner did with it; an open, saved or discarded set also carries its
+    cheat sheet and numbered cards, so the model can re-propose it with one change. A replaced one is only named.
+    """
+    status = models.CardSetStatus(card_set.status)
+    note = f"[cards proposed: {card_set.title} — {_CARD_SET_STATUS_NOTES[status]}]"
+    if status == models.CardSetStatus.REPLACED:
+        return note
+
+    cards = [
+        f"{number}. ({card['kind']}) Q: {card['question']}\n   A: {card['answer']}"
+        for number, card in enumerate(card_set.cards, start=1)
+    ]
+    return "\n".join([note, "<cheat_sheet>", card_set.cheat_sheet, "</cheat_sheet>", *cards])
 
 
 def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:

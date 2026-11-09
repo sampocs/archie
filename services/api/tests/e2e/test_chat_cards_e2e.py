@@ -18,7 +18,7 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_api.ask import context
-from archie_db import changes, models, session
+from archie_db import changes, models, pipeline, session
 from archie_testing import recording
 from archie_testing.harness import LiveStack
 
@@ -66,9 +66,14 @@ def _rows(authed: httpx.Client) -> dict[str, list[dict[str, Any]]]:
 
 
 def _seed(
-    authed: httpx.Client, *, conversation_id: str | None = None, title: str = TITLE, cards: list[dict[str, str]] = CARDS
+    authed: httpx.Client,
+    *,
+    conversation_id: str | None = None,
+    title: str = TITLE,
+    cheat_sheet: str = CHEAT_SHEET,
+    cards: list[dict[str, str]] = CARDS,
 ) -> dict[str, Any]:
-    body = {"conversation_id": conversation_id, "title": title, "cheat_sheet": CHEAT_SHEET, "cards": cards}
+    body = {"conversation_id": conversation_id, "title": title, "cheat_sheet": cheat_sheet, "cards": cards}
     response = authed.post("/test/card-sets", json=body)
     assert response.status_code == 200, response.text
     proposal: dict[str, Any] = response.json()
@@ -286,6 +291,34 @@ def test_a_later_save_in_the_chat_updates_the_same_item(live_stack: LiveStack, o
     assert live[CARDS[0]["answer"]]["id"] == kept_before[CARDS[0]["question"]]
     [retired] = [card for card in rows["cards"] if card["deleted_at"] is not None]
     assert retired["answer"] == CARDS[1]["answer"]
+
+
+def test_a_later_save_replaces_a_primer_the_owner_edited(live_stack: LiveStack, owner: httpx.Client) -> None:
+    """Saving again is the owner choosing the new set, so its cheat sheet becomes the current primer even over their own
+    chat edit, and it is labelled `archie`, not as one of their edits."""
+    first = _seed(owner)
+    item_id = _save(owner, first["id"], [0]).json()["saved_source_id"]
+    with _db(live_stack) as db:
+        changes.lock_user_writes(db, int(owner.get("/me").json()["user_id"]))
+        item = db.get(models.Source, uuid.UUID(item_id))
+        assert item is not None
+        pipeline.write_artifact(
+            db,
+            source=item,
+            kind=models.ArtifactKind.PRIMER,
+            content={"markdown": "# My own edit"},
+            model=None,
+            prompt_version=None,
+            origin=models.VersionOrigin.CHAT_EDIT,
+        )
+        db.commit()
+    new_sheet = "# Session tokens\n\nA second cheat sheet."
+    second = _seed(owner, conversation_id=first["conversation_id"], cheat_sheet=new_sheet)
+
+    assert _save(owner, second["id"], [0]).status_code == 200
+
+    [primer] = [a for a in _artifacts(live_stack, item_id) if a.kind == "primer" and a.is_current]
+    assert (primer.content["markdown"], primer.origin) == (new_sheet, models.VersionOrigin.ARCHIE.value)
 
 
 def test_a_later_save_never_retires_a_reviewed_card(live_stack: LiveStack, owner: httpx.Client) -> None:

@@ -1,0 +1,327 @@
+<title>Archie Chat Cards</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: a wall of numbered phone mocks (wrapping to one column on a phone), each with a short caption under it. */
+:root {
+  --page: #E9E6DE; --pink: #1C1B18; --pink2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --macro: #3F7262; --ai: #6A5A9C; --history: #8E5468; --web: #3D6690;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --pink: #F1EFE9; --pink2: #A9A59B; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --pink: #F1EFE9; --pink2: #A9A59B; color-scheme: dark }
+body { background: var(--page); color: var(--pink); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+header { max-width: 1280px; margin: 0 auto 26px; display: grid; gap: 6px; }
+h1 { font-size: 28px; letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--pink2); max-width: 70ch; line-height: 1.5; font-size: 15px; }
+.row { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px 26px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; min-width: 0; }
+figcaption b { font-size: 15px; }
+figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
+.n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pink2); }
+.phone { width: 100%; max-width: 300px; aspect-ratio: 300 / 640; background: var(--bg); color: var(--ink); border-radius: 38px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-size: 13px; }
+.screen { position: absolute; inset: 0; padding: 38px 14px 84px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.big { font-size: 28px; font-weight: 700; letter-spacing: -.03em; }
+.nav { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink2); }
+.nav b { color: var(--ink); font-size: 14px; max-width: 70%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search { background: var(--press); border-radius: 12px; padding: 9px 12px; color: var(--ink); }
+.search i { color: var(--ink3); font-style: normal; }
+.card { background: var(--surface); border-radius: 16px; overflow: hidden; }
+.item { padding: 11px 12px; display: grid; grid-template-columns: 36px minmax(0,1fr); gap: 10px; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.tile { width: 36px; height: 36px; border-radius: 9px; color: #fff; display: grid; place-items: center; font-weight: 600; }
+.k { font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.t { font-weight: 600; font-size: 13.5px; line-height: 1.25; }
+.s { color: var(--ink3); font-size: 11.5px; }
+.q { color: var(--ink2); font-size: 12px; line-height: 1.4; margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.q mark { background: color-mix(in srgb, var(--macro) 16%, transparent); color: inherit; border-radius: 3px; padding: 0 2px; }
+.ts { font: 500 10.5px var(--mono); color: var(--ink2); background: var(--press); border-radius: 6px; padding: 1px 5px; }
+.chat { padding: 11px 12px; border-bottom: 1px solid var(--line); display: grid; gap: 3px; }
+.chat:last-child { border-bottom: 0; }
+.chat .top { display: flex; justify-content: space-between; gap: 8px; }
+.chat .when { color: var(--ink3); font-size: 11px; white-space: nowrap; }
+.composer { position: absolute; left: 10px; right: 10px; bottom: 84px; background: var(--surface); border-radius: 22px; padding: 8px 8px 8px 14px;
+  display: flex; align-items: center; gap: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.05); }
+.composer .ph { flex: 1; color: var(--ink3); }
+.globe { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; background: var(--press); color: var(--ink2); font-size: 14px; }
+.globe.on { background: var(--web); color: #fff; }
+.send { width: 30px; height: 30px; border-radius: 50%; background: var(--chrome); color: var(--onChrome); display: grid; place-items: center; font-weight: 700; }
+.mine { align-self: flex-end; max-width: 82%; background: var(--press); border-radius: 16px 16px 4px 16px; padding: 9px 12px; line-height: 1.4; }
+.answer { display: grid; gap: 12px; }
+.sec { display: grid; gap: 5px; }
+.lab { font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; }
+.lab.lib { color: var(--macro); } .lab.bg { color: var(--ink3); } .lab.web { color: var(--web); }
+.sec p { margin: 0; line-height: 1.5; font-size: 13px; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--ink2); white-space: nowrap; }
+.chip.web { color: var(--web); }
+.acts { display: flex; gap: 8px; }
+.btn2 { background: var(--press); border-radius: 999px; padding: 6px 12px; font-weight: 600; font-size: 12px; color: var(--ink); }
+.searching { color: var(--ink3); font-size: 12px; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; border-top: 1px solid var(--line); background: var(--bg);
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 9px; font-size: 9.5px; color: var(--ink3); text-align: center; }
+.tabbar .on { color: var(--ink); font-weight: 600; }
+.dot { width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 6px; border: 1.6px solid currentColor; }
+.on .dot { background: currentColor; }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--surface); border-radius: 22px 22px 0 0; padding: 10px 16px 28px;
+  display: grid; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,.18); }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 4px; }
+.field { display: grid; gap: 4px; }
+.field label { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.field div { background: var(--bg); border-radius: 10px; padding: 9px 11px; line-height: 1.4; }
+.primary { background: var(--chrome); color: var(--onChrome); border-radius: 14px; padding: 11px; text-align: center; font-weight: 600; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,.28); }
+.about { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 11.5px; color: var(--ink2); }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 132px; background: var(--chrome); color: var(--onChrome); border-radius: 999px; padding: 7px 14px; font-size: 12px; white-space: nowrap; }
+.read { line-height: 1.55; color: var(--ink); }
+.read h4 { margin: 0 0 4px; font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); }
+</style>
+<style>
+:root { --got: #3F7262; --missed: #B04A3C; }
+.think { display: flex; align-items: center; gap: 9px; color: var(--ink3); font-size: 12px; }
+.pix { display: grid; grid-template-columns: repeat(3, 5px); gap: 2px; }
+.pix i { width: 5px; height: 5px; border-radius: 1.5px; background: var(--ai); opacity: .25; animation: px 1.2s infinite; }
+.pix i:nth-child(2){animation-delay:.1s}.pix i:nth-child(3){animation-delay:.2s}.pix i:nth-child(4){animation-delay:.3s}.pix i:nth-child(5){animation-delay:.4s}
+.pix i:nth-child(6){animation-delay:.5s}.pix i:nth-child(7){animation-delay:.6s}.pix i:nth-child(8){animation-delay:.7s}.pix i:nth-child(9){animation-delay:.8s}
+@keyframes px { 0%,100%{opacity:.2} 40%{opacity:1} }
+@media (prefers-reduced-motion: reduce) { .pix i { animation: none; opacity: .6 } }
+.shim { background: linear-gradient(90deg, var(--ink3) 0%, var(--ink) 50%, var(--ink3) 100%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: sh 1.8s linear infinite; font-weight: 500; }
+@keyframes sh { from { background-position: 200% 0 } to { background-position: 0 0 } }
+.secs { font: 500 10.5px var(--mono); color: var(--ink3); }
+.prop { background: var(--surface); border-radius: 14px; padding: 11px 12px; display: grid; gap: 8px; box-shadow: 0 0 0 1px var(--line); }
+.prop .kick { font: 600 9.5px var(--sans); letter-spacing: .09em; text-transform: uppercase; color: var(--ink3); display: flex; justify-content: space-between; }
+.doc { background: var(--bg); border-radius: 10px; padding: 9px 10px; display: grid; gap: 5px; font-size: 11.5px; line-height: 1.4; position: relative; max-height: 132px; overflow: hidden; }
+.doc::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 30px; background: linear-gradient(transparent, var(--bg)); }
+.doc.open { max-height: none; } .doc.open::after { display: none; }
+.doc b.h { font-size: 13px; }
+.doc table { border-collapse: collapse; width: 100%; font-size: 10.5px; }
+.doc td, .doc th { border-bottom: 1px solid var(--line); padding: 3px 4px; text-align: left; vertical-align: top; }
+.doc th { color: var(--ink3); font-weight: 600; font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em; }
+.more { color: var(--ink2); font-weight: 600; font-size: 11.5px; }
+.fc { border: 1px solid var(--line); border-radius: 11px; padding: 9px 10px; display: grid; gap: 5px; }
+.fc .ch { display: flex; justify-content: space-between; align-items: center; font: 500 9.5px var(--mono); color: var(--ink3); }
+.fc .qq { font-weight: 600; font-size: 12.5px; line-height: 1.3; }
+.fc .aa { color: var(--ink2); font-size: 11.5px; line-height: 1.4; border-top: 1px dashed var(--line); padding-top: 5px; }
+.fc.off { opacity: .45; } .fc.off .qq { text-decoration: line-through; }
+.pager { display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--ink2); }
+.pager .pg { font: 500 10.5px var(--mono); }
+.keep { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--got); }
+.keep.no { color: var(--ink3); }
+.box { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid currentColor; display: grid; place-items: center; font-size: 10px; line-height: 1; }
+.keep:not(.no) .box { background: var(--got); color: #fff; border-color: var(--got); }
+.pips { display: flex; gap: 4px; justify-content: center; }
+.pips i { width: 6px; height: 6px; border-radius: 50%; background: var(--line); } .pips i.on { background: var(--ink); } .pips i.x { background: transparent; box-shadow: inset 0 0 0 1.2px var(--ink3); }
+.btns { display: flex; gap: 8px; align-items: center; }
+.btnp { background: var(--chrome); color: var(--onChrome); border-radius: 999px; padding: 7px 14px; font-weight: 600; font-size: 12px; }
+.state { color: var(--got); font-weight: 600; font-size: 12px; }
+.link { color: var(--ink2); font-weight: 600; font-size: 12px; text-decoration: underline; }
+.gone { background: var(--surface); border-radius: 12px; padding: 8px 11px; box-shadow: 0 0 0 1px var(--line); color: var(--ink3); font-size: 11.5px; display: flex; justify-content: space-between; }
+.srcpill { display: inline-flex; gap: 6px; align-items: center; }
+.tile.chatc { background: var(--ai); }
+.seg { display: flex; background: var(--press); border-radius: 10px; padding: 2px; font-size: 11.5px; }
+.seg span { flex: 1; text-align: center; padding: 5px; border-radius: 8px; color: var(--ink2); }
+.seg .on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.rc { background: var(--surface); border-radius: 18px; padding: 16px 14px; display: grid; gap: 10px; min-height: 250px; align-content: start; }
+.from { font-size: 11px; color: var(--ink3); }
+.from u { color: var(--ink2); }
+.grade { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.grade span { background: var(--press); border-radius: 10px; padding: 8px 0; text-align: center; font-size: 11px; font-weight: 600; }
+.dots { display: inline-flex; gap: 3px; } .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--ai); animation: bob 1s infinite ease-in-out; }
+.dots i:nth-child(2){animation-delay:.15s} .dots i:nth-child(3){animation-delay:.3s}
+@keyframes bob { 0%,80%,100% { transform: translateY(0); opacity: .35 } 40% { transform: translateY(-3px); opacity: 1 } }
+.ring { width: 13px; height: 13px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--ai) 22%, transparent); border-top-color: var(--ai); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg) } }
+.ink { width: 26px; height: 8px; position: relative; overflow: hidden; }
+.ink::before { content: ""; position: absolute; left: 0; top: 3px; height: 2px; border-radius: 2px; background: var(--ai); animation: write 1.4s ease-in-out infinite; }
+@keyframes write { 0% { width: 0; left: 0 } 50% { width: 26px; left: 0 } 100% { width: 0; left: 26px } }
+@media (prefers-reduced-motion: reduce) { .dots i, .ring, .ink::before { animation: none } .ink::before { width: 26px } }
+.opt { display: grid; gap: 4px; } .opt .n { font-size: 9.5px; }
+.list { display: grid; gap: 6px; }
+.lc { display: grid; grid-template-columns: 16px minmax(0,1fr); gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+.lc:last-child { border-bottom: 0; }
+.lc .box { margin-top: 1px; } .lc.on .box { background: var(--got); color: #fff; border-color: var(--got); } .lc:not(.on) .box { color: var(--ink3); }
+.lc .qq { font-weight: 600; font-size: 11.5px; line-height: 1.3; } .lc .aa { color: var(--ink2); font-size: 10.5px; line-height: 1.35; }
+.lc:not(.on) .qq { text-decoration: line-through; color: var(--ink3); } .lc:not(.on) .aa { color: var(--ink3); }
+.lc .nn { font: 500 9.5px var(--mono); color: var(--ink3); }
+.full { position: absolute; left: 0; right: 0; bottom: 0; top: 30px; background: var(--surface); border-radius: 22px 22px 0 0; padding: 10px 16px 20px; display: grid; align-content: start; gap: 9px; box-shadow: 0 -10px 30px rgba(0,0,0,.18); overflow: hidden; }
+.full .top2 { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--ink2); }
+</style>
+<header>
+  <span class="n">ARCHIE · CARDS FROM A CHAT</span>
+  <h1>Learn something in Ask, keep it</h1>
+  <p>Ask about something you should know, like JWTs versus session tokens. When it clicks, ask for cards. Archie proposes a cheat sheet and a set of cards in the chat, you go back and forth on them, and one Save puts the cheat sheet in Library and the kept cards into review.</p>
+</header>
+<div class="row">
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
+      <div class="mine">Explain JWTs vs session tokens. When would you pick each?</div>
+      <div class="opt"><div class="think"><span class="dots"><i></i><i></i><i></i></span><span class="shim">Thinking</span><span class="secs">4s</span></div></div>
+    </div>
+    <div class="composer"><span class="ph">Ask a follow-up</span><span class="globe">🌐</span><span class="send" style="opacity:.35">↑</span></div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">01 · WAITING</span><b>It shows it's working</b><span>From the moment you send: three typing dots, a shimmering "Thinking" and a seconds counter. It becomes "Searching your library…" or "Drafting cards…" when Archie is doing that, and disappears when words start streaming.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
+      <div class="mine">Explain JWTs vs session tokens. When would you pick each?</div>
+      <div class="answer">
+        <div class="sec"><span class="lab bg">Background</span><p><b>Session tokens</b> are a random ID; the server looks it up in its session store on every request. <b>JWTs</b> carry the claims themselves, signed, so any server with the key can verify them without a lookup.</p></div>
+        <div class="sec"><p>The trade is revocation. Delete a session row and it's dead immediately. A JWT stays valid until it expires, so you keep them short-lived and pair them with a refresh token…</p></div>
+        <div class="acts"><span class="btn2">Make cards</span><span class="btn2">Copy</span></div>
+      </div>
+    </div>
+    <div class="composer"><span class="ph">Ask a follow-up</span><span class="globe">🌐</span><span class="send">↑</span></div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">02 · AN ANSWER</span><b>"Make cards" replaces "Make a card"</b><span>Tapping it is the same as typing "make me cards on this". Either way Claude does it in the chat, with the whole conversation in view, so you can steer it.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen" style="gap:8px">
+      <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
+      <div class="mine">Make cards</div>
+      <div class="prop">
+        <span class="kick"><span>Save to Library · Chat</span><span>5 cards</span></span>
+        <div class="doc"><b class="h">JWT vs session tokens</b>
+          <table><tr><th></th><th>Session</th><th>JWT</th></tr>
+          <tr><td>Holds</td><td>Random ID</td><td>Signed claims</td></tr>
+          <tr><td>Check</td><td>Store lookup</td><td>Verify signature</td></tr>
+          <tr><td>Revoke</td><td>Delete row, instant</td><td>Wait for expiry</td></tr></table>
+          <span>Pick sessions for a single web app…</span></div>
+        <span class="more">Show full cheat sheet</span>
+        <div class="fc"><div class="ch"><span>CARD 1</span><span class="keep"><span class="box">✓</span>Keep</span></div><span class="qq">Why is a JWT hard to revoke before it expires?</span><span class="aa">The server doesn't look it up; any valid signature is accepted until <code>exp</code>.</span></div>
+        <div class="pager"><span class="pg">‹ 1 / 5 ›</span><span class="more">See all</span></div>
+        <div class="btns"><span class="btnp">Save · 5 cards</span><span class="btn2">Discard</span></div>
+      </div>
+    </div>
+    <div class="composer"><span class="ph">Change something…</span><span class="globe">🌐</span><span class="send">↑</span></div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">03 · THE PROPOSAL</span><b>A cheat sheet and the cards, together</b><span>The cheat sheet is a preview of the Library item (tap to read it all). Cards page one at a time; each card has its own Keep tick in its corner, so unticking leaves out just that card. Nothing is saved yet.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
+      <div class="mine">Make cards</div>
+    </div>
+    <div class="dim"></div>
+    <div class="full"><div class="grab"></div>
+      <div class="top2"><span class="k" style="color:var(--ink3)">Cheat sheet · preview</span><span>Done</span></div>
+      <div class="read" style="display:grid;gap:8px;font-size:12px">
+        <b style="font-size:17px;letter-spacing:-.02em">JWT vs session tokens</b>
+        <div><h4>The difference</h4>A session token is a random ID the server looks up in its session store. A JWT carries signed claims, so any server with the key can check it without a lookup.</div>
+        <div class="doc open" style="max-height:none"><table><tr><th></th><th>Session</th><th>JWT</th></tr>
+          <tr><td>Holds</td><td>Random ID</td><td>Signed claims</td></tr>
+          <tr><td>Check</td><td>Store lookup</td><td>Verify signature</td></tr>
+          <tr><td>Revoke</td><td>Delete row, instant</td><td>Wait for expiry</td></tr>
+          <tr><td>Scale</td><td>Shared store</td><td>Stateless</td></tr></table></div>
+        <div><h4>When to pick each</h4>Sessions for one web app with a database you already have: simple, and logout is instant. JWTs when many services must verify a user without calling home, kept to minutes and paired with a refresh token.</div>
+        <div><h4>Gotchas</h4>A JWT is signed, not encrypted: anyone can read its claims. Store it in an httpOnly cookie, not localStorage.</div>
+      </div>
+    </div>
+    </div>
+    <figcaption><span class="n">03a · FULL CHEAT SHEET</span><b>"Show full cheat sheet" opens it in a sheet</b><span>Exactly what will land in Library, rendered the same way. Swipe down or Done to go back to the chat and ask for changes.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen" style="gap:8px">
+      <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
+      <div class="prop">
+        <span class="kick"><span>Save to Library · Chat</span><span>4 of 5 kept</span></span>
+        <div class="list">
+          <div class="lc on"><span class="box">✓</span><div><span class="nn">1</span> <span class="qq">Why is a JWT hard to revoke before it expires?</span><div class="aa">Nothing is looked up; any valid signature passes until exp.</div></div></div>
+          <div class="lc on"><span class="box">✓</span><div><span class="nn">2</span> <span class="qq">What does the server store for a session token?</span><div class="aa">The session itself, keyed by a random ID the client holds.</div></div></div>
+          <div class="lc"><span class="box"></span><div><span class="nn">3</span> <span class="qq">Where should a browser keep auth cookies?</span><div class="aa">httpOnly, Secure, SameSite cookies.</div></div></div>
+          <div class="lc on"><span class="box">✓</span><div><span class="nn">4</span> <span class="qq">Is a JWT's payload secret?</span><div class="aa">No: it's signed, not encrypted. Anyone can decode it.</div></div></div>
+          <div class="lc on"><span class="box">✓</span><div><span class="nn">5</span> <span class="qq">When do JWTs beat sessions?</span><div class="aa">Many services verifying a user without a shared store.</div></div></div>
+        </div>
+        <div class="pager"><span class="more">One at a time</span><span></span></div>
+        <div class="btns"><span class="btnp">Save · 4 cards</span><span class="btn2">Discard</span></div>
+      </div>
+    </div>
+    <div class="composer"><span class="ph">Change card 2…</span><span class="globe">🌐</span><span class="send">↑</span></div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">03b · ALL CARDS</span><b>"See all" lists every card, numbered</b><span>Tick and untick in place, then refer to cards by number in the chat ("make 2 about expiry"). The choice of list or one-at-a-time is remembered.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen" style="gap:8px">
+      <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
+      <div class="gone"><span>Earlier proposal</span><span>Replaced</span></div>
+      <div class="mine">Drop the one about cookies and add a card on refresh tokens</div>
+      <div class="sec"><p style="font-size:12.5px">Swapped it. Card 4 now covers why refresh tokens exist.</p></div>
+      <div class="prop">
+        <span class="kick"><span>Save to Library · Chat</span><span>5 cards</span></span>
+        <div class="fc"><div class="ch"><span>CARD 4</span><span class="keep"><span class="box">✓</span>Keep</span></div><span class="qq">What problem does a refresh token solve?</span><span class="aa">Access JWTs can stay short-lived (minutes) for safe expiry, while the long-lived refresh token, kept server-checkable, gets new ones without logging in again.</span></div>
+        <div class="pager"><span class="pg">‹ 4 / 5 ›</span><span class="more">See all</span></div>
+        <div class="pips"><i></i><i></i><i class="x"></i><i class="on"></i><i></i></div>
+        <div class="btns"><span class="btnp">Save · 4 cards</span><span class="btn2">Discard</span></div>
+      </div>
+    </div>
+    <div class="composer"><span class="ph">Change something…</span><span class="globe">🌐</span><span class="send">↑</span></div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">04 · BACK AND FORTH</span><b>Push back, get a revised set</b><span>Each reply that changes things is a fresh proposal; the old one collapses to "Replaced". The dots show which cards you've unticked (hollow), and the Save button counts only kept cards.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen" style="gap:8px">
+      <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
+      <div class="gone"><span>Earlier proposal</span><span>Replaced</span></div>
+      <div class="mine">Drop the one about cookies and add a card on refresh tokens</div>
+      <div class="prop">
+        <span class="kick"><span>Saved to Library · Chat</span><span>4 cards</span></span>
+        <div class="doc"><b class="h">JWT vs session tokens</b>
+          <table><tr><th></th><th>Session</th><th>JWT</th></tr>
+          <tr><td>Holds</td><td>Random ID</td><td>Signed claims</td></tr>
+          <tr><td>Revoke</td><td>Delete row, instant</td><td>Wait for expiry</td></tr></table></div>
+        <div class="btns"><span class="state">✓ Saved · 4 cards in review</span><span class="link">Open</span></div>
+      </div>
+      <div class="mine" style="opacity:.0">.</div>
+    </div>
+    <div class="toast">Saved to Library</div>
+    <div class="composer"><span class="ph">Ask a follow-up</span><span class="globe">🌐</span><span class="send">↑</span></div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">05 · SAVED</span><b>One item, its cards in review</b><span>Keep chatting afterwards and ask for more cards: the next proposal says "Update Library item" and saves into the same item, so one chat stays one cheat sheet.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>‹ Library</span><b></b><span>⋯</span></div>
+      <div class="srcpill"><span class="k" style="color:var(--ai)">Chat</span><span class="s">· Nov 9</span></div>
+      <div class="big" style="font-size:22px;line-height:1.15">JWT vs session tokens</div>
+      <div class="seg"><span class="on">Archie's version</span><span>See original</span></div>
+      <div class="read" style="display:grid;gap:8px;font-size:12.5px">
+        <div><h4>The difference</h4>A session token is a random ID the server looks up. A JWT carries signed claims that any server with the key can check without a lookup.</div>
+        <div class="doc open" style="max-height:none"><table><tr><th></th><th>Session</th><th>JWT</th></tr>
+          <tr><td>Check</td><td>Store lookup</td><td>Verify signature</td></tr>
+          <tr><td>Revoke</td><td>Delete row, instant</td><td>Wait for expiry</td></tr>
+          <tr><td>Scale</td><td>Shared store</td><td>Stateless</td></tr></table></div>
+        <div><h4>When to pick each</h4>Sessions for one web app with a database you already have…</div>
+      </div>
+      <div class="card"><div class="chat"><div class="top"><span class="t">Cards</span><span class="when">4 ›</span></div></div></div>
+    </div>
+    <nav class="tabbar"><span class="on"><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">06 · IN LIBRARY</span><b>Source "Chat": cheat sheet first</b><span>Like an imported note: Archie's version is the cheat sheet; "See original" shows the conversation, read-only, with a link to continue it in Ask. Cards are listed and editable as on any item.</span></figcaption>
+  </figure>
+
+  <figure>
+    <div class="phone"><div class="screen">
+      <div class="nav"><span>Review</span><b></b><span class="s">3 left</span></div>
+      <div class="rc">
+        <span class="from">From <u>JWT vs session tokens</u> · Chat</span>
+        <span class="t" style="font-size:16px;line-height:1.3">What problem does a refresh token solve?</span>
+        <span class="s" style="margin-top:auto">Tap to show the answer</span>
+      </div>
+      <div class="grade"><span>Again</span><span>Hard</span><span>Good</span><span>Easy</span></div>
+    </div>
+    <nav class="tabbar"><span><span class="dot"></span>Library</span><span class="on"><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
+    <figcaption><span class="n">07 · IN REVIEW</span><b>Cards point back to the cheat sheet</b><span>The source line opens the Library item, so a card you've forgotten leads to the cheat sheet, not a long chat.</span></figcaption>
+  </figure>
+</div>

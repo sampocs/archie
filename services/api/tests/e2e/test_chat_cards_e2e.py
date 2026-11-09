@@ -288,6 +288,34 @@ def test_a_later_save_in_the_chat_updates_the_same_item(live_stack: LiveStack, o
     assert retired["answer"] == CARDS[1]["answer"]
 
 
+def test_a_later_save_never_retires_a_reviewed_card(live_stack: LiveStack, owner: httpx.Client) -> None:
+    """A card the owner has reviewed keeps its progress even when the new set drops or rewords it; an unreviewed
+    unkept card is still retired and the new cards are added."""
+    first = _seed(owner)
+    _save(owner, first["id"], [0, 1])
+    saved = {card["question"]: card["id"] for card in _rows(owner)["cards"]}
+    reviewed_id, unreviewed_id = saved[CARDS[0]["question"]], saved[CARDS[1]["question"]]
+    with _db(live_stack) as db:
+        changes.lock_user_writes(db, int(owner.get("/me").json()["user_id"]))
+        reviewed = db.get(models.Card, uuid.UUID(reviewed_id))
+        assert reviewed is not None
+        reviewed.reps = 1
+        reviewed.last_review_at = sqlalchemy.func.now()
+        reviewed.fsrs_state = models.FsrsState.REVIEW.value
+        reviewed.change_seq = changes.next_change_seq()
+        db.commit()
+    reworded = {**CARDS[0], "answer": "An opaque id the server looks up on each request."}
+    second = _seed(owner, conversation_id=first["conversation_id"], title="Session tokens", cards=[CARDS[2], reworded])
+
+    assert _save(owner, second["id"], [0, 1]).status_code == 200
+
+    cards = {card["id"]: card for card in _rows(owner)["cards"]}
+    assert cards[reviewed_id]["deleted_at"] is None and cards[reviewed_id]["reps"] == 1
+    assert cards[unreviewed_id]["deleted_at"] is not None
+    live_answers = {card["answer"] for card in cards.values() if card["deleted_at"] is None}
+    assert live_answers == {CARDS[0]["answer"], CARDS[2]["answer"], reworded["answer"]}
+
+
 def test_saving_after_the_item_was_deleted_makes_a_new_one(owner: httpx.Client) -> None:
     """The deleted item stays deleted and lets go of the chat; the new set becomes a fresh item."""
     first = _seed(owner)

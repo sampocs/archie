@@ -4,7 +4,8 @@ Neither calls a model, so each runs in one transaction under the user's write lo
 item (kind `chat`, tied by `chat_conversation_id`): the first Save creates it, later ones update it. The item's primer
 is the cheat sheet, its summary a gist of it, and its text the chat's transcript; it is ready at once and never goes
 through the queue or the analyze/primer pipeline. Its cards are the kept ones: a Save in a chat that already saved
-keeps an identical live card (and its review progress), adds the new ones, and retires the rest.
+keeps an identical live card (and its review progress), adds the new ones, and retires the rest that were never
+reviewed; a reviewed card is never retired, so the owner's review progress survives a reworded or dropped card.
 """
 
 from __future__ import annotations
@@ -189,7 +190,8 @@ def _transcript_lines(db: orm.Session, *, conversation_id: uuid.UUID) -> list[Tr
 
 
 def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSetProposal, kept: list[int]) -> None:
-    """Make the item's live cards the kept ones: identical ones stay as they are, the rest are retired or added new."""
+    """Make the item's live cards the kept ones: identical ones stay as they are, new ones are added, and unkept ones
+    are retired unless reviewed (a reviewed card is never retired, so its FSRS progress survives)."""
     kept_cards = [proposal.cards[index] for index in sorted(kept)]
     wanted = {(card["question"], card["answer"]) for card in kept_cards}
     live = db.scalars(
@@ -197,7 +199,11 @@ def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSe
     ).all()
     have = {(card.question, card.answer) for card in live}
 
-    retired = [card.id for card in live if (card.question, card.answer) not in wanted]
+    retired = [
+        card.id
+        for card in live
+        if (card.question, card.answer) not in wanted and card.reps == 0 and card.last_review_at is None
+    ]
     if retired:
         card_rows.retire_cards(db, models.Card.id.in_(retired))
 

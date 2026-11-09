@@ -108,7 +108,12 @@ export default function ChatScreen() {
                 sections={groupSections(parseSegments(message.segments))}
                 failed={message.status === "failed"}
                 onRetry={() => retry(turns, index, send)}
-                onMakeCards={message.status === "complete" ? () => send(MAKE_CARDS_MESSAGE, false) : undefined}
+                onMakeCards={
+                  // An answer that already proposed cards has its own Save; offering Make cards there too is noise.
+                  message.status === "complete" && !cardSets.has(message.id)
+                    ? () => send(MAKE_CARDS_MESSAGE, false)
+                    : undefined
+                }
               >
                 {(proposals.get(message.id) ?? []).map((proposal) => (
                   <EditProposalCard

@@ -1,6 +1,8 @@
 appId: com.sampocs.archie
 ---
 # Run after run_chat_cards.sh has seeded a chat with a three-card proposal. Spends nothing on models.
+# Relaunch (keeping the login) so the app syncs on start and pulls the chat the runner just seeded.
+- launchApp
 - tapOn:
     id: "tab-ask"
 # The seeded chat arrives with the next sync, which can take a few seconds.
@@ -42,8 +44,20 @@ appId: com.sampocs.archie
     id: "card-set-see-all"
 - assertVisible:
     id: "card-set-list"
+# The list is taller than one card, so its last card and the footer sit below the composer until scrolled to.
+- scrollUntilVisible:
+    element: ".*What problem does a refresh token solve\\?.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 10000
+# Maestro counts the footer as visible even while the composer covers it, so centre it before tapping Save.
+- scrollUntilVisible:
+    element:
+      id: "card-set-save"
+    direction: DOWN
+    centerElement: true
+    timeout: 10000
 - assertVisible: "One at a time"
-- assertVisible: "What problem does a refresh token solve?"
 - assertVisible: "Save 2"
 - tapOn:
     id: "card-set-save"

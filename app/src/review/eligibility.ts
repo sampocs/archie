@@ -1,5 +1,6 @@
 import type * as schema from "@/db/schema";
 import type { TakeRow } from "@/takes/takes";
+import { CHAT_KIND } from "@/ui/sourceLabels";
 
 import type { CardRow } from "./types";
 
@@ -37,7 +38,8 @@ export function cardOrigin(card: CardRow): CardOrigin {
 
 /**
  * A card joins reviews only once you've taken in what it came from: a source's cards once it is consumed, foundation
- * cards once their primer was opened, take cards and chat cards at once. Quiz cards are answered only in the quiz.
+ * cards once their primer was opened, take cards, chat cards and a chat item's cards at once. Quiz cards are answered
+ * only in the quiz.
  */
 export function isReviewable(card: CardRow, data: ReviewData): boolean {
   if (card.deletedAt !== null) return false;
@@ -46,6 +48,8 @@ export function isReviewable(card: CardRow, data: ReviewData): boolean {
     case "source": {
       const source = data.sourcesById.get(origin.sourceId);
       if (!source || source.deletedAt !== null) return false;
+      // The owner kept a chat item's cards from a chat they just had, and the item never leaves the inbox.
+      if (source.kind === CHAT_KIND) return true;
       return card.kind === "foundation" ? source.primerOpenedAt !== null : source.state === "consumed";
     }
     case "topicPrimer": {

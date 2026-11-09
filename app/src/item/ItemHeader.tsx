@@ -8,7 +8,7 @@ import { ArtworkTile } from "@/ui/ArtworkTile";
 import { Kicker } from "@/ui/Kicker";
 import { monogramFor } from "@/ui/monogram";
 import { ProcessingLine } from "@/ui/ProcessingLine";
-import { datedByline, kindLabel } from "@/ui/sourceLabels";
+import { colorDomain, datedByline, kindLabel } from "@/ui/sourceLabels";
 import { useNow } from "@/ui/useNow";
 
 type SourceRow = typeof schema.sources.$inferSelect;
@@ -59,13 +59,13 @@ export function ItemHeader({
       <View style={{ flexDirection: "row", gap: theme.spacing.md, alignItems: "center" }}>
         <ArtworkTile
           imageUrl={source.imageUrl}
-          domain={source.domain}
+          domain={colorDomain(source)}
           monogram={monogramFor(source)}
           size={92}
           circle={source.kind === "x"}
         />
         <View style={{ flex: 1, gap: theme.spacing.xs }}>
-          <Kicker domain={source.domain} label={kicker?.label} suffix={kicker ? kicker.suffix : kindLabel(source.kind)} />
+          <Kicker domain={colorDomain(source)} label={kicker?.label} suffix={kicker ? kicker.suffix : kindLabel(source.kind)} />
           <Text testID="item-byline" variant="secondary" tone="ink2">
             {/* The star is repeated in the by-line so it's visible below the navbar too. */}
             {`${datedByline(source, now)}${source.favoritedAt ? " · ★ Favorite" : ""}`}

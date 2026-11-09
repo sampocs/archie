@@ -1,5 +1,5 @@
 import * as WebBrowser from "expo-web-browser";
-import { View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 import { Text } from "@/theme/components/Text";
 import { fontFamily } from "@/theme/type";
@@ -9,20 +9,30 @@ export type Span = { text: string; bold?: boolean; italic?: boolean; href?: stri
 export type Block =
   | { type: "heading"; level: 1 | 2 | 3; spans: Span[] }
   | { type: "paragraph"; spans: Span[] }
-  | { type: "list"; ordered: boolean; items: Span[][] };
+  | { type: "list"; ordered: boolean; items: Span[][] }
+  // A pipe table: its header cells, then each row's cells.
+  | { type: "table"; header: Span[][]; rows: Span[][][] };
 
 // Bear tags ("#crypto/staking") have no space after the #, so they stay paragraphs.
 const HEADING = /^(#{1,6})\s+(.*)$/;
 const TASK = /^[-*]\s+\[( |x|X)\]\s+(.*)$/;
 const BULLET = /^[-*+]\s+(.*)$/;
 const NUMBERED = /^\d+\.\s+(.*)$/;
+const TABLE_ROW = /^\|.*\|$/;
+// The row under a table's header: "|---|:---:|".
+const TABLE_RULE = /^:?-+:?$/;
 // The opening * must not be followed by a space, so "2 * 3 * 4" stays plain.
 const INLINE = /\*\*(.+?)\*\*|\*(?!\s)(.+?)(?<!\s)\*|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
 
-/** Parses the markdown subset primers and Bear notes use: headings, paragraphs, lists, tasks, links, **bold**, *italic*. */
+/**
+ * Parses the markdown subset primers, cheat sheets and Bear notes use: headings, paragraphs, lists, tasks, pipe tables,
+ * links, **bold**, *italic*.
+ */
 export function parseMarkdown(text: string): Block[] {
   const blocks: Block[] = [];
   let paragraph: string[] = [];
+  // The table the previous line belonged to; any other line ends it.
+  let table: Extract<Block, { type: "table" }> | null = null;
 
   const flushParagraph = () => {
     if (paragraph.length > 0) blocks.push({ type: "paragraph", spans: parseSpans(paragraph.join(" ")) });
@@ -35,6 +45,19 @@ export function parseMarkdown(text: string): Block[] {
     const task = TASK.exec(line);
     const bullet = BULLET.exec(line);
     const numbered = NUMBERED.exec(line);
+
+    if (TABLE_ROW.test(line)) {
+      flushParagraph();
+      const cells = tableCells(line);
+      if (table === null) {
+        table = { type: "table", header: cells.map(parseSpans), rows: [] };
+        blocks.push(table);
+      } else if (!cells.every((cell) => TABLE_RULE.test(cell))) {
+        table.rows.push(cells.map(parseSpans));
+      }
+      continue;
+    }
+    table = null;
 
     if (line === "") {
       flushParagraph();
@@ -55,6 +78,13 @@ export function parseMarkdown(text: string): Block[] {
   flushParagraph();
 
   return blocks;
+}
+
+function tableCells(line: string): string[] {
+  return line
+    .slice(1, -1)
+    .split("|")
+    .map((cell) => cell.trim());
 }
 
 function appendListItem(blocks: Block[], { ordered, item }: { ordered: boolean; item: Span[] }): void {
@@ -118,6 +148,8 @@ function BlockView({ block }: { block: Block }) {
     );
   }
 
+  if (block.type === "table") return <TableView block={block} />;
+
   return (
     <View style={{ gap: theme.spacing.sm }}>
       {block.items.map((item, index) => (
@@ -132,14 +164,44 @@ function BlockView({ block }: { block: Block }) {
   );
 }
 
+// Columns share the width evenly; each row is ruled off like the mocks' comparison tables.
+function TableView({ block }: { block: Extract<Block, { type: "table" }> }) {
+  const theme = useTheme();
+  const row = (cells: Span[][], header: boolean, key: number) => (
+    <View
+      key={key}
+      style={{
+        flexDirection: "row",
+        gap: theme.spacing.sm,
+        paddingVertical: theme.spacing.xs,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: theme.colors.line,
+      }}
+    >
+      {cells.map((cell, index) => (
+        <Text key={index} variant={header ? "kicker" : "secondary"} tone={header ? "ink3" : "ink"} style={{ flex: 1 }}>
+          {header ? cell.map((span) => span.text).join("") : <Spans spans={cell} variant="secondary" />}
+        </Text>
+      ))}
+    </View>
+  );
+
+  return (
+    <View testID="markdown-table" style={{ backgroundColor: theme.colors.bg, borderRadius: theme.radii.chip, padding: theme.spacing.md }}>
+      {row(block.header, true, -1)}
+      {block.rows.map((cells, index) => row(cells, false, index))}
+    </View>
+  );
+}
+
 // Geist ships static weights, so bold/italic need font-family switches rather than fontWeight.
-function Spans({ spans }: { spans: Span[] }) {
+function Spans({ spans, variant = "readingBody" }: { spans: Span[]; variant?: "readingBody" | "secondary" }) {
   return (
     <>
       {spans.map((span, index) => (
         <Text
           key={index}
-          variant="readingBody"
+          variant={variant}
           style={{
             fontFamily: span.bold ? fontFamily.bold : undefined,
             fontStyle: span.italic ? "italic" : undefined,

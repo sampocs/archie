@@ -50,6 +50,8 @@ export const sources = sqliteTable("sources", {
   senderAddress: text("sender_address"),
   // A newsletter from a sender the owner hasn't allowed yet: stored and unread until Allow or Block.
   senderPending: integer("sender_pending", { mode: "boolean" }).notNull().default(false),
+  // A chat item (kind chat): the Ask chat it was saved from; null for other kinds, and once that chat is deleted.
+  chatConversationId: text("chat_conversation_id"),
 });
 
 export const artifacts = sqliteTable("artifacts", {
@@ -311,6 +313,26 @@ export const editProposals = sqliteTable("edit_proposals", {
   after: text("after").notNull(),
   status: text("status").notNull(),
   appliedVersion: integer("applied_version"),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+// Card sets Ask proposed in a chat (a cheat sheet and cards). The phone saves or discards one through the card-set
+// routes, never the outbox.
+export const cardSetProposals = sqliteTable("card_set_proposals", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull(),
+  messageId: text("message_id").notNull(),
+  title: text("title").notNull(),
+  // Markdown; it becomes the chat item's primer on Save.
+  cheatSheet: text("cheat_sheet").notNull(),
+  // JSON-encoded `[{ kind, question, answer }]`.
+  cards: text("cards").notNull(),
+  // proposed | saved | replaced | discarded
+  status: text("status").notNull(),
+  savedSourceId: text("saved_source_id"),
+  // JSON-encoded indices of the cards Save kept; null until saved.
+  kept: text("kept"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

@@ -1,5 +1,6 @@
 import type { EditProposalWire } from "@/edits/types";
 
+import type { CardSetWire } from "./cardSets";
 import { ANSWER_LABEL_TEXT, formatClock, type AnswerLabel, type AnswerSegment, type AskEvent, type Citation } from "./types";
 
 /** A labelled run of an answer: consecutive blocks with the same label shown as one section. */
@@ -16,10 +17,19 @@ export type LiveAnswer = {
   // Edits Ask proposed so far, and whether it is drafting one now.
   proposals: EditProposalWire[];
   editing: boolean;
+  // Card sets Ask proposed so far, and whether it is drafting one now.
+  cardSets: CardSetWire[];
+  draftingCards: boolean;
 };
 
-/** A question sent from this screen, with the answer streaming for it. */
-export type PendingQuestion = { userMessageId: string; text: string; webSearch: boolean; live: LiveAnswer };
+/** A question sent from this screen, with the answer streaming for it; `sentAt` (ms) starts the thinking clock. */
+export type PendingQuestion = {
+  userMessageId: string;
+  text: string;
+  webSearch: boolean;
+  sentAt: number;
+  live: LiveAnswer;
+};
 
 export const EMPTY_LIVE: LiveAnswer = {
   blocks: [],
@@ -28,7 +38,12 @@ export const EMPTY_LIVE: LiveAnswer = {
   failed: false,
   proposals: [],
   editing: false,
+  cardSets: [],
+  draftingCards: false,
 };
+
+// No tool is running: what every event but a tool's start event leaves behind.
+const IDLE = { searching: null, editing: false, draftingCards: false } as const;
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -69,7 +84,7 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
       const blocks = [...live.blocks];
       const block = blocks[event.block] ?? { text: "", label: null, citations: [] };
       blocks[event.block] = { ...block, text: block.text + event.text };
-      return { ...live, blocks, searching: null, editing: false };
+      return { ...live, blocks, ...IDLE };
     }
     case "block": {
       const blocks = [...live.blocks];
@@ -78,13 +93,15 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
       return { ...live, blocks };
     }
     case "searching":
-      return { ...live, searching: event.kind, editing: false };
+      return { ...live, ...IDLE, searching: event.kind };
     case "done":
-      return { ...live, messageId: event.message_id, searching: null, editing: false };
+      return { ...live, messageId: event.message_id, ...IDLE };
     case "error":
-      return { ...live, failed: true, searching: null, editing: false };
+      return { ...live, failed: true, ...IDLE };
     case "editing":
-      return { ...live, editing: true, searching: null };
+      return { ...live, ...IDLE, editing: true };
+    case "drafting_cards":
+      return { ...live, ...IDLE, draftingCards: true };
     case "edit": {
       const { type: _type, ...wire } = event;
       // A repeated event (a retried read of the stream) replaces the proposal rather than adding it twice. A newer
@@ -98,13 +115,21 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
         );
       return { ...live, editing: false, proposals: [...earlier, wire] };
     }
+    case "cards": {
+      const { type: _type, ...wire } = event;
+      // As for edits: a repeated event replaces its set, and a newer set replaces the chat's still-proposed ones.
+      const earlier = live.cardSets
+        .filter((cardSet) => cardSet.id !== wire.id)
+        .map((cardSet) => (cardSet.status === "proposed" ? { ...cardSet, status: "replaced" } : cardSet));
+      return { ...live, draftingCards: false, cardSets: [...earlier, wire] };
+    }
   }
 }
 
 /** A stream that ended without a `done` or `error` event (the connection closed mid-answer) has failed. */
 export function endOfStream(live: LiveAnswer): LiveAnswer {
   if (live.messageId !== null || live.failed) return live;
-  return { ...live, failed: true, searching: null, editing: false };
+  return { ...live, failed: true, ...IDLE };
 }
 
 /**
@@ -123,23 +148,35 @@ export function handedOver(
   return failed && messages.slice(questionIndex + 1).some((message) => message.role === "assistant");
 }
 
-/** What the screen shows of a live answer: finished blocks as sections, the block still streaming as plain text. */
-export function liveView(live: LiveAnswer): {
-  sections: Section[];
-  streamingText: string;
-  searching: "library" | "web" | null;
-  editing: boolean;
-} {
+/**
+ * What the screen shows of a live answer: finished blocks as sections, the block still streaming as plain text, and
+ * the thinking row's label (null hides the row).
+ */
+export function liveView(live: LiveAnswer): { sections: Section[]; streamingText: string; thinking: string | null } {
   const finished = live.blocks.filter((block): block is LiveBlock & { label: AnswerLabel } => block.label !== null);
-  return {
-    sections: groupSections(finished.map((block) => ({ label: block.label, text: block.text, citations: block.citations }))),
-    streamingText: live.blocks
-      .filter((block) => block.label === null)
-      .map((block) => block.text)
-      .join(""),
-    searching: live.searching,
-    editing: live.editing,
-  };
+  const sections = groupSections(
+    finished.map((block) => ({ label: block.label, text: block.text, citations: block.citations })),
+  );
+  const streamingText = live.blocks
+    .filter((block) => block.label === null)
+    .map((block) => block.text)
+    .join("");
+  return { sections, streamingText, thinking: thinkingLabel(live, sections.length > 0 || streamingText.trim() !== "") };
+}
+
+const THINKING = "Thinking";
+const SEARCHING_TEXT = { library: "Searching your library…", web: "Searching the web…" } as const;
+
+/**
+ * The thinking row's label: what the running tool is doing, else "Thinking" until the first text streams; null once
+ * text streams with no tool running, and once the answer ended either way.
+ */
+export function thinkingLabel(live: LiveAnswer, hasText: boolean): string | null {
+  if (live.messageId !== null || live.failed) return null;
+  if (live.searching) return SEARCHING_TEXT[live.searching];
+  if (live.editing) return "Drafting an edit…";
+  if (live.draftingCards) return "Drafting cards…";
+  return hasText ? null : THINKING;
 }
 
 /** "5m", "2h", "Yesterday", "Tue", "Oct 2": a chat row's time. */

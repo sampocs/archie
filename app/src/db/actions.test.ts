@@ -49,7 +49,7 @@ function createTables(outboxCheck: string): string {
       primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL, favorited_at text, published_at text, confirm_url text,
       note_markdown text, note_edited_at text, refreshed_at text, refreshed_from_queue integer DEFAULT 0 NOT NULL,
       refresh_skipped_at text,
-      sender_address text, sender_pending integer DEFAULT 0 NOT NULL
+      sender_address text, sender_pending integer DEFAULT 0 NOT NULL, chat_conversation_id text
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,

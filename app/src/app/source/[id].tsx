@@ -10,6 +10,7 @@ import * as schema from "@/db/schema";
 import { useTargetVersions } from "@/edits/useTargetVersions";
 import { VersionsSheet } from "@/edits/VersionsSheet";
 import { CardsSection } from "@/item/CardsSection";
+import { ChatItemBody } from "@/item/ChatItemBody";
 import { confirmExplanation, confirmPrompt } from "@/library/confirmations";
 import { confirmSignup, dismissSignup } from "@/library/confirmActions";
 import { ConfirmPills, SenderPills } from "@/library/ConfirmCard";
@@ -39,6 +40,7 @@ import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
 import { haptic } from "@/ui/haptics";
 import { primerMarkdown, wordCount } from "@/library/primer";
+import { CHAT_KIND, kindLabel } from "@/ui/sourceLabels";
 import { parseSummary, SummaryContent } from "@/ui/summaryContent";
 import { Toast } from "@/ui/Toast";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -99,6 +101,7 @@ export default function SourceScreen() {
   const starred = source.favoritedAt !== null;
   const isConfirmation = source.confirmUrl !== null;
   const isNote = source.kind === "note";
+  const isChat = source.kind === CHAT_KIND;
   const isPendingSender = source.senderPending && !isConfirmation;
   // Both kinds of notice page are bare: no star, menu, badges, actions, summary, note or cards.
   const isNotice = isConfirmation || isPendingSender;
@@ -177,7 +180,9 @@ export default function SourceScreen() {
                 ? { label: "Newsletter", suffix: SENDER_KICKER_SUFFIX }
                 : isNote
                   ? { label: "Notes", suffix: source.domain ? asDomain(source.domain) : undefined }
-                  : undefined
+                  : isChat
+                    ? { label: kindLabel(CHAT_KIND) }
+                    : undefined
           }
         />
         <Text testID="item-title" variant="articleTitle">
@@ -187,6 +192,8 @@ export default function SourceScreen() {
           <ConfirmationPrompt source={source} onDone={router.back} />
         ) : isPendingSender ? (
           <SenderPrompt source={source} onBlocked={router.back} />
+        ) : isChat ? (
+          <ChatItemBody source={source} primer={primer} />
         ) : isNote ? (
           <>
             {summaryContent ? (
@@ -218,7 +225,7 @@ export default function SourceScreen() {
         {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
         {isNotice ? null : (
           <>
-            {isNote ? null : <NoteSection reaction={source.reaction} note={source.note} />}
+            {isNote || isChat ? null : <NoteSection reaction={source.reaction} note={source.note} />}
             <CardsSection of={{ kind: "source", id: source.id }} />
           </>
         )}

@@ -12,34 +12,34 @@ import { useTheme } from "@/theme/useTheme";
 import { Markdown } from "@/ui/Markdown";
 
 import { chipText, type Section } from "./sections";
+import { ThinkingRow } from "./ThinkingRow";
 import { ANSWER_LABEL_TEXT, formatClock, type Citation } from "./types";
 
 type AnswerViewProps = {
   sections: Section[];
   streamingText?: string;
-  searching?: "library" | "web" | null;
-  // Ask is drafting an edit now; the proposals it made are the children, shown under the sections.
-  editing?: boolean;
+  // The thinking row's label while the answer streams (null hides it), and when the question was sent (ms).
+  thinking?: string | null;
+  sentAt?: number;
+  // The edits and card sets the answer proposed, shown under the sections.
   children?: ReactNode;
   failed?: boolean;
   onRetry?: () => void;
   // Set only for a complete stored answer.
-  onMakeCard?: () => void;
+  onMakeCards?: () => void;
   index: number;
 };
-
-const SEARCHING_TEXT = { library: "Searching your library…", web: "Searching the web…" } as const;
 
 /** One answer: its labelled sections with citation chips, the text still streaming, and how it ended. */
 export function AnswerView({
   sections,
   streamingText,
-  searching,
-  editing,
+  thinking,
+  sentAt,
   children,
   failed,
   onRetry,
-  onMakeCard,
+  onMakeCards,
   index,
 }: AnswerViewProps) {
   const theme = useTheme();
@@ -75,17 +75,8 @@ export function AnswerView({
         </View>
       ))}
       {streamingText ? <Markdown text={streamingText.trim()} /> : null}
-      {editing ? (
-        <Text testID="chat-editing" tone="ink3">
-          Drafting an edit…
-        </Text>
-      ) : null}
       {children}
-      {searching ? (
-        <Text testID="chat-searching" tone="ink3">
-          {SEARCHING_TEXT[searching]}
-        </Text>
-      ) : null}
+      {thinking && sentAt !== undefined ? <ThinkingRow label={thinking} startedAt={sentAt} /> : null}
       {failed ? (
         <Pressable testID="chat-retry" onPress={onRetry} hitSlop={8}>
           <Text testID="chat-failed" tone="ink2">
@@ -93,8 +84,8 @@ export function AnswerView({
           </Text>
         </Pressable>
       ) : null}
-      {onMakeCard ? (
-        <Button testID={`answer-make-card-${index}`} variant="secondary" label="Make a card" onPress={onMakeCard} />
+      {onMakeCards ? (
+        <Button testID={`answer-make-cards-${index}`} variant="secondary" label="Make cards" onPress={onMakeCards} />
       ) : null}
     </View>
   );

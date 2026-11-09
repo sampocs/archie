@@ -130,7 +130,7 @@ maestro-takes-clean: reset-local-data
 	@PATH="$(MAESTRO_PATH)" maestro test maestro/takes_clean.yaml
 
 # Starts and stops the backend itself, to take the phone offline mid-flow.
-# Ask: answers, embeddings and a card draft spend real API credits (a few cents); see maestro/README.md.
+# Ask: answers, embeddings and a card set spend real API credits (a few cents); see maestro/README.md.
 maestro-ask: reset-local-data
 	@PATH="$(MAESTRO_PATH)" maestro test maestro/ask.yaml
 
@@ -138,7 +138,11 @@ maestro-ask: reset-local-data
 maestro-edit: reset-local-data
 	@PATH="$(MAESTRO_PATH)" maestro test maestro/edit.yaml
 
+# Cards from a chat: seeds a chat holding a card-set proposal (no model), saves it with one card unticked, opens the item.
+maestro-chat-cards: reset-local-data
+	@maestro/run_chat_cards.sh
+
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-confirm maestro-notes maestro-allowlist maestro-brief maestro-review maestro-takes-clean maestro-ask maestro-edit maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-confirm maestro-notes maestro-allowlist maestro-brief maestro-review maestro-takes-clean maestro-ask maestro-edit maestro-chat-cards maestro-offline

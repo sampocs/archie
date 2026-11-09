@@ -145,6 +145,19 @@ describe("clearSession", () => {
         updatedAt: "x",
       })
       .run();
+    db.insert(schema.cardSetProposals)
+      .values({
+        id: "cs1",
+        conversationId: "chat1",
+        messageId: "m1",
+        title: "T",
+        cheatSheet: "# T",
+        cards: "[]",
+        status: "proposed",
+        createdAt: "x",
+        updatedAt: "x",
+      })
+      .run();
     mockKeychain.set(COLLECTIONS_SLOT, '[{"id":"col1","name":"Bears hype"}]');
     mockKeychain.set(LAST_COLLECTION_SLOT, "col1");
   });
@@ -174,6 +187,7 @@ describe("clearSession", () => {
     expect(db.select().from(schema.messages).all()).toEqual([]);
     expect(db.select().from(schema.cardVersions).all()).toEqual([]);
     expect(db.select().from(schema.editProposals).all()).toEqual([]);
+    expect(db.select().from(schema.cardSetProposals).all()).toEqual([]);
     expect(db.select().from(schema.syncState).get()).toMatchObject({ position: 0 });
   });
 

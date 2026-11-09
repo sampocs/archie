@@ -17,6 +17,7 @@ const data: LibraryData = {
     sourceRow({ id: "inbox", state: "inbox", kind: "newsletter" }),
     sourceRow({ id: "briefed", state: "briefed", kind: "newsletter" }),
     noteSource({ id: "note", state: "inbox" }),
+    sourceRow({ id: "chat", kind: "chat", state: "inbox", primerCreatedAt: PAST }),
     sourceRow({ id: "queued-with-primer", state: "queued", primerCreatedAt: PAST }),
     sourceRow({ id: "done-with-primer", state: "consumed", primerCreatedAt: PAST, primerQueuePosition: -1 }),
     sourceRow({ id: "primer-writing", state: "consumed", primerQueuePosition: -2 }),
@@ -66,11 +67,11 @@ describe("filterEntries", () => {
     );
   });
 
-  it("Inbox: inbox and briefed, never a note", () => {
+  it("Inbox: inbox and briefed, never a note or a chat item", () => {
     expect(keys("inbox")).toEqual(["source-briefed", "source-inbox"]);
   });
 
-  it("Primers: every source with a primer, queued or not, plus live topic primers", () => {
+  it("Primers: every source with a primer, queued or not, plus live topic primers; never a chat item's cheat sheet", () => {
     expect(keys("primers")).toEqual([
       "source-done-with-primer",
       "source-queued-with-primer",
@@ -83,7 +84,7 @@ describe("filterEntries", () => {
 describe("filterCounts", () => {
   it("leaves snoozed entries out", () => {
     // Queued: 3 awake sources + 2 awake primers (the snoozed source and the snoozed primer are left out).
-    expect(filterCounts(data, NOW)).toEqual({ all: 11, queued: 5, done: 4, inbox: 2, primers: 3 });
+    expect(filterCounts(data, NOW)).toEqual({ all: 12, queued: 5, done: 4, inbox: 2, primers: 3 });
   });
 });
 

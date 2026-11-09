@@ -4,6 +4,7 @@ import { apiFetch } from "@/api/client";
 import type { AppDb } from "@/db/client";
 import * as schema from "@/db/schema";
 import { getSessionEpoch } from "@/auth/sessionEpoch";
+import { cardSetValues } from "@/ask/cardSets";
 import { cardVersionValues, proposalValues } from "@/edits/types";
 
 import type {
@@ -296,6 +297,7 @@ export function createDbSyncStore(
             refreshSkippedAt: source.refresh_skipped_at ?? null,
             senderAddress: source.sender_address ?? null,
             senderPending: source.sender_pending ?? false,
+            chatConversationId: source.chat_conversation_id ?? null,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })
@@ -526,6 +528,16 @@ export function createDbSyncStore(
           tx.insert(schema.editProposals)
             .values({ id: proposal.id, ...values })
             .onConflictDoUpdate({ target: schema.editProposals.id, set: values })
+            .run();
+        }
+
+        // Like edit proposals: Save and Discard store the route's answer at once (ask/api.ts), so a pulled row is never
+        // older than what the phone shows.
+        for (const proposal of page.rows.card_set_proposals ?? []) {
+          const values = cardSetValues(proposal);
+          tx.insert(schema.cardSetProposals)
+            .values({ id: proposal.id, ...values })
+            .onConflictDoUpdate({ target: schema.cardSetProposals.id, set: values })
             .run();
         }
 

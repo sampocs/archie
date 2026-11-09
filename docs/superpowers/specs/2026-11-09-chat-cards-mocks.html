@@ -149,6 +149,30 @@ figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
 .lc .nn { font: 500 9.5px var(--mono); color: var(--ink3); }
 .full { position: absolute; left: 0; right: 0; bottom: 0; top: 30px; background: var(--surface); border-radius: 22px 22px 0 0; padding: 10px 16px 20px; display: grid; align-content: start; gap: 9px; box-shadow: 0 -10px 30px rgba(0,0,0,.18); overflow: hidden; }
 .full .top2 { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--ink2); }
+.seg2 { display: flex; gap: 4px; background: var(--press); border-radius: 9px; padding: 2px; font-size: 11px; }
+.seg2 span { flex: 1; text-align: center; padding: 4px 6px; border-radius: 7px; color: var(--ink2); white-space: nowrap; }
+.seg2 .on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.hdr { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.hdr .ttl { font-weight: 600; font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mini { background: var(--chrome); color: var(--onChrome); border-radius: 999px; padding: 5px 11px; font-weight: 600; font-size: 11.5px; white-space: nowrap; }
+.x { color: var(--ink3); font-size: 15px; line-height: 1; padding: 0 2px; }
+.tap { cursor: pointer; }
+.rowl { display: grid; grid-template-columns: 26px minmax(0,1fr) auto; gap: 9px; align-items: center; padding: 8px 2px; border-bottom: 1px solid var(--line); }
+.rowl:last-child { border-bottom: 0; }
+.ic { width: 26px; height: 26px; border-radius: 7px; background: var(--press); display: grid; place-items: center; font-size: 12px; color: var(--ink2); }
+.rowl .t { font-size: 12.5px; } .rowl .s { font-size: 11px; }
+.chev { color: var(--ink3); }
+.car { display: grid; grid-auto-flow: column; grid-auto-columns: 86%; gap: 8px; overflow: hidden; }
+.car .fc, .car .docc { min-height: 120px; }
+.docc { background: var(--bg); border-radius: 11px; padding: 9px 10px; display: grid; gap: 4px; align-content: start; font-size: 11px; }
+.docc .ch { display: flex; justify-content: space-between; font: 500 9.5px var(--mono); color: var(--ink3); }
+.foot { display: flex; justify-content: space-between; align-items: center; }
+.chk { width: 16px; height: 16px; border-radius: 5px; display: grid; place-items: center; font-size: 10px; background: var(--got); color: #fff; }
+.chk.off { background: transparent; box-shadow: inset 0 0 0 1.5px var(--ink3); color: transparent; }
+.fc .ch2 { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.actionbar { position: absolute; left: 10px; right: 10px; bottom: 84px; background: var(--chrome); color: var(--onChrome); border-radius: 18px; padding: 8px 8px 8px 14px; display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.actionbar .grow { flex: 1; } .actionbar .w { background: var(--onChrome); color: var(--chrome); border-radius: 999px; padding: 6px 12px; font-weight: 700; }
+.actionbar .d { color: color-mix(in srgb, var(--onChrome) 70%, transparent); font-weight: 600; }
 </style>
 <header>
   <span class="n">ARCHIE · CARDS FROM A CHAT</span>
@@ -187,23 +211,15 @@ figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
     <div class="phone"><div class="screen" style="gap:8px">
       <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
       <div class="mine">Make cards</div>
-      <div class="prop">
-        <span class="kick"><span>Save to Library · Chat</span><span>5 cards</span></span>
-        <div class="doc"><b class="h">JWT vs session tokens</b>
-          <table><tr><th></th><th>Session</th><th>JWT</th></tr>
-          <tr><td>Holds</td><td>Random ID</td><td>Signed claims</td></tr>
-          <tr><td>Check</td><td>Store lookup</td><td>Verify signature</td></tr>
-          <tr><td>Revoke</td><td>Delete row, instant</td><td>Wait for expiry</td></tr></table>
-          <span>Pick sessions for a single web app…</span></div>
-        <span class="more">Show full cheat sheet</span>
+      <div class="prop" style="gap:7px">
+        <div class="hdr tap"><span class="ttl">▤ Cheat sheet · JWT vs session tokens</span><span class="chev">›</span></div>
         <div class="fc"><div class="ch"><span>CARD 1</span><span class="keep"><span class="box">✓</span>Keep</span></div><span class="qq">Why is a JWT hard to revoke before it expires?</span><span class="aa">The server doesn't look it up; any valid signature is accepted until <code>exp</code>.</span></div>
-        <div class="pager"><span class="pg">‹ 1 / 5 ›</span><span class="more">See all</span></div>
-        <div class="btns"><span class="btnp">Save · 5 cards</span><span class="btn2">Discard</span></div>
+        <div class="foot"><span style="display:flex;gap:10px;align-items:center"><span class="pg" style="font:500 10.5px var(--mono);color:var(--ink2)">‹ 1 / 5 ›</span><span class="more">See all</span></span><span style="display:flex;gap:6px;align-items:center"><span class="mini">Save 5</span><span class="x">×</span></span></div>
       </div>
     </div>
     <div class="composer"><span class="ph">Change something…</span><span class="globe">🌐</span><span class="send">↑</span></div>
     <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
-    <figcaption><span class="n">03 · THE PROPOSAL</span><b>A cheat sheet and the cards, together</b><span>The cheat sheet is a preview of the Library item (tap to read it all). Cards page one at a time; each card has its own Keep tick in its corner, so unticking leaves out just that card. Nothing is saved yet.</span></figcaption>
+    <figcaption><span class="n">03 · THE PROPOSAL</span><b>A cheat sheet and the cards, together</b><span>The cheat sheet is one line; tap it to read it in full (03a). Cards page one at a time, each with its own Keep tick. One footer row: the pager, See all, Save and × (discard). The composer stays, so you can ask for changes. Nothing is saved yet.</span></figcaption>
   </figure>
 
   <figure>
@@ -233,8 +249,8 @@ figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
   <figure>
     <div class="phone"><div class="screen" style="gap:8px">
       <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
-      <div class="prop">
-        <span class="kick"><span>Save to Library · Chat</span><span>4 of 5 kept</span></span>
+      <div class="prop" style="gap:7px">
+        <div class="hdr tap"><span class="ttl">▤ Cheat sheet · JWT vs session tokens</span><span class="chev">›</span></div>
         <div class="list">
           <div class="lc on"><span class="box">✓</span><div><span class="nn">1</span> <span class="qq">Why is a JWT hard to revoke before it expires?</span><div class="aa">Nothing is looked up; any valid signature passes until exp.</div></div></div>
           <div class="lc on"><span class="box">✓</span><div><span class="nn">2</span> <span class="qq">What does the server store for a session token?</span><div class="aa">The session itself, keyed by a random ID the client holds.</div></div></div>
@@ -242,8 +258,7 @@ figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
           <div class="lc on"><span class="box">✓</span><div><span class="nn">4</span> <span class="qq">Is a JWT's payload secret?</span><div class="aa">No: it's signed, not encrypted. Anyone can decode it.</div></div></div>
           <div class="lc on"><span class="box">✓</span><div><span class="nn">5</span> <span class="qq">When do JWTs beat sessions?</span><div class="aa">Many services verifying a user without a shared store.</div></div></div>
         </div>
-        <div class="pager"><span class="more">One at a time</span><span></span></div>
-        <div class="btns"><span class="btnp">Save · 4 cards</span><span class="btn2">Discard</span></div>
+        <div class="foot"><span class="more">One at a time</span><span style="display:flex;gap:6px;align-items:center"><span class="mini">Save 4</span><span class="x">×</span></span></div>
       </div>
     </div>
     <div class="composer"><span class="ph">Change card 2…</span><span class="globe">🌐</span><span class="send">↑</span></div>
@@ -257,17 +272,15 @@ figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
       <div class="gone"><span>Earlier proposal</span><span>Replaced</span></div>
       <div class="mine">Drop the one about cookies and add a card on refresh tokens</div>
       <div class="sec"><p style="font-size:12.5px">Swapped it. Card 4 now covers why refresh tokens exist.</p></div>
-      <div class="prop">
-        <span class="kick"><span>Save to Library · Chat</span><span>5 cards</span></span>
+      <div class="prop" style="gap:7px">
+        <div class="hdr tap"><span class="ttl">▤ Cheat sheet · JWT vs session tokens</span><span class="chev">›</span></div>
         <div class="fc"><div class="ch"><span>CARD 4</span><span class="keep"><span class="box">✓</span>Keep</span></div><span class="qq">What problem does a refresh token solve?</span><span class="aa">Access JWTs can stay short-lived (minutes) for safe expiry, while the long-lived refresh token, kept server-checkable, gets new ones without logging in again.</span></div>
-        <div class="pager"><span class="pg">‹ 4 / 5 ›</span><span class="more">See all</span></div>
-        <div class="pips"><i></i><i></i><i class="x"></i><i class="on"></i><i></i></div>
-        <div class="btns"><span class="btnp">Save · 4 cards</span><span class="btn2">Discard</span></div>
+        <div class="foot"><span style="display:flex;gap:10px;align-items:center"><span style="font:500 10.5px var(--mono);color:var(--ink2)">‹ 4 / 5 ›</span><span class="more">See all</span></span><span style="display:flex;gap:6px;align-items:center"><span class="mini">Save 4</span><span class="x">×</span></span></div>
       </div>
     </div>
     <div class="composer"><span class="ph">Change something…</span><span class="globe">🌐</span><span class="send">↑</span></div>
     <nav class="tabbar"><span><span class="dot"></span>Library</span><span><span class="dot"></span>Review</span><span><span class="dot"></span>Today</span><span class="on"><span class="dot"></span>Ask</span><span><span class="dot"></span>Settings</span></nav></div>
-    <figcaption><span class="n">04 · BACK AND FORTH</span><b>Push back, get a revised set</b><span>Each reply that changes things is a fresh proposal; the old one collapses to "Replaced". The dots show which cards you've unticked (hollow), and the Save button counts only kept cards.</span></figcaption>
+    <figcaption><span class="n">04 · BACK AND FORTH</span><b>Push back, get a revised set</b><span>Each reply that changes things is a fresh proposal; the old one collapses to "Replaced". Save counts only kept cards (card 3 was unticked here).</span></figcaption>
   </figure>
 
   <figure>
@@ -275,12 +288,8 @@ figcaption span { color: var(--pink2); font-size: 13.5px; line-height: 1.45; }
       <div class="nav"><span>‹ Ask</span><b>JWT vs session tokens</b><span></span></div>
       <div class="gone"><span>Earlier proposal</span><span>Replaced</span></div>
       <div class="mine">Drop the one about cookies and add a card on refresh tokens</div>
-      <div class="prop">
-        <span class="kick"><span>Saved to Library · Chat</span><span>4 cards</span></span>
-        <div class="doc"><b class="h">JWT vs session tokens</b>
-          <table><tr><th></th><th>Session</th><th>JWT</th></tr>
-          <tr><td>Holds</td><td>Random ID</td><td>Signed claims</td></tr>
-          <tr><td>Revoke</td><td>Delete row, instant</td><td>Wait for expiry</td></tr></table></div>
+      <div class="prop" style="gap:7px">
+        <div class="hdr tap"><span class="ttl">▤ Cheat sheet · JWT vs session tokens</span><span class="chev">›</span></div>
         <div class="btns"><span class="state">✓ Saved · 4 cards in review</span><span class="link">Open</span></div>
       </div>
       <div class="mine" style="opacity:.0">.</div>

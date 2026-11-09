@@ -1,6 +1,7 @@
 # Cards from a chat: design
 
-Approved mocks: `docs/superpowers/specs/2026-11-09-chat-cards-mocks.html` (screens 01–07, 03a, 03b).
+Approved mocks: `docs/superpowers/specs/2026-11-09-chat-cards-mocks.html` (screens 01–07, 03a, 03b; 03 is the compact
+block: cheat-sheet line, card pager, one footer row).
 
 ## Why
 
@@ -17,18 +18,19 @@ way to make several cards, discuss them, or keep a tidy reference; and the chat 
   and the row disappears when text streams. Reduced motion: dots static, no shimmer.
 - **"Make cards" (02)** replaces "Make a card" on every complete answer. Tapping it sends the user message
   `Make cards` in that chat; typing "make me cards on this" does the same thing. The old single-card sheet goes.
-- **A card-set proposal (03).** Claude answers with one proposal block, kicker `Save to Library · Chat` (or
-  `Update Library item · Chat` when this chat already saved one) and `N cards` on the right:
-  - a **cheat-sheet preview** (title, the markdown clipped with a fade) and **Show full cheat sheet**, which opens a
-    sheet rendering the full markdown exactly as Library will (03a; Done / swipe down closes);
-  - the **cards one at a time** (`‹ 1 / 5 ›`), each card showing `CARD n` and its own **Keep** tick in the card's
-    top-right corner, question, then answer under a dashed rule. Unticked cards dim and strike through;
-  - **See all** switches to a numbered list of every card with its tick (03b); **One at a time** switches back.
-    The chosen view is remembered on the phone;
-  - **Save · K cards** (K = kept count; disabled at 0 kept) and **Discard**.
+- **A card-set proposal (03).** Claude answers with one compact proposal block, no kicker header:
+  - one **cheat-sheet line** (`▤ Cheat sheet · {title} ›`, ellipsised); tapping it opens a sheet rendering the full
+    markdown exactly as Library will (03a; Done / swipe down closes). No inline preview;
+  - the **cards one at a time**, each card showing `CARD n` and its own **Keep** tick in the card's top-right
+    corner, question, then answer under a dashed rule. Unticked cards dim and strike through;
+  - **one footer row**: `‹ n / N ›` and **See all** on the left, **Save K** (K = kept count; disabled at 0) and
+    **×** (Discard) on the right. See all switches the card area to a numbered list of every card with its tick
+    (03b), whose footer reads **One at a time** instead. The chosen view is remembered on the phone;
+  - the composer stays available below, so changes are asked for in the chat.
+  - When this chat already saved an item, the Save button reads **Update K** instead.
 - **Back and forth (04).** Asking for changes produces a fresh proposal; every earlier still-open proposal in that
   chat collapses to a one-line `Earlier proposal · Replaced`. Ticks reset to all-kept on each new proposal.
-- **Saved (05).** The block shows `✓ Saved · K cards in review` and **Open** (→ the Library item); toast
+- **Saved (05).** The block keeps the cheat-sheet line and shows `✓ Saved · K cards in review` and **Open** (→ the Library item); toast
   `Saved to Library`. Later proposals in the same chat update that same item (one chat ↔ at most one item).
   Discarded shows `Discarded`.
 - **In Library (06).** A new source kind **Chat** (kicker `Chat`, label "Chat", `--ai` tile). The item page shows

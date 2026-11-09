@@ -8,9 +8,11 @@ cassette by deleting it and running `uv run pytest services/api/tests/e2e/test_c
 
 from __future__ import annotations
 
+import contextlib
 import json
 import pathlib
 import uuid
+from collections.abc import Iterator
 from typing import Any
 
 import httpx
@@ -56,8 +58,15 @@ def owner(live_stack: LiveStack) -> httpx.Client:
     return live_stack.authed(live_stack.sign_in(apple_sub="owner", is_whitelisted=True))
 
 
-def _db(live_stack: LiveStack) -> sqlalchemy.orm.Session:
-    return sqlalchemy.orm.Session(session.engine_for(live_stack.database_url))
+@contextlib.contextmanager
+def _db(live_stack: LiveStack) -> Iterator[sqlalchemy.orm.Session]:
+    """A session on its own engine, disposed afterwards so the test leaves no pooled connections open."""
+    engine = session.engine_for(live_stack.database_url)
+    try:
+        with sqlalchemy.orm.Session(engine) as db:
+            yield db
+    finally:
+        engine.dispose()
 
 
 def _rows(authed: httpx.Client) -> dict[str, list[dict[str, Any]]]:

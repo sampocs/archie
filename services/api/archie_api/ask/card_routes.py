@@ -102,15 +102,17 @@ def transcript(lines: Sequence[TranscriptLine]) -> str:
 def gist_of(cheat_sheet: str, *, title: str) -> str:
     """The cheat sheet's first prose paragraph on one line, cut at a word to `MAX_GIST_CHARACTERS`; else the title."""
     blocks = (block.strip() for block in cheat_sheet.split("\n\n"))
-    prose = (
-        block for block in blocks if block and not block.startswith(_NON_PROSE_STARTS) and not _NUMBERED_START.match(block)
-    )
+    prose = (block for block in blocks if block and not _is_non_prose(block))
     paragraph = next(prose, title)
     text = " ".join(paragraph.split())
     if len(text) <= MAX_GIST_CHARACTERS:
         return text
     cut = text[: MAX_GIST_CHARACTERS - 1].rsplit(" ", 1)[0]
     return f"{cut}…"
+
+
+def _is_non_prose(block: str) -> bool:
+    return block.startswith(_NON_PROSE_STARTS) or bool(_NUMBERED_START.match(block))
 
 
 def _open_proposal(db: orm.Session, *, user: models.User, proposal_id: uuid.UUID) -> models.CardSetProposal:

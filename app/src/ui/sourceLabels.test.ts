@@ -1,4 +1,4 @@
-import { datedByline, itemBadge, kindLabel, longDate, sourceByline, sourceMeta } from "./sourceLabels";
+import { colorDomain, datedByline, itemBadge, kindLabel, longDate, sourceByline, sourceMeta } from "./sourceLabels";
 
 describe("sourceByline", () => {
   it("uses a newsletter's sender, or 'Newsletter' without one", () => {
@@ -92,5 +92,24 @@ describe("notes", () => {
 
   it("formats a long date in local time", () => {
     expect(longDate(new Date(2024, 1, 13, 12).toISOString())).toBe("Feb 13, 2024");
+  });
+});
+
+describe("chat items", () => {
+  const chat = { kind: "chat", url: "chat:k1", sender: null };
+
+  it("labels a chat item as Chat from Ask, with the day it was saved", () => {
+    expect(kindLabel("chat")).toBe("Chat");
+    expect(sourceMeta(chat)).toBe("Chat · Ask");
+    expect(datedByline({ ...chat, createdAt: new Date(2026, 10, 9, 12).toISOString() }, new Date())).toBe(
+      "From Ask · Nov 9, 2026",
+    );
+  });
+
+  it("colours a chat item as Ask whatever its domain, and other kinds by their domain", () => {
+    expect(colorDomain({ kind: "chat", domain: "History" })).toBe("AI");
+    expect(colorDomain({ kind: "chat", domain: null })).toBe("AI");
+    expect(colorDomain({ kind: "article", domain: "History" })).toBe("History");
+    expect(colorDomain({ kind: "article", domain: null })).toBeNull();
   });
 });

@@ -1,6 +1,8 @@
 import type * as schema from "@/db/schema";
 import type { EditProposalWire } from "@/edits/types";
 
+import type { CardSetWire } from "./cardSets";
+
 /** Where an answer's text came from, read off its citations (never the model's own claim). */
 export type AnswerLabel = "library" | "web" | "background";
 export type OwnerKind = "source_text" | "source_summary" | "source_primer" | "topic_primer" | "take";
@@ -29,7 +31,9 @@ export type AskEvent =
   | { type: "done"; message_id: string }
   | { type: "error"; message: string }
   | { type: "editing"; target_kind: string | null }
-  | ({ type: "edit" } & EditProposalWire);
+  | ({ type: "edit" } & EditProposalWire)
+  | { type: "drafting_cards" }
+  | ({ type: "cards" } & CardSetWire);
 
 export type ConversationRow = typeof schema.conversations.$inferSelect;
 export type MessageRow = typeof schema.messages.$inferSelect;

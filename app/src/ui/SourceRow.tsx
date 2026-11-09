@@ -6,7 +6,7 @@ import { statusTag } from "@/library/visibility";
 
 import { ItemRow } from "./ItemRow";
 import { monogramFor } from "./monogram";
-import { sourceMeta } from "./sourceLabels";
+import { CHAT_KIND, colorDomain, kindLabel, sourceMeta } from "./sourceLabels";
 
 type SourceRowProps = {
   source: LibrarySource;
@@ -27,12 +27,18 @@ export function SourceRow({ source, end, meta, kickerSuffix, testID, onPress }: 
       testID={testID}
       artwork={{
         imageUrl: source.imageUrl,
-        domain: source.domain,
+        domain: colorDomain(source),
         monogram: monogramFor(source),
         circle: source.kind === "x",
         unread: statusTag(source) === "Unread",
       }}
-      kicker={{ domain: source.domain, suffix: kickerSuffix, starred: source.favoritedAt !== null }}
+      kicker={{
+        domain: colorDomain(source),
+        // A chat item's kicker names the kind ("Chat"), not a domain.
+        label: source.kind === CHAT_KIND ? kindLabel(source.kind) : undefined,
+        suffix: kickerSuffix,
+        starred: source.favoritedAt !== null,
+      }}
       title={source.title ?? source.url}
       meta={meta ?? sourceMeta(source)}
       end={end}

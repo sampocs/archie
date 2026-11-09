@@ -1,3 +1,5 @@
+import { CHAT_KIND } from "@/ui/sourceLabels";
+
 import type { LibrarySource } from "./join";
 
 export type StatusTag = "Queued" | "Done" | "Unread" | "Read" | "Briefed" | "Primer" | "Processing" | "Failed";
@@ -11,6 +13,8 @@ export function statusTag(source: { kind: string; state: string; processing: str
   if (source.processing === "pending" || source.processing === "processing") return "Processing";
   if (source.processing === "failed") return "Failed";
   if (source.kind === "note" && source.state !== "consumed") return "Read";
+  // A chat item is what the owner just worked through in Ask, so it is never unread.
+  if (source.kind === CHAT_KIND) return "Read";
   if (source.state === "queued") return "Queued";
   if (source.state === "consumed") return "Done";
   if (source.state === "briefed") return "Briefed";

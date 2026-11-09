@@ -1,4 +1,5 @@
 import { asTakeKind, TAKE_KIND_DOMAIN, TAKE_KIND_LABELS } from "@/takes/takes";
+import { CHAT_KIND, kindLabel } from "@/ui/sourceLabels";
 
 import { cardDomain, cardOrigin, type ReviewData } from "./eligibility";
 import { KIND_LABELS } from "./labels";
@@ -23,6 +24,18 @@ export function cardKicker(card: CardRow, data: ReviewData): CardKickerParts {
     return { label: "From Ask", suffix: undefined, domain: conversationDomain(origin.conversationId, data) };
   }
   return { label: undefined, suffix: KIND_LABELS[card.kind], domain: cardDomain(card, data) };
+}
+
+/** A chat item's card names its item instead of a kicker: `From {title} · Chat`, opening the item. */
+export type ChatItemLine = { sourceId: string; title: string; kind: string };
+
+/** The source line of a card from a chat item (the cheat sheet saved from an Ask chat); null for any other card. */
+export function chatItemLine(card: CardRow, data: ReviewData): ChatItemLine | null {
+  const origin = cardOrigin(card);
+  if (origin.kind !== "source") return null;
+  const source = data.sourcesById.get(origin.sourceId);
+  if (!source || source.kind !== CHAT_KIND) return null;
+  return { sourceId: source.id, title: source.title ?? kindLabel(CHAT_KIND), kind: kindLabel(CHAT_KIND) };
 }
 
 /** The domain colour of what a chat was about: a source's domain, a topic primer's topic's, a take kind's; else none. */

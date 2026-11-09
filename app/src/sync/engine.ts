@@ -44,6 +44,8 @@ export type PulledSource = {
   // Absent when pulling from a server older than the sender allowlist.
   sender_address?: string | null;
   sender_pending?: boolean;
+  // Absent when pulling from a server older than chat cards.
+  chat_conversation_id?: string | null;
 };
 export type PulledNewsletterSender = {
   id: string;
@@ -222,6 +224,20 @@ export type PulledEditProposal = {
   updated_at: string;
   change_seq: number;
 };
+export type PulledCardSetProposal = {
+  id: string;
+  conversation_id: string;
+  message_id: string;
+  title: string;
+  cheat_sheet: string;
+  cards: { kind: string; question: string; answer: string }[];
+  status: string;
+  saved_source_id: string | null;
+  kept: number[] | null;
+  created_at: string;
+  updated_at: string;
+  change_seq: number;
+};
 export type PullPage = {
   rows: {
     sources: PulledSource[];
@@ -246,6 +262,8 @@ export type PullPage = {
     edit_proposals?: PulledEditProposal[];
     // Absent when pulling from a server older than the sender allowlist.
     newsletter_senders?: PulledNewsletterSender[];
+    // Absent when pulling from a server older than chat cards.
+    card_set_proposals?: PulledCardSetProposal[];
   };
   position: number;
   more: boolean;

@@ -53,7 +53,7 @@ export function useChatSession(input: {
           current && current.userMessageId === userMessageId ? { ...current, live: change(current.live) } : current,
         );
       };
-      setOverlay({ userMessageId, text: question, webSearch, live: EMPTY_LIVE });
+      setOverlay({ userMessageId, text: question, webSearch, sentAt: Date.now(), live: EMPTY_LIVE });
 
       streamAnswer({
         conversationId: input.conversationId,
@@ -71,7 +71,7 @@ export function useChatSession(input: {
         .then(() => update(endOfStream))
         .catch((error) => {
           if (error instanceof UnauthorizedError) void clearSession();
-          update((live) => ({ ...live, failed: true, searching: null }));
+          update((live) => ({ ...live, failed: true, searching: null, editing: false, draftingCards: false }));
         })
         .finally(() => requestSync());
     },

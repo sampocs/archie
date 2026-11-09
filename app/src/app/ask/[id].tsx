@@ -5,11 +5,13 @@ import { View } from "react-native";
 
 import { aboutTitleOf } from "@/ask/aboutTitle";
 import { AnswerView } from "@/ask/AnswerView";
+import { CardSetProposal } from "@/ask/CardSetProposal";
+import { MAKE_CARDS_MESSAGE, shownCardSetStatus, viewOfCardSetWire } from "@/ask/cardSets";
 import { Composer } from "@/ask/Composer";
-import { MakeCardSheet } from "@/ask/MakeCardSheet";
 import { groupSections, liveView } from "@/ask/sections";
 import { parseSegments, type AboutKind } from "@/ask/types";
 import { useAskAvailable } from "@/ask/useAskAvailable";
+import { useChatItemId, useConversationCardSets } from "@/ask/useCardSets";
 import { useChat } from "@/ask/useChats";
 import { useChatSession } from "@/ask/useChatSession";
 import { EditProposalCard } from "@/edits/EditProposalCard";
@@ -38,7 +40,15 @@ export default function ChatScreen() {
   const proposals = useConversationProposals(params.id);
   // Targets with a proposal in the live answer: older still-proposed ones for them are superseded.
   const liveTargets = new Set((pending?.live.proposals ?? []).map((wire) => `${wire.target_kind}:${wire.target_id}`));
-  const [cardFor, setCardFor] = useState<string | null>(null);
+  const cardSets = useConversationCardSets(params.id);
+  // A set in the live answer replaces every still-proposed stored one, as the server does when it saves it.
+  const cardSetLive = (pending?.live.cardSets.length ?? 0) > 0;
+  // Once the chat has saved its Library item, a later Save updates that item.
+  const updating = useChatItemId(params.id) !== null;
+  // While a set waits on a decision, the composer invites changes to it.
+  const openCardSet =
+    (pending?.live.cardSets ?? []).some((wire) => wire.status === "proposed") ||
+    [...cardSets.values()].flat().some((cardSet) => shownCardSetStatus(cardSet, cardSetLive) === "proposed");
   const [toast, setToast] = useState<string | null>(null);
   // Stable, so a re-render (a pull landing) doesn't restart the toast's timer.
   const hideToast = useCallback(() => setToast(null), []);
@@ -77,7 +87,7 @@ export default function ChatScreen() {
               </Text>
             ) : (
               <Composer
-                placeholder="Ask a follow-up"
+                placeholder={openCardSet ? "Change something…" : "Ask a follow-up"}
                 disabled={!online}
                 disabledLabel="Ask needs a connection"
                 sendDisabled={pending !== null && !pending.live.failed}
@@ -98,7 +108,7 @@ export default function ChatScreen() {
                 sections={groupSections(parseSegments(message.segments))}
                 failed={message.status === "failed"}
                 onRetry={() => retry(turns, index, send)}
-                onMakeCard={message.status === "complete" ? () => setCardFor(message.id) : undefined}
+                onMakeCards={message.status === "complete" ? () => send(MAKE_CARDS_MESSAGE, false) : undefined}
               >
                 {(proposals.get(message.id) ?? []).map((proposal) => (
                   <EditProposalCard
@@ -107,6 +117,17 @@ export default function ChatScreen() {
                     ready
                     online={online}
                     supersededLive={liveTargets.has(`${proposal.targetKind}:${proposal.targetId}`)}
+                    onToast={setToast}
+                  />
+                ))}
+                {(cardSets.get(message.id) ?? []).map((cardSet) => (
+                  <CardSetProposal
+                    key={cardSet.id}
+                    cardSet={cardSet}
+                    ready
+                    online={online}
+                    replacedLive={cardSetLive}
+                    updating={updating}
                     onToast={setToast}
                   />
                 ))}
@@ -119,6 +140,7 @@ export default function ChatScreen() {
               <AnswerView
                 index={turns.length + 1}
                 {...liveView(pending.live)}
+                sentAt={pending.sentAt}
                 failed={pending.live.failed}
                 onRetry={() => send(pending.text, pending.webSearch)}
               >
@@ -131,16 +153,20 @@ export default function ChatScreen() {
                     onToast={setToast}
                   />
                 ))}
+                {pending.live.cardSets.map((wire) => (
+                  <CardSetProposal
+                    key={wire.id}
+                    cardSet={viewOfCardSetWire(wire)}
+                    ready={pending.live.messageId !== null}
+                    online={online}
+                    updating={updating}
+                    onToast={setToast}
+                  />
+                ))}
               </AnswerView>
             </>
           ) : null}
         </View>
-        <MakeCardSheet
-          messageId={cardFor}
-          visible={cardFor !== null}
-          onClose={() => setCardFor(null)}
-          onSaved={() => setToast("Card added to Review")}
-        />
       </Screen>
       {/* Outside the scroll view, so it pins to the screen's bottom rather than the end of the chat. */}
       {toast ? <Toast message={toast} onHide={hideToast} /> : null}

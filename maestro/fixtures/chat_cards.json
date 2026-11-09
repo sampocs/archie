@@ -1,0 +1,21 @@
+{
+  "title": "JWT vs session tokens",
+  "cheat_sheet": "## The difference\n\nA session token is a random ID the server looks up in its session store. A JWT carries signed claims, so any server with the key can check it without a lookup.\n\n| | Session | JWT |\n|---|---|---|\n| Check | Store lookup | Verify signature |\n| Revoke | Delete row, instant | Wait for expiry |\n\n## Gotchas\n\nA JWT is signed, not encrypted: anyone can read its claims.",
+  "cards": [
+    {
+      "kind": "concept",
+      "question": "Why is a JWT hard to revoke before it expires?",
+      "answer": "The server doesn't look it up; any valid signature is accepted until exp."
+    },
+    {
+      "kind": "concept",
+      "question": "Where should a browser keep auth tokens?",
+      "answer": "In an httpOnly, Secure, SameSite cookie, not localStorage."
+    },
+    {
+      "kind": "mechanism",
+      "question": "What problem does a refresh token solve?",
+      "answer": "Access JWTs stay short-lived while a server-checkable refresh token gets new ones without logging in again."
+    }
+  ]
+}

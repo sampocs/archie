@@ -87,4 +87,28 @@ describe("parseMarkdown", () => {
   it("leaves a Bear tag as a paragraph", () => {
     expect(parseMarkdown("#crypto/staking")).toEqual([{ type: "paragraph", spans: [{ text: "#crypto/staking" }] }]);
   });
+
+  it("parses a pipe table: header, then rows, skipping the rule under the header", () => {
+    const text = "| | Session | JWT |\n|---|:---:|---|\n| Revoke | Delete row | **Wait** for expiry |\n| Scale | Shared store | Stateless |";
+    expect(parseMarkdown(text)).toEqual([
+      {
+        type: "table",
+        header: [[], [{ text: "Session" }], [{ text: "JWT" }]],
+        rows: [
+          [[{ text: "Revoke" }], [{ text: "Delete row" }], [{ text: "Wait", bold: true }, { text: " for expiry" }]],
+          [[{ text: "Scale" }], [{ text: "Shared store" }], [{ text: "Stateless" }]],
+        ],
+      },
+    ]);
+  });
+
+  it("ends a table at the first line that isn't a row, and starts a new one after", () => {
+    const blocks = parseMarkdown("| a | b |\n| 1 | 2 |\nAfter the table\n\n| c |\n| 3 |");
+    expect(blocks.map((block) => block.type)).toEqual(["table", "paragraph", "table"]);
+    expect(blocks[2]).toEqual({ type: "table", header: [[{ text: "c" }]], rows: [[[{ text: "3" }]]] });
+  });
+
+  it("leaves a line with a pipe inside it as a paragraph", () => {
+    expect(parseMarkdown("cats | dogs")).toEqual([{ type: "paragraph", spans: [{ text: "cats | dogs" }] }]);
+  });
 });

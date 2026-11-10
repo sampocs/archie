@@ -125,7 +125,9 @@ def grade(
     card = _card_or_404(db, user=user, card_id=body.card_id)
     api_key = _owner_anthropic_key(user)
     context = llm.CallContext(user_id=user.id, source_id=card.source_id, job_id=None, step=llm.GRADE_STEP)
-    user_message = prompts.grade_message(question=card.question, accepted=card.answer, answer=body.answer)
+    user_message = prompts.grade_message(
+        question=card.question, accepted=card.answer, detail=card.detail, answer=body.answer
+    )
     engine = _engine(db)
 
     # No transaction is held during the model call.
@@ -204,7 +206,9 @@ def care(
     card = _card_or_404(db, user=user, card_id=card_id)
     api_key = _owner_anthropic_key(user)
     context = llm.CallContext(user_id=user.id, source_id=card.source_id, job_id=None, step=llm.CARE_STEP)
-    user_message = prompts.care_message(question=card.question, accepted=card.answer, note=body.note)
+    user_message = prompts.care_message(
+        question=card.question, accepted=card.answer, detail=card.detail, note=body.note
+    )
     engine = _engine(db)
 
     # No transaction is held during the model call.
@@ -227,11 +231,15 @@ def care(
     changes.lock_user_writes(db, user.id)
     live_card = _card_or_404(db, user=user, card_id=card_id)
 
-    # The rewrite is the card's next version, so the answer it replaces can be restored.
+    # The rewrite is the card's next version, so the answer it replaces can be restored; only the answer changes.
     versions.write(
         db,
         target=versions.Target(kind=models.EditTarget.CARD, id=live_card.id),
-        content={versions.QUESTION_KEY: live_card.question, versions.ANSWER_KEY: rewritten.answer},
+        content={
+            versions.QUESTION_KEY: live_card.question,
+            versions.ANSWER_KEY: rewritten.answer,
+            versions.DETAIL_KEY: live_card.detail,
+        },
         origin=models.VersionOrigin.CARE,
         instruction=body.note,
         derived_from=None,

@@ -30,7 +30,8 @@ class _Seeded:
 
 
 def test_a_pull_sends_cards_of_every_origin_with_their_schedule(live_stack: LiveStack) -> None:
-    """A summary card, a topic-primer foundation card and a brief quiz card each carry their one origin."""
+    """A summary card, a topic-primer foundation card and a brief quiz card each carry their one origin; a card ships
+    its detail, and one without any (the database default) ships ""."""
     authed = live_stack.authed(live_stack.sign_in())
     seeded = _seed(live_stack, user_id=authed.get("/me").json()["user_id"])
 
@@ -50,6 +51,7 @@ def test_a_pull_sends_cards_of_every_origin_with_their_schedule(live_stack: Live
         "kind": models.CardKind.CONCEPT.value,
         "question": "Why?",
         "answer": "Because.",
+        "detail": "It is so\nAnd so",
         "version": 1,
         "fsrs_state": models.FsrsState.REVIEW.value,
         "stability": 4.5,
@@ -68,12 +70,13 @@ def test_a_pull_sends_cards_of_every_origin_with_their_schedule(live_stack: Live
         str(seeded.topic_primer_id),
         None,
     )
-    assert (foundation["kind"], foundation["fsrs_state"], foundation["reps"], foundation["due_at"]) == (
-        models.CardKind.FOUNDATION.value,
-        models.FsrsState.NEW.value,
-        0,
-        None,
-    )
+    assert (
+        foundation["kind"],
+        foundation["fsrs_state"],
+        foundation["reps"],
+        foundation["due_at"],
+        foundation["detail"],
+    ) == (models.CardKind.FOUNDATION.value, models.FsrsState.NEW.value, 0, None, "")
 
     quiz = cards[str(seeded.quiz_card_id)]
     assert (quiz["source_id"], quiz["topic_primer_id"], quiz["brief_id"]) == (None, None, str(seeded.brief_id))
@@ -127,6 +130,7 @@ def _seed(live_stack: LiveStack, *, user_id: int) -> _Seeded:
             last_review_at=_LAST_REVIEW_AT,
             reps=3,
             lapses=1,
+            detail="It is so\nAnd so",
         )
 
         # A topic primer's foundation card and a done brief's quiz card have no source.

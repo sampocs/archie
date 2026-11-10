@@ -13,6 +13,8 @@ import sqlalchemy
 from archie_db import models, pipeline, search, takes
 from sqlalchemy import orm
 
+from archie_api.ask import card_set_tools
+
 HISTORY_MESSAGES = 20
 ABOUT_PRIMER_CHARACTERS = 2000
 _EDIT_STATUS_NOTES: dict[models.EditStatus, str] = {
@@ -132,8 +134,8 @@ def proposal_note(proposal: models.EditProposal) -> str:
 
 def card_set_note(card_set: models.CardSetProposal) -> str:
     """A `[cards proposed: …]` line with what the owner did with it; an open, saved or discarded set also carries its
-    cheat sheet (a note's set has none) and numbered cards, so the model can re-propose it with one change. A replaced
-    one is only named.
+    cheat sheet (a note's set has none) and numbered cards with their detail lines, so the model can re-propose it with
+    one change. A replaced one is only named.
     """
     status = models.CardSetStatus(card_set.status)
     note = f"[cards proposed: {card_set.title} — {_CARD_SET_STATUS_NOTES[status]}]"
@@ -141,8 +143,14 @@ def card_set_note(card_set: models.CardSetProposal) -> str:
         return note
 
     cards = [
-        f"{number}. ({card['kind']}) Q: {card['question']}\n   A: {card['answer']}"
-        for number, card in enumerate(card_set.cards, start=1)
+        "\n".join(
+            [
+                f"{number}. ({card.kind.value}) Q: {card.question}",
+                f"   A: {card.answer}",
+                *(f"   - {line}" for line in card.detail),
+            ]
+        )
+        for number, card in enumerate(card_set_tools.stored_cards(card_set), start=1)
     ]
     cheat_sheet = ["<cheat_sheet>", card_set.cheat_sheet, "</cheat_sheet>"] if card_set.cheat_sheet else []
     return "\n".join([note, *cheat_sheet, *cards])

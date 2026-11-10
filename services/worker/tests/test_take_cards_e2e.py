@@ -31,6 +31,8 @@ pytestmark = pytest.mark.postgres
 Replay = Callable[[str], contextlib.AbstractContextManager[object]]
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
+# The card rules' ceiling on an answer.
+MAX_ANSWER_WORDS = 15
 
 CLEANED = (
     "Crypto's lasting use isn't speculation. It's moving dollars, and it already works.\n\n"
@@ -90,8 +92,12 @@ def test_a_take_gets_two_to_four_cards_in_its_own_words(engine: sqlalchemy.Engin
         assert (card.source_id, card.artifact_id, card.topic_primer_id, card.brief_id) == (None, None, None, None)
         assert card.fsrs_state == models.FsrsState.NEW.value
         assert card.question.strip() and card.answer.strip()
-        assert set(re.findall(r"\d+(?:\.\d+)?", card.answer)) <= set(re.findall(r"\d+(?:\.\d+)?", CLEANED))
+        assert len(card.answer.split()) <= MAX_ANSWER_WORDS
+        # The detail too uses only the take's own claims.
+        cited = f"{card.answer} {card.detail}"
+        assert set(re.findall(r"\d+(?:\.\d+)?", cited)) <= set(re.findall(r"\d+(?:\.\d+)?", CLEANED))
     assert len({card.change_seq for card in cards}) == len(cards)
+    assert any(card.detail for card in cards)
 
     [call] = _llm_calls(engine)
     assert (call.step, call.model, call.source_id) == (models.JobKind.TAKE_CARDS.value, llm.HAIKU, None)

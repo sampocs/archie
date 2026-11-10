@@ -10,16 +10,33 @@ interactions:
       the chain means buying a large share of the coins, which is costly.\n- Without
       mining hardware, energy use is a tiny fraction of proof of work.\n\nNumbers:\n-
       Ethereum requires 32 ETH per validator.\n- Energy use fell about 99.95% after
-      the switch to proof of stake.\n</explanation>"}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"cards":{"type":"array","items":{"type":"object","properties":{"kind":{"type":"string","enum":["concept","mechanism","number"]},"question":{"type":"string"},"answer":{"type":"string"}},"required":["kind","question","answer"],"additionalProperties":false}}},"required":["cards"],"additionalProperties":false}}},"system":"You
+      the switch to proof of stake.\n</explanation>"}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"cards":{"type":"array","items":{"type":"object","properties":{"kind":{"type":"string","enum":["concept","mechanism","number"]},"question":{"type":"string"},"answer":{"type":"string"},"detail":{"type":"array","items":{"type":"string"}}},"required":["kind","question","answer","detail"],"additionalProperties":false}}},"required":["cards"],"additionalProperties":false}}},"system":"You
       write review cards for a personal learning app from an explanation of a subject
       the user chose to study, so they remember it. The user''s own notes on it show
       what they chose to cover; ask about that.\n\nWrite 3-5 open-recall cards of
       kind concept, mechanism (\"why does X cause Y\") or number (a rough figure worth
-      knowing). Each card asks ONE focused question, never a compound one with several
-      parts. Each answer is what a good response would cover in 1-3 sentences, worded
-      from the explanation. Avoid trivia. When nothing in it is worth remembering
-      (personal admin, a list of errands), cards is an empty list. Never mention the
-      notes or the explanation in a card."}'
+      knowing), written to the card rules below and worded from the explanation. Avoid
+      trivia. When nothing in it is worth remembering (personal admin, a list of errands),
+      cards is an empty list. Never mention the notes or the explanation in a card.\n\nEach
+      card has a question, an answer and a detail:\n- question: ONE focused question
+      with ONE thing to recall. Never join two asks with \"and\" (\"What does X give
+      you, and what can you lose?\" is two cards, or pick one). Ask only what has
+      a short answer.\n- answer: the one thing to recall, in as few words as carry
+      it: a phrase, not a sentence. Aim for 2-8 words, never more than 15. The learner
+      is graded only on this, so it is what someone who knows the material would say
+      off the top of their head. When two things are both essential, name both briefly
+      (\"Supply and demand\"). A number card''s answer is the rough figure with its
+      unit.\n- detail: 0-3 short bullet lines, each under 12 words. Shown after the
+      learner answers, never graded. Each line must help explain the answer (the why
+      or how behind it, or a contrast that makes it click); a further fact about the
+      subject, however true, is not a reason for a line. No padding and no redundancy:
+      never a line that restates the answer, is implied by it or repeats another line;
+      that is trivia from this one source (who said it, when, a passing example or
+      anecdote) rather than a lasting fact about the subject; or that is a side remark
+      that doesn''t help recall. So a plain fact or a number usually needs none and
+      most whys need one; use two or three only when the explanation really has that
+      many steps (A happens, so B, so C) or named parts (the three phases of a cycle).
+      When in doubt, use fewer."}'
     headers:
       accept:
       - application/json
@@ -30,7 +47,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1965'
+      - '3374'
       content-type:
       - application/json
       host:
@@ -61,66 +78,63 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-5-5","id":"msg_011CgrFt5TxfFbTjbtKpsx3w","type":"message","role":"assistant","content":[{"type":"text","text":"{\"cards\":[{\"kind\":\"concept\",\"question\":\"What
-        does a validator lock up in proof of stake, in place of computing work?\",\"answer\":\"Coins,
-        which are held as a stake. Validators are chosen to propose blocks based on
-        the coins they have locked, rather than by solving computational puzzles.\"},{\"kind\":\"mechanism\",\"question\":\"Why
-        does signing two conflicting blocks cost a validator money in proof of stake?\",\"answer\":\"Doing
-        so is detectable misbehavior, so part of the validator''s locked stake is
-        slashed. That penalty makes cheating expensive and keeps validators honest.\"},{\"kind\":\"number\",\"question\":\"How
-        many ETH does Ethereum require to run one validator?\",\"answer\":\"32 ETH
-        per validator. That locked amount is the minimum stake needed to take part
-        in proposing and securing blocks.\"},{\"kind\":\"number\",\"question\":\"Roughly
+      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgv3oa8cYVobKHaYCCFgm","type":"message","role":"assistant","content":[{"type":"text","text":"{\"cards\":[{\"kind\":\"concept\",\"question\":\"What
+        does a proof-of-stake validator lock up instead of computing work?\",\"answer\":\"Coins
+        as a stake\",\"detail\":[\"Locked coins are the collateral that makes cheating
+        costly\"]},{\"kind\":\"mechanism\",\"question\":\"Why does signing conflicting
+        blocks cost a validator coins?\",\"answer\":\"Its stake gets slashed\",\"detail\":[\"Conflicting
+        signatures are provable misbehaviour, so part of the stake is destroyed\",\"Honest
+        behaviour keeps the stake intact, so cheating loses money\"]},{\"kind\":\"number\",\"question\":\"How
+        many ETH does each Ethereum validator need?\",\"answer\":\"32 ETH\",\"detail\":[]},{\"kind\":\"number\",\"question\":\"Roughly
         how much did Ethereum''s energy use fall after switching to proof of stake?\",\"answer\":\"About
-        99.95%. Removing mining hardware cut energy consumption to a tiny fraction
-        of what proof of work required.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":845,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":350,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+        99.95%\",\"detail\":[\"Mining hardware no longer needed to secure the chain\"]}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1304,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":310,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
-      - '10000000'
+      - '9999000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-08T22:34:09Z'
+      - '2026-11-10T22:38:08Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-08T22:34:10Z'
+      - '2026-11-10T22:38:10Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-08T22:34:08Z'
+      - '2026-11-10T22:38:07Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '12000000'
+      - '11999000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-08T22:34:09Z'
+      - '2026-11-10T22:38:08Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a5780b18188a1149-ORD
+      - a5888bb22bb75555-ORD
       connection:
       - keep-alive
       content-length:
-      - '1617'
+      - '1431'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Sun, 08 Nov 2026 22:34:10 GMT
+      - Tue, 10 Nov 2026 22:38:10 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=2672
+      - x-originResponse;dur=2315
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-7ea638c71e3537ec63c83ddd80ebb9e8-2ff5ba3a66e77dd5-01
+      - 00-747ebbb8980476032d091eae536e8e7f-6308ba5fcd8b67d3-01
       transfer-encoding:
       - chunked
       vary:

@@ -307,22 +307,28 @@ def test_a_take_edit_makes_a_take_version_and_rewrites_its_cards(db: sqlalchemy.
 
 
 def test_a_card_gets_versions_one_and_two_on_its_first_change(db: sqlalchemy.orm.Session) -> None:
-    """The card as it was becomes version 1 (archie); the edit is version 2; the card keeps its schedule."""
+    """The card as it was (with its detail) becomes version 1 (archie); the edit is version 2; a restore brings back
+    version 1's answer and detail; the card keeps its schedule."""
     user_id = _user(db)
     source = _source_with_summary(db, user_id=user_id)
     card = models.Card(
         id=uuid.uuid4(), user_id=user_id, source_id=source.id, kind=models.CardKind.CONCEPT.value,
-        question="What do fees do?", answer="They compound.", fsrs_state=models.FsrsState.REVIEW.value, reps=3,
-        change_seq=changes.next_change_seq(),
+        question="What do fees do?", answer="They compound.", detail="Each year's fee also loses its growth.",
+        fsrs_state=models.FsrsState.REVIEW.value, reps=3, change_seq=changes.next_change_seq(),
     )  # fmt: skip
     db.add(card)
     db.flush()
     target = versions.Target(kind=models.EditTarget.CARD, id=card.id)
+    assert versions.current(db, target=target).content == {
+        "question": "What do fees do?", "answer": "They compound.", "detail": "Each year's fee also loses its growth.",
+    }  # fmt: skip
 
+    edited = {"question": "What do fees do?", "answer": "Compound over decades.", "detail": "1% a year\nCosts ~25%"}
     versions.write(
-        db, target=target, content={"question": "What do fees do?", "answer": "They compound over decades."},
-        origin=models.VersionOrigin.CHAT_EDIT, instruction="Say over decades", derived_from=1,
+        db, target=target, content=edited, origin=models.VersionOrigin.CHAT_EDIT, instruction="Say over decades",
+        derived_from=1,
     )  # fmt: skip
+    assert versions.at_version(db, target=target, version=2) == edited
     versions.restore(db, target=target, version=1)
 
     rows = db.scalars(
@@ -330,14 +336,41 @@ def test_a_card_gets_versions_one_and_two_on_its_first_change(db: sqlalchemy.orm
         .where(models.CardVersion.card_id == card.id)
         .order_by(models.CardVersion.version)
     ).all()
-    assert [(row.version, row.answer, row.origin) for row in rows] == [
-        (1, "They compound.", "archie"),
-        (2, "They compound over decades.", "chat_edit"),
-        (3, "They compound.", "restore"),
+    assert [(row.version, row.answer, row.detail, row.origin) for row in rows] == [
+        (1, "They compound.", "Each year's fee also loses its growth.", "archie"),
+        (2, "Compound over decades.", "1% a year\nCosts ~25%", "chat_edit"),
+        (3, "They compound.", "Each year's fee also loses its growth.", "restore"),
     ]
     assert rows[0].created_at == card.created_at
     db.refresh(card)
-    assert (card.version, card.answer, card.fsrs_state, card.reps) == (3, "They compound.", "review", 3)
+    assert (card.version, card.answer, card.detail, card.fsrs_state, card.reps) == (
+        3, "They compound.", "Each year's fee also loses its growth.", "review", 3,
+    )  # fmt: skip
+
+
+def test_card_content_from_before_detail_writes_an_empty_detail(db: sqlalchemy.orm.Session) -> None:
+    """An edit proposal stored before cards had detail lacks the key: applying it leaves the card with no detail."""
+    user_id = _user(db)
+    source = _source_with_summary(db, user_id=user_id)
+    card = models.Card(
+        id=uuid.uuid4(), user_id=user_id, source_id=source.id, kind=models.CardKind.CONCEPT.value,
+        question="What do fees do?", answer="They compound.", detail="Every year.",
+        change_seq=changes.next_change_seq(),
+    )  # fmt: skip
+    db.add(card)
+    db.flush()
+    target = versions.Target(kind=models.EditTarget.CARD, id=card.id)
+
+    old_content = {"question": "What do fees do?", "answer": "Compound."}
+    versions.write(
+        db, target=target, content=old_content, origin=models.VersionOrigin.CHAT_EDIT, instruction=None,
+        derived_from=1,
+    )  # fmt: skip
+
+    assert versions.card_detail(old_content) == ""
+    assert versions.at_version(db, target=target, version=2) == {**old_content, "detail": ""}
+    first = versions.at_version(db, target=target, version=1)
+    assert first == {"question": "What do fees do?", "answer": "They compound.", "detail": "Every year."}
 
 
 def test_resolve_refuses_other_users_deleted_items_and_missing_content(db: sqlalchemy.orm.Session) -> None:

@@ -29,6 +29,7 @@ MAX_OUTPUT_TOKENS = 2000
 class _TakeCard(pydantic.BaseModel):
     question: str = pydantic.Field(min_length=1)
     answer: str = pydantic.Field(min_length=1)
+    detail: list[str]
 
 
 class _TakeCardsOutput(pydantic.BaseModel):
@@ -87,6 +88,7 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
                 kind=models.CardKind.TAKE.value,
                 question=card.question.strip(),
                 answer=card.answer.strip(),
+                detail=card_rows.joined_detail(card.detail),
                 change_seq=changes.next_change_seq(),
             )
         )

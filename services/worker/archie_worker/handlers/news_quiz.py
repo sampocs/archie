@@ -24,6 +24,8 @@ from archie_llm import llm
 from archie_worker import brief_content, keys, prompts
 
 QUIZ_CARD_COUNT = 5
+# A quiz card's detail is at most one line (the prompt says so); any more the model writes are dropped.
+MAX_QUIZ_DETAIL_LINES = 1
 MAX_OUTPUT_TOKENS = 2000
 # The week's job may be queued twice (the phone retries); a quiz made inside this window already answers it.
 _DUPLICATE_WINDOW = datetime.timedelta(days=6)
@@ -33,6 +35,7 @@ class _QuizCard(pydantic.BaseModel):
     story_index: int
     question: str = pydantic.Field(min_length=1)
     answer: str = pydantic.Field(min_length=1)
+    detail: list[str]
 
 
 class _QuizOutput(pydantic.BaseModel):
@@ -163,6 +166,7 @@ def _insert_cards(db: sqlalchemy.orm.Session, *, run: _QuizRun, output: _QuizOut
                 kind=models.CardKind.QUIZ.value,
                 question=card.question,
                 answer=card.answer,
+                detail=card_rows.joined_detail(card_rows.detail_lines(card.detail)[:MAX_QUIZ_DETAIL_LINES]),
                 expires_at=sqlalchemy.func.now() + card_rows.QUIZ_LIFETIME,
                 change_seq=changes.next_change_seq(),
             )

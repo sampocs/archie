@@ -189,14 +189,46 @@ interactions:
       900-1400 words). Use markdown with short sections and a title. Don't reveal
       the source's own conclusions or story beats.\\n\\nAfter the primer, add 2-3
       foundation review cards: the background ideas this primer teaches that are worth
-      remembering on their own (a core concept, how something works, a rough number).
-      Each is one focused open-recall question, never a compound one, and an answer
-      of 1-3 sentences. Write them after the primer's last line as a JSON array of
-      {\\\"question\\\": \\\"...\\\", \\\"answer\\\": \\\"...\\\"} objects between
-      <foundation_cards> and </foundation_cards>, with nothing after the closing tag.\\n\\nWrite
-      in plain, conversational English for a smart reader who is new to the subject.
-      Short sentences. Define any jargon the first time it appears. Prefer concrete
-      examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\"}"
+      remembering on their own (a core concept, how something works, a rough number),
+      each an open-recall card written to the card rules below. Write them after the
+      primer's last line as a JSON array of {\\\"question\\\": \\\"...\\\", \\\"answer\\\":
+      \\\"...\\\", \\\"detail\\\": [\\\"...\\\", ...]} objects between <foundation_cards>
+      and </foundation_cards>, with nothing after the closing tag.\\n\\nEach card
+      has a question, an answer and a detail:\\n- question: ONE focused question with
+      ONE thing to recall. Never join two asks with \\\"and\\\" (\\\"What does X give
+      you, and what can you lose?\\\" is two cards, or pick one). Ask only what has
+      a short answer.\\n- answer: the one thing to recall, in as few words as carry
+      it: a phrase, not a sentence. Aim for 2-8 words, never more than 15. The learner
+      is graded only on this, so it is what someone who knows the material would say
+      off the top of their head. When two things are both essential, name both briefly
+      (\\\"Supply and demand\\\"). A number card's answer is the rough figure with
+      its unit.\\n- detail: 0-3 short bullet lines, each under 12 words. Shown after
+      the learner answers, never graded. Each line must help explain the answer (the
+      why or how behind it, or a contrast that makes it click); a further fact about
+      the subject, however true, is not a reason for a line. No padding and no redundancy:
+      never a line that restates the answer, is implied by it or repeats another line;
+      that is trivia from this one source (who said it, when, a passing example or
+      anecdote) rather than a lasting fact about the subject; or that is a side remark
+      that doesn't help recall. So a plain fact or a number usually needs none and
+      most whys need one; use two or three only when the explanation really has that
+      many steps (A happens, so B, so C) or named parts (the three phases of a cycle).
+      When in doubt, use fewer.\\n\\nVoice: a great teacher who respects the reader's
+      time. Warm and direct; talk to \\\"you\\\".\\n- Open with the core idea in one
+      or two plain sentences: what it is and why it matters.\\n- Match depth to the
+      idea. A simple point gets one or two crisp sentences. Only an idea with a real
+      mechanism gets a plain everyday analogy to make it click, then the specifics.\\n-
+      Tell something as a story only when there genuinely is one (real people, a rise
+      and fall, a turning point). Never invent drama, scenes or suspense.\\n- Define
+      jargon in plain words the first time it appears. Prefer concrete examples and
+      rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n- Short sentences and
+      no padding: every sentence carries information. Friendliness comes from the
+      phrasing, not from extra sentences.\\n- Never open with throat-clearing (\\\"Okay
+      so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's dive
+      in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never close
+      with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\"}"
     headers:
       accept:
       - application/json
@@ -207,7 +239,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '15371'
+      - '17797'
       content-type:
       - application/json
       host:
@@ -238,166 +270,148 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-sonnet-5-5","id":"msg_011CgkkVfvc4WGtGzeQvHNSP","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"#
-        Background for \"How to Do Great Work\"\n\nThis essay is a long list of advice.
-        It leans on a few borrowed ideas from math, chemistry, sailing, and the history
-        of science. Knowing them up front makes it read much more easily.\n\n## Who
-        is writing, and what kind of essay is this?\n\nPaul Graham is a programmer
-        turned investor and essayist. He co-founded Y Combinator, a well-known startup
-        \"accelerator.\" It funds young companies and coaches their founders. Over
-        about 20 years he has watched thousands of ambitious people try to build something
-        new. He also writes short, informal essays on work, ideas, and how people
-        succeed.\n\nThis one is a **synthesis**. He gathered the techniques that people
-        in many fields (painting, physics, writing, business) have used to do outstanding
-        work. Then he asked which ones show up everywhere. In math, the overlap of
-        several sets is called their **intersection**. So when he says he''s looking
-        for \"the intersection,\" he means the advice that holds across all those
-        fields, not the quirks of any one.\n\nNotice also that the advice is aimed
-        at a specific reader: someone \"very ambitious.\" It isn''t a guide to being
-        comfortably productive. It''s about work that people later call great.\n\n##
-        The \"frontier of knowledge\" and fractals\n\nTwo ideas carry a lot of weight
-        in the first half.\n\n**The frontier of knowledge.** Picture everything humans
-        know as a territory. Inside it is settled, well-mapped material, like what
-        you learn in a textbook. Outside it is the unknown. The border between them
-        is the **frontier**, where nobody yet knows the answers. Researchers, inventors,
-        and artists doing new work operate there. Getting to a frontier takes years
-        of study, because you first have to learn what''s already known.\n\n**Fractals.**
-        A fractal is a shape that has detail at every zoom level. The classic example
-        is a coastline. From space it looks like a smooth curve. Zoom in and it''s
-        jagged. Zoom in more and each jagged piece is jagged too. The essay uses this
-        as a picture of knowledge. From far away, a field looks finished, with smooth
-        edges. Up close, the edges are full of gaps and open questions. A \"fractal
-        bud,\" a phrase from the essay, is like a new little branch sprouting from
-        the edge. It''s a small crack that turns out to open into a whole new area.\n\nYou
-        don''t need any more math than that. It''s just a metaphor for \"the closer
-        you look, the more unfinished it turns out to be.\"\n\n## Aptitude, interest,
-        and two kinds of ambition\n\nThe essay separates a few things people often
-        blur together:\n\n- **Aptitude:** a natural knack. You pick up some skills
-        faster than others.\n- **Interest:** how much you care about a subject, and
-        whether you stay curious about it.\n- **Ambition:** the desire to achieve
-        something big.\n\nThe essay says ambition can come before you have any interest
-        in a particular subject (\"I want to do something important, I just don''t
-        know what yet\"). It can also grow out of a subject (\"I love this, and now
-        I want to push it as far as it goes\"). That split matters later, because
-        the first kind makes choosing a direction harder.\n\n## Why \"figuring out
-        what to work on\" is its own problem\n\nMost schools run on **tracks**. You
-        choose a subject, take a fixed sequence of courses, and move toward a degree
-        and a career. The system assumes you know early what suits you. The essay''s
-        complaint is that a teenager can''t really know what a job feels like from
-        the outside. A related point: some future jobs don''t exist yet. For example,
-        nobody in 1990 trained to be a mobile app developer.\n\nWhen the essay says
-        an ambitious person \"will often read to the system as an instance of breakage,\"
-        it means someone who switches fields or doesn''t fit the track can look like
-        a malfunction, even if they''re doing something sensible.\n\n## Natural selection
-        as an example\n\nThe essay says you \"can''t discover natural selection\"
-        by planning to. Natural selection is Charles Darwin''s 1800s theory of how
-        species change over time. Individuals with traits that help them survive and
-        reproduce pass those traits on, so populations gradually shift. Darwin didn''t
-        set out with that goal on a schedule. He collected observations over years,
-        including a long sea voyage, and the idea emerged. The essay uses this as
-        a case where the achievement couldn''t have been described in advance. Compare
-        that to a goal like \"win a gold medal,\" where the target is clear from the
-        start.\n\n## Sailing language\n\nGraham leans on sailing metaphors, so here
-        are the terms:\n\n- **Upwind:** sailing toward the direction the wind comes
-        from. It''s harder, and sailors do it by choosing angles that keep their options
-        open. The essay''s phrase \"staying upwind\" is about keeping yourself well
-        placed so you can reach many destinations. Think of a sailor who wants to
-        keep the *ability* to get anywhere, rather than picking one spot and sailing
-        straight at it.\n- **Headwinds:** winds blowing against you.\n- **Currents:**
-        water flows that push the boat off course.\n- **Shoals:** hidden shallow areas
-        that can wreck a boat.\n- **Rudder:** the steering part of a boat. The essay
-        says curiosity is both \"engine\" and \"rudder,\" meaning it both powers you
-        and steers you.\n\nThe point of the metaphor is simply that even when you''re
-        motivated, doing the work has its own skills, like sailing does.\n\n## \"Invariants\"\n\nIn
-        math and programming, an **invariant** is something that stays true no matter
-        what else changes. The essay contrasts this with having a plan. A plan is
-        a fixed list of steps. An invariant is more like a rule you keep holding to
-        while the steps change. The essay''s examples of invariants are things like
-        \"keep doing something excitingly ambitious\" and \"keep your options open.\"\n\n##
-        Activation energy\n\nThis is a term from chemistry. Many reactions need a
-        push of energy to get started, even if they release energy afterward. A match
-        won''t light until you strike it, but once it''s burning it keeps going. The
-        essay borrows this for work. Starting can feel much harder than continuing,
-        even though the effort of *continuing* is lower.\n\n## Diminishing returns\n\nThis
-        is an economics idea. Early on, each extra unit of effort gives you a lot.
-        Eventually each extra unit gives less and less. Think of studying: the first
-        hour of a day is productive, while the tenth hour (when you''re exhausted)
-        gets you very little. The essay says some kinds of work hit that point sooner
-        than others.\n\n## Other phrases that may trip you up\n\n- **\"A tincture
-        of strangeness\":** a *tincture* is a small amount of something that adds
-        a noticeable flavor. So: just a hint of oddness.\n- **\"Affected\":** fake
-        or put-on. To \"manufacture\" strangeness would be affected, meaning you''d
-        be faking it.\n- **\"Eminent frauds\":** well-known people who aren''t actually
-        good at what they''re known for.\n- **\"Empirical evidence on the scale of
-        the evidence for mortality\":** a joke. *Empirical* means based on observation.
-        Everyone who has ever lived has died, which is about as well-supported as
-        a claim gets. Graham is saying the evidence that great work takes hard effort
-        is overwhelming.\n- **\"Excitingly ambitious\":** his shorthand for a project
-        that makes you eager *and* feels like a stretch.\n\n## What to keep in mind
-        while reading\n\nThe essay is a set of rules of thumb, not a scientific study.
-        The examples come from biographies and Graham''s own observation, so the claims
-        are best read as informed opinion. Also notice the *tone*: he often says \"probably\"
-        and \"usually,\" and he sometimes offers advice that seems to contradict itself
-        (be bold but don''t over-plan; lie to yourself, but only in certain cases).
-        Those tensions are part of the point.\n\n<foundation_cards>\n[\n  {\"question\":
-        \"In the ''frontier of knowledge'' metaphor, why is the fractal (coastline)
-        image used?\", \"answer\": \"A coastline looks smooth from far away but is
-        jagged at every zoom level. Likewise, a field looks finished from a distance,
-        but up close its edges are full of gaps and open questions.\"},\n  {\"question\":
-        \"What is ''activation energy,'' and how does it apply to starting work?\",
-        \"answer\": \"It''s a chemistry term for the initial push a reaction needs
-        to get going, even though it''s easier to keep going once started. Applied
-        to work, starting often feels harder than continuing.\"},\n  {\"question\":
-        \"What does ''diminishing returns'' mean?\", \"answer\": \"Each extra unit
-        of effort produces less benefit than the one before. For example, the tenth
-        hour of studying while exhausted yields much less than the first hour.\"}\n]\n</foundation_cards>"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":4597,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":3092,"output_tokens_details":{"thinking_tokens":374},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-sonnet-5-5","id":"msg_011Cgv3j9ZPsFHaCjrqEtSF4","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"#
+        Primer: Background for \"How to Do Great Work\"\n\n## Who is writing, and
+        what kind of essay is this?\n\nPaul Graham is a programmer turned essayist
+        and investor. He co-founded Y Combinator, a startup accelerator that has funded
+        thousands of young companies, so he has watched a lot of ambitious people
+        try to do original work. His essays are opinionated, informal, and built from
+        observation rather than research studies.\n\nThis one starts with a method.
+        He imagines collecting advice for doing great work in many fields (science,
+        painting, writing, business) and asking what they all share. \"Intersection\"
+        is the set-theory word for the overlap between groups. His claim is that the
+        overlap has a real shape, not just \"work hard.\"\n\n## The \"frontier of
+        knowledge\" and the fractal\n\nAny field has a **frontier**: the edge where
+        what humans know stops and what they don''t begins. Most study means catching
+        up to what''s already known. Original work happens at the frontier.\n\nGraham
+        says knowledge expands **fractally**. A fractal is a shape that stays intricate
+        at every zoom level. A coastline is the classic example. On a map it looks
+        like a smooth curve, but walk up to it and you find bays and inlets, and zoom
+        in on those and you find more. Graham applies this to knowledge. From far
+        away, a field looks finished and smooth. Get close and the edge is full of
+        gaps and unanswered questions.\n\nA \"fractal bud,\" then, is a new offshoot
+        of the pattern: a question that opens up a whole new sub-area, the way a bud
+        grows into a branch.\n\nYou''ll also see a historical example: **natural selection**.
+        Charles Darwin and Alfred Russel Wallace independently worked out in the 1800s
+        that species change over time because individuals with helpful traits survive
+        and reproduce more. Nobody could have set \"discover natural selection\" as
+        a childhood goal, because the idea didn''t yet exist to aim at. That is the
+        contrast the essay draws between discoveries and achievements you can name
+        in advance.\n\n## Aptitude, interest, and ambition\n\nThe essay uses three
+        words that are easy to blur:\n\n- **Aptitude**: natural ability. Things that
+        come easier to you than to most people.\n- **Interest**: how much a subject
+        pulls you in on its own.\n- **Ambition**: wanting to achieve something big.\n\nThe
+        essay distinguishes ambition that comes *before* you have a subject (you want
+        to be great at something) from ambition that grows out of a subject you already
+        love. The first kind makes choosing a field harder, because the ambition has
+        no target yet.\n\n## The school system and \"tracks\"\n\nThe essay criticizes
+        education, so it helps to know the structure. In many countries you pick a
+        specialty early: a high-school stream, a university major, a graduate program.
+        Each step assumes you''ve already committed. Graham''s metaphor of \"scrambling
+        diagonally across tracks\" is a picture of someone cutting across rails laid
+        for people who chose once and stayed on course. \"Reading as breakage\" means
+        the system''s paperwork and expectations see a person who changes direction
+        as a malfunction rather than as someone exploring.\n\n## A little sailing\n\nGraham
+        borrows from sailing in two places.\n\n**\"Staying upwind.\"** A sailboat
+        can''t sail straight into the wind. It zigzags toward an upwind target. The
+        practical lesson sailors know is that it''s easy to drift downwind and hard
+        to climb back. If you''re upwind of your destination, you can reach many places.
+        If you''ve fallen downwind, your options shrink. Keep that in mind when he
+        says \"invariants\" and \"best options for the future.\"\n\n**Headwinds, currents,
+        and shoals.** A headwind blows against you. Currents are water flows that
+        push you off course. Shoals are hidden shallow patches that can run you aground.
+        He uses them to say that even when you''re motivated, practical obstacles
+        slow the work down.\n\n## Planning versus \"preserving invariants\"\n\nAn
+        **invariant** is something that stays the same while everything else changes.
+        In math and programming it''s a rule that stays true at every step. Graham
+        means a few standing principles (\"work on something exciting, keep my options
+        open\") that you hold constant, rather than a fixed route from A to Z. The
+        contrast is a plan, which fixes the route in advance.\n\n## Diminishing returns\n\n**Diminishing
+        returns** means each extra unit of effort gives you less than the one before.
+        The first hour of focused work is productive, and the tenth hour of the same
+        day produces far less, and may produce mistakes. Graham uses it to explain
+        why working *harder* is not the same as working *more hours*.\n\n## Activation
+        energy\n\nThis is a chemistry term. Even a reaction that releases energy overall,
+        like burning wood, needs a push to get going: the match. That initial push
+        is the **activation energy**. Once the reaction is running, it sustains itself.
+        Graham borrows the idea for work: getting started takes disproportionate effort,
+        and continuing takes less. He notes there are two \"starts,\" one each day
+        and one for each whole project.\n\n## Procrastination in two sizes\n\nEveryday
+        procrastination is putting off today''s task. The essay separates this from
+        putting off a *big project* for months or years, which can happen while you''re
+        busy and productive at something else. It matters because ordinary busyness
+        doesn''t feel like avoidance.\n\n## Two small phrases and some vocabulary\n\n-
+        **\"How hard could it be?\"** The phrase signals optimistic underestimation,
+        the belief that a task is easier than it is. The essay discusses it as a trait
+        of young people and beginners.\n- **\"Tincture of strangeness.\"** A tincture
+        is a small amount of a substance mixed into something else, like a drop of
+        dye. Here it means a trace of oddness.\n- **\"Affected.\"** Behaving in a
+        put-on, artificial way. To \"try to manufacture\" strangeness would be affected.\n-
+        **\"Exacerbate.\"** To make a problem worse.\n- **\"Eminent frauds.\"** Famous
+        or respected people who aren''t actually good at what they''re famous for.\n-
+        **\"Empirical evidence.\"** Evidence from observation and experience rather
+        than logical proof. Graham says the evidence that hard work is needed is \"on
+        the scale of the evidence for mortality,\" meaning nobody has ever seen an
+        exception.\n\n## How to read it\n\nThe essay moves from choosing what to work
+        on, to how to get there, to how to keep working. The footnote numbers in square
+        brackets refer to endnotes that aren''t in your excerpt, so you can skip them.
+        The text is also cut off partway, so it ends mid-thought rather than at a
+        conclusion.\n\n<foundation_cards>\n[\n  {\n    \"question\": \"What is a fractal?\",\n    \"answer\":
+        \"A pattern that stays detailed at every zoom level\",\n    \"detail\": [\"A
+        coastline looks smooth on a map but is jagged up close.\"]\n  },\n  {\n    \"question\":
+        \"In chemistry, what is activation energy?\",\n    \"answer\": \"The initial
+        push needed to start a reaction\",\n    \"detail\": [\"Wood needs a match
+        to burn, then keeps burning by itself.\"]\n  },\n  {\n    \"question\": \"What
+        does \\\"diminishing returns\\\" mean?\",\n    \"answer\": \"Each extra unit
+        of effort yields less\",\n    \"detail\": [\"The tenth hour of work produces
+        far less than the first.\"]\n  }\n]\n</foundation_cards>"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":5367,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":2912,"output_tokens_details":{"thinking_tokens":625},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '9998000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-06T00:45:48Z'
+      - '2026-11-10T22:37:08Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '1999000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-06T00:46:15Z'
+      - '2026-11-10T22:37:32Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-06T00:45:48Z'
+      - '2026-11-10T22:37:07Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11997000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-06T00:45:48Z'
+      - '2026-11-10T22:37:08Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a56013d76ecf0011-ORD
+      - a5888a3b3e59f97d-ORD
       connection:
       - keep-alive
       content-length:
-      - '11449'
+      - '11094'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Fri, 06 Nov 2026 00:46:15 GMT
+      - Tue, 10 Nov 2026 22:37:32 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=27259
+      - x-originResponse;dur=24950
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-72d99cbca3daa98f30950c66b7304252-00e856f1b34f12e8-01
+      - 00-dfda14335e2da1fe3f8c88a1e9dc34a3-2d65147d493814e3-01
       transfer-encoding:
       - chunked
       vary:

@@ -90,6 +90,7 @@ def _replace_foundation_cards(
                 kind=models.CardKind.FOUNDATION.value,
                 question=card.question,
                 answer=card.answer,
+                detail=card_rows.joined_detail(card.detail),
                 change_seq=changes.next_change_seq(),
             )
         )

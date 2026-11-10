@@ -40,11 +40,28 @@ CHEAT_SHEET = (
     "A session token is a random id the server looks up; a JWT carries signed claims any server can check.\n\n"
     "| | Session token | JWT |\n|---|---|---|\n| Revoke | Instant | Wait for expiry |"
 )
-CARDS: list[dict[str, str]] = [
-    {"kind": "concept", "question": "What does a session token hold?", "answer": "A random id the server looks up."},
-    {"kind": "mechanism", "question": "How is a JWT checked?", "answer": "By verifying the server's signature."},
-    {"kind": "concept", "question": "Why is revoking a JWT hard?", "answer": "It stays valid until it expires."},
+CARDS: list[dict[str, Any]] = [
+    {
+        "kind": "concept",
+        "question": "What does a session token hold?",
+        "answer": "A random id the server looks up.",
+        "detail": [],
+    },
+    {
+        "kind": "mechanism",
+        "question": "How is a JWT checked?",
+        "answer": "By verifying the server's signature.",
+        "detail": ["Any server with the key can check it", "So no session lookup is needed"],
+    },
+    {
+        "kind": "concept",
+        "question": "Why is revoking a JWT hard?",
+        "answer": "It stays valid until it expires.",
+        "detail": ["No server-side list holds it to delete"],
+    },
 ]
+# The card rules' ceiling on an answer.
+MAX_ANSWER_WORDS = 15
 
 
 @pytest.fixture(autouse=True)
@@ -211,6 +228,7 @@ def test_make_cards_proposes_one_card_set_streamed_as_the_row_the_phone_pulls(
     )
     assert 3 <= len(row["cards"]) <= 7
     assert all(card["kind"] in {"concept", "mechanism", "number", "foundation"} for card in row["cards"])
+    _assert_short_answers_with_detail(row["cards"])
     assert "jwt" in row["cheat_sheet"].lower()
     assert not any(source["kind"] == "chat" for source in rows["sources"])
 
@@ -349,6 +367,13 @@ def test_keep_ticks_must_be_integers(owner: httpx.Client) -> None:
     assert response.status_code == 422
 
 
+def _assert_short_answers_with_detail(cards: list[dict[str, Any]]) -> None:
+    """The card rules held: short answers, each card with a detail list, some of them not empty."""
+    assert all(len(card["answer"].split()) <= MAX_ANSWER_WORDS for card in cards)
+    assert all(isinstance(card["detail"], list) for card in cards)
+    assert any(card["detail"] for card in cards)
+
+
 def test_the_seed_route_makes_a_chat_when_none_is_given(owner: httpx.Client) -> None:
     """A new chat holds an exchange about the title, then `Make cards` and the answer the set hangs on."""
     proposal = _seed(owner)
@@ -403,10 +428,11 @@ def test_save_creates_the_chat_item_with_three_artifacts_and_only_the_kept_cards
     assert contents["text"]["text"].endswith(f"**You:** Make cards\n\n**Archie:** Here are cards on {TITLE}.")
     assert _embed_jobs(live_stack) == 1
 
+    # Each kept card carries its detail lines, joined; a card without detail has "".
     cards = sorted(rows["cards"], key=lambda card: card["question"])
-    assert [(card["question"], card["kind"], card["fsrs_state"]) for card in cards] == [
-        (CARDS[0]["question"], "concept", "new"),
-        (CARDS[2]["question"], "concept", "new"),
+    assert [(card["question"], card["kind"], card["fsrs_state"], card["detail"]) for card in cards] == [
+        (CARDS[0]["question"], "concept", "new", ""),
+        (CARDS[2]["question"], "concept", "new", CARDS[2]["detail"][0]),
     ]
     assert all(
         (card["source_id"], card["message_id"], card["conversation_id"]) == (item["id"], proposal["message_id"], None)
@@ -654,6 +680,7 @@ def test_make_cards_about_a_note_proposes_its_cards_without_a_cheat_sheet(
     assert (event["title"], event["cheat_sheet"]) == (NOTE_TITLE, "")
     assert 3 <= len(event["cards"]) <= 5
     assert all(card["kind"] in {"concept", "mechanism", "number"} for card in event["cards"])
+    _assert_short_answers_with_detail(event["cards"])
     rows = _rows(owner)
     assert [row["id"] for row in rows["card_set_proposals"]] == [event["id"]]
     assert not rows["cards"]

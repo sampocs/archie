@@ -1,25 +1,58 @@
 interactions:
 - request:
-    body: '{"max_tokens":6000,"messages":[{"role":"user","content":"Domain: Macro\nTopic:
-      Fed & monetary policy\n\nThe user''s sources on this topic (for emphasis only):\n-
-      Powell''s Jackson Hole speech\n- Why the yield curve inverted"}],"model":"claude-sonnet-5-5","system":"You
+    body: "{\"max_tokens\":6000,\"messages\":[{\"role\":\"user\",\"content\":\"Domain:
+      Macro\\nTopic: Fed & monetary policy\\n\\nThe user's sources on this topic (for
+      emphasis only):\\n- Powell's Jackson Hole speech\\n- Why the yield curve inverted\"}],\"model\":\"claude-sonnet-5-5\",\"system\":\"You
       write topic primers for a personal learning app. A topic primer gives the general
-      background on one topic (for example \"How the Fed works\" for the topic \"Fed
-      & monetary policy\"): the core concepts, how the machinery works, the key players,
-      a little history, the rough numbers worth knowing, and the live debates. It
-      is about the topic, not about any one source.\n\nThe user lists the titles of
-      their own sources on the topic. Use them only to decide what to emphasize, never
-      as material to summarize. Write for a smart beginner: friendly, no assumed jargon,
-      a 5-8 minute read (roughly 900-1400 words). Use markdown with short sections
-      and a title.\n\nAfter the primer, add 2-3 foundation review cards: the background
-      ideas this primer teaches that are worth remembering on their own (a core concept,
-      how something works, a rough number). Each is one focused open-recall question,
-      never a compound one, and an answer of 1-3 sentences. Write them after the primer''s
-      last line as a JSON array of {\"question\": \"...\", \"answer\": \"...\"} objects
-      between <foundation_cards> and </foundation_cards>, with nothing after the closing
-      tag.\n\nWrite in plain, conversational English for a smart reader who is new
-      to the subject. Short sentences. Define any jargon the first time it appears.
-      Prefer concrete examples and rough numbers (\"~1 GW\", not \"1.07 GW\")."}'
+      background on one topic (for example \\\"How the Fed works\\\" for the topic
+      \\\"Fed & monetary policy\\\"): the core concepts, how the machinery works,
+      the key players, a little history, the rough numbers worth knowing, and the
+      live debates. It is about the topic, not about any one source.\\n\\nThe user
+      lists the titles of their own sources on the topic. Use them only to decide
+      what to emphasize, never as material to summarize. Write for a smart beginner:
+      friendly, no assumed jargon, a 5-8 minute read (roughly 900-1400 words). Use
+      markdown with short sections and a title.\\n\\nAfter the primer, add 2-3 foundation
+      review cards: the background ideas this primer teaches that are worth remembering
+      on their own (a core concept, how something works, a rough number), each an
+      open-recall card written to the card rules below. Write them after the primer's
+      last line as a JSON array of {\\\"question\\\": \\\"...\\\", \\\"answer\\\":
+      \\\"...\\\", \\\"detail\\\": [\\\"...\\\", ...]} objects between <foundation_cards>
+      and </foundation_cards>, with nothing after the closing tag.\\n\\nEach card
+      has a question, an answer and a detail:\\n- question: ONE focused question with
+      ONE thing to recall. Never join two asks with \\\"and\\\" (\\\"What does X give
+      you, and what can you lose?\\\" is two cards, or pick one). Ask only what has
+      a short answer.\\n- answer: the one thing to recall, in as few words as carry
+      it: a phrase, not a sentence. Aim for 2-8 words, never more than 15. The learner
+      is graded only on this, so it is what someone who knows the material would say
+      off the top of their head. When two things are both essential, name both briefly
+      (\\\"Supply and demand\\\"). A number card's answer is the rough figure with
+      its unit.\\n- detail: 0-3 short bullet lines, each under 12 words. Shown after
+      the learner answers, never graded. Each line must help explain the answer (the
+      why or how behind it, or a contrast that makes it click); a further fact about
+      the subject, however true, is not a reason for a line. No padding and no redundancy:
+      never a line that restates the answer, is implied by it or repeats another line;
+      that is trivia from this one source (who said it, when, a passing example or
+      anecdote) rather than a lasting fact about the subject; or that is a side remark
+      that doesn't help recall. So a plain fact or a number usually needs none and
+      most whys need one; use two or three only when the explanation really has that
+      many steps (A happens, so B, so C) or named parts (the three phases of a cycle).
+      When in doubt, use fewer.\\n\\nVoice: a great teacher who respects the reader's
+      time. Warm and direct; talk to \\\"you\\\".\\n- Open with the core idea in one
+      or two plain sentences: what it is and why it matters.\\n- Match depth to the
+      idea. A simple point gets one or two crisp sentences. Only an idea with a real
+      mechanism gets a plain everyday analogy to make it click, then the specifics.\\n-
+      Tell something as a story only when there genuinely is one (real people, a rise
+      and fall, a turning point). Never invent drama, scenes or suspense.\\n- Define
+      jargon in plain words the first time it appears. Prefer concrete examples and
+      rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n- Short sentences and
+      no padding: every sentence carries information. Friendliness comes from the
+      phrasing, not from extra sentences.\\n- Never open with throat-clearing (\\\"Okay
+      so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's dive
+      in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never close
+      with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\"}"
     headers:
       accept:
       - application/json
@@ -30,7 +63,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1629'
+      - '4055'
       content-type:
       - application/json
       host:
@@ -61,163 +94,147 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: "{\"model\":\"claude-sonnet-5-5\",\"id\":\"msg_011CgkkXhtV1M8bRZHdsqKXT\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"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\"},{\"type\":\"text\",\"text\":\"#
-        Fed & Monetary Policy: The Background\\n\\n## What the Fed is trying to do\\n\\nThe
-        Federal Reserve is the central bank of the United States. Its job is to manage
-        **monetary policy**: the cost and availability of money and credit in the
-        economy.\\n\\nCongress gave it a \\\"dual mandate\\\":\\n\\n1. **Stable prices.**
-        The Fed defines this as inflation of about 2% a year.\\n2. **Maximum employment.**
-        There is no fixed number here. Roughly, it means as many people working as
-        possible without pushing inflation up.\\n\\nSometimes the two goals pull against
-        each other. Cooling a hot economy to bring down inflation usually costs jobs.
-        Much of the Fed drama you read about comes from this tradeoff.\\n\\n## The
-        main tool: one interest rate\\n\\nThe Fed's best-known tool is the **federal
-        funds rate**. This is the rate banks charge each other for overnight loans.
-        The Fed doesn't dictate it directly. It sets a target range (for example,
-        5.25%\u20135.50%) and uses its other tools to keep the rate inside it.\\n\\nWhy
-        does one overnight rate matter so much? It ripples outward. When it rises:\\n\\n-
-        Credit cards, car loans, and business loans get more expensive.\\n- Mortgage
-        rates tend to rise.\\n- Saving gets more rewarding.\\n- Stock and bond prices
-        often fall.\\n\\nPeople and companies borrow and spend less, demand cools,
-        and inflation eases. Cutting rates does the opposite. The Fed is effectively
-        pressing the brake or the gas on the whole economy.\\n\\nThe effect is slow
-        and uncertain. Economists often say policy works with \\\"long and variable
-        lags.\\\" A rate hike today may not fully show up in jobs and prices for a
-        year or more. That is why the Fed is always steering based on forecasts, not
-        just on what it sees today.\\n\\n## The second tool: the balance sheet\\n\\nWhen
-        rates are already near zero, the Fed has another option. It can buy bonds,
-        mainly US Treasuries and mortgage-backed securities. This is called **quantitative
-        easing (QE)**. Buying bonds pushes their prices up and their yields down,
-        which lowers longer-term borrowing costs.\\n\\nThe reverse is **quantitative
-        tightening (QT)**. The Fed lets bonds mature without replacing them, so the
-        balance sheet shrinks. After 2008 and again in 2020, the Fed's holdings grew
-        enormously, peaking near $9 trillion in 2022 (versus under $1 trillion before
-        2008).\\n\\n## Who makes the decisions\\n\\n- **The Board of Governors** in
-        Washington has seven members, including the Chair. The Chair is the public
-        face of the Fed.\\n- **Twelve regional Federal Reserve Banks** (New York,
-        Kansas City, and so on) bring local economic information.\\n- **The FOMC (Federal
-        Open Market Committee)** sets interest rate policy. It has 12 voting members:
-        the seven governors, the New York Fed president, and four other regional presidents
-        who rotate. It meets about eight times a year.\\n\\nThe Fed is designed to
-        be **independent**. Politicians can't tell it to cut rates before an election.
-        The idea is that people with short time horizons shouldn't control inflation
-        policy, since fighting inflation is often unpopular in the short run.\\n\\n##
-        A little history\\n\\n- **1970s:** Inflation spiraled out of control. People
-        started expecting rising prices, which pushed prices higher still.\\n- **Early
-        1980s:** Fed Chair Paul Volcker raised the federal funds rate to about 20%.
-        Inflation broke, but the economy suffered a deep recession. The lesson: stopping
-        inflation can be painful, and credibility matters.\\n- **2008 financial crisis:**
-        The Fed cut rates to near zero and launched QE.\\n- **2020 pandemic:** Rates
-        dropped to zero again, with massive bond buying.\\n- **2021\u20132023:** Inflation
-        hit about 9% in mid-2022, a 40-year high. The Fed raised rates from near 0%
-        to 5.25\u20135.50% in about 16 months, one of the fastest hiking cycles in
-        decades.\\n\\n## Expectations and communication\\n\\nA surprising amount of
-        the Fed's power comes from what it *says*. If people believe the Fed will
-        keep inflation near 2%, they behave in ways that help keep it there. This
-        is called keeping **inflation expectations anchored**.\\n\\nSo the Fed talks
-        constantly: post-meeting press conferences, meeting minutes, and speeches.
-        One famous venue is the **Jackson Hole symposium**, an annual late-August
-        gathering in Wyoming hosted by the Kansas City Fed. Chairs often use their
-        speech there to signal a shift in thinking. In 2022, Powell gave a short,
-        blunt speech warning that bringing down inflation would cause \\\"some pain\\\"
-        for households and businesses. Markets reacted sharply, because it made clear
-        the Fed would not back off early.\\n\\nWhen you read a Fed speech, look for
-        changes in wording. Markets treat small shifts, such as a new adjective or
-        a dropped phrase, as signals about future rate moves.\\n\\n## The yield curve
-        and why it matters\\n\\nA **bond yield** is the annual return you earn from
-        lending money to the government for a set period. The **yield curve** plots
-        those yields for different lengths: 3 months, 2 years, 10 years, 30 years.\\n\\nNormally
-        the curve slopes upward. Lending for longer means more risk, so you demand
-        more pay.\\n\\nAn **inverted** yield curve means short-term yields are higher
-        than long-term ones. The most-watched comparison is the 2-year versus the
-        10-year Treasury. Why would it happen?\\n\\n- The Fed controls the short end.
-        When it hikes rates hard, short-term yields jump.\\n- Long-term yields reflect
-        what investors expect rates and growth to do over many years.\\n- If investors
-        think the Fed's high rates will eventually slow the economy and force cuts,
-        long-term yields stay lower than short-term ones.\\n\\nAn inversion is essentially
-        the bond market betting the Fed's tightening will go too far. Historically,
-        inversions have come before most US recessions since the 1970s, usually by
-        about 6 to 24 months. The curve inverted in 2022 and stayed inverted for an
-        unusually long time, and the expected recession was slow to arrive, or didn't
-        arrive on schedule. That has made the signal a subject of debate. It is a
-        useful clue, not a guarantee.\\n\\n## Live debates\\n\\n- **Soft landing or
-        recession?** Can the Fed bring inflation down without causing a big jump in
-        unemployment? It has happened rarely.\\n- **How high is \\\"neutral\\\"?**
-        The neutral rate is the level that neither speeds up nor slows down the economy.
-        Nobody can observe it directly, and estimates have risen since the 2010s.\\n-
-        **Is 2% the right target?** Some argue for a higher target, which would give
-        the Fed more room to cut in a downturn.\\n- **Was the Fed too slow?** Many
-        argue the Fed called 2021 inflation \\\"transitory\\\" too long and then had
-        to hike faster than it wanted.\\n- **The balance sheet:** Does QE mainly help
-        the real economy, or does it mostly lift asset prices and benefit people who
-        already own them?\\n- **Independence:** How much political pressure can the
-        Fed withstand, and how much should it answer to elected officials?\\n\\n##
-        The big picture\\n\\nThe Fed pulls a few levers (short-term rates, bond holdings,
-        and its words) to keep prices stable and jobs plentiful. Everything works
-        through expectations and long delays. The Fed is always steering with a foggy
-        windshield, and the yield curve is one way the market tells the Fed whether
-        it thinks the steering is right.\\n\\n<foundation_cards>\\n[\\n  {\\n    \\\"question\\\":
-        \\\"What is the Fed's dual mandate?\\\",\\n    \\\"answer\\\": \\\"Stable
-        prices (the Fed defines this as about 2% inflation) and maximum employment.
-        The two goals can conflict, since cooling inflation often costs jobs.\\\"\\n
-        \ },\\n  {\\n    \\\"question\\\": \\\"How does the Fed raising the federal
-        funds rate slow inflation?\\\",\\n    \\\"answer\\\": \\\"A higher overnight
-        rate pushes up borrowing costs across the economy, such as mortgages, car
-        loans, and business loans. People and companies borrow and spend less, demand
-        cools, and price pressure eases. The effect takes a year or more to fully
-        show up.\\\"\\n  },\\n  {\\n    \\\"question\\\": \\\"What does an inverted
-        yield curve mean, and why has it signaled recessions?\\\",\\n    \\\"answer\\\":
-        \\\"It means short-term Treasury yields are higher than long-term ones. It
-        usually happens when the Fed has hiked rates hard and investors expect the
-        economy to slow and rates to fall later, which is why it has often come before
-        recessions.\\\"\\n  }\\n]\\n</foundation_cards>\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":505,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":3394,\"output_tokens_details\":{\"thinking_tokens\":634},\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
+      string: '{"model":"claude-sonnet-5-5","id":"msg_011Cgv3mRhJaBRriuBvk1ju8","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"#
+        How the Fed works\n\nThe Federal Reserve is the US central bank. Its main
+        job is to steer the economy by adjusting the price of borrowing money: higher
+        rates cool spending and inflation, lower rates encourage it. Nearly everything
+        else in macro news, from mortgage rates to stock moves to recession fears,
+        flows from that one lever.\n\n## The two goals\n\nCongress gave the Fed a
+        **dual mandate**: **stable prices** and **maximum employment**. In practice,
+        \"stable prices\" means inflation of about **2%** a year (measured by a gauge
+        called PCE). The two goals often pull against each other. Hot hiring can push
+        prices up, and the cure for high inflation, slower spending, usually costs
+        jobs.\n\n## The main tool: the policy rate\n\nThe Fed''s headline tool is
+        the **federal funds rate**, the rate banks charge each other for overnight
+        loans. The Fed doesn''t set it by decree. It sets a target range (in 2023-24
+        it peaked at **5.25-5.5%**) and uses other administered rates, like the interest
+        it pays banks on reserves they park at the Fed, to keep the market rate inside
+        that range.\n\nThink of it as the **base price of money**. When the Fed raises
+        it:\n\n1. Banks pay more to borrow, so they charge you more for loans, credit
+        cards and mortgages.\n2. Higher rates make saving more attractive and borrowing
+        less so.\n3. People and companies spend and hire less, demand cools, and price
+        increases slow.\n\nCuts do the reverse. The catch is **lags**: rate changes
+        take many months, often a year or more, to fully work through the economy.
+        The Fed is always steering by looking at old data and guessing where things
+        are headed.\n\n## The other tools\n\n- **Balance sheet.** In a crisis, when
+        rates are already near zero, the Fed buys bonds (**quantitative easing, QE**)
+        to push long-term rates down. Its holdings swelled to roughly **$9 trillion**
+        by 2022. Letting those bonds roll off (**quantitative tightening, QT**) does
+        the opposite.\n- **Forward guidance.** Simply telling markets what it expects
+        to do. Since markets price in the future, words can move rates almost as much
+        as actions.\n- **Communication more broadly.** Press conferences, minutes,
+        projections, and speeches are part of the toolkit, not decoration. That''s
+        why a speech like the chair''s annual one at **Jackson Hole** (a Kansas City
+        Fed conference held in Wyoming each August) gets so much attention. It''s
+        a traditional venue for the chair to signal how the Fed is thinking about
+        big-picture strategy. In 2022 Powell used a short, blunt Jackson Hole speech
+        to say the Fed would keep fighting inflation even if it caused \"some pain\"
+        for households and businesses.\n\n## Who decides\n\nThe **FOMC** (Federal
+        Open Market Committee) sets rates, meeting eight times a year. It has 12 voters:
+        the 7 governors in Washington (including the **Chair**, currently Jerome Powell),
+        the president of the New York Fed, and 4 of the other 11 regional Fed presidents
+        on a rotating basis. The Chair is the public face, but it''s a committee vote.\n\nThe
+        Fed is deliberately **independent**: governors serve long, staggered 14-year
+        terms, and the Fed funds itself, so politicians can''t easily force rate decisions.
+        The idea is that elected leaders always want low rates before an election,
+        and an insulated central bank can make unpopular choices.\n\n## Reading the
+        yield curve\n\nThe **yield curve** plots what the government pays to borrow
+        for different lengths of time, from three months to 30 years. Normally, longer
+        loans pay more (you''re tying money up and taking more risk), so the curve
+        slopes upward.\n\nThe Fed directly controls only the very short end. Longer
+        rates reflect what markets *expect* the Fed to do over the coming years, plus
+        a bonus for the risk of locking in.\n\nAn **inversion** is when short-term
+        rates rise above long-term rates (a common check is the 2-year vs. 10-year
+        yield, or the 3-month vs. 10-year). It happens when the Fed pushes short rates
+        up hard to fight inflation while investors bet that growth will weaken and
+        rates will have to come down later. In effect, the market is saying today''s
+        tight policy won''t last.\n\nInversions have come before most US recessions
+        since the 1960s, usually 6 to 24 months ahead, which is why it''s a famous
+        recession signal. The curve inverted in 2022 and stayed that way for a record
+        stretch, yet the expected recession didn''t clearly arrive. That has fueled
+        debate over whether \"this time is different.\" Reasons offered include a
+        strong labor market, households and companies locked into cheap old debt,
+        and distortions from the Fed''s huge bond holdings that muddy what the curve
+        is saying.\n\n## A little history\n\n- **1913:** The Fed is created after
+        a series of bank panics.\n- **1930s:** Policy mistakes are widely blamed for
+        deepening the Great Depression.\n- **1970s:** Inflation spirals as the Fed
+        backs off too soon. In 1979-81 Chair **Paul Volcker** drives the funds rate
+        to around **20%**, breaking inflation at the cost of a harsh recession. The
+        lesson: credibility matters, and stopping inflation late costs more.\n- **2008-2015:**
+        After the financial crisis, rates sit near zero and the Fed turns to QE.\n-
+        **2020:** The pandemic brings another round of zero rates and QE. The Fed
+        also adopted \"average inflation targeting,\" a looser approach that tolerated
+        overshoots, which it later walked back.\n- **2021-23:** Inflation surges past
+        9%. The Fed, having called it \"transitory,\" hikes from near 0% to over 5%
+        in about 16 months, the fastest tightening in decades.\n- **2024 onward:**
+        Rate cuts begin as inflation cools.\n\n## Live debates\n\n- **Soft landing
+        or recession?** Can the Fed bring inflation down without a big jump in unemployment?
+        So far the odds looked better than many expected, but the lags make it hard
+        to declare victory.\n- **Where is \"neutral\"?** The **neutral rate** is the
+        rate that neither speeds up nor slows down the economy. Nobody can observe
+        it, and many think it''s higher than before the pandemic, which means today''s
+        rates may be less restrictive than they look.\n- **Was the Fed late in 2021?**
+        Critics say it ignored inflation signs too long. Defenders say supply shocks
+        were hard to read in real time.\n- **Is 2% the right target?** Some argue
+        for a higher target to leave more room to cut in a downturn; the Fed has stuck
+        with 2% to protect its credibility.\n- **Independence.** Political pressure
+        on the Fed''s decisions is a recurring flashpoint, and markets treat the Fed''s
+        insulation as essential to keeping inflation expectations anchored.\n\n<foundation_cards>\n[\n  {\n    \"question\":
+        \"What are the two goals in the Fed''s dual mandate?\",\n    \"answer\": \"Stable
+        prices and maximum employment\",\n    \"detail\": [\"They often conflict:
+        fighting inflation usually costs jobs.\"]\n  },\n  {\n    \"question\": \"What
+        inflation rate does the Fed target over time?\",\n    \"answer\": \"About
+        2% a year\",\n    \"detail\": []\n  },\n  {\n    \"question\": \"What is an
+        inverted yield curve?\",\n    \"answer\": \"Short-term rates above long-term
+        rates\",\n    \"detail\": [\"Markets expect the Fed to cut later as growth
+        weakens.\", \"It has preceded most US recessions since the 1960s.\"]\n  }\n]\n</foundation_cards>"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1275,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":3289,"output_tokens_details":{"thinking_tokens":846},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-06T00:46:16Z'
+      - '2026-11-10T22:37:39Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '1999000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-06T00:46:43Z'
+      - '2026-11-10T22:38:06Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-06T00:46:15Z'
+      - '2026-11-10T22:37:38Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '11999000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-06T00:46:16Z'
+      - '2026-11-10T22:37:39Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a56014836df9a243-ORD
+      - a5888afc6d43ace0-ORD
       connection:
       - keep-alive
       content-length:
-      - '11786'
+      - '11450'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Fri, 06 Nov 2026 00:46:43 GMT
+      - Tue, 10 Nov 2026 22:38:06 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=27710
+      - x-originResponse;dur=27438
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-c443fe6d192a906204d2e47f7c92c320-837c36b680f7f127-01
+      - 00-b28187b520fd8087a532d0f9d007a322-627299389c739e7c-01
       transfer-encoding:
       - chunked
       vary:

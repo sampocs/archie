@@ -17,15 +17,15 @@ from typing import Any
 
 import pydantic
 from archie_db import card_rows, models, takes
-from archie_llm import voice
+from archie_llm import cards, voice
 from archie_shared import logging
 from archie_shared.domains import Domain
 
 from archie_worker import content, timestamps
 
-ANALYZE_PROMPT_VERSION = "analyze-v2"
-PRIMER_PROMPT_VERSION = "primer-v2"
-TOPIC_PRIMER_PROMPT_VERSION = "topic-primer-v2"
+ANALYZE_PROMPT_VERSION = "analyze-v3"
+PRIMER_PROMPT_VERSION = "primer-v3"
+TOPIC_PRIMER_PROMPT_VERSION = "topic-primer-v3"
 CLEAN_TEXT_PROMPT_VERSION = "clean-text-v1"
 
 # A primer's foundation cards beyond this many are dropped.
@@ -50,9 +50,9 @@ DOMAINS = [
     "Other",
 ]
 
-# Replay contract: the recorded analyze cassettes match on only the first 60 characters of this prompt and still hold
-# the v1 request and response bodies. Wording past character 60 is not covered by any recording until a timed-source
-# analyze cassette is recorded.
+# Replay contract: the recorded analyze cassettes match on only the first 60 characters of this prompt, and all but
+# `analyze_greatwork` still hold the v1 request and response bodies (cards without `detail`). Wording past character 60
+# is not covered by any recording until a timed-source analyze cassette is recorded.
 ANALYZE_SYSTEM = f"""You process sources for a personal learning app. A source is an article, an X post or thread, or \
 an episode (podcast or video) that the user consumed or plans to. A newsletter is an email digest; summarize its \
 main stories. The user wants "level 2" knowledge of its subject: \
@@ -73,18 +73,21 @@ Skip ads and sponsor reads.
 false for pure entertainment such as banter, sports chat, jokes or gossip. A mostly entertaining source with real \
 teaching in it (e.g. how a contract works, why a play scheme succeeds) is still true.
 - cards: when is_educational is true, 3-5 open-recall review cards of kind concept, mechanism ("why does X cause Y") \
-or number (a rough figure worth knowing). Each card asks ONE focused question, never a compound one with several \
-parts. Each answer is what a good response would cover in 1-3 sentences. Avoid trivia that only matters to this one \
+or number (a rough figure worth knowing), written to the card rules below. Avoid trivia that only matters to this one \
 source. Cards come only from the educational stretches of a source: a mostly entertaining show with one educational \
 segment gets cards for that segment; still 3-5. When is_educational is false, cards is an empty list.
 
+{cards.CARD_RULES}
+
 {voice.READING_VOICE}"""
 
-FOUNDATION_CARDS_INSTRUCTIONS = """After the primer, add 2-3 foundation review cards: the background ideas this primer \
-teaches that are worth remembering on their own (a core concept, how something works, a rough number). Each is one \
-focused open-recall question, never a compound one, and an answer of 1-3 sentences. Write them after the primer's \
-last line as a JSON array of {"question": "...", "answer": "..."} objects between <foundation_cards> and \
-</foundation_cards>, with nothing after the closing tag."""
+FOUNDATION_CARDS_INSTRUCTIONS = f"""After the primer, add 2-3 foundation review cards: the background ideas this \
+primer teaches that are worth remembering on their own (a core concept, how something works, a rough number), each an \
+open-recall card written to the card rules below. Write them after the primer's last line as a JSON array of \
+{{"question": "...", "answer": "...", "detail": ["...", ...]}} objects between <foundation_cards> and \
+</foundation_cards>, with nothing after the closing tag.
+
+{cards.CARD_RULES}"""
 
 PRIMER_SYSTEM = f"""You write primers for a personal learning app. A primer gives the background a source assumes its \
 reader already has, so the source is easy to follow. It is not a summary of the source.
@@ -112,10 +115,11 @@ words). Use markdown with short sections and a title.
 
 
 class FoundationCard(pydantic.BaseModel):
-    """One foundation card the model wrote after a primer."""
+    """One foundation card the model wrote after a primer; `detail` is missing from primers recorded before it."""
 
     question: str = pydantic.Field(min_length=1)
     answer: str = pydantic.Field(min_length=1)
+    detail: list[str] = []
 
 
 @dataclass(frozen=True)
@@ -150,11 +154,11 @@ def split_primer_output(text: str) -> PrimerOutput:
 
     markdown = text[:open_index].rstrip()
     try:
-        cards = _FOUNDATION_CARDS.validate_json(text[cards_start:close_index])
+        foundation_cards = _FOUNDATION_CARDS.validate_json(text[cards_start:close_index])
     except pydantic.ValidationError:
         _logger.warning("Dropped a malformed foundation cards block")
         return PrimerOutput(markdown=markdown, foundation_cards=[])
-    return PrimerOutput(markdown=markdown, foundation_cards=cards[:MAX_FOUNDATION_CARDS])
+    return PrimerOutput(markdown=markdown, foundation_cards=foundation_cards[:MAX_FOUNDATION_CARDS])
 
 
 def preferences_block(notes: Sequence[card_rows.PreferenceNote]) -> str:
@@ -224,8 +228,9 @@ ANALYSIS_SCHEMA: dict[str, Any] = {
                     "kind": {"type": "string", "enum": CARD_KINDS},
                     "question": {"type": "string"},
                     "answer": {"type": "string"},
+                    "detail": cards.DETAIL_SCHEMA,
                 },
-                "required": ["kind", "question", "answer"],
+                "required": ["kind", "question", "answer", "detail"],
                 "additionalProperties": False,
             },
         },
@@ -522,8 +527,12 @@ NEWS_QUIZ_SYSTEM = f"""You write a weekly news quiz for a personal learning app:
 week's most important news stories, so the user remembers what happened and why it matters.
 
 You get numbered stories (headline, what happened, why it matters, detail). Write exactly one card per story, in the \
-order given: one focused question about the core of the story (what happened, or why it matters), never trivia like \
-exact dates or a minor name, and an answer of 1-2 sentences. Give each card the story's number as story_index.
+order given: a question about the core of the story (what happened, or why it matters), never trivia like exact dates \
+or a minor name, written to the card rules below. Give each card the story's number as story_index.
+
+{cards.CARD_RULES}
+News quiz cards are the one exception to the detail rule: a quiz card's detail is at most ONE line (or none), never \
+two or three.
 
 {voice.READING_VOICE}"""
 
@@ -538,8 +547,9 @@ NEWS_QUIZ_SCHEMA: dict[str, Any] = {
                     "story_index": {"type": "integer"},
                     "question": {"type": "string"},
                     "answer": {"type": "string"},
+                    "detail": cards.DETAIL_SCHEMA,
                 },
-                "required": ["story_index", "question", "answer"],
+                "required": ["story_index", "question", "answer", "detail"],
                 "additionalProperties": False,
             },
         }
@@ -569,15 +579,17 @@ def news_quiz_message(stories: Sequence[QuizStory]) -> str:
     )
 
 
-TAKE_CARDS_SYSTEM = """You write review cards from the user's own take for a personal learning app. A take is \
+TAKE_CARDS_SYSTEM = f"""You write review cards from the user's own take for a personal learning app. A take is \
 something the user thinks (an opinion) or the case they make for something (a talking point), in their own words. The \
 cards help them remember their own argument well enough to make it out loud.
 
 Write 2-4 open-recall cards. Good questions ask for the take's main points ("What are your three main points for \
 ...?"), a rough number the take cites, and the user's answer to an objection the take names ("What do you say to \
-...?"). Ask only about what the take says. Each answer is 1-3 sentences made of the take's own words and claims: never \
-add a fact, number or argument that isn't in the take, and never correct, soften or strengthen what it says. The \
-user's spoken answer is graded against these answers."""
+...?"). Ask only about what the take says. Write each card to the card rules below, with its answer and its detail \
+made only of the take's own words and claims: never add a fact, number or argument that isn't in the take, and never \
+correct, soften or strengthen what it says. The user's spoken answer is graded against these answers.
+
+{cards.CARD_RULES}"""
 
 TAKE_CARDS_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -586,8 +598,12 @@ TAKE_CARDS_SCHEMA: dict[str, Any] = {
             "type": "array",
             "items": {
                 "type": "object",
-                "properties": {"question": {"type": "string"}, "answer": {"type": "string"}},
-                "required": ["question", "answer"],
+                "properties": {
+                    "question": {"type": "string"},
+                    "answer": {"type": "string"},
+                    "detail": cards.DETAIL_SCHEMA,
+                },
+                "required": ["question", "answer", "detail"],
                 "additionalProperties": False,
             },
         }
@@ -602,16 +618,17 @@ def take_cards_message(*, kind: models.TakeKind, title: str, body: str) -> str:
     return f"Kind: {takes.KIND_NAMES[kind]}\nTitle: {title}\n\n<take>\n{body}\n</take>"
 
 
-NOTE_CARDS_PROMPT_VERSION = "note-cards-v1"
+NOTE_CARDS_PROMPT_VERSION = "note-cards-v2"
 
-NOTE_CARDS_SYSTEM = """You write review cards for a personal learning app from an explanation of a subject the user \
+NOTE_CARDS_SYSTEM = f"""You write review cards for a personal learning app from an explanation of a subject the user \
 chose to study, so they remember it. The user's own notes on it show what they chose to cover; ask about that.
 
 Write 3-5 open-recall cards of kind concept, mechanism ("why does X cause Y") or number (a rough figure worth \
-knowing). Each card asks ONE focused question, never a compound one with several parts. Each answer is what a good \
-response would cover in 1-3 sentences, worded from the explanation. Avoid trivia. When nothing in it is worth \
+knowing), written to the card rules below and worded from the explanation. Avoid trivia. When nothing in it is worth \
 remembering (personal admin, a list of errands), cards is an empty list. Never mention the notes or the explanation \
-in a card."""
+in a card.
+
+{cards.CARD_RULES}"""
 
 NOTE_CARDS_SCHEMA: dict[str, Any] = copy.deepcopy(
     {

@@ -37,6 +37,7 @@ SUMMARY: dict[str, Any] = {
 PASSAGE = "Index funds buy every stock in the index. Their low fees compound into large differences over decades."
 FEES_QUESTION = "What do low fees do over decades?"
 FEES_ANSWER = "They compound into large differences."
+FEES_DETAIL = "A fee comes off every year, so its cost grows like interest"
 # Fixed ids: the recorded tool calls name them, so a replay must seed the same ones (every test empties the tables).
 SOURCE_ID = uuid.UUID("5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f")
 CARD_ID = uuid.UUID("c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b")
@@ -103,7 +104,7 @@ def _seed_source(live_stack: LiveStack, *, user_id: int) -> tuple[uuid.UUID, uui
         )  # fmt: skip
         card = models.Card(
             id=CARD_ID, user_id=user_id, source_id=source.id, kind=models.CardKind.MECHANISM.value,
-            question=FEES_QUESTION, answer=FEES_ANSWER, change_seq=changes.next_change_seq(),
+            question=FEES_QUESTION, answer=FEES_ANSWER, detail=FEES_DETAIL, change_seq=changes.next_change_seq(),
         )  # fmt: skip
         db.add(card)
         db.commit()
@@ -154,15 +155,32 @@ def test_text_edits_must_match_and_a_new_proposal_supersedes_the_pending_one(
     )  # fmt: skip
     same = edit_tools.run(
         engine, context=context, tool_use_id="t2", name=edit_tools.PROPOSE_CARD_EDIT,
-        tool_input={"card_id": str(card_id), "description": "x", "question": FEES_QUESTION, "answer": FEES_ANSWER},
+        tool_input={
+            "card_id": str(card_id), "description": "x", "question": FEES_QUESTION, "answer": FEES_ANSWER,
+            "detail": [FEES_DETAIL],
+        },
     )  # fmt: skip
     assert unknown.result["is_error"] and "that the owner can edit" in unknown.result["content"]
     assert same.result["is_error"] and "exactly what it says now" in same.result["content"]
 
+    # A change to the detail alone is a change; its lines are stored joined.
+    detail_only = edit_tools.run(
+        engine, context=context, tool_use_id="t3", name=edit_tools.PROPOSE_CARD_EDIT,
+        tool_input={
+            "card_id": str(card_id), "description": "x", "question": FEES_QUESTION, "answer": FEES_ANSWER,
+            "detail": [FEES_DETAIL, " 1% a year\ncosts ~25% over 40 years ", ""],
+        },
+    )  # fmt: skip
+    assert detail_only.proposal is not None
+    assert detail_only.proposal.after["detail"] == f"{FEES_DETAIL}\n1% a year costs ~25% over 40 years"
+
     proposals = [
         edit_tools.run(
             engine, context=context, tool_use_id=f"p{index}", name=edit_tools.PROPOSE_CARD_EDIT,
-            tool_input={"card_id": str(card_id), "description": "Longer", "question": FEES_QUESTION, "answer": answer},
+            tool_input={
+                "card_id": str(card_id), "description": "Longer", "question": FEES_QUESTION, "answer": answer,
+                "detail": [FEES_DETAIL],
+            },
         ).proposal
         for index, answer in enumerate(["They compound.", "They compound over decades."])
     ]  # fmt: skip
@@ -184,6 +202,7 @@ def test_text_edits_must_match_and_a_new_proposal_supersedes_the_pending_one(
     assert json.loads(read.result["content"])["pending"] == {
         "question": FEES_QUESTION,
         "answer": "They compound over decades.",
+        "detail": FEES_DETAIL,
     }
     engine.dispose()
 
@@ -202,10 +221,13 @@ def test_a_pending_edit_made_against_an_older_version_is_not_built_on(live_stack
     # A proposal stored against version 1, then Review's care rewrites the card to version 2.
     stale = edit_tools.run(
         engine, context=context, tool_use_id="p1", name=edit_tools.PROPOSE_CARD_EDIT,
-        tool_input={"card_id": str(card_id), "description": "Shorter", "question": FEES_QUESTION, "answer": "Grow."},
+        tool_input={
+            "card_id": str(card_id), "description": "Shorter", "question": FEES_QUESTION, "answer": "Grow.",
+            "detail": [],
+        },
     ).proposal  # fmt: skip
     assert stale is not None
-    newer = {"question": "What do low fees add up to over decades?", "answer": FEES_ANSWER}
+    newer = {"question": "What do low fees add up to over decades?", "answer": FEES_ANSWER, "detail": FEES_DETAIL}
     with sqlalchemy.orm.Session(engine) as db:
         changes.lock_user_writes(db, user_id)
         edit_tools.save_proposals(
@@ -232,7 +254,10 @@ def test_a_pending_edit_made_against_an_older_version_is_not_built_on(live_stack
 
     fresh = edit_tools.run(
         engine, context=context, tool_use_id="p2", name=edit_tools.PROPOSE_CARD_EDIT,
-        tool_input={"card_id": str(card_id), "description": "Short", "question": newer["question"], "answer": "Grow."},
+        tool_input={
+            "card_id": str(card_id), "description": "Short", "question": newer["question"], "answer": "Grow.",
+            "detail": [],
+        },
     ).proposal  # fmt: skip
     assert fresh is not None
     assert (fresh.before, fresh.base_version) == (newer, newer_version)
@@ -276,7 +301,9 @@ def test_a_text_edit_replaces_text_that_is_there_and_another_users_items_are_out
     stranger = edit_tools.ToolContext(user_id=user_id + 1000, conversation_id=uuid.uuid4())
     card_edit = edit_tools.run(
         engine, context=stranger, tool_use_id="s1", name=edit_tools.PROPOSE_CARD_EDIT,
-        tool_input={"card_id": str(card_id), "description": "x", "question": FEES_QUESTION, "answer": "Mine now."},
+        tool_input={
+            "card_id": str(card_id), "description": "x", "question": FEES_QUESTION, "answer": "Mine now.", "detail": [],
+        },
     )  # fmt: skip
     card_read = edit_tools.run(
         engine, context=stranger, tool_use_id="s2", name=edit_tools.READ_ITEM,
@@ -345,6 +372,7 @@ def test_asking_to_fix_a_card_finds_it_and_proposes_a_card_edit(
 
     [edit] = [data for name, data in events if name == "edit"]
     assert (edit["target_kind"], edit["target_id"]) == ("card", str(card_id))
-    assert edit["before"] == {"question": FEES_QUESTION, "answer": FEES_ANSWER}
-    assert "quarter" in edit["after"]["answer"].lower()
+    assert edit["before"] == {"question": FEES_QUESTION, "answer": FEES_ANSWER, "detail": FEES_DETAIL}
+    assert "quarter" in f"{edit['after']['answer']} {edit['after']['detail']}".lower()
+    assert isinstance(edit["after"]["detail"], str)
     assert events[-1][0] == "done"

@@ -951,7 +951,9 @@ class Card(Base):
     )
     kind: Mapped[str] = mapped_column(sqlalchemy.String(16))
     question: Mapped[str] = mapped_column(sqlalchemy.Text)
+    # The short answer the learner is graded on; `detail` is the lines shown after it (joined by "\n", may be "").
     answer: Mapped[str] = mapped_column(sqlalchemy.Text)
+    detail: Mapped[str] = mapped_column(sqlalchemy.Text, default="", server_default="")
     fsrs_state: Mapped[str] = mapped_column(sqlalchemy.String(16), server_default=FsrsState.NEW.value)
     stability: Mapped[float | None] = mapped_column(sqlalchemy.Double)
     difficulty: Mapped[float | None] = mapped_column(sqlalchemy.Double)
@@ -995,7 +997,8 @@ class Review(Base):
 
 
 class CardVersion(Base):
-    """One version of a card's question and answer. Written lazily: a card's first change writes versions 1 and 2."""
+    """One version of a card's question, answer and detail. Written lazily: a card's first change writes versions 1 and
+    2."""
 
     __tablename__ = "card_versions"
     __table_args__ = (
@@ -1011,6 +1014,7 @@ class CardVersion(Base):
     version: Mapped[int] = mapped_column(sqlalchemy.Integer)
     question: Mapped[str] = mapped_column(sqlalchemy.Text)
     answer: Mapped[str] = mapped_column(sqlalchemy.Text)
+    detail: Mapped[str] = mapped_column(sqlalchemy.Text, default="", server_default="")
     origin: Mapped[str] = mapped_column(sqlalchemy.String(16))
     # An Ask edit's description, or the note behind a care rewrite.
     instruction: Mapped[str | None] = mapped_column(sqlalchemy.Text)
@@ -1057,8 +1061,8 @@ class EditProposal(Base):
 class CardSetProposal(Base):
     """A card set Ask proposed in a chat: a cheat sheet and cards; nothing is saved until the owner taps Save.
 
-    `cards` holds `[{kind, question, answer}]`; `kept` the indices the owner saved, and `saved_source_id` the chat item
-    they went to.
+    `cards` holds `[{kind, question, answer, detail}]` (`detail` a list of lines, missing on older rows); `kept` the
+    indices the owner saved, and `saved_source_id` the chat item they went to.
     """
 
     __tablename__ = "card_set_proposals"

@@ -1,9 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, useContext } from "react";
 import { Pressable, View } from "react-native";
 import ReanimatedSwipeable, { type SwipeableMethods } from "react-native-gesture-handler/ReanimatedSwipeable";
 
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
+import { NO_BLEED, RowBleedContext } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
 
 export type SwipeTone = "neutral" | "chrome" | "gotIt" | "missed";
@@ -17,6 +18,7 @@ const ACTION_WIDTH = 72;
 /** Swipe left to reveal up to three actions; the row closes after any of them. No actions, no swipe. */
 export function SwipeRow({ actions, children, testID }: SwipeRowProps) {
   const theme = useTheme();
+  const bleed = useContext(RowBleedContext);
 
   if (actions.length === 0) return <View testID={testID}>{children}</View>;
 
@@ -62,9 +64,25 @@ export function SwipeRow({ actions, children, testID }: SwipeRowProps) {
       overshootRight={false}
       onSwipeableWillOpen={() => haptic("light")}
       renderRightActions={(_progress, _translation, methods) => renderActions(methods)}
-      childrenContainerStyle={{ backgroundColor: theme.colors.surface }}
+      // Reaching past the list's padding to the card's edges, so the row slides out and the actions end flush with
+      // the card instead of leaving a strip of padding beside them.
+      containerStyle={{
+        marginLeft: -bleed.left,
+        marginRight: -bleed.right,
+        overflow: "hidden",
+        borderTopLeftRadius: bleed.roundTop ? theme.radii.card : 0,
+        borderTopRightRadius: bleed.roundTop ? theme.radii.card : 0,
+        borderBottomLeftRadius: bleed.roundBottom ? theme.radii.card : 0,
+        borderBottomRightRadius: bleed.roundBottom ? theme.radii.card : 0,
+      }}
+      childrenContainerStyle={{
+        backgroundColor: theme.colors.surface,
+        paddingLeft: bleed.left,
+        paddingRight: bleed.right,
+      }}
     >
-      {children}
+      {/* A swipe row nested deeper inside this one starts from its own edges, not the card's. */}
+      <RowBleedContext.Provider value={NO_BLEED}>{children}</RowBleedContext.Provider>
     </ReanimatedSwipeable>
   );
 }

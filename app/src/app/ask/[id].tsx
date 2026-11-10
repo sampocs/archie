@@ -139,7 +139,7 @@ export default function ChatScreen() {
                   maxWidth: "100%",
                   backgroundColor: theme.colors.surface,
                   borderWidth: 1,
-                  borderColor: theme.colors.line,
+                  borderColor: theme.colors.cardEdge,
                   borderRadius: theme.radii.chipSmall,
                   paddingHorizontal: theme.spacing.md,
                   paddingVertical: theme.spacing.xs,

@@ -29,7 +29,7 @@ export function PostCard({ item, onLongPress }: PostCardProps) {
       }}
       style={[
         styles.card,
-        { backgroundColor: theme.colors.surface, borderColor: theme.colors.line },
+        { backgroundColor: theme.colors.surface, borderColor: theme.colors.cardEdge },
         isLight && styles.shadow,
       ]}
     >

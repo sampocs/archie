@@ -146,7 +146,7 @@ function Chip({ testID, label, onPress, disabled = false, children }: ChipProps)
         alignItems: "center",
         gap: theme.spacing.sm,
         backgroundColor: pressed ? theme.colors.press : theme.colors.surface,
-        borderColor: theme.colors.line,
+        borderColor: theme.colors.cardEdge,
         borderWidth: 1,
         borderRadius: theme.radii.chipSmall,
         paddingHorizontal: theme.spacing.md,

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import urllib.parse
 import uuid
 from dataclasses import dataclass
 
@@ -38,6 +39,7 @@ _PAGE_TIMEOUT_SECONDS = 15
 _PAGE_MAX_BYTES = 5_000_000
 _MIN_ARTICLE_WORDS = 50
 _MIN_X_WORDS = 1
+_URL_TITLE_MAX_WORDS = 15
 _URL_TITLE_MAX_TOKENS = 100
 # Page statuses that mean "paywalled, blocked or gone"; a retry cannot fix them, sharing from Safari can.
 _PERMANENT_PAGE_STATUSES = frozenset({401, 403, 404, 410, 451})
@@ -119,11 +121,22 @@ def _title_failed_source(
     """Give a source whose text is missing a title before its job fails, so its row does not show the bare URL.
 
     The captured title, else the page's, when there is one; otherwise the model's guess from the URL. Written under the
-    user's lock after the model call, and never replacing a title the source has.
+    user's lock after the model call, and never replacing a title the source has. The title is a nicety: anything that
+    goes wrong here is logged and rolled back, so the job still fails once, for its own reason.
     """
     if source_input.title:
         return
 
+    try:
+        _write_failed_title(db, job=job, source_input=source_input, page_title=page_title)
+    except Exception:  # noqa: BLE001 (a database or model surprise must not replace the permanent failure)
+        db.rollback()
+        _logger.exception("Could not title failed source %s", source_input.source_id)
+
+
+def _write_failed_title(
+    db: sqlalchemy.orm.Session, *, job: models.Job, source_input: _SourceInput, page_title: str | None
+) -> None:
     title = source_input.capture_title or page_title or _title_from_url(db, job=job, source_input=source_input)
     if not title:
         return
@@ -143,10 +156,13 @@ def _title_from_url(db: sqlalchemy.orm.Session, *, job: models.Job, source_input
     user = db.get_one(models.User, source_input.user_id)
     try:
         api_key = keys.anthropic_key_for(user)
-    except (errors.PermanentJobError, config.ConfigError):
+    except (errors.PermanentJobError, config.ConfigError) as error:
         # Without a key the job still fails for its own reason (the text is missing), not for this nicety.
+        _logger.info("No key to title source %s from its URL: %r", source_input.source_id, error)
         return None
 
+    # Read before the commit, which expires the job and would reload it inside the model call's wait.
+    job_id = job.id
     # Committing ends the transaction so no connection is held during the model call.
     db.commit()
     engine = db.get_bind()
@@ -156,18 +172,25 @@ def _title_from_url(db: sqlalchemy.orm.Session, *, job: models.Job, source_input
             engine,
             api_key=api_key,
             context=llm.CallContext(
-                user_id=source_input.user_id, source_id=source_input.source_id, job_id=job.id, step=llm.URL_TITLE_STEP
+                user_id=source_input.user_id, source_id=source_input.source_id, job_id=job_id, step=llm.URL_TITLE_STEP
             ),
             models=llm.URL_TITLE_MODELS,
             system=prompts.URL_TITLE_SYSTEM,
-            user_message=source_input.url,
+            # Host and path only: a query string can carry tokens or an email address.
+            user_message=_host_and_path(source_input.url),
             max_tokens=_URL_TITLE_MAX_TOKENS,
             json_schema=prompts.URL_TITLE_SCHEMA,
         )
-        return str(json.loads(completion.text)["title"])
+        words = str(json.loads(completion.text)["title"]).split()
+        return " ".join(words[:_URL_TITLE_MAX_WORDS]) or None
     except (llm.ModelOutputError, anthropic.APIError, json.JSONDecodeError) as error:
         _logger.warning("No title from the URL for source %s: %r", source_input.source_id, error)
         return None
+
+
+def _host_and_path(url: str) -> str:
+    parts = urllib.parse.urlsplit(url)
+    return f"{parts.netloc}{parts.path}"
 
 
 def _fetch_podcast(db: sqlalchemy.orm.Session, *, source: models.Source, source_input: _SourceInput) -> None:

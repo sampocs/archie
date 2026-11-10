@@ -1478,7 +1478,7 @@ interactions:
       content-type:
       - text/html; charset=UTF-8
       date:
-      - Tue, 10 Nov 2026 23:44:14 GMT
+      - Tue, 10 Nov 2026 23:48:12 GMT
       host-header:
       - a9130478a60e5f9135f765b23f26593b
       link:
@@ -1503,12 +1503,12 @@ interactions:
       x-remembering:
       - Eric Binnion <https://friendsofericbinnion.wordpress.com/>
       x-rq:
-      - mdw2 0 20 9980
+      - mdw1 0 20 9980
     status:
       code: 404
       message: Not Found
 - request:
-    body: '{"max_tokens":100,"messages":[{"role":"user","content":"https://github.blog/engineering/how-we-rebuilt-our-merge-queue-for-monorepos/"}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"title":{"type":"string"}},"required":["title"],"additionalProperties":false}}},"system":"You
+    body: '{"max_tokens":100,"messages":[{"role":"user","content":"github.blog/engineering/how-we-rebuilt-our-merge-queue-for-monorepos/"}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"title":{"type":"string"}},"required":["title"],"additionalProperties":false}}},"system":"You
       write a title for a web page that could not be read, from its URL alone. The
       URL is all you know: use the domain and the words in the path (a slug), and
       never guess at what the page says beyond them.\n\nRules:\n- Write a short, natural
@@ -1527,7 +1527,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '929'
+      - '921'
       content-type:
       - application/json
       host:
@@ -1558,37 +1558,37 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgv8qy78MKEeHkaxEzbAd","type":"message","role":"assistant","content":[{"type":"text","text":"{\"title\":\"How
-        we rebuilt our merge queue for monorepos\"}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":418,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":26,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgv99WhspoVHXCyC1QJjN","type":"message","role":"assistant","content":[{"type":"text","text":"{\"title\":\"How
+        we rebuilt our merge queue for monorepos\"}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":416,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":26,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-10T23:44:15Z'
+      - '2026-11-10T23:48:13Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-10T23:44:16Z'
+      - '2026-11-10T23:48:13Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-10T23:44:14Z'
+      - '2026-11-10T23:48:12Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-10T23:44:15Z'
+      - '2026-11-10T23:48:13Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a588ec88d97861f0-ORD
+      - a588f2588d378243-ORD
       connection:
       - keep-alive
       content-length:
@@ -1598,15 +1598,15 @@ interactions:
       content-type:
       - application/json
       date:
-      - Tue, 10 Nov 2026 23:44:16 GMT
+      - Tue, 10 Nov 2026 23:48:13 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=1925
+      - x-originResponse;dur=1384
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-47f611e84b7908be45a12ed37c24c177-c91c70983dc15887-01
+      - 00-d669b3521bb42cf0a10b1c8d16fee791-bcb107c5974cff4c-01
       transfer-encoding:
       - chunked
       vary:

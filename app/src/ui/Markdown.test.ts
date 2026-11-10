@@ -1,4 +1,4 @@
-import { parseMarkdown } from "./Markdown";
+import { parseMarkdown, parseSpans } from "./Markdown";
 
 describe("parseMarkdown", () => {
   it("parses headings by level", () => {
@@ -117,4 +117,12 @@ describe("parseMarkdown", () => {
   it("leaves a line with a pipe inside it as a paragraph", () => {
     expect(parseMarkdown("cats | dogs")).toEqual([{ type: "paragraph", spans: [{ text: "cats | dogs" }] }]);
   });
+});
+
+
+test("a key idea's bold lead-in becomes a bold span instead of literal asterisks", () => {
+  expect(parseSpans("**All-in-one backend.** Convex bundles the database.")).toEqual([
+    { text: "All-in-one backend.", bold: true },
+    { text: " Convex bundles the database." },
+  ]);
 });

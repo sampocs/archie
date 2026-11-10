@@ -27,6 +27,8 @@ SUMMARY: dict[str, Any] = {
     "numbers": [],
 }
 EDITED = {**SUMMARY, "key_ideas": SUMMARY["key_ideas"][:1]}
+FEES_DETAIL = "A fee comes off every year"
+NEW_DETAIL = "A fee comes off every year\nSo its cost grows like interest"
 
 
 @dataclass(frozen=True)
@@ -71,7 +73,8 @@ def _seed(live_stack: LiveStack, *, user_id: int) -> Seeded:
         )  # fmt: skip
         card = models.Card(
             id=uuid.uuid4(), user_id=user_id, source_id=source.id, kind=models.CardKind.CONCEPT.value,
-            question="What do fees do?", answer="They compound.", change_seq=changes.next_change_seq(),
+            question="What do fees do?", answer="They compound.", detail=FEES_DETAIL,
+            change_seq=changes.next_change_seq(),
         )  # fmt: skip
         take = models.Take(
             id=uuid.uuid4(), user_id=user_id, kind=models.TakeKind.OPINION.value, title="Rates", current_version=0,
@@ -241,12 +244,13 @@ def test_discard_is_final_and_apply_after_it_is_refused(live_stack: LiveStack, a
 
 
 def test_card_and_take_edits_apply_with_their_side_effects(live_stack: LiveStack, authed: httpx.Client) -> None:
-    """A card edit pulls card versions 1 and 2; a take edit is take version 2 and queues its cards."""
+    """A card edit pulls card versions 1 and 2, each with its detail; a take edit is take version 2 and queues its
+    cards."""
     seeded = _seed(live_stack, user_id=_user_id(authed))
     card_edit = _propose(
         live_stack, seeded, kind=models.EditTarget.CARD, target_id=seeded.card_id,
-        before={"question": "What do fees do?", "answer": "They compound."},
-        after={"question": "What do fees do?", "answer": "They compound over decades."},
+        before={"question": "What do fees do?", "answer": "They compound.", "detail": FEES_DETAIL},
+        after={"question": "What do fees do?", "answer": "They compound over decades.", "detail": NEW_DETAIL},
     )  # fmt: skip
     take_edit = _propose(
         live_stack, seeded, kind=models.EditTarget.TAKE, target_id=seeded.take_id,
@@ -257,9 +261,13 @@ def test_card_and_take_edits_apply_with_their_side_effects(live_stack: LiveStack
     assert authed.post(f"/ask/edits/{take_edit}/apply").json()["applied_version"] == 2
 
     rows = _rows(authed)
-    assert [(row["version"], row["origin"]) for row in rows["card_versions"]] == [(1, "archie"), (2, "chat_edit")]
+    card_versions = sorted(rows["card_versions"], key=lambda row: row["version"])
+    assert [(row["version"], row["origin"], row["detail"]) for row in card_versions] == [
+        (1, "archie", FEES_DETAIL),
+        (2, "chat_edit", NEW_DETAIL),
+    ]
     [card] = rows["cards"]
-    assert (card["version"], card["answer"]) == (2, "They compound over decades.")
+    assert (card["version"], card["answer"], card["detail"]) == (2, "They compound over decades.", NEW_DETAIL)
     take_versions = sorted(rows["take_versions"], key=lambda row: row["version"])
     assert [(row["version"], row["origin"], row["body"]) for row in take_versions] == [
         (1, "owner", "Rates stay high."),
@@ -271,12 +279,13 @@ def test_card_and_take_edits_apply_with_their_side_effects(live_stack: LiveStack
 def test_restore_copies_a_version_and_refuses_the_current_one_or_a_missing_one(
     live_stack: LiveStack, authed: httpx.Client
 ) -> None:
-    """Restoring version 1 of an edited card makes version 3; restoring the current one is 409, version 9 is 404."""
+    """Restoring version 1 of an edited card makes version 3 with version 1's answer and detail; restoring the current
+    one is 409, version 9 is 404."""
     seeded = _seed(live_stack, user_id=_user_id(authed))
     card_edit = _propose(
         live_stack, seeded, kind=models.EditTarget.CARD, target_id=seeded.card_id,
-        before={"question": "What do fees do?", "answer": "They compound."},
-        after={"question": "What do fees do?", "answer": "They compound over decades."},
+        before={"question": "What do fees do?", "answer": "They compound.", "detail": FEES_DETAIL},
+        after={"question": "What do fees do?", "answer": "They compound over decades.", "detail": NEW_DETAIL},
     )  # fmt: skip
     authed.post(f"/ask/edits/{card_edit}/apply")
     body = {"target_kind": "card", "target_id": str(seeded.card_id)}
@@ -291,7 +300,7 @@ def test_restore_copies_a_version_and_refuses_the_current_one_or_a_missing_one(
     assert (missing.status_code, missing.json()["detail"]) == (404, "version not found")
     assert (unknown.status_code, unknown.json()["detail"]) == (404, "not found")
     [card] = _rows(authed)["cards"]
-    assert (card["version"], card["answer"]) == (3, "They compound.")
+    assert (card["version"], card["answer"], card["detail"]) == (3, "They compound.", FEES_DETAIL)
 
 
 def test_restore_copies_an_earlier_take_version(live_stack: LiveStack, authed: httpx.Client) -> None:

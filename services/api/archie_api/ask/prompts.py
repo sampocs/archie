@@ -9,7 +9,7 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
-from archie_llm import voice
+from archie_llm import cards, voice
 
 _ANSWER_RULES = """You are Archie's Ask, answering the owner's questions from their own library first. Archie is \
 their personal library of the articles, newsletters, podcasts and videos they saved, with Archie's summaries and \
@@ -45,6 +45,7 @@ exactly, timestamps included. If read_item shows a pending edit, build on it: yo
 - When an edit removes or changes a fact that one of the item's cards asks about, find that item's cards and \
 propose a matching card edit too.
 - A take is the owner's own words: change only what they asked, and never add claims of your own.
+- A card edit's question, answer and detail follow the card rules at the end of this prompt.
 - After proposing, say in one short sentence what will change. Don't repeat the new text."""
 
 CARD_SET_RULES = f"""Making cards from the chat:
@@ -54,7 +55,7 @@ propose_cards once, with the whole conversation in view. Don't search the librar
 headings, a comparison table when the chat compared things, and the gotchas. Never refer back to the chat ("as \
 discussed above", "you asked"). Headings and tables are fine here, unlike in answers. {voice.READING_VOICE}
 - Write 3 to 7 open-recall cards on what the chat established, each answerable on its own without the chat or the \
-other cards.
+other cards, written to the card rules below.
 - When the about item below is one of the owner's notes ("Note: …"), the cards are that note's review cards: call \
 propose_cards with an empty cheat_sheet (the note already has its write-up) and the note's title, and 3 to 5 \
 open-recall cards (concept, mechanism or number) on what the note chose to cover, worded from its write-up and what \
@@ -65,7 +66,9 @@ this chat are listed after your answers.
 - A message may open with a line saying which cards of the open proposal the owner kept and dropped (their Keep \
 ticks). When you next call propose_cards, copy the kept cards word for word (so Save can match them) unless the owner \
 asks to change them, and don't bring back the dropped ones.
-- Around the proposal, write one or two short sentences at most. Don't repeat the cards or the cheat sheet."""
+- Around the proposal, write one or two short sentences at most. Don't repeat the cards or the cheat sheet.
+
+{cards.CARD_RULES}"""
 
 # The answer rules come first, so every chat's prompt keeps its first 60 characters (the cassette key).
 ASK_SYSTEM = f"{_ANSWER_RULES}\n\n{EDIT_RULES}\n\n{CARD_SET_RULES}"

@@ -26,6 +26,8 @@ pytestmark = pytest.mark.postgres
 Replay = Callable[[str], contextlib.AbstractContextManager[object]]
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
+# The card rules' ceiling on an answer.
+MAX_ANSWER_WORDS = 15
 
 NOTE_MARKDOWN = (
     "# Proof of stake\n\n"
@@ -98,7 +100,9 @@ def test_a_refreshed_note_gets_three_to_five_cards_from_its_write_up(engine: sql
         assert (card.source_id, card.artifact_id) == (source_id, summary_id)
         assert card.kind in prompts.CARD_KINDS
         assert card.question.strip() and card.answer.strip()
+        assert len(card.answer.split()) <= MAX_ANSWER_WORDS
     assert len({card.change_seq for card in cards}) == len(cards)
+    assert any(card.detail for card in cards)
 
     [call] = _llm_calls(engine)
     assert (call.step, call.model, call.source_id) == (models.JobKind.NOTE_CARDS.value, llm.HAIKU, source_id)

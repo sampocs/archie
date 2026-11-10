@@ -8,7 +8,7 @@ interactions:
       are the easiest way to hold them.\n- Open rails: anyone can build payments on
       them without a bank partnership.\n\n## When they say \"it''s just a casino\"\n\nMost
       volume is speculation, agreed. But the payment use is growing whatever happens
-      to prices.\n</take>"}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"cards":{"type":"array","items":{"type":"object","properties":{"question":{"type":"string"},"answer":{"type":"string"}},"required":["question","answer"],"additionalProperties":false}}},"required":["cards"],"additionalProperties":false}}},"system":"You
+      to prices.\n</take>"}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"cards":{"type":"array","items":{"type":"object","properties":{"question":{"type":"string"},"answer":{"type":"string"},"detail":{"type":"array","items":{"type":"string"}}},"required":["question","answer","detail"],"additionalProperties":false}}},"required":["cards"],"additionalProperties":false}}},"system":"You
       write review cards from the user''s own take for a personal learning app. A
       take is something the user thinks (an opinion) or the case they make for something
       (a talking point), in their own words. The cards help them remember their own
@@ -16,10 +16,29 @@ interactions:
       questions ask for the take''s main points (\"What are your three main points
       for ...?\"), a rough number the take cites, and the user''s answer to an objection
       the take names (\"What do you say to ...?\"). Ask only about what the take says.
-      Each answer is 1-3 sentences made of the take''s own words and claims: never
-      add a fact, number or argument that isn''t in the take, and never correct, soften
-      or strengthen what it says. The user''s spoken answer is graded against these
-      answers."}'
+      Write each card to the card rules below, with its answer and its detail made
+      only of the take''s own words and claims: never add a fact, number or argument
+      that isn''t in the take, and never correct, soften or strengthen what it says.
+      The user''s spoken answer is graded against these answers.\n\nEach card has
+      a question, an answer and a detail:\n- question: ONE focused question with ONE
+      thing to recall. Never join two asks with \"and\" (\"What does X give you, and
+      what can you lose?\" is two cards, or pick one). Ask only what has a short answer.\n-
+      answer: the one thing to recall, in as few words as carry it: a phrase, not
+      a sentence. Aim for 2-8 words, never more than 15. The learner is graded only
+      on this, so it is what someone who knows the material would say off the top
+      of their head. When two things are both essential, name both briefly (\"Supply
+      and demand\"). A number card''s answer is the rough figure with its unit.\n-
+      detail: 0-3 short bullet lines, each under 12 words. Shown after the learner
+      answers, never graded. Each line must help explain the answer (the why or how
+      behind it, or a contrast that makes it click); a further fact about the subject,
+      however true, is not a reason for a line. No padding and no redundancy: never
+      a line that restates the answer, is implied by it or repeats another line; that
+      is trivia from this one source (who said it, when, a passing example or anecdote)
+      rather than a lasting fact about the subject; or that is a side remark that
+      doesn''t help recall. So a plain fact or a number usually needs none and most
+      whys need one; use two or three only when the explanation really has that many
+      steps (A happens, so B, so C) or named parts (the three phases of a cycle).
+      When in doubt, use fewer."}'
     headers:
       accept:
       - application/json
@@ -30,7 +49,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1826'
+      - '3391'
       content-type:
       - application/json
       host:
@@ -61,63 +80,64 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgm4BasqtxZrP4hGw8Pef","type":"message","role":"assistant","content":[{"type":"text","text":"{\"cards\":[{\"question\":\"What
-        are your three main points for the argument that crypto''s lasting use is
-        moving dollars?\",\"answer\":\"Stablecoins settle about $10T a year, already
-        Visa scale, with no bank in the middle. People in high-inflation countries
-        want dollars, and stablecoins are the easiest way to hold them. Open rails
-        let anyone build payments on them without a bank partnership.\"},{\"question\":\"Roughly
-        how much do stablecoins settle per year, according to the take?\",\"answer\":\"About
-        $10T a year, which is already Visa scale.\"},{\"question\":\"What do you say
-        when someone claims crypto is just a casino?\",\"answer\":\"Most volume is
-        speculation, agreed. But the payment use is growing whatever happens to prices.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":727,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":238,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgv3opix12aetNqHVKTeC","type":"message","role":"assistant","content":[{"type":"text","text":"{\"cards\":[{\"question\":\"What
+        are the three main points for crypto''s lasting use being payments?\",\"answer\":\"Stablecoin
+        settlement scale, dollar demand abroad, open rails\",\"detail\":[\"Each point
+        shows payments work without speculation driving them\",\"Stablecoins already
+        move around $10T a year\"]},{\"question\":\"What rough annual settlement volume
+        does the take cite for stablecoins?\",\"answer\":\"About $10 trillion a year\",\"detail\":[\"Described
+        as already at Visa scale\"]},{\"question\":\"What do you say to the objection
+        that it''s just a casino?\",\"answer\":\"Most volume is speculation, but payments
+        grow regardless of prices\",\"detail\":[\"Concedes speculation dominates volume,
+        without giving up the argument\",\"Payment use keeps growing whatever happens
+        to prices\"]}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1229,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":252,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '10000000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-06T04:37:46Z'
+      - '2026-11-10T22:38:12Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-06T04:37:47Z'
+      - '2026-11-10T22:38:13Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-06T04:37:45Z'
+      - '2026-11-10T22:38:11Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
       - '12000000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-06T04:37:46Z'
+      - '2026-11-10T22:38:12Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a561679f7ff08c0a-ORD
+      - a5888bc7ac0858ee-ORD
       connection:
       - keep-alive
       content-length:
-      - '1287'
+      - '1342'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Fri, 06 Nov 2026 04:37:47 GMT
+      - Tue, 10 Nov 2026 22:38:13 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=2006
+      - x-originResponse;dur=2723
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-6b18e07db6940561365d2698fac0fe33-adfb9a1409d7776d-01
+      - 00-1254086b298032688c985c242de79510-e1ad629ffdc70aaf-01
       transfer-encoding:
       - chunked
       vary:

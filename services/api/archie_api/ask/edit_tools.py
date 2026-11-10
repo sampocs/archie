@@ -18,7 +18,8 @@ from typing import Any
 import pydantic
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, models, search, versions
+from archie_db import card_rows, changes, models, search, versions
+from archie_llm import cards
 
 from archie_api.sync import take_actions
 
@@ -134,8 +135,10 @@ PROPOSE_TEXT_EDIT_TOOL: dict[str, Any] = {
 PROPOSE_CARD_EDIT_TOOL: dict[str, Any] = {
     "name": PROPOSE_CARD_EDIT,
     "description": (
-        "Propose a new question and answer for one of the owner's review cards (find it with find_cards). The card "
-        "keeps its review schedule. The owner sees a diff and taps Apply; nothing changes before that."
+        "Propose a new question, short answer and detail for one of the owner's review cards (find it with "
+        "find_cards). detail: the lines shown after the answer, one per item (read_item gives them joined by "
+        "newlines); copy them when the owner didn't ask to change them, and an empty list for none. The card keeps "
+        "its review schedule. The owner sees a diff and taps Apply; nothing changes before that."
     ),
     "input_schema": _object(
         {
@@ -143,6 +146,7 @@ PROPOSE_CARD_EDIT_TOOL: dict[str, Any] = {
             "description": _DESCRIPTION,
             "question": {"type": "string"},
             "answer": {"type": "string"},
+            "detail": cards.DETAIL_SCHEMA,
         }
     ),
     "strict": True,
@@ -254,6 +258,7 @@ class _CardEditIn(pydantic.BaseModel):
     description: str = pydantic.Field(min_length=1, max_length=MAX_DESCRIPTION_CHARACTERS)
     question: str = pydantic.Field(min_length=1, max_length=MAX_QUESTION_CHARACTERS)
     answer: str = pydantic.Field(min_length=1, max_length=MAX_ANSWER_CHARACTERS)
+    detail: list[str]
 
 
 _Handled = tuple[dict[str, Any], Proposal | None]
@@ -380,8 +385,8 @@ def _find_cards(db: sqlalchemy.orm.Session, context: ToolContext, tool_input: ob
     else:
         statement = statement.order_by(models.Card.created_at)
 
-    cards = db.scalars(statement.limit(MAX_FOUND_CARDS)).all()
-    return {"cards": [{"id": str(card.id), "question": card.question, "answer": card.answer} for card in cards]}, None
+    found = db.scalars(statement.limit(MAX_FOUND_CARDS)).all()
+    return {"cards": [{"id": str(card.id), "question": card.question, "answer": card.answer} for card in found]}, None
 
 
 def _propose_summary_edit(db: sqlalchemy.orm.Session, context: ToolContext, tool_input: object) -> _Handled:
@@ -416,7 +421,11 @@ def _propose_text_edit(db: sqlalchemy.orm.Session, context: ToolContext, tool_in
 def _propose_card_edit(db: sqlalchemy.orm.Session, context: ToolContext, tool_input: object) -> _Handled:
     parsed = _CardEditIn.model_validate(tool_input)
     target = _resolve(db, context=context, kind=models.EditTarget.CARD, item_id=parsed.card_id)
-    after = {versions.QUESTION_KEY: parsed.question.strip(), versions.ANSWER_KEY: parsed.answer.strip()}
+    after = {
+        versions.QUESTION_KEY: parsed.question.strip(),
+        versions.ANSWER_KEY: parsed.answer.strip(),
+        versions.DETAIL_KEY: card_rows.joined_detail(parsed.detail),
+    }
     return _proposal(db, target=target, description=parsed.description, after=after)
 
 

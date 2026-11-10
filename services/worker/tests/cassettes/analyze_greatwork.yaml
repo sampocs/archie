@@ -180,32 +180,66 @@ interactions:
       work usually entails spending what would seem to most people\\nan unreasonable
       amount of time on a problem. You can't think of\\nthis time as a cost, or it
       will seem too high. You have to find the\\nwork sufficiently engaging as it's
-      happening.\\n\\n</text>\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"summary\":{\"type\":\"object\",\"properties\":{\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"domain\":{\"type\":\"string\",\"enum\":[\"AI\",\"Macro\",\"Crypto\",\"Startups\",\"Finance\",\"Tech\",\"History\",\"Security\",\"Sports\",\"Other\"]},\"topic\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"concepts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"is_educational\":{\"type\":\"boolean\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"}},\"required\":[\"kind\",\"question\",\"answer\"],\"additionalProperties\":false}}},\"required\":[\"summary\",\"domain\",\"topic\",\"tags\",\"concepts\",\"is_educational\",\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
+      happening.\\n\\n</text>\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"summary\":{\"type\":\"object\",\"properties\":{\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"type\":[\"string\",\"null\"]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"domain\":{\"type\":\"string\",\"enum\":[\"AI\",\"Macro\",\"Crypto\",\"Startups\",\"Finance\",\"Tech\",\"History\",\"Security\",\"Sports\",\"Other\"]},\"topic\":{\"type\":\"string\"},\"tags\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"concepts\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}},\"is_educational\":{\"type\":\"boolean\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"kind\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false}}},\"required\":[\"summary\",\"domain\",\"topic\",\"tags\",\"concepts\",\"is_educational\",\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
       process sources for a personal learning app. A source is an article, an X post
       or thread, or an episode (podcast or video) that the user consumed or plans
-      to. The user wants \\\"level 2\\\" knowledge of its subject: enough to hold
-      a real conversation about it, including the vocabulary, how things work, the
-      key players, rough numbers, and the current debates.\\n\\nFrom the text, produce:\\n-
-      summary: the gist in 2-3 sentences, the key ideas, and the numbers worth remembering.
-      Where the text has timestamps like [mm:ss] or [h:mm:ss], cite the one where
-      each idea or number comes up; when it has none, set the timestamp to null. Skip
-      ads and sponsor reads.\\n- domain: the one broad domain the source belongs to.\\n-
-      topic: a short, reusable topic name under that domain (e.g. \\\"Stablecoins\\\",
-      \\\"Fed policy\\\", \\\"NFL quarterbacks\\\").\\n- tags: 3-8 short tags.\\n-
-      concepts: the key concepts the source relies on or teaches, as short noun phrases.\\n-
-      is_educational: true when the source teaches something worth remembering (how
-      things work, history, ideas, numbers). false for pure entertainment such as
-      banter, sports chat, jokes or gossip. A mostly entertaining source with real
-      teaching in it (e.g. how a contract works, why a play scheme succeeds) is still
-      true.\\n- cards: when is_educational is true, 3-5 open-recall review cards of
-      kind concept, mechanism (\\\"why does X cause Y\\\") or number (a rough figure
-      worth knowing). Each card asks ONE focused question, never a compound one with
-      several parts. Each answer is what a good response would cover in 1-3 sentences.
-      Avoid trivia that only matters to this one source. When is_educational is false,
-      cards is an empty list.\\n\\nWrite in plain, conversational English for a smart
-      reader who is new to the subject. Short sentences. Define any jargon the first
-      time it appears. Prefer concrete examples and rough numbers (\\\"~1 GW\\\",
-      not \\\"1.07 GW\\\").\"}"
+      to. A newsletter is an email digest; summarize its main stories. The user wants
+      \\\"level 2\\\" knowledge of its subject: enough to hold a real conversation
+      about it, including the vocabulary, how things work, the key players, rough
+      numbers, and the current debates.\\n\\nFrom the text, produce:\\n- summary:
+      the gist in 2-3 sentences, the key ideas, and the numbers worth remembering.
+      The text of an episode may carry markers like [12:14] or [1:02:03] at roughly
+      one-minute intervals; give each key idea and number the time of the marker nearest
+      before where it comes up, copied exactly but without the brackets (12:14, 1:02:03),
+      and null when the text has no markers. Skip ads and sponsor reads.\\n- domain:
+      the one broad domain the source belongs to.\\n- topic: a short, reusable topic
+      name under that domain (e.g. \\\"Stablecoins\\\", \\\"Fed policy\\\", \\\"NFL
+      quarterbacks\\\").\\n- tags: 3-8 short tags.\\n- concepts: the key concepts
+      the source relies on or teaches, as short noun phrases.\\n- is_educational:
+      true when the source teaches something worth remembering (how things work, history,
+      ideas, numbers). false for pure entertainment such as banter, sports chat, jokes
+      or gossip. A mostly entertaining source with real teaching in it (e.g. how a
+      contract works, why a play scheme succeeds) is still true.\\n- cards: when is_educational
+      is true, 3-5 open-recall review cards of kind concept, mechanism (\\\"why does
+      X cause Y\\\") or number (a rough figure worth knowing), written to the card
+      rules below. Avoid trivia that only matters to this one source. Cards come only
+      from the educational stretches of a source: a mostly entertaining show with
+      one educational segment gets cards for that segment; still 3-5. When is_educational
+      is false, cards is an empty list.\\n\\nEach card has a question, an answer and
+      a detail:\\n- question: ONE focused question with ONE thing to recall. Never
+      join two asks with \\\"and\\\" (\\\"What does X give you, and what can you lose?\\\"
+      is two cards, or pick one). Ask only what has a short answer.\\n- answer: the
+      one thing to recall, in as few words as carry it: a phrase, not a sentence.
+      Aim for 2-8 words, never more than 15. The learner is graded only on this, so
+      it is what someone who knows the material would say off the top of their head.
+      When two things are both essential, name both briefly (\\\"Supply and demand\\\").
+      A number card's answer is the rough figure with its unit.\\n- detail: 0-3 short
+      bullet lines, each under 12 words. Shown after the learner answers, never graded.
+      Each line must help explain the answer (the why or how behind it, or a contrast
+      that makes it click); a further fact about the subject, however true, is not
+      a reason for a line. No padding and no redundancy: never a line that restates
+      the answer, is implied by it or repeats another line; that is trivia from this
+      one source (who said it, when, a passing example or anecdote) rather than a
+      lasting fact about the subject; or that is a side remark that doesn't help recall.
+      So a plain fact or a number usually needs none and most whys need one; use two
+      or three only when the explanation really has that many steps (A happens, so
+      B, so C) or named parts (the three phases of a cycle). When in doubt, use fewer.\\n\\nVoice:
+      a great teacher who respects the reader's time. Warm and direct; talk to \\\"you\\\".\\n-
+      Open with the core idea in one or two plain sentences: what it is and why it
+      matters.\\n- Match depth to the idea. A simple point gets one or two crisp sentences.
+      Only an idea with a real mechanism gets a plain everyday analogy to make it
+      click, then the specifics.\\n- Tell something as a story only when there genuinely
+      is one (real people, a rise and fall, a turning point). Never invent drama,
+      scenes or suspense.\\n- Define jargon in plain words the first time it appears.
+      Prefer concrete examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n-
+      Short sentences and no padding: every sentence carries information. Friendliness
+      comes from the phrasing, not from extra sentences.\\n- Never open with throat-clearing
+      (\\\"Okay so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's
+      dive in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never
+      close with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\"}"
     headers:
       accept:
       - application/json
@@ -216,7 +250,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '17320'
+      - '20056'
       content-type:
       - application/json
       host:
@@ -247,106 +281,99 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-5-5","id":"msg_011CggtSUX6PnYNkmq41vSN7","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSuggKEAgTGAI4AUIIdGhpbmtpbmcSDMte+3x4ZsughguP3RoM/+HULzkLTZumoxwWIjAn9xdj2bTpwIXDkONrwEfpgF9WxXyO6P4OGg9ea9Bw2Cw4nShDq36UqkfCJVzV3WMq1wd2ev/ztks+BJoP6Ke3f8H1JBaNLS4hGiv0iFT+oHIAar0zmkYWqXVG+rBGqdIz071y+QgFlgcD3WZSdbVmzw32EoPPCghEwFHJhorZ+qG8q9w58E82R3Jzv8sVeiuBzOktVTjzb7UKeg7sxWkpfnLmxg7/RN9QBKldmI7reH+CMSQPY+525cjBz0H0QVtB31ZMcyLk4pv5hRci5HvV91ztEBnyKqurZ0WmoRtpjd7Q47S23Z4e7oTeILFrDeVIDO08vH0tbgmGdl2zh+PIMzlFdTk2raEnN+u4/3fj1VR2qwljhBpmh+09oHYRwWchLOSi562Vi4IFcvePRF9+33m1YWtkF+xoiU5X6cnevsgy4NZ+SQcLj79h/Ut/ZSN307h72bQpkGhOxHz4Qcv3if1LnYvNeoKwoWQRCZZCSR/jOgRlUd/ED1g+XXWcAQla90zYnjD6fp/EB30J60Hk26Q6KW6piQGrPP7+UkC9nvJzmHNLmq8/7P6bOs3UOdqMv0NxBgBUKkqgSn2sGFihQPMi2riJ/vpLWzlTD46BmgQXRlNn1mwKmxBOPuE+VfhIGYO7Sa7YKX7O3iyiGHmw+WKwDzc9UHvbwzWse2+8QxmZsE9OXsZrEouQiXrxt1uHlcW5FFPEffk/8I/DQat9PbndTSiGiQWXiZeYNx96rhKkPd6bzrmQl3AYlTJDxN2pQe5mdBIDBEZ73/zaSngklbx1ktViJHTur7YbSpsEm0StP9bTCIn9BrYkv2YFt+07OVbVYghD8YFF3w8NWPVIjhERRoHiy7op0FXncNdk6VGIB/ZkETB2VGC3CA0ADdNM4JZa+qrwzzAhhzl4GQBvgWYtC+TD6O1WAkmyP9iz65BFbj+2Xfn6x4AnlWjhlW1Oef/imrTqzXKx0pNXwDiFrGQcV/tR8tav+ifYUYNN4DvEmF/LvDwwVHGIH+ay1BHJikHWIryTh0HSC2/EqVd8Nx5MlmC6VKTz+u7GLSWLnkMmWtjzIB5vGlrzuyJCTUD7zFjhY/30CJWqLIUcVWk0TDdyCTNYMf0wyqHrgO7C66rseeAUmDIhdVwunKKujRSPOqdEEryg3E20YQnr1Xar0IP0H7VEiVW27pPcij60pfEMVzOafkN6s2xL0dI0HUEE+EBoAMXycpC7z3jrj+mq+2eJpJKgNBaVWCWpOsn+aXiUAzBP/zDen6CbUvRFjGOF+HDA0ExBR3lNFVhbYhJ7Lf5as44SGXeXWGS6Xc6uX5mQwwczRxjo29f2Y7a5DFMxbMSPB/JyD4U+BhOq//WQSE+Qyc5gGZpBLRgB"},{"type":"text","text":"{\"summary\":{\"gist\":\"Paul
-        Graham''s essay lays out a rough recipe for doing great work: find work you
-        have aptitude for and deep interest in, learn enough to reach a field''s frontier,
-        notice its gaps, and chase the promising ones. He argues that interest, not
-        diligence alone, is what drives the hard work, and that most people should
-        plan less and follow what excites them, while using small self-deceptions
-        and big blocks of focused time to get going.\",\"key_ideas\":[{\"timestamp\":null,\"idea\":\"The
-        recipe has four steps: choose a field, learn enough to reach its frontier
-        (the edge of known knowledge), notice gaps in that knowledge, and explore
-        the promising ones.\"},{\"timestamp\":null,\"idea\":\"Choose work that is
-        excitingly ambitious and that you are deeply curious about. Excitement and
-        importance tend to converge as your tastes mature.\"},{\"timestamp\":null,\"idea\":\"You
-        usually can''t tell what a kind of work is like until you do it, so figuring
-        out what to work on takes trial and error. Nobody systematically hands you
-        this answer, so you need to stay curious and expose yourself to many fields,
-        people, and books, since luck plays a big role.\"},{\"timestamp\":null,\"idea\":\"Use
-        ''staying upwind'': at each stage, do whatever seems most interesting and
-        keeps the best future options open, rather than making a detailed plan and
-        executing it.\"},{\"timestamp\":null,\"idea\":\"Work has a startup cost (activation
-        energy) each day and each project. It is fine to trick yourself into starting,
-        for example by saying you''ll just reread what you have so far.\"},{\"timestamp\":null,\"idea\":\"Per-project
-        procrastination is the more dangerous kind. It often hides as busy work, so
-        periodically ask whether you are working on what you most want to work on.\"},{\"timestamp\":null,\"idea\":\"If
-        you make something for people, make what you yourself want. Chasing an imagined
-        sophisticated audience usually goes wrong.\"}],\"numbers\":[{\"timestamp\":null,\"fact\":\"Some
-        of the hardest types of work can only be sustained for about four or five
-        hours a day.\"},{\"timestamp\":null,\"fact\":\"Great work often takes an unreasonable
-        amount of time on one problem, so the work itself has to feel engaging enough
-        that the time doesn''t feel like a cost.\"}]},\"domain\":\"Other\",\"topic\":\"Doing
-        great work\",\"tags\":[\"productivity\",\"career\",\"curiosity\",\"research\",\"motivation\",\"essay\"],\"concepts\":[\"fractal
-        frontier of knowledge\",\"aptitude and interest\",\"staying upwind\",\"activation
-        energy for work\",\"per-project procrastination\",\"outlier ideas\",\"deep
-        work blocks\"],\"is_educational\":true,\"cards\":[{\"kind\":\"mechanism\",\"question\":\"Why
-        does Graham say that following your interests makes you resistant to pressures
-        like fashion, money, and other people''s wishes?\",\"answer\":\"Because genuine
-        interest keeps you on a path you care about, so outside pulls have less hold
-        on you. If you''re interested in the work, you''re not astray. Interest also
-        drives you to work harder than diligence alone.\"},{\"kind\":\"concept\",\"question\":\"What
-        does ''staying upwind'' mean in Graham''s essay?\",\"answer\":\"It means not
-        planning too far ahead. At each stage you do whatever seems most interesting
-        and keeps the best options open for the future. The approach is like a sailor
-        reading the wind rather than following a fixed route.\"},{\"kind\":\"mechanism\",\"question\":\"Why
-        is per-project procrastination more dangerous than per-day procrastination?\",\"answer\":\"Per-project
-        procrastination often looks like real work, since you are busy with other
-        tasks, so it doesn''t set off alarms. Delaying a big project for years can
-        leave a lot undone.\"},{\"kind\":\"concept\",\"question\":\"What is the ''frontier
-        of knowledge'' in Graham''s recipe, and why does it matter?\",\"answer\":\"The
-        frontier is the edge where known knowledge stops. From a distance it looks
-        smooth, but up close it is full of gaps. Those gaps are where new discoveries
-        come from, which is why you need to learn enough to reach the frontier.\"},{\"kind\":\"number\",\"question\":\"About
-        how many hours a day can you sustain the hardest kinds of work?\",\"answer\":\"Graham
-        suggests that some of the hardest types of work may only be sustainable for
-        four or five hours a day. Past that point, fatigue leads to diminishing returns.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":5788,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1580,"output_tokens_details":{"thinking_tokens":187},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgv3iSU7NwqngQTADgoNG","type":"message","role":"assistant","content":[{"type":"text","text":"{\"summary\":{\"gist\":\"Paul
+        Graham''s guide to doing great work: pick something you have aptitude for
+        and deep interest in, learn enough to reach a field''s frontier, notice gaps
+        others ignore, and explore them. Interest and boldness matter more than planning,
+        and the main danger is procrastinating on ambitious projects while staying
+        busy.\",\"key_ideas\":[{\"timestamp\":null,\"idea\":\"Great work sits where
+        natural aptitude, deep interest, and scope intersect; in practice, aptitude
+        plus interest is what to look for, since ambitious people already aim too
+        conservatively on scope.\"},{\"timestamp\":null,\"idea\":\"Figure out what
+        to work on by working: guess, start, and adjust, because you often can''t
+        know what a field is like until you do it.\"},{\"timestamp\":null,\"idea\":\"Knowledge
+        expands fractally: from afar its edges look smooth, but close up they are
+        full of gaps. Noticing gaps that others take for granted is where discoveries
+        come from.\"},{\"timestamp\":null,\"idea\":\"Four steps: choose a field, learn
+        enough to reach the frontier, notice gaps, explore promising ones. Steps two
+        and four demand hard work, and interest is what sustains it.\"},{\"timestamp\":null,\"idea\":\"Follow
+        what you find interesting rather than fashion, money, or others'' wishes;
+        make what you yourself want, since imagined audiences lead you astray.\"},{\"timestamp\":null,\"idea\":\"Plan
+        less and stay upwind: at each stage do whatever seems most interesting and
+        keeps the best future options open, since planning only works for goals you
+        can describe in advance.\"},{\"timestamp\":null,\"idea\":\"Working hard has
+        diminishing returns; hard work is often limited to four or five hours a day,
+        ideally in contiguous blocks free of interruptions.\"},{\"timestamp\":null,\"idea\":\"Starting
+        has activation energy, so it is fine to trick yourself into starting, for
+        example by saying you''ll just reread what you have.\"},{\"timestamp\":null,\"idea\":\"Per-project
+        procrastination is the more dangerous kind: it hides behind being busy with
+        other work, so ask whether you''re working on what you most want to work on.\"}],\"numbers\":[{\"timestamp\":null,\"fact\":\"Some
+        of the hardest types of work can only be done for about four or five hours
+        a day.\"}]},\"domain\":\"Other\",\"topic\":\"Doing great work\",\"tags\":[\"productivity\",\"career\",\"curiosity\",\"research\",\"ambition\",\"essay\"],\"concepts\":[\"Aptitude
+        and interest intersection\",\"Fractal knowledge frontier\",\"Noticing gaps\",\"Staying
+        upwind\",\"Activation energy in work\",\"Per-project procrastination\",\"Diminishing
+        returns of work\",\"Excitingness rule\"],\"is_educational\":true,\"cards\":[{\"kind\":\"concept\",\"question\":\"What
+        three qualities should the work you choose have?\",\"answer\":\"Aptitude,
+        deep interest, and scope for greatness\",\"detail\":[\"Scope matters less
+        in practice, since ambitious people already aim too conservatively\"]},{\"kind\":\"concept\",\"question\":\"What
+        is the four-step recipe for doing great work?\",\"answer\":\"Choose a field,
+        reach frontier, notice gaps, explore\",\"detail\":[\"Steps two and four demand
+        hard work, which interest sustains\"]},{\"kind\":\"mechanism\",\"question\":\"Why
+        do discoveries come from noticing gaps at a field''s frontier?\",\"answer\":\"Frontier
+        edges look smooth from afar but are full of gaps\",\"detail\":[\"Your brain
+        wants to ignore gaps to keep a simpler model of the world\"]},{\"kind\":\"mechanism\",\"question\":\"Why
+        is per-project procrastination more dangerous than per-day procrastination?\",\"answer\":\"It
+        disguises itself as productive work on other things\",\"detail\":[\"It doesn''t
+        trigger the alarm that idle procrastination does\"]},{\"kind\":\"number\",\"question\":\"How
+        many hours a day can the hardest kinds of work sustain?\",\"answer\":\"About
+        four or five hours a day\",\"detail\":[]}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":6672,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1268,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '9998000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-03T23:47:38Z'
+      - '2026-11-10T22:37:00Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
-      - '1998000'
+      - '1999000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-03T23:47:45Z'
+      - '2026-11-10T22:37:06Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-03T23:47:36Z'
+      - '2026-11-10T22:36:58Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11996000'
+      - '11997000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-03T23:47:38Z'
+      - '2026-11-10T22:37:00Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a54f43d97da6e06d-ORD
+      - a58889fe3f05b4b8-ORD
       connection:
       - keep-alive
       content-length:
-      - '6400'
+      - '4407'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Tue, 03 Nov 2026 23:47:45 GMT
+      - Tue, 10 Nov 2026 22:37:06 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=9231
+      - x-originResponse;dur=8164
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-2a5105502dd580bc483a86e7bcfecfce-4724623ccc87dbe6-01
+      - 00-2e06d29c0358f04485e50a44371ab6c2-a2cd4056b93a20ee-01
       transfer-encoding:
       - chunked
       vary:

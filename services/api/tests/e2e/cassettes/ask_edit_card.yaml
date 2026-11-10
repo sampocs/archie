@@ -1,92 +1,159 @@
 interactions:
 - request:
-    body: '{"max_tokens":8000,"messages":[{"role":"user","content":"Change my card
-      about low fees so its answer says a 1% fee can eat about a quarter of your savings
-      over 40 years."}],"model":"claude-sonnet-5-5","output_config":{"effort":"medium"},"system":"You
-      are Archie''s Ask, answering the owner''s questions from their own library first.
+    body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Change
+      my card about low fees so its answer says a 1% fee can eat about a quarter of
+      your savings over 40 years.\"}],\"model\":\"claude-sonnet-5-5\",\"output_config\":{\"effort\":\"medium\"},\"system\":\"You
+      are Archie's Ask, answering the owner's questions from their own library first.
       Archie is their personal library of the articles, newsletters, podcasts and
-      videos they saved, with Archie''s summaries and primers of them, topic primers,
-      and the owner''s own takes.\n\nHow to answer:\n- Search the owner''s library
-      with search_library first, unless the question plainly isn''t about anything
+      videos they saved, with Archie's summaries and primers of them, topic primers,
+      and the owner's own takes.\\n\\nHow to answer:\\n- Search the owner's library
+      with search_library first, unless the question plainly isn't about anything
       they could have saved (small talk, arithmetic). Search again with other words
-      if the first search finds nothing useful.\n- Call tools without writing anything
-      first; don''t announce your searches.\n- Base library claims only on search
-      results, so they carry citations.\n- Each library result''s title gives the
+      if the first search finds nothing useful.\\n- Call tools without writing anything
+      first; don't announce your searches.\\n- Base library claims only on search
+      results, so they carry citations.\\n- Each library result's title gives the
       day the owner saved it and, when that was another day, when it was published.
-      For a question about a time (\"yesterday\", \"this week\", \"on Tuesday\"),
-      work the days out from today''s date and pass search_library''s saved_* or published_*
-      bounds.\n- Then add background knowledge only where the library doesn''t cover
+      For a question about a time (\\\"yesterday\\\", \\\"this week\\\", \\\"on Tuesday\\\"),
+      work the days out from today's date and pass search_library's saved_* or published_*
+      bounds.\\n- Then add background knowledge only where the library doesn't cover
       the question, in its own paragraph and without citations. Never present background
-      knowledge as coming from the library.\n- Search the web for recent or fast-changing
-      facts (prices, office holders, this year''s numbers), when the owner asks you
+      knowledge as coming from the library.\\n- Search the web for recent or fast-changing
+      facts (prices, office holders, this year's numbers), when the owner asks you
       to look something up, and whenever this prompt says a web search is required.
-      Base web claims only on web results.\n- Keep answers short and in plain language:
+      Base web claims only on web results.\\n- Keep answers short and in plain language:
       a few short paragraphs at most. Define a technical term the first time you use
-      it. No headings, and no bullet lists unless the owner asks for a list.\n- If
-      neither the library nor the web has the answer and you don''t know it, say so
-      plainly.\n- Write plain paragraphs: no headings, no bold section titles; a short
-      list only when it really helps.\n\nEditing the owner''s things:\n- You can propose
-      edits to a source''s summary or primer, a topic primer, one of the owner''s
-      takes, or a review card, but only when the owner asks for a change. Use propose_summary_edit,
-      propose_text_edit or propose_card_edit. Nothing changes until the owner taps
-      Apply, so never say the edit is done.\n- Find the id first: the about item below
-      names its ids, search results end with [kind id] tags, earlier answers list
-      the items they cited, and find_cards finds cards. You don''t need to search
-      the library for an edit when you already have the id.\n- Read the current content
-      with read_item first and change only what the owner asked for; copy everything
-      else exactly, timestamps included. If read_item shows a pending edit, build
-      on it: your new proposal replaces it.\n- When an edit removes or changes a fact
-      that one of the item''s cards asks about, find that item''s cards and propose
-      a matching card edit too.\n- A take is the owner''s own words: change only what
-      they asked, and never add claims of your own.\n- After proposing, say in one
-      short sentence what will change. Don''t repeat the new text.\n\nToday is Saturday
-      7 November 2026 (UTC).\n\nThis chat is about one item in the owner''s library,
-      described below. Searches rank its passages first; answer about it unless the
-      owner clearly asks about something else.\n<about>\nArticle: How index funds
-      work\nSource id: 5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f (its summary and primer
-      are editable)\nGist: Index funds beat most stock pickers because they cost less
-      and don''t try to time the market.\n- An index fund buys every stock in an index
-      instead of picking winners.\n- Low fees compound into large differences over
-      decades.\n- Most active managers trail their index after fees.\n</about>","tools":[{"name":"search_library","description":"Search
-      the owner''s saved library: article and newsletter text, podcast and video transcripts,
-      Archie''s summaries and primers of them, topic primers, and the owner''s own
-      takes. Call this first for any question the owner''s reading could bear on.
-      Returns up to 8 passages to cite. For a question about a time (\"yesterday\",
-      \"this week\", \"on Tuesday\"), also pass day bounds so only items from those
-      days come back: saved_* for when the owner saved or got it (\"what did I save
-      this week\", \"yesterday''s newsletters\"), published_* for when it came out
-      (\"articles published this year\"). For newsletters the two are the same day.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"What
-      to look for, in a few words."},"saved_after":{"type":"string","format":"date","description":"Only
-      items the owner saved or got on or after this day. YYYY-MM-DD, in the owner''s
-      time zone."},"saved_before":{"type":"string","format":"date","description":"Only
-      items the owner saved or got on or before this day. YYYY-MM-DD, in the owner''s
-      time zone."},"published_after":{"type":"string","format":"date","description":"Only
-      items that came out on or after this day. YYYY-MM-DD, in the owner''s time zone."},"published_before":{"type":"string","format":"date","description":"Only
-      items that came out on or before this day. YYYY-MM-DD, in the owner''s time
-      zone."}},"required":["query"],"additionalProperties":false},"strict":true,"eager_input_streaming":true},{"type":"web_search_20260209","name":"web_search","max_uses":3,"allowed_callers":["direct"]},{"name":"read_item","description":"Read
-      the exact current content of something the owner can edit: a source''s summary
+      it. No headings, and no bullet lists unless the owner asks for a list.\\n- If
+      neither the library nor the web has the answer and you don't know it, say so
+      plainly.\\n- Write plain paragraphs: no headings, no bold section titles; a
+      short list only when it really helps.\\n\\nEditing the owner's things:\\n- You
+      can propose edits to a source's summary or primer, a topic primer, one of the
+      owner's takes, or a review card, but only when the owner asks for a change.
+      Use propose_summary_edit, propose_text_edit or propose_card_edit. Nothing changes
+      until the owner taps Apply, so never say the edit is done.\\n- Find the id first:
+      the about item below names its ids, search results end with [kind id] tags,
+      earlier answers list the items they cited, and find_cards finds cards. You don't
+      need to search the library for an edit when you already have the id.\\n- Read
+      the current content with read_item first and change only what the owner asked
+      for; copy everything else exactly, timestamps included. If read_item shows a
+      pending edit, build on it: your new proposal replaces it.\\n- When an edit removes
+      or changes a fact that one of the item's cards asks about, find that item's
+      cards and propose a matching card edit too.\\n- A take is the owner's own words:
+      change only what they asked, and never add claims of your own.\\n- A card edit's
+      question, answer and detail follow the card rules at the end of this prompt.\\n-
+      After proposing, say in one short sentence what will change. Don't repeat the
+      new text.\\n\\nMaking cards from the chat:\\n- When the owner asks for cards
+      (the message \\\"Make cards\\\", or any wording like \\\"make me cards on this\\\"),
+      call propose_cards once, with the whole conversation in view. Don't search the
+      library first unless the owner asks you to.\\n- The cheat sheet is a fresh,
+      self-contained reference the owner will re-read later without the chat: markdown
+      with headings, a comparison table when the chat compared things, and the gotchas.
+      Never refer back to the chat (\\\"as discussed above\\\", \\\"you asked\\\").
+      Headings and tables are fine here, unlike in answers. Voice: a great teacher
+      who respects the reader's time. Warm and direct; talk to \\\"you\\\".\\n- Open
+      with the core idea in one or two plain sentences: what it is and why it matters.\\n-
+      Match depth to the idea. A simple point gets one or two crisp sentences. Only
+      an idea with a real mechanism gets a plain everyday analogy to make it click,
+      then the specifics.\\n- Tell something as a story only when there genuinely
+      is one (real people, a rise and fall, a turning point). Never invent drama,
+      scenes or suspense.\\n- Define jargon in plain words the first time it appears.
+      Prefer concrete examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n-
+      Short sentences and no padding: every sentence carries information. Friendliness
+      comes from the phrasing, not from extra sentences.\\n- Never open with throat-clearing
+      (\\\"Okay so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's
+      dive in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never
+      close with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\\n- Write 3 to 7 open-recall cards on what the chat established,
+      each answerable on its own without the chat or the other cards, written to the
+      card rules below.\\n- When the about item below is one of the owner's notes
+      (\\\"Note: \u2026\\\"), the cards are that note's review cards: call propose_cards
+      with an empty cheat_sheet (the note already has its write-up) and the note's
+      title, and 3 to 5 open-recall cards (concept, mechanism or number) on what the
+      note chose to cover, worded from its write-up and what the owner asked for in
+      this chat.\\n- When the owner asks to change the proposal (\\\"change card 2\\\",
+      \\\"drop the last one\\\", \\\"add a card on X\\\"), call propose_cards again
+      with the whole new set, copying everything they didn't ask to change. Your earlier
+      proposals in this chat are listed after your answers.\\n- A message may open
+      with a line saying which cards of the open proposal the owner kept and dropped
+      (their Keep ticks). When you next call propose_cards, copy the kept cards word
+      for word (so Save can match them) unless the owner asks to change them, and
+      don't bring back the dropped ones.\\n- Around the proposal, write one or two
+      short sentences at most. Don't repeat the cards or the cheat sheet.\\n\\nEach
+      card has a question, an answer and a detail:\\n- question: ONE focused question
+      with ONE thing to recall. Never join two asks with \\\"and\\\" (\\\"What does
+      X give you, and what can you lose?\\\" is two cards, or pick one). Ask only
+      what has a short answer.\\n- answer: the one thing to recall, in as few words
+      as carry it: a phrase, not a sentence. Aim for 2-8 words, never more than 15.
+      The learner is graded only on this, so it is what someone who knows the material
+      would say off the top of their head. When two things are both essential, name
+      both briefly (\\\"Supply and demand\\\"). A number card's answer is the rough
+      figure with its unit.\\n- detail: 0-3 short bullet lines, each under 12 words.
+      Shown after the learner answers, never graded. Each line must help explain the
+      answer (the why or how behind it, or a contrast that makes it click); a further
+      fact about the subject, however true, is not a reason for a line. No padding
+      and no redundancy: never a line that restates the answer, is implied by it or
+      repeats another line; that is trivia from this one source (who said it, when,
+      a passing example or anecdote) rather than a lasting fact about the subject;
+      or that is a side remark that doesn't help recall. So a plain fact or a number
+      usually needs none and most whys need one; use two or three only when the explanation
+      really has that many steps (A happens, so B, so C) or named parts (the three
+      phases of a cycle). When in doubt, use fewer.\\n\\nToday is Tuesday 10 November
+      2026 (UTC).\\n\\nThis chat is about one item in the owner's library, described
+      below. Searches rank its passages first; answer about it unless the owner clearly
+      asks about something else.\\n<about>\\nArticle: How index funds work\\nSource
+      id: 5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f (its summary and primer are editable)\\nGist:
+      Index funds beat most stock pickers because they cost less and don't try to
+      time the market.\\n- An index fund buys every stock in an index instead of picking
+      winners.\\n- Low fees compound into large differences over decades.\\n- Most
+      active managers trail their index after fees.\\n</about>\",\"tools\":[{\"name\":\"search_library\",\"description\":\"Search
+      the owner's saved library: article and newsletter text, podcast and video transcripts,
+      Archie's summaries and primers of them, topic primers, and the owner's own takes.
+      Call this first for any question the owner's reading could bear on. Returns
+      up to 8 passages to cite. For a question about a time (\\\"yesterday\\\", \\\"this
+      week\\\", \\\"on Tuesday\\\"), also pass day bounds so only items from those
+      days come back: saved_* for when the owner saved or got it (\\\"what did I save
+      this week\\\", \\\"yesterday's newsletters\\\"), published_* for when it came
+      out (\\\"articles published this year\\\"). For newsletters the two are the
+      same day.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"What
+      to look for, in a few words.\"},\"saved_after\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items the owner saved or got on or after this day. YYYY-MM-DD, in the owner's
+      time zone.\"},\"saved_before\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items the owner saved or got on or before this day. YYYY-MM-DD, in the owner's
+      time zone.\"},\"published_after\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items that came out on or after this day. YYYY-MM-DD, in the owner's time zone.\"},\"published_before\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items that came out on or before this day. YYYY-MM-DD, in the owner's time zone.\"}},\"required\":[\"query\"],\"additionalProperties\":false},\"strict\":true,\"eager_input_streaming\":true},{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":3,\"allowed_callers\":[\"direct\"]},{\"name\":\"read_item\",\"description\":\"Read
+      the exact current content of something the owner can edit: a source's summary
       or primer (id: the source id), a topic primer (id: a topic primer id or the
-      topic id), one of the owner''s takes (id: the take id) or a review card (id:
+      topic id), one of the owner's takes (id: the take id) or a review card (id:
       the card id). Call it before proposing an edit and copy text from it exactly.
-      `pending` is an edit you already proposed in this chat that the owner hasn''t
-      applied: build on it.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["summary","primer","topic_primer","take","card"]},"id":{"type":"string"}},"required":["kind","id"],"additionalProperties":false},"strict":true},{"name":"find_cards","description":"Find
-      the owner''s review cards by words in their question or answer, by the item
-      they came from, or both. Returns up to 10 cards with their ids.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"Words
-      to look for; empty to list an item''s cards."},"item":{"anyOf":[{"type":"object","properties":{"kind":{"type":"string","enum":["source","topic_primer","take"]},"id":{"type":"string"}},"required":["kind","id"],"additionalProperties":false},{"type":"null"}]}},"required":["query","item"],"additionalProperties":false},"strict":true},{"name":"propose_summary_edit","description":"Propose
-      a new version of a source''s summary: the whole summary as it should read, with
-      everything the owner didn''t ask to change copied exactly, timestamps included.
-      The owner sees a diff and taps Apply; nothing changes before that.","input_schema":{"type":"object","properties":{"source_id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"gist":{"type":"string"},"key_ideas":{"type":"array","items":{"type":"object","properties":{"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}]},"idea":{"type":"string"}},"required":["timestamp","idea"],"additionalProperties":false}},"numbers":{"type":"array","items":{"type":"object","properties":{"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}]},"fact":{"type":"string"}},"required":["timestamp","fact"],"additionalProperties":false}}},"required":["source_id","description","gist","key_ideas","numbers"],"additionalProperties":false},"strict":true},{"name":"propose_text_edit","description":"Propose
-      an edit to a source''s primer (id: the source id), a topic primer or one of
-      the owner''s takes, as find-and-replace pairs over its current markdown from
-      read_item. Each find must be copied exactly and appear exactly once; an empty
-      replace deletes it. The owner sees a diff and taps Apply; nothing changes before
-      that.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["primer","topic_primer","take"]},"id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"replacements":{"type":"array","items":{"type":"object","properties":{"find":{"type":"string"},"replace":{"type":"string"}},"required":["find","replace"],"additionalProperties":false}}},"required":["kind","id","description","replacements"],"additionalProperties":false},"strict":true},{"name":"propose_card_edit","description":"Propose
-      a new question and answer for one of the owner''s review cards (find it with
-      find_cards). The card keeps its review schedule. The owner sees a diff and taps
-      Apply; nothing changes before that.","input_schema":{"type":"object","properties":{"card_id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"question":{"type":"string"},"answer":{"type":"string"}},"required":["card_id","description","question","answer"],"additionalProperties":false},"strict":true}],"thinking":{"type":"between_tools"},"tool_choice":{"type":"auto"},"stream":true}'
+      `pending` is an edit you already proposed in this chat, against this version,
+      that the owner hasn't applied: build on it.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"summary\",\"primer\",\"topic_primer\",\"take\",\"card\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"find_cards\",\"description\":\"Find
+      the owner's review cards by words in their question or answer, by the item they
+      came from, or both. Returns up to 10 cards with their ids.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"Words
+      to look for; empty to list an item's cards.\"},\"item\":{\"anyOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"source\",\"topic_primer\",\"take\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"null\"}]}},\"required\":[\"query\",\"item\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_summary_edit\",\"description\":\"Propose
+      a new version of a source's summary: the whole summary as it should read, with
+      everything the owner didn't ask to change copied exactly, timestamps included.
+      The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"source_id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"source_id\",\"description\",\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_text_edit\",\"description\":\"Propose
+      an edit to a source's primer (id: the source id), a topic primer or one of the
+      owner's takes, as find-and-replace pairs over its current markdown from read_item.
+      Each find must be copied exactly and appear exactly once; an empty replace deletes
+      it. The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"primer\",\"topic_primer\",\"take\"]},\"id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"replacements\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"find\":{\"type\":\"string\"},\"replace\":{\"type\":\"string\"}},\"required\":[\"find\",\"replace\"],\"additionalProperties\":false}}},\"required\":[\"kind\",\"id\",\"description\",\"replacements\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_card_edit\",\"description\":\"Propose
+      a new question, short answer and detail for one of the owner's review cards
+      (find it with find_cards). detail: the lines shown after the answer, one per
+      item (read_item gives them joined by newlines); copy them when the owner didn't
+      ask to change them, and an empty list for none. The card keeps its review schedule.
+      The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"card_id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"card_id\",\"description\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_cards\",\"description\":\"Propose
+      review cards and a cheat sheet from this chat, when the owner asks for cards.
+      The owner sees them with Keep ticks and taps Save; nothing is saved before that.
+      title: a short name for the cheat sheet (at most 120 characters). cheat_sheet:
+      markdown, at most 20000 characters, or empty in a chat about a note. cards:
+      1 to 10, each a question (at most 500 characters), its short answer (at most
+      2000) and its detail lines (may be empty). To change a proposal, call this again
+      with the whole new set.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"title\":{\"type\":\"string\"},\"cheat_sheet\":{\"type\":\"string\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\",\"foundation\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"kind\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false}}},\"required\":[\"title\",\"cheat_sheet\",\"cards\"],\"additionalProperties\":false},\"strict\":true}],\"thinking\":{\"type\":\"between_tools\"},\"tool_choice\":{\"type\":\"auto\"},\"stream\":true}"
     headers:
       accept:
       - application/json
@@ -97,7 +164,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '9234'
+      - '15121'
       content-type:
       - application/json
       host:
@@ -134,12 +201,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011CgpQi4KGuaknxg9cAfHnp","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":5909,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":1,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}             }
+        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011Cgv4JWkXGxtfMsH747L92","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":7871,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":7,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}            }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}       }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}               }
 
 
         event: ping
@@ -149,44 +216,39 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"I"}           }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Let
+        me find the card first"}               }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"''ll
-        find the card first"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}              }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}      }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0   }
+        data: {"type":"content_block_stop","index":0 }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_01TEjh7sriWQGg3u9KYeAZLr","name":"find_cards","input":{},"caller":{"type":"direct"}}       }
+        data: {"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_01MSDA77rdCNM6kr1gFjtS4J","name":"find_cards","input":{},"caller":{"type":"direct"}}               }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}  }
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}           }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"query"}              }
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"query"}         }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\":
-        \"low"}            }
+        \"low"}        }
 
 
         event: content_block_delta
@@ -198,28 +260,28 @@ interactions:
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":",
-        \"item"}    }
+        \"item"}}
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\":
-        {\"ki"} }
+        {\"ki"}         }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"nd\":\"so"}    }
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"nd\":\"so"}            }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"urce\",\""}        }
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"urce\",\""}          }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"id\":\"5f"}             }
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"id\":\"5f"}            }
 
 
         event: content_block_delta
@@ -229,43 +291,44 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"1d3b-4c"}
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"1d3b-4c"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"6a-9e8f"}
         }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"6a-9e8f"}       }
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"-0a1b2c"}               }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"-0a1b2c"}             }
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"3d4e5f\""}
+        }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"3d4e5f\""}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"}}"}      }
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"}}"}          }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":1        }
+        data: {"type":"content_block_stop","index":1      }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":5909,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":128,"output_tokens_details":{"thinking_tokens":0}}               }
+        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":7871,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":129,"output_tokens_details":{"thinking_tokens":0}}              }
 
 
         event: message_stop
 
-        data: {"type":"message_stop"      }
+        data: {"type":"message_stop"               }
 
 
         '
@@ -273,51 +336,51 @@ interactions:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
-      - '9997000'
+      - '9996000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-07T23:08:42Z'
+      - '2026-11-10T22:44:40Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-07T23:08:42Z'
+      - '2026-11-10T22:44:40Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-07T23:08:42Z'
+      - '2026-11-10T22:44:40Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11997000'
+      - '11996000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-07T23:08:42Z'
+      - '2026-11-10T22:44:40Z'
       cache-control:
       - no-cache
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a570005c4b34eadb-ORD
+      - a588954838fa1b3c-ORD
       connection:
       - keep-alive
       content-length:
-      - '3980'
+      - '3900'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Sat, 07 Nov 2026 23:08:43 GMT
+      - Tue, 10 Nov 2026 22:44:42 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=300
+      - x-originResponse;dur=217
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-c3f4e1d7996e2e3b2f7adc8d110a0b6a-a6f481ec66845a21-01
+      - 00-6ed8b4175d8aaaa0aaca8c30244b9082-f4bc6c739cb863f9-01
       transfer-encoding:
       - chunked
       vary:
@@ -328,97 +391,165 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"max_tokens":8000,"messages":[{"role":"user","content":"Change my card
-      about low fees so its answer says a 1% fee can eat about a quarter of your savings
-      over 40 years."},{"role":"assistant","content":[{"text":"I''ll find the card
-      first.","type":"text"},{"id":"toolu_01TEjh7sriWQGg3u9KYeAZLr","caller":{"type":"direct"},"input":{"query":"low
-      fees","item":{"kind":"source","id":"5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f"}},"name":"find_cards","type":"tool_use"}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01TEjh7sriWQGg3u9KYeAZLr","content":"{\"cards\":
-      [{\"id\": \"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\", \"question\": \"What do
-      low fees do over decades?\", \"answer\": \"They compound into large differences.\"}]}"}]}],"model":"claude-sonnet-5-5","output_config":{"effort":"medium"},"system":"You
-      are Archie''s Ask, answering the owner''s questions from their own library first.
+    body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Change
+      my card about low fees so its answer says a 1% fee can eat about a quarter of
+      your savings over 40 years.\"},{\"role\":\"assistant\",\"content\":[{\"text\":\"Let
+      me find the card first.\",\"type\":\"text\"},{\"id\":\"toolu_01MSDA77rdCNM6kr1gFjtS4J\",\"caller\":{\"type\":\"direct\"},\"input\":{\"query\":\"low
+      fees\",\"item\":{\"kind\":\"source\",\"id\":\"5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f\"}},\"name\":\"find_cards\",\"type\":\"tool_use\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_01MSDA77rdCNM6kr1gFjtS4J\",\"content\":\"{\\\"cards\\\":
+      [{\\\"id\\\": \\\"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\\\", \\\"question\\\":
+      \\\"What do low fees do over decades?\\\", \\\"answer\\\": \\\"They compound
+      into large differences.\\\"}]}\"}]}],\"model\":\"claude-sonnet-5-5\",\"output_config\":{\"effort\":\"medium\"},\"system\":\"You
+      are Archie's Ask, answering the owner's questions from their own library first.
       Archie is their personal library of the articles, newsletters, podcasts and
-      videos they saved, with Archie''s summaries and primers of them, topic primers,
-      and the owner''s own takes.\n\nHow to answer:\n- Search the owner''s library
-      with search_library first, unless the question plainly isn''t about anything
+      videos they saved, with Archie's summaries and primers of them, topic primers,
+      and the owner's own takes.\\n\\nHow to answer:\\n- Search the owner's library
+      with search_library first, unless the question plainly isn't about anything
       they could have saved (small talk, arithmetic). Search again with other words
-      if the first search finds nothing useful.\n- Call tools without writing anything
-      first; don''t announce your searches.\n- Base library claims only on search
-      results, so they carry citations.\n- Each library result''s title gives the
+      if the first search finds nothing useful.\\n- Call tools without writing anything
+      first; don't announce your searches.\\n- Base library claims only on search
+      results, so they carry citations.\\n- Each library result's title gives the
       day the owner saved it and, when that was another day, when it was published.
-      For a question about a time (\"yesterday\", \"this week\", \"on Tuesday\"),
-      work the days out from today''s date and pass search_library''s saved_* or published_*
-      bounds.\n- Then add background knowledge only where the library doesn''t cover
+      For a question about a time (\\\"yesterday\\\", \\\"this week\\\", \\\"on Tuesday\\\"),
+      work the days out from today's date and pass search_library's saved_* or published_*
+      bounds.\\n- Then add background knowledge only where the library doesn't cover
       the question, in its own paragraph and without citations. Never present background
-      knowledge as coming from the library.\n- Search the web for recent or fast-changing
-      facts (prices, office holders, this year''s numbers), when the owner asks you
+      knowledge as coming from the library.\\n- Search the web for recent or fast-changing
+      facts (prices, office holders, this year's numbers), when the owner asks you
       to look something up, and whenever this prompt says a web search is required.
-      Base web claims only on web results.\n- Keep answers short and in plain language:
+      Base web claims only on web results.\\n- Keep answers short and in plain language:
       a few short paragraphs at most. Define a technical term the first time you use
-      it. No headings, and no bullet lists unless the owner asks for a list.\n- If
-      neither the library nor the web has the answer and you don''t know it, say so
-      plainly.\n- Write plain paragraphs: no headings, no bold section titles; a short
-      list only when it really helps.\n\nEditing the owner''s things:\n- You can propose
-      edits to a source''s summary or primer, a topic primer, one of the owner''s
-      takes, or a review card, but only when the owner asks for a change. Use propose_summary_edit,
-      propose_text_edit or propose_card_edit. Nothing changes until the owner taps
-      Apply, so never say the edit is done.\n- Find the id first: the about item below
-      names its ids, search results end with [kind id] tags, earlier answers list
-      the items they cited, and find_cards finds cards. You don''t need to search
-      the library for an edit when you already have the id.\n- Read the current content
-      with read_item first and change only what the owner asked for; copy everything
-      else exactly, timestamps included. If read_item shows a pending edit, build
-      on it: your new proposal replaces it.\n- When an edit removes or changes a fact
-      that one of the item''s cards asks about, find that item''s cards and propose
-      a matching card edit too.\n- A take is the owner''s own words: change only what
-      they asked, and never add claims of your own.\n- After proposing, say in one
-      short sentence what will change. Don''t repeat the new text.\n\nToday is Saturday
-      7 November 2026 (UTC).\n\nThis chat is about one item in the owner''s library,
-      described below. Searches rank its passages first; answer about it unless the
-      owner clearly asks about something else.\n<about>\nArticle: How index funds
-      work\nSource id: 5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f (its summary and primer
-      are editable)\nGist: Index funds beat most stock pickers because they cost less
-      and don''t try to time the market.\n- An index fund buys every stock in an index
-      instead of picking winners.\n- Low fees compound into large differences over
-      decades.\n- Most active managers trail their index after fees.\n</about>","tools":[{"name":"search_library","description":"Search
-      the owner''s saved library: article and newsletter text, podcast and video transcripts,
-      Archie''s summaries and primers of them, topic primers, and the owner''s own
-      takes. Call this first for any question the owner''s reading could bear on.
-      Returns up to 8 passages to cite. For a question about a time (\"yesterday\",
-      \"this week\", \"on Tuesday\"), also pass day bounds so only items from those
-      days come back: saved_* for when the owner saved or got it (\"what did I save
-      this week\", \"yesterday''s newsletters\"), published_* for when it came out
-      (\"articles published this year\"). For newsletters the two are the same day.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"What
-      to look for, in a few words."},"saved_after":{"type":"string","format":"date","description":"Only
-      items the owner saved or got on or after this day. YYYY-MM-DD, in the owner''s
-      time zone."},"saved_before":{"type":"string","format":"date","description":"Only
-      items the owner saved or got on or before this day. YYYY-MM-DD, in the owner''s
-      time zone."},"published_after":{"type":"string","format":"date","description":"Only
-      items that came out on or after this day. YYYY-MM-DD, in the owner''s time zone."},"published_before":{"type":"string","format":"date","description":"Only
-      items that came out on or before this day. YYYY-MM-DD, in the owner''s time
-      zone."}},"required":["query"],"additionalProperties":false},"strict":true,"eager_input_streaming":true},{"type":"web_search_20260209","name":"web_search","max_uses":3,"allowed_callers":["direct"]},{"name":"read_item","description":"Read
-      the exact current content of something the owner can edit: a source''s summary
+      it. No headings, and no bullet lists unless the owner asks for a list.\\n- If
+      neither the library nor the web has the answer and you don't know it, say so
+      plainly.\\n- Write plain paragraphs: no headings, no bold section titles; a
+      short list only when it really helps.\\n\\nEditing the owner's things:\\n- You
+      can propose edits to a source's summary or primer, a topic primer, one of the
+      owner's takes, or a review card, but only when the owner asks for a change.
+      Use propose_summary_edit, propose_text_edit or propose_card_edit. Nothing changes
+      until the owner taps Apply, so never say the edit is done.\\n- Find the id first:
+      the about item below names its ids, search results end with [kind id] tags,
+      earlier answers list the items they cited, and find_cards finds cards. You don't
+      need to search the library for an edit when you already have the id.\\n- Read
+      the current content with read_item first and change only what the owner asked
+      for; copy everything else exactly, timestamps included. If read_item shows a
+      pending edit, build on it: your new proposal replaces it.\\n- When an edit removes
+      or changes a fact that one of the item's cards asks about, find that item's
+      cards and propose a matching card edit too.\\n- A take is the owner's own words:
+      change only what they asked, and never add claims of your own.\\n- A card edit's
+      question, answer and detail follow the card rules at the end of this prompt.\\n-
+      After proposing, say in one short sentence what will change. Don't repeat the
+      new text.\\n\\nMaking cards from the chat:\\n- When the owner asks for cards
+      (the message \\\"Make cards\\\", or any wording like \\\"make me cards on this\\\"),
+      call propose_cards once, with the whole conversation in view. Don't search the
+      library first unless the owner asks you to.\\n- The cheat sheet is a fresh,
+      self-contained reference the owner will re-read later without the chat: markdown
+      with headings, a comparison table when the chat compared things, and the gotchas.
+      Never refer back to the chat (\\\"as discussed above\\\", \\\"you asked\\\").
+      Headings and tables are fine here, unlike in answers. Voice: a great teacher
+      who respects the reader's time. Warm and direct; talk to \\\"you\\\".\\n- Open
+      with the core idea in one or two plain sentences: what it is and why it matters.\\n-
+      Match depth to the idea. A simple point gets one or two crisp sentences. Only
+      an idea with a real mechanism gets a plain everyday analogy to make it click,
+      then the specifics.\\n- Tell something as a story only when there genuinely
+      is one (real people, a rise and fall, a turning point). Never invent drama,
+      scenes or suspense.\\n- Define jargon in plain words the first time it appears.
+      Prefer concrete examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n-
+      Short sentences and no padding: every sentence carries information. Friendliness
+      comes from the phrasing, not from extra sentences.\\n- Never open with throat-clearing
+      (\\\"Okay so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's
+      dive in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never
+      close with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\\n- Write 3 to 7 open-recall cards on what the chat established,
+      each answerable on its own without the chat or the other cards, written to the
+      card rules below.\\n- When the about item below is one of the owner's notes
+      (\\\"Note: \u2026\\\"), the cards are that note's review cards: call propose_cards
+      with an empty cheat_sheet (the note already has its write-up) and the note's
+      title, and 3 to 5 open-recall cards (concept, mechanism or number) on what the
+      note chose to cover, worded from its write-up and what the owner asked for in
+      this chat.\\n- When the owner asks to change the proposal (\\\"change card 2\\\",
+      \\\"drop the last one\\\", \\\"add a card on X\\\"), call propose_cards again
+      with the whole new set, copying everything they didn't ask to change. Your earlier
+      proposals in this chat are listed after your answers.\\n- A message may open
+      with a line saying which cards of the open proposal the owner kept and dropped
+      (their Keep ticks). When you next call propose_cards, copy the kept cards word
+      for word (so Save can match them) unless the owner asks to change them, and
+      don't bring back the dropped ones.\\n- Around the proposal, write one or two
+      short sentences at most. Don't repeat the cards or the cheat sheet.\\n\\nEach
+      card has a question, an answer and a detail:\\n- question: ONE focused question
+      with ONE thing to recall. Never join two asks with \\\"and\\\" (\\\"What does
+      X give you, and what can you lose?\\\" is two cards, or pick one). Ask only
+      what has a short answer.\\n- answer: the one thing to recall, in as few words
+      as carry it: a phrase, not a sentence. Aim for 2-8 words, never more than 15.
+      The learner is graded only on this, so it is what someone who knows the material
+      would say off the top of their head. When two things are both essential, name
+      both briefly (\\\"Supply and demand\\\"). A number card's answer is the rough
+      figure with its unit.\\n- detail: 0-3 short bullet lines, each under 12 words.
+      Shown after the learner answers, never graded. Each line must help explain the
+      answer (the why or how behind it, or a contrast that makes it click); a further
+      fact about the subject, however true, is not a reason for a line. No padding
+      and no redundancy: never a line that restates the answer, is implied by it or
+      repeats another line; that is trivia from this one source (who said it, when,
+      a passing example or anecdote) rather than a lasting fact about the subject;
+      or that is a side remark that doesn't help recall. So a plain fact or a number
+      usually needs none and most whys need one; use two or three only when the explanation
+      really has that many steps (A happens, so B, so C) or named parts (the three
+      phases of a cycle). When in doubt, use fewer.\\n\\nToday is Tuesday 10 November
+      2026 (UTC).\\n\\nThis chat is about one item in the owner's library, described
+      below. Searches rank its passages first; answer about it unless the owner clearly
+      asks about something else.\\n<about>\\nArticle: How index funds work\\nSource
+      id: 5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f (its summary and primer are editable)\\nGist:
+      Index funds beat most stock pickers because they cost less and don't try to
+      time the market.\\n- An index fund buys every stock in an index instead of picking
+      winners.\\n- Low fees compound into large differences over decades.\\n- Most
+      active managers trail their index after fees.\\n</about>\",\"tools\":[{\"name\":\"search_library\",\"description\":\"Search
+      the owner's saved library: article and newsletter text, podcast and video transcripts,
+      Archie's summaries and primers of them, topic primers, and the owner's own takes.
+      Call this first for any question the owner's reading could bear on. Returns
+      up to 8 passages to cite. For a question about a time (\\\"yesterday\\\", \\\"this
+      week\\\", \\\"on Tuesday\\\"), also pass day bounds so only items from those
+      days come back: saved_* for when the owner saved or got it (\\\"what did I save
+      this week\\\", \\\"yesterday's newsletters\\\"), published_* for when it came
+      out (\\\"articles published this year\\\"). For newsletters the two are the
+      same day.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"What
+      to look for, in a few words.\"},\"saved_after\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items the owner saved or got on or after this day. YYYY-MM-DD, in the owner's
+      time zone.\"},\"saved_before\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items the owner saved or got on or before this day. YYYY-MM-DD, in the owner's
+      time zone.\"},\"published_after\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items that came out on or after this day. YYYY-MM-DD, in the owner's time zone.\"},\"published_before\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items that came out on or before this day. YYYY-MM-DD, in the owner's time zone.\"}},\"required\":[\"query\"],\"additionalProperties\":false},\"strict\":true,\"eager_input_streaming\":true},{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":3,\"allowed_callers\":[\"direct\"]},{\"name\":\"read_item\",\"description\":\"Read
+      the exact current content of something the owner can edit: a source's summary
       or primer (id: the source id), a topic primer (id: a topic primer id or the
-      topic id), one of the owner''s takes (id: the take id) or a review card (id:
+      topic id), one of the owner's takes (id: the take id) or a review card (id:
       the card id). Call it before proposing an edit and copy text from it exactly.
-      `pending` is an edit you already proposed in this chat that the owner hasn''t
-      applied: build on it.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["summary","primer","topic_primer","take","card"]},"id":{"type":"string"}},"required":["kind","id"],"additionalProperties":false},"strict":true},{"name":"find_cards","description":"Find
-      the owner''s review cards by words in their question or answer, by the item
-      they came from, or both. Returns up to 10 cards with their ids.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"Words
-      to look for; empty to list an item''s cards."},"item":{"anyOf":[{"type":"object","properties":{"kind":{"type":"string","enum":["source","topic_primer","take"]},"id":{"type":"string"}},"required":["kind","id"],"additionalProperties":false},{"type":"null"}]}},"required":["query","item"],"additionalProperties":false},"strict":true},{"name":"propose_summary_edit","description":"Propose
-      a new version of a source''s summary: the whole summary as it should read, with
-      everything the owner didn''t ask to change copied exactly, timestamps included.
-      The owner sees a diff and taps Apply; nothing changes before that.","input_schema":{"type":"object","properties":{"source_id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"gist":{"type":"string"},"key_ideas":{"type":"array","items":{"type":"object","properties":{"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}]},"idea":{"type":"string"}},"required":["timestamp","idea"],"additionalProperties":false}},"numbers":{"type":"array","items":{"type":"object","properties":{"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}]},"fact":{"type":"string"}},"required":["timestamp","fact"],"additionalProperties":false}}},"required":["source_id","description","gist","key_ideas","numbers"],"additionalProperties":false},"strict":true},{"name":"propose_text_edit","description":"Propose
-      an edit to a source''s primer (id: the source id), a topic primer or one of
-      the owner''s takes, as find-and-replace pairs over its current markdown from
-      read_item. Each find must be copied exactly and appear exactly once; an empty
-      replace deletes it. The owner sees a diff and taps Apply; nothing changes before
-      that.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["primer","topic_primer","take"]},"id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"replacements":{"type":"array","items":{"type":"object","properties":{"find":{"type":"string"},"replace":{"type":"string"}},"required":["find","replace"],"additionalProperties":false}}},"required":["kind","id","description","replacements"],"additionalProperties":false},"strict":true},{"name":"propose_card_edit","description":"Propose
-      a new question and answer for one of the owner''s review cards (find it with
-      find_cards). The card keeps its review schedule. The owner sees a diff and taps
-      Apply; nothing changes before that.","input_schema":{"type":"object","properties":{"card_id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"question":{"type":"string"},"answer":{"type":"string"}},"required":["card_id","description","question","answer"],"additionalProperties":false},"strict":true}],"thinking":{"type":"between_tools"},"tool_choice":{"type":"auto"},"stream":true}'
+      `pending` is an edit you already proposed in this chat, against this version,
+      that the owner hasn't applied: build on it.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"summary\",\"primer\",\"topic_primer\",\"take\",\"card\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"find_cards\",\"description\":\"Find
+      the owner's review cards by words in their question or answer, by the item they
+      came from, or both. Returns up to 10 cards with their ids.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"Words
+      to look for; empty to list an item's cards.\"},\"item\":{\"anyOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"source\",\"topic_primer\",\"take\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"null\"}]}},\"required\":[\"query\",\"item\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_summary_edit\",\"description\":\"Propose
+      a new version of a source's summary: the whole summary as it should read, with
+      everything the owner didn't ask to change copied exactly, timestamps included.
+      The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"source_id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"source_id\",\"description\",\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_text_edit\",\"description\":\"Propose
+      an edit to a source's primer (id: the source id), a topic primer or one of the
+      owner's takes, as find-and-replace pairs over its current markdown from read_item.
+      Each find must be copied exactly and appear exactly once; an empty replace deletes
+      it. The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"primer\",\"topic_primer\",\"take\"]},\"id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"replacements\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"find\":{\"type\":\"string\"},\"replace\":{\"type\":\"string\"}},\"required\":[\"find\",\"replace\"],\"additionalProperties\":false}}},\"required\":[\"kind\",\"id\",\"description\",\"replacements\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_card_edit\",\"description\":\"Propose
+      a new question, short answer and detail for one of the owner's review cards
+      (find it with find_cards). detail: the lines shown after the answer, one per
+      item (read_item gives them joined by newlines); copy them when the owner didn't
+      ask to change them, and an empty list for none. The card keeps its review schedule.
+      The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"card_id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"card_id\",\"description\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_cards\",\"description\":\"Propose
+      review cards and a cheat sheet from this chat, when the owner asks for cards.
+      The owner sees them with Keep ticks and taps Save; nothing is saved before that.
+      title: a short name for the cheat sheet (at most 120 characters). cheat_sheet:
+      markdown, at most 20000 characters, or empty in a chat about a note. cards:
+      1 to 10, each a question (at most 500 characters), its short answer (at most
+      2000) and its detail lines (may be empty). To change a proposal, call this again
+      with the whole new set.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"title\":{\"type\":\"string\"},\"cheat_sheet\":{\"type\":\"string\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\",\"foundation\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"kind\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false}}},\"required\":[\"title\",\"cheat_sheet\",\"cards\"],\"additionalProperties\":false},\"strict\":true}],\"thinking\":{\"type\":\"between_tools\"},\"tool_choice\":{\"type\":\"auto\"},\"stream\":true}"
     headers:
       accept:
       - application/json
@@ -429,7 +560,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '9805'
+      - '15694'
       content-type:
       - application/json
       host:
@@ -466,13 +597,13 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011CgpQiCLyYkXdgK6AQPDGx","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":6118,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":16,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}
-        }
+        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011Cgv4JjvXxcn5mPUT6iw4Q","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":8080,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":16,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}               }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_01AWQY4Ggu7ttBmekTDMxypo","name":"read_item","input":{},"caller":{"type":"direct"}}               }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_015B3e2Dvd98wkx7Q3T1QxY4","name":"read_item","input":{},"caller":{"type":"direct"}}
+        }
 
 
         event: ping
@@ -482,24 +613,23 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}    }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}           }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"kind\""}   }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"kind\""}        }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":":
-        \"card"}          }
+        \"card"}  }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\""}
-        }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\""}       }
 
 
         event: content_block_delta
@@ -511,47 +641,47 @@ interactions:
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        \"c4a1d"}  }
+        \"c4a1d"}           }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"2e3-f40"}              }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"2e3-f40"}           }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"5-4617-"}       }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"5-4617-"}          }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"8a9b-0c"}         }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"8a9b-0c"}               }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"1d2e3f4"}  }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"1d2e3f4"}             }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"a5b\"}"}      }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"a5b\"}"}             }
 
 
         event: content_block_stop
 
-        data: {"type":"content_block_stop","index":0             }
+        data: {"type":"content_block_stop","index":0 }
 
 
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":6118,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":100,"output_tokens_details":{"thinking_tokens":0}}     }
+        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":8080,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":100,"output_tokens_details":{"thinking_tokens":0}}             }
 
 
         event: message_stop
 
-        data: {"type":"message_stop"}
+        data: {"type":"message_stop"              }
 
 
         '
@@ -559,51 +689,51 @@ interactions:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
-      - '9997000'
+      - '9996000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-07T23:08:44Z'
+      - '2026-11-10T22:44:43Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-07T23:08:44Z'
+      - '2026-11-10T22:44:43Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-07T23:08:44Z'
+      - '2026-11-10T22:44:43Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11997000'
+      - '11996000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-07T23:08:44Z'
+      - '2026-11-10T22:44:43Z'
       cache-control:
       - no-cache
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a57000680b73eadb-ORD
+      - a588955b7e041b3c-ORD
       connection:
       - keep-alive
       content-length:
-      - '2795'
+      - '2848'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Sat, 07 Nov 2026 23:08:45 GMT
+      - Tue, 10 Nov 2026 22:44:44 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=207
+      - x-originResponse;dur=195
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-c9576ff6e81c11f8740f9dcb4ea0ea2e-6491ac5661103a7c-01
+      - 00-8c8d23ceb47fbf831650a306828c6ab1-82feff47f7f134d6-01
       transfer-encoding:
       - chunked
       vary:
@@ -614,101 +744,170 @@ interactions:
       code: 200
       message: OK
 - request:
-    body: '{"max_tokens":8000,"messages":[{"role":"user","content":"Change my card
-      about low fees so its answer says a 1% fee can eat about a quarter of your savings
-      over 40 years."},{"role":"assistant","content":[{"text":"I''ll find the card
-      first.","type":"text"},{"id":"toolu_01TEjh7sriWQGg3u9KYeAZLr","caller":{"type":"direct"},"input":{"query":"low
-      fees","item":{"kind":"source","id":"5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f"}},"name":"find_cards","type":"tool_use"}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01TEjh7sriWQGg3u9KYeAZLr","content":"{\"cards\":
-      [{\"id\": \"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\", \"question\": \"What do
-      low fees do over decades?\", \"answer\": \"They compound into large differences.\"}]}"}]},{"role":"assistant","content":[{"id":"toolu_01AWQY4Ggu7ttBmekTDMxypo","caller":{"type":"direct"},"input":{"kind":"card","id":"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b"},"name":"read_item","type":"tool_use"}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01AWQY4Ggu7ttBmekTDMxypo","content":"{\"kind\":
-      \"card\", \"id\": \"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\", \"title\": \"What
-      do low fees do over decades?\", \"version\": 1, \"content\": {\"question\":
-      \"What do low fees do over decades?\", \"answer\": \"They compound into large
-      differences.\"}, \"pending\": null}"}]}],"model":"claude-sonnet-5-5","output_config":{"effort":"medium"},"system":"You
-      are Archie''s Ask, answering the owner''s questions from their own library first.
+    body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Change
+      my card about low fees so its answer says a 1% fee can eat about a quarter of
+      your savings over 40 years.\"},{\"role\":\"assistant\",\"content\":[{\"text\":\"Let
+      me find the card first.\",\"type\":\"text\"},{\"id\":\"toolu_01MSDA77rdCNM6kr1gFjtS4J\",\"caller\":{\"type\":\"direct\"},\"input\":{\"query\":\"low
+      fees\",\"item\":{\"kind\":\"source\",\"id\":\"5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f\"}},\"name\":\"find_cards\",\"type\":\"tool_use\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_01MSDA77rdCNM6kr1gFjtS4J\",\"content\":\"{\\\"cards\\\":
+      [{\\\"id\\\": \\\"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\\\", \\\"question\\\":
+      \\\"What do low fees do over decades?\\\", \\\"answer\\\": \\\"They compound
+      into large differences.\\\"}]}\"}]},{\"role\":\"assistant\",\"content\":[{\"id\":\"toolu_015B3e2Dvd98wkx7Q3T1QxY4\",\"caller\":{\"type\":\"direct\"},\"input\":{\"kind\":\"card\",\"id\":\"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\"},\"name\":\"read_item\",\"type\":\"tool_use\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_015B3e2Dvd98wkx7Q3T1QxY4\",\"content\":\"{\\\"kind\\\":
+      \\\"card\\\", \\\"id\\\": \\\"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\\\", \\\"title\\\":
+      \\\"What do low fees do over decades?\\\", \\\"version\\\": 1, \\\"content\\\":
+      {\\\"question\\\": \\\"What do low fees do over decades?\\\", \\\"answer\\\":
+      \\\"They compound into large differences.\\\", \\\"detail\\\": \\\"A fee comes
+      off every year, so its cost grows like interest\\\"}, \\\"pending\\\": null}\"}]}],\"model\":\"claude-sonnet-5-5\",\"output_config\":{\"effort\":\"medium\"},\"system\":\"You
+      are Archie's Ask, answering the owner's questions from their own library first.
       Archie is their personal library of the articles, newsletters, podcasts and
-      videos they saved, with Archie''s summaries and primers of them, topic primers,
-      and the owner''s own takes.\n\nHow to answer:\n- Search the owner''s library
-      with search_library first, unless the question plainly isn''t about anything
+      videos they saved, with Archie's summaries and primers of them, topic primers,
+      and the owner's own takes.\\n\\nHow to answer:\\n- Search the owner's library
+      with search_library first, unless the question plainly isn't about anything
       they could have saved (small talk, arithmetic). Search again with other words
-      if the first search finds nothing useful.\n- Call tools without writing anything
-      first; don''t announce your searches.\n- Base library claims only on search
-      results, so they carry citations.\n- Each library result''s title gives the
+      if the first search finds nothing useful.\\n- Call tools without writing anything
+      first; don't announce your searches.\\n- Base library claims only on search
+      results, so they carry citations.\\n- Each library result's title gives the
       day the owner saved it and, when that was another day, when it was published.
-      For a question about a time (\"yesterday\", \"this week\", \"on Tuesday\"),
-      work the days out from today''s date and pass search_library''s saved_* or published_*
-      bounds.\n- Then add background knowledge only where the library doesn''t cover
+      For a question about a time (\\\"yesterday\\\", \\\"this week\\\", \\\"on Tuesday\\\"),
+      work the days out from today's date and pass search_library's saved_* or published_*
+      bounds.\\n- Then add background knowledge only where the library doesn't cover
       the question, in its own paragraph and without citations. Never present background
-      knowledge as coming from the library.\n- Search the web for recent or fast-changing
-      facts (prices, office holders, this year''s numbers), when the owner asks you
+      knowledge as coming from the library.\\n- Search the web for recent or fast-changing
+      facts (prices, office holders, this year's numbers), when the owner asks you
       to look something up, and whenever this prompt says a web search is required.
-      Base web claims only on web results.\n- Keep answers short and in plain language:
+      Base web claims only on web results.\\n- Keep answers short and in plain language:
       a few short paragraphs at most. Define a technical term the first time you use
-      it. No headings, and no bullet lists unless the owner asks for a list.\n- If
-      neither the library nor the web has the answer and you don''t know it, say so
-      plainly.\n- Write plain paragraphs: no headings, no bold section titles; a short
-      list only when it really helps.\n\nEditing the owner''s things:\n- You can propose
-      edits to a source''s summary or primer, a topic primer, one of the owner''s
-      takes, or a review card, but only when the owner asks for a change. Use propose_summary_edit,
-      propose_text_edit or propose_card_edit. Nothing changes until the owner taps
-      Apply, so never say the edit is done.\n- Find the id first: the about item below
-      names its ids, search results end with [kind id] tags, earlier answers list
-      the items they cited, and find_cards finds cards. You don''t need to search
-      the library for an edit when you already have the id.\n- Read the current content
-      with read_item first and change only what the owner asked for; copy everything
-      else exactly, timestamps included. If read_item shows a pending edit, build
-      on it: your new proposal replaces it.\n- When an edit removes or changes a fact
-      that one of the item''s cards asks about, find that item''s cards and propose
-      a matching card edit too.\n- A take is the owner''s own words: change only what
-      they asked, and never add claims of your own.\n- After proposing, say in one
-      short sentence what will change. Don''t repeat the new text.\n\nToday is Saturday
-      7 November 2026 (UTC).\n\nThis chat is about one item in the owner''s library,
-      described below. Searches rank its passages first; answer about it unless the
-      owner clearly asks about something else.\n<about>\nArticle: How index funds
-      work\nSource id: 5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f (its summary and primer
-      are editable)\nGist: Index funds beat most stock pickers because they cost less
-      and don''t try to time the market.\n- An index fund buys every stock in an index
-      instead of picking winners.\n- Low fees compound into large differences over
-      decades.\n- Most active managers trail their index after fees.\n</about>","tools":[{"name":"search_library","description":"Search
-      the owner''s saved library: article and newsletter text, podcast and video transcripts,
-      Archie''s summaries and primers of them, topic primers, and the owner''s own
-      takes. Call this first for any question the owner''s reading could bear on.
-      Returns up to 8 passages to cite. For a question about a time (\"yesterday\",
-      \"this week\", \"on Tuesday\"), also pass day bounds so only items from those
-      days come back: saved_* for when the owner saved or got it (\"what did I save
-      this week\", \"yesterday''s newsletters\"), published_* for when it came out
-      (\"articles published this year\"). For newsletters the two are the same day.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"What
-      to look for, in a few words."},"saved_after":{"type":"string","format":"date","description":"Only
-      items the owner saved or got on or after this day. YYYY-MM-DD, in the owner''s
-      time zone."},"saved_before":{"type":"string","format":"date","description":"Only
-      items the owner saved or got on or before this day. YYYY-MM-DD, in the owner''s
-      time zone."},"published_after":{"type":"string","format":"date","description":"Only
-      items that came out on or after this day. YYYY-MM-DD, in the owner''s time zone."},"published_before":{"type":"string","format":"date","description":"Only
-      items that came out on or before this day. YYYY-MM-DD, in the owner''s time
-      zone."}},"required":["query"],"additionalProperties":false},"strict":true,"eager_input_streaming":true},{"type":"web_search_20260209","name":"web_search","max_uses":3,"allowed_callers":["direct"]},{"name":"read_item","description":"Read
-      the exact current content of something the owner can edit: a source''s summary
+      it. No headings, and no bullet lists unless the owner asks for a list.\\n- If
+      neither the library nor the web has the answer and you don't know it, say so
+      plainly.\\n- Write plain paragraphs: no headings, no bold section titles; a
+      short list only when it really helps.\\n\\nEditing the owner's things:\\n- You
+      can propose edits to a source's summary or primer, a topic primer, one of the
+      owner's takes, or a review card, but only when the owner asks for a change.
+      Use propose_summary_edit, propose_text_edit or propose_card_edit. Nothing changes
+      until the owner taps Apply, so never say the edit is done.\\n- Find the id first:
+      the about item below names its ids, search results end with [kind id] tags,
+      earlier answers list the items they cited, and find_cards finds cards. You don't
+      need to search the library for an edit when you already have the id.\\n- Read
+      the current content with read_item first and change only what the owner asked
+      for; copy everything else exactly, timestamps included. If read_item shows a
+      pending edit, build on it: your new proposal replaces it.\\n- When an edit removes
+      or changes a fact that one of the item's cards asks about, find that item's
+      cards and propose a matching card edit too.\\n- A take is the owner's own words:
+      change only what they asked, and never add claims of your own.\\n- A card edit's
+      question, answer and detail follow the card rules at the end of this prompt.\\n-
+      After proposing, say in one short sentence what will change. Don't repeat the
+      new text.\\n\\nMaking cards from the chat:\\n- When the owner asks for cards
+      (the message \\\"Make cards\\\", or any wording like \\\"make me cards on this\\\"),
+      call propose_cards once, with the whole conversation in view. Don't search the
+      library first unless the owner asks you to.\\n- The cheat sheet is a fresh,
+      self-contained reference the owner will re-read later without the chat: markdown
+      with headings, a comparison table when the chat compared things, and the gotchas.
+      Never refer back to the chat (\\\"as discussed above\\\", \\\"you asked\\\").
+      Headings and tables are fine here, unlike in answers. Voice: a great teacher
+      who respects the reader's time. Warm and direct; talk to \\\"you\\\".\\n- Open
+      with the core idea in one or two plain sentences: what it is and why it matters.\\n-
+      Match depth to the idea. A simple point gets one or two crisp sentences. Only
+      an idea with a real mechanism gets a plain everyday analogy to make it click,
+      then the specifics.\\n- Tell something as a story only when there genuinely
+      is one (real people, a rise and fall, a turning point). Never invent drama,
+      scenes or suspense.\\n- Define jargon in plain words the first time it appears.
+      Prefer concrete examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n-
+      Short sentences and no padding: every sentence carries information. Friendliness
+      comes from the phrasing, not from extra sentences.\\n- Never open with throat-clearing
+      (\\\"Okay so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's
+      dive in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never
+      close with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\\n- Write 3 to 7 open-recall cards on what the chat established,
+      each answerable on its own without the chat or the other cards, written to the
+      card rules below.\\n- When the about item below is one of the owner's notes
+      (\\\"Note: \u2026\\\"), the cards are that note's review cards: call propose_cards
+      with an empty cheat_sheet (the note already has its write-up) and the note's
+      title, and 3 to 5 open-recall cards (concept, mechanism or number) on what the
+      note chose to cover, worded from its write-up and what the owner asked for in
+      this chat.\\n- When the owner asks to change the proposal (\\\"change card 2\\\",
+      \\\"drop the last one\\\", \\\"add a card on X\\\"), call propose_cards again
+      with the whole new set, copying everything they didn't ask to change. Your earlier
+      proposals in this chat are listed after your answers.\\n- A message may open
+      with a line saying which cards of the open proposal the owner kept and dropped
+      (their Keep ticks). When you next call propose_cards, copy the kept cards word
+      for word (so Save can match them) unless the owner asks to change them, and
+      don't bring back the dropped ones.\\n- Around the proposal, write one or two
+      short sentences at most. Don't repeat the cards or the cheat sheet.\\n\\nEach
+      card has a question, an answer and a detail:\\n- question: ONE focused question
+      with ONE thing to recall. Never join two asks with \\\"and\\\" (\\\"What does
+      X give you, and what can you lose?\\\" is two cards, or pick one). Ask only
+      what has a short answer.\\n- answer: the one thing to recall, in as few words
+      as carry it: a phrase, not a sentence. Aim for 2-8 words, never more than 15.
+      The learner is graded only on this, so it is what someone who knows the material
+      would say off the top of their head. When two things are both essential, name
+      both briefly (\\\"Supply and demand\\\"). A number card's answer is the rough
+      figure with its unit.\\n- detail: 0-3 short bullet lines, each under 12 words.
+      Shown after the learner answers, never graded. Each line must help explain the
+      answer (the why or how behind it, or a contrast that makes it click); a further
+      fact about the subject, however true, is not a reason for a line. No padding
+      and no redundancy: never a line that restates the answer, is implied by it or
+      repeats another line; that is trivia from this one source (who said it, when,
+      a passing example or anecdote) rather than a lasting fact about the subject;
+      or that is a side remark that doesn't help recall. So a plain fact or a number
+      usually needs none and most whys need one; use two or three only when the explanation
+      really has that many steps (A happens, so B, so C) or named parts (the three
+      phases of a cycle). When in doubt, use fewer.\\n\\nToday is Tuesday 10 November
+      2026 (UTC).\\n\\nThis chat is about one item in the owner's library, described
+      below. Searches rank its passages first; answer about it unless the owner clearly
+      asks about something else.\\n<about>\\nArticle: How index funds work\\nSource
+      id: 5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f (its summary and primer are editable)\\nGist:
+      Index funds beat most stock pickers because they cost less and don't try to
+      time the market.\\n- An index fund buys every stock in an index instead of picking
+      winners.\\n- Low fees compound into large differences over decades.\\n- Most
+      active managers trail their index after fees.\\n</about>\",\"tools\":[{\"name\":\"search_library\",\"description\":\"Search
+      the owner's saved library: article and newsletter text, podcast and video transcripts,
+      Archie's summaries and primers of them, topic primers, and the owner's own takes.
+      Call this first for any question the owner's reading could bear on. Returns
+      up to 8 passages to cite. For a question about a time (\\\"yesterday\\\", \\\"this
+      week\\\", \\\"on Tuesday\\\"), also pass day bounds so only items from those
+      days come back: saved_* for when the owner saved or got it (\\\"what did I save
+      this week\\\", \\\"yesterday's newsletters\\\"), published_* for when it came
+      out (\\\"articles published this year\\\"). For newsletters the two are the
+      same day.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"What
+      to look for, in a few words.\"},\"saved_after\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items the owner saved or got on or after this day. YYYY-MM-DD, in the owner's
+      time zone.\"},\"saved_before\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items the owner saved or got on or before this day. YYYY-MM-DD, in the owner's
+      time zone.\"},\"published_after\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items that came out on or after this day. YYYY-MM-DD, in the owner's time zone.\"},\"published_before\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items that came out on or before this day. YYYY-MM-DD, in the owner's time zone.\"}},\"required\":[\"query\"],\"additionalProperties\":false},\"strict\":true,\"eager_input_streaming\":true},{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":3,\"allowed_callers\":[\"direct\"]},{\"name\":\"read_item\",\"description\":\"Read
+      the exact current content of something the owner can edit: a source's summary
       or primer (id: the source id), a topic primer (id: a topic primer id or the
-      topic id), one of the owner''s takes (id: the take id) or a review card (id:
+      topic id), one of the owner's takes (id: the take id) or a review card (id:
       the card id). Call it before proposing an edit and copy text from it exactly.
-      `pending` is an edit you already proposed in this chat that the owner hasn''t
-      applied: build on it.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["summary","primer","topic_primer","take","card"]},"id":{"type":"string"}},"required":["kind","id"],"additionalProperties":false},"strict":true},{"name":"find_cards","description":"Find
-      the owner''s review cards by words in their question or answer, by the item
-      they came from, or both. Returns up to 10 cards with their ids.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"Words
-      to look for; empty to list an item''s cards."},"item":{"anyOf":[{"type":"object","properties":{"kind":{"type":"string","enum":["source","topic_primer","take"]},"id":{"type":"string"}},"required":["kind","id"],"additionalProperties":false},{"type":"null"}]}},"required":["query","item"],"additionalProperties":false},"strict":true},{"name":"propose_summary_edit","description":"Propose
-      a new version of a source''s summary: the whole summary as it should read, with
-      everything the owner didn''t ask to change copied exactly, timestamps included.
-      The owner sees a diff and taps Apply; nothing changes before that.","input_schema":{"type":"object","properties":{"source_id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"gist":{"type":"string"},"key_ideas":{"type":"array","items":{"type":"object","properties":{"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}]},"idea":{"type":"string"}},"required":["timestamp","idea"],"additionalProperties":false}},"numbers":{"type":"array","items":{"type":"object","properties":{"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}]},"fact":{"type":"string"}},"required":["timestamp","fact"],"additionalProperties":false}}},"required":["source_id","description","gist","key_ideas","numbers"],"additionalProperties":false},"strict":true},{"name":"propose_text_edit","description":"Propose
-      an edit to a source''s primer (id: the source id), a topic primer or one of
-      the owner''s takes, as find-and-replace pairs over its current markdown from
-      read_item. Each find must be copied exactly and appear exactly once; an empty
-      replace deletes it. The owner sees a diff and taps Apply; nothing changes before
-      that.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["primer","topic_primer","take"]},"id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"replacements":{"type":"array","items":{"type":"object","properties":{"find":{"type":"string"},"replace":{"type":"string"}},"required":["find","replace"],"additionalProperties":false}}},"required":["kind","id","description","replacements"],"additionalProperties":false},"strict":true},{"name":"propose_card_edit","description":"Propose
-      a new question and answer for one of the owner''s review cards (find it with
-      find_cards). The card keeps its review schedule. The owner sees a diff and taps
-      Apply; nothing changes before that.","input_schema":{"type":"object","properties":{"card_id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"question":{"type":"string"},"answer":{"type":"string"}},"required":["card_id","description","question","answer"],"additionalProperties":false},"strict":true}],"thinking":{"type":"between_tools"},"tool_choice":{"type":"auto"},"stream":true}'
+      `pending` is an edit you already proposed in this chat, against this version,
+      that the owner hasn't applied: build on it.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"summary\",\"primer\",\"topic_primer\",\"take\",\"card\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"find_cards\",\"description\":\"Find
+      the owner's review cards by words in their question or answer, by the item they
+      came from, or both. Returns up to 10 cards with their ids.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"Words
+      to look for; empty to list an item's cards.\"},\"item\":{\"anyOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"source\",\"topic_primer\",\"take\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"null\"}]}},\"required\":[\"query\",\"item\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_summary_edit\",\"description\":\"Propose
+      a new version of a source's summary: the whole summary as it should read, with
+      everything the owner didn't ask to change copied exactly, timestamps included.
+      The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"source_id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"source_id\",\"description\",\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_text_edit\",\"description\":\"Propose
+      an edit to a source's primer (id: the source id), a topic primer or one of the
+      owner's takes, as find-and-replace pairs over its current markdown from read_item.
+      Each find must be copied exactly and appear exactly once; an empty replace deletes
+      it. The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"primer\",\"topic_primer\",\"take\"]},\"id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"replacements\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"find\":{\"type\":\"string\"},\"replace\":{\"type\":\"string\"}},\"required\":[\"find\",\"replace\"],\"additionalProperties\":false}}},\"required\":[\"kind\",\"id\",\"description\",\"replacements\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_card_edit\",\"description\":\"Propose
+      a new question, short answer and detail for one of the owner's review cards
+      (find it with find_cards). detail: the lines shown after the answer, one per
+      item (read_item gives them joined by newlines); copy them when the owner didn't
+      ask to change them, and an empty list for none. The card keeps its review schedule.
+      The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"card_id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"card_id\",\"description\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_cards\",\"description\":\"Propose
+      review cards and a cheat sheet from this chat, when the owner asks for cards.
+      The owner sees them with Keep ticks and taps Save; nothing is saved before that.
+      title: a short name for the cheat sheet (at most 120 characters). cheat_sheet:
+      markdown, at most 20000 characters, or empty in a chat about a note. cards:
+      1 to 10, each a question (at most 500 characters), its short answer (at most
+      2000) and its detail lines (may be empty). To change a proposal, call this again
+      with the whole new set.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"title\":{\"type\":\"string\"},\"cheat_sheet\":{\"type\":\"string\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\",\"foundation\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"kind\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false}}},\"required\":[\"title\",\"cheat_sheet\",\"cards\"],\"additionalProperties\":false},\"strict\":true}],\"thinking\":{\"type\":\"between_tools\"},\"tool_choice\":{\"type\":\"auto\"},\"stream\":true}"
     headers:
       accept:
       - application/json
@@ -719,7 +918,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '10399'
+      - '16365'
       content-type:
       - application/json
       host:
@@ -756,12 +955,12 @@ interactions:
     body:
       string: 'event: message_start
 
-        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011CgpQiKEhbiTtkQWQEqsbH","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":6329,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":24,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}   }
+        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011Cgv4Jrwid1DbWjfxFnzNv","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":8316,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":56,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}              }
 
 
         event: content_block_start
 
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"toolu_01V84eXy8AirphJ8q15ztJHY","name":"propose_card_edit","input":{},"caller":{"type":"direct"}}    }
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}     }
 
 
         event: ping
@@ -771,589 +970,44 @@ interactions:
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":""}
-        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\"card_"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"id\":
-        \"c"}      }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"4a1d2e3"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"-f405-4"}        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"617-8a9"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"b-0c1d2"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"e3f4a5b"}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\""}   }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":",
-        \"desc"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"ription"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\":
-        \"Ans"}          }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"wer
-        now"}               }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        states"}      }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        that a"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        1% fee"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        can ea"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"t
-        about"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        a quar"}          }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"ter
-        of "}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"savings"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        over 4"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"0
-        years"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":".\""}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":",
-        \"ques"}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"tion\":
-        "}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\"What
-        d"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"o
-        low f"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"ees
-        do "}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"over
-        de"}         }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"cades?\""}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":",
-        \"answ"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"er\":
-        \"T"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"hey
-        com"}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"pound
-        i"}}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"nto
-        lar"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"ge
-        diff"}          }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"erences"}       }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":":
-        a 1% "}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"fee
-        can"}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        eat ab"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"out
-        a q"}     }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"uarter
-        "}             }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"of
-        your"}           }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"
-        saving"}    }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"s
-        over "}            }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"40
-        year"} }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"s.\"}"}     }
-
-
-        event: content_block_stop
-
-        data: {"type":"content_block_stop","index":0    }
-
-
-        event: message_delta
-
-        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":6329,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":216,"output_tokens_details":{"thinking_tokens":0}}           }
-
-
-        event: message_stop
-
-        data: {"type":"message_stop" }
-
-
-        '
-    headers:
-      anthropic-ratelimit-input-tokens-limit:
-      - '10000000'
-      anthropic-ratelimit-input-tokens-remaining:
-      - '9997000'
-      anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-07T23:08:45Z'
-      anthropic-ratelimit-output-tokens-limit:
-      - '2000000'
-      anthropic-ratelimit-output-tokens-remaining:
-      - '2000000'
-      anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-07T23:08:45Z'
-      anthropic-ratelimit-requests-limit:
-      - '13000'
-      anthropic-ratelimit-requests-remaining:
-      - '12999'
-      anthropic-ratelimit-requests-reset:
-      - '2026-11-07T23:08:45Z'
-      anthropic-ratelimit-tokens-limit:
-      - '12000000'
-      anthropic-ratelimit-tokens-remaining:
-      - '11997000'
-      anthropic-ratelimit-tokens-reset:
-      - '2026-11-07T23:08:45Z'
-      cache-control:
-      - no-cache
-      cf-cache-status:
-      - DYNAMIC
-      cf-ray:
-      - a57000722f52eadb-ORD
-      connection:
-      - keep-alive
-      content-length:
-      - '8135'
-      content-security-policy:
-      - default-src 'none'; frame-ancestors 'none'
-      content-type:
-      - text/event-stream; charset=utf-8
-      date:
-      - Sat, 07 Nov 2026 23:08:46 GMT
-      server:
-      - cloudflare
-      server-timing:
-      - x-originResponse;dur=201
-      strict-transport-security:
-      - max-age=31536000; includeSubDomains; preload
-      traceresponse:
-      - 00-67e356358cfaf740f27c4a1d2831a309-e47b401002bd05e6-01
-      transfer-encoding:
-      - chunked
-      vary:
-      - Accept-Encoding
-      x-robots-tag:
-      - none
-    status:
-      code: 200
-      message: OK
-- request:
-    body: '{"max_tokens":8000,"messages":[{"role":"user","content":"Change my card
-      about low fees so its answer says a 1% fee can eat about a quarter of your savings
-      over 40 years."},{"role":"assistant","content":[{"text":"I''ll find the card
-      first.","type":"text"},{"id":"toolu_01TEjh7sriWQGg3u9KYeAZLr","caller":{"type":"direct"},"input":{"query":"low
-      fees","item":{"kind":"source","id":"5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f"}},"name":"find_cards","type":"tool_use"}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01TEjh7sriWQGg3u9KYeAZLr","content":"{\"cards\":
-      [{\"id\": \"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\", \"question\": \"What do
-      low fees do over decades?\", \"answer\": \"They compound into large differences.\"}]}"}]},{"role":"assistant","content":[{"id":"toolu_01AWQY4Ggu7ttBmekTDMxypo","caller":{"type":"direct"},"input":{"kind":"card","id":"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b"},"name":"read_item","type":"tool_use"}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01AWQY4Ggu7ttBmekTDMxypo","content":"{\"kind\":
-      \"card\", \"id\": \"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\", \"title\": \"What
-      do low fees do over decades?\", \"version\": 1, \"content\": {\"question\":
-      \"What do low fees do over decades?\", \"answer\": \"They compound into large
-      differences.\"}, \"pending\": null}"}]},{"role":"assistant","content":[{"id":"toolu_01V84eXy8AirphJ8q15ztJHY","caller":{"type":"direct"},"input":{"card_id":"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b","description":"Answer
-      now states that a 1% fee can eat about a quarter of savings over 40 years.","question":"What
-      do low fees do over decades?","answer":"They compound into large differences:
-      a 1% fee can eat about a quarter of your savings over 40 years."},"name":"propose_card_edit","type":"tool_use"}]},{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01V84eXy8AirphJ8q15ztJHY","content":"{\"proposal_id\":
-      \"255555a6-b2e5-4a75-8990-4c53d194de4d\", \"status\": \"shown to the owner with
-      Apply and Discard; nothing has changed yet\"}"}]}],"model":"claude-sonnet-5-5","output_config":{"effort":"medium"},"system":"You
-      are Archie''s Ask, answering the owner''s questions from their own library first.
-      Archie is their personal library of the articles, newsletters, podcasts and
-      videos they saved, with Archie''s summaries and primers of them, topic primers,
-      and the owner''s own takes.\n\nHow to answer:\n- Search the owner''s library
-      with search_library first, unless the question plainly isn''t about anything
-      they could have saved (small talk, arithmetic). Search again with other words
-      if the first search finds nothing useful.\n- Call tools without writing anything
-      first; don''t announce your searches.\n- Base library claims only on search
-      results, so they carry citations.\n- Each library result''s title gives the
-      day the owner saved it and, when that was another day, when it was published.
-      For a question about a time (\"yesterday\", \"this week\", \"on Tuesday\"),
-      work the days out from today''s date and pass search_library''s saved_* or published_*
-      bounds.\n- Then add background knowledge only where the library doesn''t cover
-      the question, in its own paragraph and without citations. Never present background
-      knowledge as coming from the library.\n- Search the web for recent or fast-changing
-      facts (prices, office holders, this year''s numbers), when the owner asks you
-      to look something up, and whenever this prompt says a web search is required.
-      Base web claims only on web results.\n- Keep answers short and in plain language:
-      a few short paragraphs at most. Define a technical term the first time you use
-      it. No headings, and no bullet lists unless the owner asks for a list.\n- If
-      neither the library nor the web has the answer and you don''t know it, say so
-      plainly.\n- Write plain paragraphs: no headings, no bold section titles; a short
-      list only when it really helps.\n\nEditing the owner''s things:\n- You can propose
-      edits to a source''s summary or primer, a topic primer, one of the owner''s
-      takes, or a review card, but only when the owner asks for a change. Use propose_summary_edit,
-      propose_text_edit or propose_card_edit. Nothing changes until the owner taps
-      Apply, so never say the edit is done.\n- Find the id first: the about item below
-      names its ids, search results end with [kind id] tags, earlier answers list
-      the items they cited, and find_cards finds cards. You don''t need to search
-      the library for an edit when you already have the id.\n- Read the current content
-      with read_item first and change only what the owner asked for; copy everything
-      else exactly, timestamps included. If read_item shows a pending edit, build
-      on it: your new proposal replaces it.\n- When an edit removes or changes a fact
-      that one of the item''s cards asks about, find that item''s cards and propose
-      a matching card edit too.\n- A take is the owner''s own words: change only what
-      they asked, and never add claims of your own.\n- After proposing, say in one
-      short sentence what will change. Don''t repeat the new text.\n\nToday is Saturday
-      7 November 2026 (UTC).\n\nThis chat is about one item in the owner''s library,
-      described below. Searches rank its passages first; answer about it unless the
-      owner clearly asks about something else.\n<about>\nArticle: How index funds
-      work\nSource id: 5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f (its summary and primer
-      are editable)\nGist: Index funds beat most stock pickers because they cost less
-      and don''t try to time the market.\n- An index fund buys every stock in an index
-      instead of picking winners.\n- Low fees compound into large differences over
-      decades.\n- Most active managers trail their index after fees.\n</about>","tools":[{"name":"search_library","description":"Search
-      the owner''s saved library: article and newsletter text, podcast and video transcripts,
-      Archie''s summaries and primers of them, topic primers, and the owner''s own
-      takes. Call this first for any question the owner''s reading could bear on.
-      Returns up to 8 passages to cite. For a question about a time (\"yesterday\",
-      \"this week\", \"on Tuesday\"), also pass day bounds so only items from those
-      days come back: saved_* for when the owner saved or got it (\"what did I save
-      this week\", \"yesterday''s newsletters\"), published_* for when it came out
-      (\"articles published this year\"). For newsletters the two are the same day.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"What
-      to look for, in a few words."},"saved_after":{"type":"string","format":"date","description":"Only
-      items the owner saved or got on or after this day. YYYY-MM-DD, in the owner''s
-      time zone."},"saved_before":{"type":"string","format":"date","description":"Only
-      items the owner saved or got on or before this day. YYYY-MM-DD, in the owner''s
-      time zone."},"published_after":{"type":"string","format":"date","description":"Only
-      items that came out on or after this day. YYYY-MM-DD, in the owner''s time zone."},"published_before":{"type":"string","format":"date","description":"Only
-      items that came out on or before this day. YYYY-MM-DD, in the owner''s time
-      zone."}},"required":["query"],"additionalProperties":false},"strict":true,"eager_input_streaming":true},{"type":"web_search_20260209","name":"web_search","max_uses":3,"allowed_callers":["direct"]},{"name":"read_item","description":"Read
-      the exact current content of something the owner can edit: a source''s summary
-      or primer (id: the source id), a topic primer (id: a topic primer id or the
-      topic id), one of the owner''s takes (id: the take id) or a review card (id:
-      the card id). Call it before proposing an edit and copy text from it exactly.
-      `pending` is an edit you already proposed in this chat that the owner hasn''t
-      applied: build on it.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["summary","primer","topic_primer","take","card"]},"id":{"type":"string"}},"required":["kind","id"],"additionalProperties":false},"strict":true},{"name":"find_cards","description":"Find
-      the owner''s review cards by words in their question or answer, by the item
-      they came from, or both. Returns up to 10 cards with their ids.","input_schema":{"type":"object","properties":{"query":{"type":"string","description":"Words
-      to look for; empty to list an item''s cards."},"item":{"anyOf":[{"type":"object","properties":{"kind":{"type":"string","enum":["source","topic_primer","take"]},"id":{"type":"string"}},"required":["kind","id"],"additionalProperties":false},{"type":"null"}]}},"required":["query","item"],"additionalProperties":false},"strict":true},{"name":"propose_summary_edit","description":"Propose
-      a new version of a source''s summary: the whole summary as it should read, with
-      everything the owner didn''t ask to change copied exactly, timestamps included.
-      The owner sees a diff and taps Apply; nothing changes before that.","input_schema":{"type":"object","properties":{"source_id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"gist":{"type":"string"},"key_ideas":{"type":"array","items":{"type":"object","properties":{"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}]},"idea":{"type":"string"}},"required":["timestamp","idea"],"additionalProperties":false}},"numbers":{"type":"array","items":{"type":"object","properties":{"timestamp":{"anyOf":[{"type":"string"},{"type":"null"}]},"fact":{"type":"string"}},"required":["timestamp","fact"],"additionalProperties":false}}},"required":["source_id","description","gist","key_ideas","numbers"],"additionalProperties":false},"strict":true},{"name":"propose_text_edit","description":"Propose
-      an edit to a source''s primer (id: the source id), a topic primer or one of
-      the owner''s takes, as find-and-replace pairs over its current markdown from
-      read_item. Each find must be copied exactly and appear exactly once; an empty
-      replace deletes it. The owner sees a diff and taps Apply; nothing changes before
-      that.","input_schema":{"type":"object","properties":{"kind":{"type":"string","enum":["primer","topic_primer","take"]},"id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"replacements":{"type":"array","items":{"type":"object","properties":{"find":{"type":"string"},"replace":{"type":"string"}},"required":["find","replace"],"additionalProperties":false}}},"required":["kind","id","description","replacements"],"additionalProperties":false},"strict":true},{"name":"propose_card_edit","description":"Propose
-      a new question and answer for one of the owner''s review cards (find it with
-      find_cards). The card keeps its review schedule. The owner sees a diff and taps
-      Apply; nothing changes before that.","input_schema":{"type":"object","properties":{"card_id":{"type":"string"},"description":{"type":"string","description":"One
-      short line telling the owner what changes."},"question":{"type":"string"},"answer":{"type":"string"}},"required":["card_id","description","question","answer"],"additionalProperties":false},"strict":true}],"thinking":{"type":"between_tools"},"tool_choice":{"type":"auto"},"stream":true}'
-    headers:
-      accept:
-      - application/json
-      accept-encoding:
-      - gzip, deflate
-      anthropic-version:
-      - '2026-10-21'
-      connection:
-      - keep-alive
-      content-length:
-      - '11115'
-      content-type:
-      - application/json
-      host:
-      - api.anthropic.com
-      user-agent:
-      - Anthropic/Python 2.4.0
-      x-stainless-arch:
-      - arm64
-      x-stainless-async:
-      - 'false'
-      x-stainless-helper-method:
-      - stream
-      x-stainless-lang:
-      - python
-      x-stainless-os:
-      - MacOS
-      x-stainless-package-version:
-      - 2.4.0
-      x-stainless-read-timeout:
-      - '120'
-      x-stainless-retry-count:
-      - '0'
-      x-stainless-runtime:
-      - CPython
-      x-stainless-runtime-version:
-      - 3.13.3
-      x-stainless-stream-helper:
-      - messages
-      x-stainless-timeout:
-      - NOT_GIVEN
-    method: POST
-    uri: https://api.anthropic.com/v1/messages
-  response:
-    body:
-      string: 'event: message_start
-
-        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011CgpQiTjBbz3L7meY7qsTS","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":6614,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":69,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}
-        }
-
-
-        event: content_block_start
-
-        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}      }
-
-
-        event: ping
-
-        data: {"type": "ping"}
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"I"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"''ve
-        proposed a"}     }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"The
+        answer should"}             }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        new"}              }
+        st"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ay
+        short, so I''ll make"}          }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        answer for the card:"} }
+        it"}            }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        \"They compound into large differences"}           }
+        a br"}       }
 
 
         event: content_block_delta
 
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":":
-        a 1% fee can"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        eat about a quarter of"}       }
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ief
+        phrase and keep the"}        }
 
 
         event: content_block_delta
 
         data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        your savings over 40 years"}        }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":".\"
-        The"}      }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        question stays the same, and"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
-        nothing chang"}              }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"es
-        until you tap Apply"}  }
-
-
-        event: content_block_delta
-
-        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"."}              }
+        existing detail line."}    }
 
 
         event: content_block_stop
@@ -1361,14 +1015,318 @@ interactions:
         data: {"type":"content_block_stop","index":0              }
 
 
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":1,"content_block":{"type":"tool_use","id":"toolu_01UB5NAeTfTefWThtignc3xN","name":"propose_card_edit","input":{},"caller":{"type":"direct"}}
+        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"card_"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"id\":
+        \"c"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"4a1d2e3"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"-f405-4"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"617-8a9"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"b-0c1d2"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"e3f4a5b"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\""}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":",
+        \"desc"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ription"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\":
+        \"Ans"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"wer
+        now"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        says a"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        1% fee"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        can ea"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"t
+        about"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        a quar"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ter
+        of "}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"savings"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        over 4"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"0
+        years"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\""}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":",
+        \"ques"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"tion\":
+        "} }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"\"What
+        c"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"an
+        a 1%"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        annual"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        fee do"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        to you"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"r
+        savin"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"gs
+        over"}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        40 yea"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"rs?\""}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":",
+        \"answ"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"er\":
+        \"E"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"at
+        abou"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"t
+        a qua"}       }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"rter
+        of"}               }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        them\""}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":",
+        \"deta"}               }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"il\":
+        [\""}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"A
+        fee c"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"omes
+        of"}               }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"f
+        every"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"
+        year, "}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"so
+        its "}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"cost
+        gr"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"ows
+        lik"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"e
+        inter"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"est\"]}"}}
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":1       }
+
+
         event: message_delta
 
-        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":6614,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":69,"output_tokens_details":{"thinking_tokens":0}}          }
+        data: {"type":"message_delta","delta":{"stop_reason":"tool_use","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":8316,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":276,"output_tokens_details":{"thinking_tokens":0}}}
 
 
         event: message_stop
 
-        data: {"type":"message_stop"             }
+        data: {"type":"message_stop"        }
 
 
         '
@@ -1376,51 +1334,500 @@ interactions:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
-      - '9997000'
+      - '9996000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-07T23:08:47Z'
+      - '2026-11-10T22:44:45Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-07T23:08:47Z'
+      - '2026-11-10T22:44:45Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-07T23:08:47Z'
+      - '2026-11-10T22:44:45Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11997000'
+      - '11996000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-07T23:08:47Z'
+      - '2026-11-10T22:44:45Z'
       cache-control:
       - no-cache
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a570007e984beadb-ORD
+      - a588956588291b3c-ORD
       connection:
       - keep-alive
       content-length:
-      - '2965'
+      - '9729'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - text/event-stream; charset=utf-8
       date:
-      - Sat, 07 Nov 2026 23:08:49 GMT
+      - Tue, 10 Nov 2026 22:44:46 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=212
+      - x-originResponse;dur=271
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-019c7e502fb43af2133c873b71675efe-ea409fe704bb0730-01
+      - 00-33501a63adc1be8b044bd29fd68dd205-3fe76a5537152ff5-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+- request:
+    body: "{\"max_tokens\":8000,\"messages\":[{\"role\":\"user\",\"content\":\"Change
+      my card about low fees so its answer says a 1% fee can eat about a quarter of
+      your savings over 40 years.\"},{\"role\":\"assistant\",\"content\":[{\"text\":\"Let
+      me find the card first.\",\"type\":\"text\"},{\"id\":\"toolu_01MSDA77rdCNM6kr1gFjtS4J\",\"caller\":{\"type\":\"direct\"},\"input\":{\"query\":\"low
+      fees\",\"item\":{\"kind\":\"source\",\"id\":\"5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f\"}},\"name\":\"find_cards\",\"type\":\"tool_use\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_01MSDA77rdCNM6kr1gFjtS4J\",\"content\":\"{\\\"cards\\\":
+      [{\\\"id\\\": \\\"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\\\", \\\"question\\\":
+      \\\"What do low fees do over decades?\\\", \\\"answer\\\": \\\"They compound
+      into large differences.\\\"}]}\"}]},{\"role\":\"assistant\",\"content\":[{\"id\":\"toolu_015B3e2Dvd98wkx7Q3T1QxY4\",\"caller\":{\"type\":\"direct\"},\"input\":{\"kind\":\"card\",\"id\":\"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\"},\"name\":\"read_item\",\"type\":\"tool_use\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_015B3e2Dvd98wkx7Q3T1QxY4\",\"content\":\"{\\\"kind\\\":
+      \\\"card\\\", \\\"id\\\": \\\"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\\\", \\\"title\\\":
+      \\\"What do low fees do over decades?\\\", \\\"version\\\": 1, \\\"content\\\":
+      {\\\"question\\\": \\\"What do low fees do over decades?\\\", \\\"answer\\\":
+      \\\"They compound into large differences.\\\", \\\"detail\\\": \\\"A fee comes
+      off every year, so its cost grows like interest\\\"}, \\\"pending\\\": null}\"}]},{\"role\":\"assistant\",\"content\":[{\"text\":\"The
+      answer should stay short, so I'll make it a brief phrase and keep the existing
+      detail line.\",\"type\":\"text\"},{\"id\":\"toolu_01UB5NAeTfTefWThtignc3xN\",\"caller\":{\"type\":\"direct\"},\"input\":{\"card_id\":\"c4a1d2e3-f405-4617-8a9b-0c1d2e3f4a5b\",\"description\":\"Answer
+      now says a 1% fee can eat about a quarter of savings over 40 years\",\"question\":\"What
+      can a 1% annual fee do to your savings over 40 years?\",\"answer\":\"Eat about
+      a quarter of them\",\"detail\":[\"A fee comes off every year, so its cost grows
+      like interest\"]},\"name\":\"propose_card_edit\",\"type\":\"tool_use\"}]},{\"role\":\"user\",\"content\":[{\"type\":\"tool_result\",\"tool_use_id\":\"toolu_01UB5NAeTfTefWThtignc3xN\",\"content\":\"{\\\"proposal_id\\\":
+      \\\"4382a17b-73af-4c95-8198-e4e6cb75503f\\\", \\\"status\\\": \\\"shown to the
+      owner with Apply and Discard; nothing has changed yet\\\"}\"}]}],\"model\":\"claude-sonnet-5-5\",\"output_config\":{\"effort\":\"medium\"},\"system\":\"You
+      are Archie's Ask, answering the owner's questions from their own library first.
+      Archie is their personal library of the articles, newsletters, podcasts and
+      videos they saved, with Archie's summaries and primers of them, topic primers,
+      and the owner's own takes.\\n\\nHow to answer:\\n- Search the owner's library
+      with search_library first, unless the question plainly isn't about anything
+      they could have saved (small talk, arithmetic). Search again with other words
+      if the first search finds nothing useful.\\n- Call tools without writing anything
+      first; don't announce your searches.\\n- Base library claims only on search
+      results, so they carry citations.\\n- Each library result's title gives the
+      day the owner saved it and, when that was another day, when it was published.
+      For a question about a time (\\\"yesterday\\\", \\\"this week\\\", \\\"on Tuesday\\\"),
+      work the days out from today's date and pass search_library's saved_* or published_*
+      bounds.\\n- Then add background knowledge only where the library doesn't cover
+      the question, in its own paragraph and without citations. Never present background
+      knowledge as coming from the library.\\n- Search the web for recent or fast-changing
+      facts (prices, office holders, this year's numbers), when the owner asks you
+      to look something up, and whenever this prompt says a web search is required.
+      Base web claims only on web results.\\n- Keep answers short and in plain language:
+      a few short paragraphs at most. Define a technical term the first time you use
+      it. No headings, and no bullet lists unless the owner asks for a list.\\n- If
+      neither the library nor the web has the answer and you don't know it, say so
+      plainly.\\n- Write plain paragraphs: no headings, no bold section titles; a
+      short list only when it really helps.\\n\\nEditing the owner's things:\\n- You
+      can propose edits to a source's summary or primer, a topic primer, one of the
+      owner's takes, or a review card, but only when the owner asks for a change.
+      Use propose_summary_edit, propose_text_edit or propose_card_edit. Nothing changes
+      until the owner taps Apply, so never say the edit is done.\\n- Find the id first:
+      the about item below names its ids, search results end with [kind id] tags,
+      earlier answers list the items they cited, and find_cards finds cards. You don't
+      need to search the library for an edit when you already have the id.\\n- Read
+      the current content with read_item first and change only what the owner asked
+      for; copy everything else exactly, timestamps included. If read_item shows a
+      pending edit, build on it: your new proposal replaces it.\\n- When an edit removes
+      or changes a fact that one of the item's cards asks about, find that item's
+      cards and propose a matching card edit too.\\n- A take is the owner's own words:
+      change only what they asked, and never add claims of your own.\\n- A card edit's
+      question, answer and detail follow the card rules at the end of this prompt.\\n-
+      After proposing, say in one short sentence what will change. Don't repeat the
+      new text.\\n\\nMaking cards from the chat:\\n- When the owner asks for cards
+      (the message \\\"Make cards\\\", or any wording like \\\"make me cards on this\\\"),
+      call propose_cards once, with the whole conversation in view. Don't search the
+      library first unless the owner asks you to.\\n- The cheat sheet is a fresh,
+      self-contained reference the owner will re-read later without the chat: markdown
+      with headings, a comparison table when the chat compared things, and the gotchas.
+      Never refer back to the chat (\\\"as discussed above\\\", \\\"you asked\\\").
+      Headings and tables are fine here, unlike in answers. Voice: a great teacher
+      who respects the reader's time. Warm and direct; talk to \\\"you\\\".\\n- Open
+      with the core idea in one or two plain sentences: what it is and why it matters.\\n-
+      Match depth to the idea. A simple point gets one or two crisp sentences. Only
+      an idea with a real mechanism gets a plain everyday analogy to make it click,
+      then the specifics.\\n- Tell something as a story only when there genuinely
+      is one (real people, a rise and fall, a turning point). Never invent drama,
+      scenes or suspense.\\n- Define jargon in plain words the first time it appears.
+      Prefer concrete examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n-
+      Short sentences and no padding: every sentence carries information. Friendliness
+      comes from the phrasing, not from extra sentences.\\n- Never open with throat-clearing
+      (\\\"Okay so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's
+      dive in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never
+      close with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\\n- Write 3 to 7 open-recall cards on what the chat established,
+      each answerable on its own without the chat or the other cards, written to the
+      card rules below.\\n- When the about item below is one of the owner's notes
+      (\\\"Note: \u2026\\\"), the cards are that note's review cards: call propose_cards
+      with an empty cheat_sheet (the note already has its write-up) and the note's
+      title, and 3 to 5 open-recall cards (concept, mechanism or number) on what the
+      note chose to cover, worded from its write-up and what the owner asked for in
+      this chat.\\n- When the owner asks to change the proposal (\\\"change card 2\\\",
+      \\\"drop the last one\\\", \\\"add a card on X\\\"), call propose_cards again
+      with the whole new set, copying everything they didn't ask to change. Your earlier
+      proposals in this chat are listed after your answers.\\n- A message may open
+      with a line saying which cards of the open proposal the owner kept and dropped
+      (their Keep ticks). When you next call propose_cards, copy the kept cards word
+      for word (so Save can match them) unless the owner asks to change them, and
+      don't bring back the dropped ones.\\n- Around the proposal, write one or two
+      short sentences at most. Don't repeat the cards or the cheat sheet.\\n\\nEach
+      card has a question, an answer and a detail:\\n- question: ONE focused question
+      with ONE thing to recall. Never join two asks with \\\"and\\\" (\\\"What does
+      X give you, and what can you lose?\\\" is two cards, or pick one). Ask only
+      what has a short answer.\\n- answer: the one thing to recall, in as few words
+      as carry it: a phrase, not a sentence. Aim for 2-8 words, never more than 15.
+      The learner is graded only on this, so it is what someone who knows the material
+      would say off the top of their head. When two things are both essential, name
+      both briefly (\\\"Supply and demand\\\"). A number card's answer is the rough
+      figure with its unit.\\n- detail: 0-3 short bullet lines, each under 12 words.
+      Shown after the learner answers, never graded. Each line must help explain the
+      answer (the why or how behind it, or a contrast that makes it click); a further
+      fact about the subject, however true, is not a reason for a line. No padding
+      and no redundancy: never a line that restates the answer, is implied by it or
+      repeats another line; that is trivia from this one source (who said it, when,
+      a passing example or anecdote) rather than a lasting fact about the subject;
+      or that is a side remark that doesn't help recall. So a plain fact or a number
+      usually needs none and most whys need one; use two or three only when the explanation
+      really has that many steps (A happens, so B, so C) or named parts (the three
+      phases of a cycle). When in doubt, use fewer.\\n\\nToday is Tuesday 10 November
+      2026 (UTC).\\n\\nThis chat is about one item in the owner's library, described
+      below. Searches rank its passages first; answer about it unless the owner clearly
+      asks about something else.\\n<about>\\nArticle: How index funds work\\nSource
+      id: 5f0c2a4e-1d3b-4c6a-9e8f-0a1b2c3d4e5f (its summary and primer are editable)\\nGist:
+      Index funds beat most stock pickers because they cost less and don't try to
+      time the market.\\n- An index fund buys every stock in an index instead of picking
+      winners.\\n- Low fees compound into large differences over decades.\\n- Most
+      active managers trail their index after fees.\\n</about>\",\"tools\":[{\"name\":\"search_library\",\"description\":\"Search
+      the owner's saved library: article and newsletter text, podcast and video transcripts,
+      Archie's summaries and primers of them, topic primers, and the owner's own takes.
+      Call this first for any question the owner's reading could bear on. Returns
+      up to 8 passages to cite. For a question about a time (\\\"yesterday\\\", \\\"this
+      week\\\", \\\"on Tuesday\\\"), also pass day bounds so only items from those
+      days come back: saved_* for when the owner saved or got it (\\\"what did I save
+      this week\\\", \\\"yesterday's newsletters\\\"), published_* for when it came
+      out (\\\"articles published this year\\\"). For newsletters the two are the
+      same day.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"What
+      to look for, in a few words.\"},\"saved_after\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items the owner saved or got on or after this day. YYYY-MM-DD, in the owner's
+      time zone.\"},\"saved_before\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items the owner saved or got on or before this day. YYYY-MM-DD, in the owner's
+      time zone.\"},\"published_after\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items that came out on or after this day. YYYY-MM-DD, in the owner's time zone.\"},\"published_before\":{\"type\":\"string\",\"format\":\"date\",\"description\":\"Only
+      items that came out on or before this day. YYYY-MM-DD, in the owner's time zone.\"}},\"required\":[\"query\"],\"additionalProperties\":false},\"strict\":true,\"eager_input_streaming\":true},{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":3,\"allowed_callers\":[\"direct\"]},{\"name\":\"read_item\",\"description\":\"Read
+      the exact current content of something the owner can edit: a source's summary
+      or primer (id: the source id), a topic primer (id: a topic primer id or the
+      topic id), one of the owner's takes (id: the take id) or a review card (id:
+      the card id). Call it before proposing an edit and copy text from it exactly.
+      `pending` is an edit you already proposed in this chat, against this version,
+      that the owner hasn't applied: build on it.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"summary\",\"primer\",\"topic_primer\",\"take\",\"card\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"find_cards\",\"description\":\"Find
+      the owner's review cards by words in their question or answer, by the item they
+      came from, or both. Returns up to 10 cards with their ids.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"query\":{\"type\":\"string\",\"description\":\"Words
+      to look for; empty to list an item's cards.\"},\"item\":{\"anyOf\":[{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"source\",\"topic_primer\",\"take\"]},\"id\":{\"type\":\"string\"}},\"required\":[\"kind\",\"id\"],\"additionalProperties\":false},{\"type\":\"null\"}]}},\"required\":[\"query\",\"item\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_summary_edit\",\"description\":\"Propose
+      a new version of a source's summary: the whole summary as it should read, with
+      everything the owner didn't ask to change copied exactly, timestamps included.
+      The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"source_id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"gist\":{\"type\":\"string\"},\"key_ideas\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"idea\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"idea\"],\"additionalProperties\":false}},\"numbers\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"timestamp\":{\"anyOf\":[{\"type\":\"string\"},{\"type\":\"null\"}]},\"fact\":{\"type\":\"string\"}},\"required\":[\"timestamp\",\"fact\"],\"additionalProperties\":false}}},\"required\":[\"source_id\",\"description\",\"gist\",\"key_ideas\",\"numbers\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_text_edit\",\"description\":\"Propose
+      an edit to a source's primer (id: the source id), a topic primer or one of the
+      owner's takes, as find-and-replace pairs over its current markdown from read_item.
+      Each find must be copied exactly and appear exactly once; an empty replace deletes
+      it. The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"primer\",\"topic_primer\",\"take\"]},\"id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"replacements\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"find\":{\"type\":\"string\"},\"replace\":{\"type\":\"string\"}},\"required\":[\"find\",\"replace\"],\"additionalProperties\":false}}},\"required\":[\"kind\",\"id\",\"description\",\"replacements\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_card_edit\",\"description\":\"Propose
+      a new question, short answer and detail for one of the owner's review cards
+      (find it with find_cards). detail: the lines shown after the answer, one per
+      item (read_item gives them joined by newlines); copy them when the owner didn't
+      ask to change them, and an empty list for none. The card keeps its review schedule.
+      The owner sees a diff and taps Apply; nothing changes before that.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"card_id\":{\"type\":\"string\"},\"description\":{\"type\":\"string\",\"description\":\"One
+      short line telling the owner what changes.\"},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"card_id\",\"description\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false},\"strict\":true},{\"name\":\"propose_cards\",\"description\":\"Propose
+      review cards and a cheat sheet from this chat, when the owner asks for cards.
+      The owner sees them with Keep ticks and taps Save; nothing is saved before that.
+      title: a short name for the cheat sheet (at most 120 characters). cheat_sheet:
+      markdown, at most 20000 characters, or empty in a chat about a note. cards:
+      1 to 10, each a question (at most 500 characters), its short answer (at most
+      2000) and its detail lines (may be empty). To change a proposal, call this again
+      with the whole new set.\",\"input_schema\":{\"type\":\"object\",\"properties\":{\"title\":{\"type\":\"string\"},\"cheat_sheet\":{\"type\":\"string\"},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\",\"foundation\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"kind\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false}}},\"required\":[\"title\",\"cheat_sheet\",\"cards\"],\"additionalProperties\":false},\"strict\":true}],\"thinking\":{\"type\":\"between_tools\"},\"tool_choice\":{\"type\":\"auto\"},\"stream\":true}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '17218'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-helper-method:
+      - stream
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '120'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-stream-helper:
+      - messages
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: 'event: message_start
+
+        data: {"type":"message_start","message":{"model":"claude-sonnet-5-5","id":"msg_011Cgv4K3dPw9cUzzRxBgKqQ","type":"message","role":"assistant","content":[],"container":null,"stop_reason":null,"stop_sequence":null,"stop_details":null,"usage":{"input_tokens":8661,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":103,"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}               }
+
+
+        event: content_block_start
+
+        data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}              }
+
+
+        event: ping
+
+        data: {"type": "ping"}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"I''ve
+        proposed r"} }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ewording
+        the card so the"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        answer re"}        }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ads
+        \"Eat about a qu"}      }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"arter
+        of them\","}          }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        and I ad"}     }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"justed
+        the question to "}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ask
+        about a 1% fee"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        over 40 years so"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        the"}    }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        two still match"}   }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":".
+        The detail line stays the"}           }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        same. The"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        \""}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"qu"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"arter\"
+        figure comes from"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        your request r"}            }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"ather
+        than from the article"}}
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":",
+        so check"}         }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        it against"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        the source"}              }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        if"}             }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"
+        you want it to be ex"}  }
+
+
+        event: content_block_delta
+
+        data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"act."}       }
+
+
+        event: content_block_stop
+
+        data: {"type":"content_block_stop","index":0        }
+
+
+        event: message_delta
+
+        data: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"container":null},"usage":{"input_tokens":8661,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"output_tokens":103,"output_tokens_details":{"thinking_tokens":0}}   }
+
+
+        event: message_stop
+
+        data: {"type":"message_stop"  }
+
+
+        '
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9995000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-10T22:44:47Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-10T22:44:47Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-10T22:44:47Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11995000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-10T22:44:47Z'
+      cache-control:
+      - no-cache
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a58895754a531b3c-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '4417'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - text/event-stream; charset=utf-8
+      date:
+      - Tue, 10 Nov 2026 22:44:49 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=221
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-0fab9bf5a7b032df5b72717bede3c5d8-fd12bbe5c2adf215-01
       transfer-encoding:
       - chunked
       vary:

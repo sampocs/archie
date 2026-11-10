@@ -26,6 +26,7 @@ from archie_db import card_rows, changes, jobs, models, pipeline
 from sqlalchemy import orm
 
 from archie_api import deps
+from archie_api.ask import card_set_tools
 from archie_api.sync import schemas
 
 NO_CARD_SET = "card set not found"
@@ -227,9 +228,11 @@ def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSe
     ones are retired unless reviewed (a reviewed card is never retired, so its FSRS progress survives).
 
     Only cards saved from this proposal's chat are retired; on a note the worker's cards and other chats' cards stay.
-    Identical cards are matched against every live card on the item, so nothing is duplicated."""
-    kept_cards = [proposal.cards[index] for index in sorted(kept)]
-    wanted = {(card["question"], card["answer"]) for card in kept_cards}
+    Identical cards (same question and answer) are matched against every live card on the item, so nothing is
+    duplicated; a matched card keeps its own detail. A new card gets the proposal's detail."""
+    proposed = card_set_tools.stored_cards(proposal)
+    kept_cards = [proposed[index] for index in sorted(kept)]
+    wanted = {(card.question, card.answer) for card in kept_cards}
     live = db.scalars(
         sqlalchemy.select(models.Card).where(models.Card.source_id == item.id, models.Card.deleted_at.is_(None))
     ).all()
@@ -251,18 +254,19 @@ def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSe
         card_rows.retire_cards(db, models.Card.id.in_(retired))
 
     for card in kept_cards:
-        if (card["question"], card["answer"]) in have:
+        if (card.question, card.answer) in have:
             continue
-        have.add((card["question"], card["answer"]))
+        have.add((card.question, card.answer))
         db.add(
             models.Card(
                 id=uuid.uuid4(),
                 user_id=item.user_id,
                 source_id=item.id,
                 message_id=proposal.message_id,
-                kind=card["kind"],
-                question=card["question"],
-                answer=card["answer"],
+                kind=card.kind.value,
+                question=card.question,
+                answer=card.answer,
+                detail=card_rows.joined_detail(card.detail),
                 change_seq=changes.next_change_seq(),
             )
         )

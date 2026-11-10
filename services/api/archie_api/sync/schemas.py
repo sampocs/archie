@@ -168,6 +168,8 @@ class CardOut(pydantic.BaseModel):
     kind: str
     question: str
     answer: str
+    # The lines shown after the answer, joined by newlines; "" for none.
+    detail: str
     version: int
     fsrs_state: str
     stability: float | None
@@ -347,7 +349,7 @@ class MessageOut(pydantic.BaseModel):
 
 
 class CardVersionOut(pydantic.BaseModel):
-    """One version of a card's question and answer as the phone stores it."""
+    """One version of a card's question, answer and detail as the phone stores it."""
 
     model_config = pydantic.ConfigDict(from_attributes=True)
 
@@ -356,6 +358,7 @@ class CardVersionOut(pydantic.BaseModel):
     version: int
     question: str
     answer: str
+    detail: str
     origin: str
     instruction: str | None
     created_at: datetime.datetime

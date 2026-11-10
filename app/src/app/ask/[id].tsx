@@ -268,7 +268,7 @@ function UserBubble({ text, index, choice }: { text: string; index: number; choi
       <View
         testID={`chat-user-${index}`}
         style={{
-          backgroundColor: theme.colors.press,
+          backgroundColor: theme.colors.bubble,
           borderRadius: theme.radii.card,
           paddingHorizontal: theme.spacing.md,
           paddingVertical: theme.spacing.sm,

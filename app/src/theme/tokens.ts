@@ -13,6 +13,8 @@ export type ColorTokens = {
   ink3: string;
   line: string;
   press: string;
+  // A chat question's bubble: a step darker than `press`, so it stands off the page background.
+  bubble: string;
   chrome: string;
   onChrome: string;
   unread: string;
@@ -29,6 +31,7 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     ink3: "#9A978F",
     line: "#E8E6DF",
     press: "#EFEDE6",
+    bubble: "#E6E3DA",
     chrome: "#1C1B18",
     onChrome: "#FFFFFF",
     unread: "#3D7BF2",
@@ -42,6 +45,7 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     ink3: "#7E7A70",
     line: "#2D2B27",
     press: "#2A2824",
+    bubble: "#2E2C28",
     chrome: "#F1EFE9",
     // Text on chrome flips in dark mode.
     onChrome: "#141311",

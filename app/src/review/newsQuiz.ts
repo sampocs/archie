@@ -1,3 +1,5 @@
+import { localDate } from "@/today/todayLabels";
+
 import { isOpenQuiz, type ReviewData } from "./eligibility";
 
 const SUNDAY = 0;
@@ -13,9 +15,4 @@ export function quizOffer(data: ReviewData, now: Date): { count: number; until: 
   if (open.length === 0) return null;
   // isOpenQuiz guarantees every open card has an expiry.
   return { count: open.length, until: new Date(Math.min(...open.map((card) => Date.parse(card.expiresAt!)))) };
-}
-
-function localDate(day: Date): string {
-  const pad = (value: number): string => String(value).padStart(2, "0");
-  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
 }

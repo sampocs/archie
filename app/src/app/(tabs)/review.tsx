@@ -23,7 +23,6 @@ export default function ReviewScreen() {
         <ReviewStartCard
           testID="review-tab-start"
           count={due.count}
-          foundations={due.foundations}
           onPress={() => router.push({ pathname: "/review/session", params: { mode: "due" } })}
         />
       ) : (

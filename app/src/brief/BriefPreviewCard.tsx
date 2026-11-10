@@ -5,11 +5,12 @@ import { Card } from "@/theme/components/Card";
 import { Text } from "@/theme/components/Text";
 import { fontFamily } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
+import { CardHeader } from "@/today/CardHeader";
 import { haptic } from "@/ui/haptics";
 
 import { briefReadingMinutes, previewLines, storiesInOrder, storyCountLabel, type TodayBrief } from "./brief";
 
-/** Today's brief card: the first headlines and "Read the brief ›", or "Writing your brief…" while it is written. */
+/** Today's brief card: the first headlines and "Read the brief ›", or "writing…" in its header while it is written. */
 export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) {
   const theme = useTheme();
   const router = useRouter();
@@ -18,7 +19,7 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
     const newsletters = `${state.newsletters} ${state.newsletters === 1 ? "newsletter" : "newsletters"}`;
     return (
       <Card testID="today-brief-writing">
-        <PreviewTop title="Writing your brief…" meta={newsletters} />
+        <CardHeader label="Your brief" detail={`writing… · ${newsletters}`} />
       </Card>
     );
   }
@@ -33,7 +34,7 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
   return (
     <Pressable testID="today-brief" onPress={open}>
       <Card style={{ gap: 9 }}>
-        <PreviewTop title="Your brief" meta={meta} />
+        <CardHeader label="Your brief" detail={meta} testID="today-brief-detail" />
         <View style={{ gap: theme.spacing.xs }}>
           {lines.headlines.map((headline, index) => (
             <Bullet key={index} text={headline} />
@@ -47,19 +48,6 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
         </Pressable>
       </Card>
     </Pressable>
-  );
-}
-
-function PreviewTop({ title, meta }: { title: string; meta: string }) {
-  return (
-    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-      <Text variant="headline" style={{ fontSize: 17, letterSpacing: -0.02 * 17 }}>
-        {title}
-      </Text>
-      <Text variant="monoLabel" tone="ink3">
-        {meta}
-      </Text>
-    </View>
   );
 }
 

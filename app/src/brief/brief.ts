@@ -27,7 +27,7 @@ export type BriefContent = {
 /** A story with its place in display order (the story page's address) and its domain. */
 export type NumberedStory = { index: number; domain: DomainName; story: BriefStory };
 
-/** What Today shows for the brief: the preview, "Writing your brief…" with how many newsletters wait, or nothing. */
+/** What Today shows for the brief: the preview, that it is being written with how many newsletters wait, or nothing. */
 export type TodayBrief =
   | { kind: "ready"; brief: BriefRow; content: BriefContent }
   | { kind: "writing"; newsletters: number }

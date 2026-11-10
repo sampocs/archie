@@ -91,7 +91,7 @@ function addDays(day: Date, days: number): Date {
   return new Date(day.getFullYear(), day.getMonth(), day.getDate() + days);
 }
 
-// Whole local calendar days from `now` to `day`; rounded, since a DST change makes one day 23 or 25 hours long.
-function daysFrom(now: Date, day: Date): number {
+/** Whole local calendar days from `now` to `day`; rounded, since a DST change makes one day 23 or 25 hours long. */
+export function daysFrom(now: Date, day: Date): number {
   return Math.round((startOfDay(day).getTime() - startOfDay(now).getTime()) / DAY_MS);
 }

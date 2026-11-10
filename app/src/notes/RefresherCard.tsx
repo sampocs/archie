@@ -2,35 +2,27 @@ import { Pressable, View } from "react-native";
 
 import { DAILY_NOTES, type TodayRefresher } from "./refresher";
 import { Card } from "@/theme/components/Card";
+import { CardHeader } from "@/today/CardHeader";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { ArtworkTile } from "@/ui/ArtworkTile";
 import { monogramFor } from "@/ui/monogram";
 import { asDomain } from "@/topics/domains";
 
-type RefresherCardProps = { state: TodayRefresher; onOpen: (id: string) => void; onSkip: (id: string) => void };
+type RefresherCardProps = {
+  state: Extract<TodayRefresher, { kind: "pick" }>;
+  onOpen: (id: string) => void;
+  onSkip: (id: string) => void;
+};
 
-/** Today's "Refresh a note" card: the note to read now and what's next, or that today's notes are done. */
+/** Today's "Refresh a note" card: the note to read now and what's next. Once today's are done, Today shows a done row. */
 export function RefresherCard({ state, onOpen, onSkip }: RefresherCardProps) {
   const theme = useTheme();
-
-  if (state.kind === "done") {
-    return (
-      <Card testID="today-refresher" style={{ gap: theme.spacing.sm }}>
-        <Text variant="kicker" tone="ink2">
-          Refresh a note · Done for today
-        </Text>
-        {state.nextUp.length > 0 ? (
-          <Text variant="secondary" tone="ink3">{`Next up tomorrow: ${state.nextUp[0]}`}</Text>
-        ) : null}
-      </Card>
-    );
-  }
-
   const { note } = state;
+
   return (
     <Card testID="today-refresher" style={{ gap: theme.spacing.md }}>
-      <Text variant="kicker" tone="ink2">{`Refresh a note · ${state.position} of ${DAILY_NOTES} today`}</Text>
+      <CardHeader label="Refresh a note" detail={`${state.position} of ${DAILY_NOTES} today`} testID="today-refresher-detail" />
       <Pressable
         testID="today-refresher-note"
         onPress={() => onOpen(note.id)}

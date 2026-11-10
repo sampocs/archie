@@ -12,6 +12,9 @@ export type ColorTokens = {
   ink2: string;
   ink3: string;
   line: string;
+  // A card's edge: the hairline in light mode; in dark mode a brighter 1pt edge, so cards stay distinct from the page
+  // at low brightness with Night Shift, where the fills alone blur together.
+  cardEdge: string;
   press: string;
   // A chat question's bubble: a step darker than `press`, so it stands off the page background.
   bubble: string;
@@ -30,6 +33,7 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     ink2: "#55534D",
     ink3: "#9A978F",
     line: "#E8E6DF",
+    cardEdge: "#E8E6DF",
     press: "#EFEDE6",
     bubble: "#E6E3DA",
     chrome: "#1C1B18",
@@ -38,13 +42,14 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     onDomain: "#FFFFFF",
   },
   dark: {
-    bg: "#151412",
-    surface: "#201F1C",
+    bg: "#111010",
+    surface: "#282622",
     ink: "#F1EFE9",
     ink2: "#B3AFA5",
     ink3: "#7E7A70",
-    line: "#2D2B27",
-    press: "#2A2824",
+    line: "#36332E",
+    cardEdge: "#423E38",
+    press: "#302E2A",
     bubble: "#2E2C28",
     chrome: "#F1EFE9",
     // Text on chrome flips in dark mode.

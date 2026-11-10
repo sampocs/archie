@@ -132,10 +132,33 @@ export function keptIndices(kept: boolean[]): number[] {
 /** Each card set's Keep ticks, by set id; the screen holds them so the next question can carry them. */
 export type CardSetTicks = Record<string, boolean[]>;
 
-/** A set's ticks as the owner left them; one never touched (or whose cards changed) has every card kept. */
-export function ticksOf(ticks: CardSetTicks, view: Pick<CardSetView, "id" | "cards">): boolean[] {
+/**
+ * A set's ticks as the owner left them; one never touched this visit (or whose cards changed) falls back to the ticks
+ * an earlier question stored (`seededTicks`), then to every card kept.
+ */
+export function ticksOf(
+  ticks: CardSetTicks,
+  view: Pick<CardSetView, "id" | "cards">,
+  seeded: boolean[] | null = null,
+): boolean[] {
   const stored = ticks[view.id];
-  return stored && stored.length === view.cards.length ? stored : allKept(view.cards.length);
+  if (stored && stored.length === view.cards.length) return stored;
+  return seeded ?? allKept(view.cards.length);
+}
+
+/**
+ * The ticks the latest question about this set carried, for a screen that remounted and lost its own: the newest user
+ * message whose stored choice is for this set and this many cards; null when there is none.
+ */
+export function seededTicks(
+  messages: { role: string; segments: string | null }[],
+  view: Pick<CardSetView, "id" | "cards">,
+): boolean[] | null {
+  const choices = messages.filter((message) => message.role === "user").map((message) => storedChoice(message.segments));
+  const latest = choices.findLast(
+    (choice) => choice?.proposal_id === view.id && choice.card_count === view.cards.length,
+  );
+  return latest ? view.cards.map((_, index) => latest.kept.includes(index)) : null;
 }
 
 /**

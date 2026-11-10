@@ -10,11 +10,13 @@ import {
   cardSetChoice,
   choiceLine,
   MAKE_CARDS_MESSAGE,
+  seededTicks,
   shownCardSetStatus,
   storedChoice,
   ticksOf,
   viewOfCardSetWire,
   type CardSetChoice,
+  type CardSetView,
 } from "@/ask/cardSets";
 import { Composer } from "@/ask/Composer";
 import { groupSections, liveView } from "@/ask/sections";
@@ -47,15 +49,20 @@ export default function ChatScreen() {
   );
   const cardSets = useConversationCardSets(params.id);
   const { ticks, toggle } = useCardSetTicks();
+  // Ticks an earlier question stored back a set up after a remount; toggled ticks win over them.
+  const ticksFor = useCallback(
+    (view: Pick<CardSetView, "id" | "cards">) => ticksOf(ticks, view, seededTicks(messages, view)),
+    [ticks, messages],
+  );
   // The next question carries the open set's ticks when some card is unticked. Only a stored set can be open then: a
-  // live answer blocks sending until its rows land.
+  // live answer blocks sending until its rows land. The latest proposed one is the open one.
   const openStoredSet = useMemo(
-    () => [...cardSets.values()].flat().find((cardSet) => cardSet.status === "proposed") ?? null,
+    () => [...cardSets.values()].flat().findLast((cardSet) => cardSet.status === "proposed") ?? null,
     [cardSets],
   );
   const choice = useMemo(
-    () => cardSetChoice(openStoredSet, openStoredSet ? ticksOf(ticks, openStoredSet) : []),
-    [openStoredSet, ticks],
+    () => cardSetChoice(openStoredSet, openStoredSet ? ticksFor(openStoredSet) : []),
+    [openStoredSet, ticksFor],
   );
   const { pending, send } = useChatSession({ conversationId: params.id, messages, about, cardSetChoice: choice });
   const proposals = useConversationProposals(params.id);
@@ -153,8 +160,8 @@ export default function ChatScreen() {
                     online={online}
                     replacedLive={cardSetLive}
                     updating={updating}
-                    kept={ticksOf(ticks, cardSet)}
-                    onToggle={(index) => toggle(cardSet, index)}
+                    kept={ticksFor(cardSet)}
+                    onToggle={(index) => toggle(cardSet, index, seededTicks(messages, cardSet))}
                     onToast={setToast}
                   />
                 ))}
@@ -187,8 +194,8 @@ export default function ChatScreen() {
                     ready={pending.live.messageId !== null}
                     online={online}
                     updating={updating}
-                    kept={ticksOf(ticks, wire)}
-                    onToggle={(index) => toggle(wire, index)}
+                    kept={ticksFor(wire)}
+                    onToggle={(index) => toggle(wire, index, seededTicks(messages, wire))}
                     onToast={setToast}
                   />
                 ))}

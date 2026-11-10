@@ -72,15 +72,15 @@ export function useCardSetMode(): [CardSetMode, (mode: CardSetMode) => void] {
 
 /**
  * The chat's Keep ticks, by set id. The screen holds them rather than each block, so the next question can carry the
- * open set's ticks, and a live set keeps its ticks when its stored row takes over. A new set starts with every card kept.
+ * open set's ticks (`seeded` is where a toggle starts when this visit has none yet), and a live set keeps its ticks when its stored row takes over. A new set starts with every card kept.
  */
 export function useCardSetTicks(): {
   ticks: CardSetTicks;
-  toggle: (view: Pick<CardSetView, "id" | "cards">, index: number) => void;
+  toggle: (view: Pick<CardSetView, "id" | "cards">, index: number, seeded: boolean[] | null) => void;
 } {
   const [ticks, setTicks] = useState<CardSetTicks>({});
-  const toggle = useCallback((view: Pick<CardSetView, "id" | "cards">, index: number) => {
-    setTicks((current) => ({ ...current, [view.id]: toggleKept(ticksOf(current, view), index) }));
+  const toggle = useCallback((view: Pick<CardSetView, "id" | "cards">, index: number, seeded: boolean[] | null) => {
+    setTicks((current) => ({ ...current, [view.id]: toggleKept(ticksOf(current, view, seeded), index) }));
   }, []);
   return { ticks, toggle };
 }

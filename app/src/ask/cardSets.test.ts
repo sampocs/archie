@@ -11,6 +11,7 @@ import {
   pageLabel,
   saveLabel,
   savedToast,
+  seededTicks,
   shownCardSetStatus,
   stepPage,
   storedChoice,
@@ -212,5 +213,26 @@ describe("opensByGoingBack", () => {
     expect(opensByGoingBack("n1", "n1")).toBe(true);
     expect(opensByGoingBack("n1", "n2")).toBe(false);
     expect(opensByGoingBack(undefined, "n1")).toBe(false);
+  });
+});
+
+describe("seededTicks", () => {
+  const asked = (proposalId: string, kept: number[], cardCount = 3) => ({
+    role: "user",
+    segments: JSON.stringify([{ card_set_choice: { proposal_id: proposalId, kept, card_count: cardCount } }]),
+  });
+
+  it("takes the latest question's choice for this set", () => {
+    const messages = [asked("cs1", [0]), { role: "assistant", segments: null }, asked("cs1", [0, 2])];
+    expect(seededTicks(messages, view({}))).toEqual([true, false, true]);
+  });
+
+  it("ignores a choice for another set or for a different card count", () => {
+    const messages = [asked("cs1", [1]), asked("other", [0]), asked("cs1", [0], 2)];
+    expect(seededTicks(messages, view({}))).toEqual([false, true, false]);
+  });
+
+  it("is null when no question carried ticks for the set", () => {
+    expect(seededTicks([asked("other", [0]), { role: "user", segments: null }], view({}))).toBeNull();
   });
 });

@@ -42,7 +42,7 @@ class CardSetChoiceIn(pydantic.BaseModel):
     """The Keep ticks of the chat's open card set as the question was sent: the 0-based indices of the kept cards."""
 
     proposal_id: uuid.UUID
-    kept: list[int]
+    kept: list[pydantic.StrictInt] = pydantic.Field(max_length=100)
 
 
 class AskRequest(pydantic.BaseModel):

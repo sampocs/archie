@@ -334,6 +334,21 @@ def test_keep_ticks_that_dont_fit_the_open_set_are_ignored_and_the_question_stil
     assert asked_turns[-1][-1] == {"role": "user", "content": f"{line}\n\nNone of these"}
 
 
+def test_keep_ticks_must_be_integers(owner: httpx.Client) -> None:
+    """A boolean is not an index: `kept: [true]` is refused rather than read as card 2."""
+    proposal = _seed(owner)
+    payload = {
+        "user_message_id": str(uuid.uuid4()),
+        "text": "Bad ticks",
+        "web_search": False,
+        "card_set_choice": {"proposal_id": proposal["id"], "kept": [True]},
+    }
+
+    response = owner.post(f"/ask/conversations/{proposal['conversation_id']}/messages", json=payload)
+
+    assert response.status_code == 422
+
+
 def test_the_seed_route_makes_a_chat_when_none_is_given(owner: httpx.Client) -> None:
     """A new chat holds an exchange about the title, then `Make cards` and the answer the set hangs on."""
     proposal = _seed(owner)

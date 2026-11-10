@@ -22,7 +22,7 @@ from typing import Annotated, Any
 import fastapi
 import pydantic
 import sqlalchemy
-from archie_db import card_rows, changes, jobs, models, pipeline
+from archie_db import card_rows, changes, jobs, models, pipeline, versions
 from sqlalchemy import orm
 
 from archie_api import deps
@@ -229,14 +229,16 @@ def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSe
 
     Only cards saved from this proposal's chat are retired; on a note the worker's cards and other chats' cards stay.
     Identical cards (same question and answer) are matched against every live card on the item, so nothing is
-    duplicated; a matched card keeps its own detail. A new card gets the proposal's detail."""
+    duplicated. A matched card from this chat takes the proposal's detail as its next version (the owner may have asked
+    to change only the detail lines), keeping its schedule; a matched card the worker or another chat made keeps its own
+    detail. A new card gets the proposal's detail."""
     proposed = card_set_tools.stored_cards(proposal)
     kept_cards = [proposed[index] for index in sorted(kept)]
     wanted = {(card.question, card.answer) for card in kept_cards}
     live = db.scalars(
         sqlalchemy.select(models.Card).where(models.Card.source_id == item.id, models.Card.deleted_at.is_(None))
     ).all()
-    have = {(card.question, card.answer) for card in live}
+    have = {(card.question, card.answer): card for card in live}
 
     chat_messages = sqlalchemy.select(models.Message.id).where(
         models.Message.conversation_id == proposal.conversation_id
@@ -254,22 +256,44 @@ def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSe
         card_rows.retire_cards(db, models.Card.id.in_(retired))
 
     for card in kept_cards:
-        if (card.question, card.answer) in have:
+        detail = card_rows.joined_detail(card.detail)
+        matched = have.get((card.question, card.answer))
+        if matched is not None:
+            _update_detail(db, matched=matched, detail=detail, chat_message_ids=chat_message_ids)
             continue
-        have.add((card.question, card.answer))
-        db.add(
-            models.Card(
-                id=uuid.uuid4(),
-                user_id=item.user_id,
-                source_id=item.id,
-                message_id=proposal.message_id,
-                kind=card.kind.value,
-                question=card.question,
-                answer=card.answer,
-                detail=card_rows.joined_detail(card.detail),
-                change_seq=changes.next_change_seq(),
-            )
+
+        created = models.Card(
+            id=uuid.uuid4(),
+            user_id=item.user_id,
+            source_id=item.id,
+            message_id=proposal.message_id,
+            kind=card.kind.value,
+            question=card.question,
+            answer=card.answer,
+            detail=detail,
+            change_seq=changes.next_change_seq(),
         )
+        have[(card.question, card.answer)] = created
+        db.add(created)
+
+
+def _update_detail(db: orm.Session, *, matched: models.Card, detail: str, chat_message_ids: set[uuid.UUID]) -> None:
+    """Write `detail` as the matched card's next version when this chat made the card and its detail changed."""
+    if matched.message_id not in chat_message_ids or matched.detail == detail:
+        return
+
+    versions.write(
+        db,
+        target=versions.Target(kind=models.EditTarget.CARD, id=matched.id),
+        content={
+            versions.QUESTION_KEY: matched.question,
+            versions.ANSWER_KEY: matched.answer,
+            versions.DETAIL_KEY: detail,
+        },
+        origin=models.VersionOrigin.CHAT_EDIT,
+        instruction=None,
+        derived_from=None,
+    )
 
 
 def _set_status(proposal: models.CardSetProposal, status: models.CardSetStatus) -> None:

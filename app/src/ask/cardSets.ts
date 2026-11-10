@@ -3,7 +3,7 @@ import { cardsWord } from "@/review/labels";
 import type { PulledCardSetProposal } from "@/sync/engine";
 
 export type CardSetStatus = "proposed" | "saved" | "replaced" | "discarded";
-export type ProposedCard = { kind: string; question: string; answer: string };
+export type ProposedCard = { kind: string; question: string; answer: string; detail: string[] };
 export type CardSetRow = typeof schema.cardSetProposals.$inferSelect;
 
 // The `cards` event's data is the row as the pull sends it.
@@ -52,7 +52,7 @@ export function viewOfCardSetWire(wire: CardSetWire): CardSetView {
     id: wire.id,
     title: wire.title,
     cheatSheet: wire.cheat_sheet,
-    cards: wire.cards,
+    cards: wire.cards.map(withDetail),
     status: STATUSES.has(wire.status) ? (wire.status as CardSetStatus) : "proposed",
     savedSourceId: wire.saved_source_id,
     kept: wire.kept,
@@ -217,13 +217,23 @@ export function asCardSetMode(stored: string | null): CardSetMode {
 function parseCards(json: string): ProposedCard[] {
   const parsed = parseJson(json);
   if (!Array.isArray(parsed)) return [];
-  return parsed.filter(
-    (card): card is ProposedCard =>
-      typeof card === "object" &&
-      card !== null &&
-      typeof (card as ProposedCard).question === "string" &&
-      typeof (card as ProposedCard).answer === "string",
-  );
+  return parsed
+    .filter(
+      (card): card is LooseCard =>
+        typeof card === "object" &&
+        card !== null &&
+        typeof (card as ProposedCard).question === "string" &&
+        typeof (card as ProposedCard).answer === "string",
+    )
+    .map(withDetail);
+}
+
+type LooseCard = Omit<ProposedCard, "detail"> & { detail?: string[] };
+
+/** A card with its detail lines; an older server's card (or stored row) has none. */
+function withDetail(card: LooseCard): ProposedCard {
+  const detail = Array.isArray(card.detail) ? card.detail.filter((line) => typeof line === "string") : [];
+  return { kind: card.kind, question: card.question, answer: card.answer, detail };
 }
 
 function parseKept(json: string | null): number[] | null {

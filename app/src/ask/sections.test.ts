@@ -141,7 +141,7 @@ describe("card-set events", () => {
     message_id: "m1",
     title: "JWT vs session tokens",
     cheat_sheet: "## The difference",
-    cards: [{ kind: "concept", question: "Q?", answer: "A." }],
+    cards: [{ kind: "concept", question: "Q?", answer: "A.", detail: [] }],
     status: "proposed",
     saved_source_id: null,
     kept: null,

@@ -23,6 +23,11 @@ export type CardSetView = {
 /** One card per page, or every card in a numbered list; the phone remembers the owner's choice. */
 export type CardSetMode = "pager" | "list";
 
+/** Whether a saved set's Open should go back: the chat was opened from that same item's page, which is still below it. */
+export function opensByGoingBack(fromNote: string | undefined, itemId: string): boolean {
+  return fromNote === itemId;
+}
+
 /** What "Make cards" under an answer sends: the same as typing it, so Ask makes the set with the whole chat in view. */
 export const MAKE_CARDS_MESSAGE = "Make cards";
 
@@ -93,9 +98,21 @@ export function cardSetBlock(view: CardSetView, replacedLive = false): CardSetBl
       return { kind: "saved", line: savedLine(view), itemId: view.savedSourceId };
     case "replaced":
       return { kind: "collapsed", left: "Earlier proposal", right: "Replaced" };
-    case "discarded":
-      return { kind: "collapsed", left: `Cheat sheet · ${view.title}`, right: "Discarded" };
+    case "discarded": {
+      const what = hasCheatSheet(view) ? "Cheat sheet" : "Cards";
+      return { kind: "collapsed", left: `${what} · ${view.title}`, right: "Discarded" };
+    }
   }
+}
+
+/** A note's set has no cheat sheet (the note already has its write-up), so its block shows only the cards. */
+export function hasCheatSheet(view: Pick<CardSetView, "cheatSheet">): boolean {
+  return view.cheatSheet.trim() !== "";
+}
+
+/** The toast after Save: a chat's set goes to Library as an item, a note's set only adds cards to the note. */
+export function savedToast(view: Pick<CardSetView, "cheatSheet">): string {
+  return hasCheatSheet(view) ? "Saved to Library" : "Added to review";
 }
 
 /** Every card starts kept; a new proposal is a new block, so its ticks start over. */

@@ -1,6 +1,9 @@
 appId: com.sampocs.archie
 ---
-# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Done's cards spend a fraction of a cent.
+# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Spends nothing on models: the chat
+# with its card set is seeded by the script.
+# Relaunch (keeping the login) so the app syncs on start and pulls what the runner just seeded.
+- launchApp
 - tapOn:
     id: "tab-today"
 # The refresher arrives with the next sync, which can take a few seconds.
@@ -30,13 +33,40 @@ appId: com.sampocs.archie
     end: "50%, 90%"
 - assertNotVisible:
     id: "original-note-sheet"
-- tapOn:
-    id: "note-done"
+# Done on a note is asserted, not tapped: it would open a chat that asks a model for the cards.
 - assertVisible:
-    id: "today-refresher-detail"
-    text: "(?i)2 of 2 today"
-- assertVisible: ".*Liquid Restaking Tokens.*"
-# The worker writes the cards with Haiku, then the toast says so.
+    id: "note-done"
+    text: "Done, make cards"
+# The seeded chat about the note shows its card set without a cheat sheet; Save puts the cards on the note.
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "tab-ask"
 - extendedWaitUntil:
-    visible: ".*review cards? added from Liquid Staking.*"
-    timeout: 60000
+    visible:
+      id: "ask-row-.*"
+    timeout: 30000
+- tapOn:
+    id: "ask-row-.*"
+- scrollUntilVisible:
+    element:
+      id: "card-set-save"
+    direction: DOWN
+    centerElement: true
+    timeout: 15000
+- assertNotVisible:
+    id: "card-set-cheat-sheet"
+- tapOn:
+    id: "card-set-save"
+- extendedWaitUntil:
+    visible: "Added to review"
+    timeout: 10000
+- assertVisible: ".*Saved · \\d+ cards? in review.*"
+# Open goes to the note, which holds the kept cards.
+- tapOn:
+    id: "card-set-open"
+- extendedWaitUntil:
+    visible:
+      id: "item-title"
+      text: "Liquid Staking"
+    timeout: 15000

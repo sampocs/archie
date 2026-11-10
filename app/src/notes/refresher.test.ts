@@ -1,6 +1,14 @@
 import { noteSource } from "@/library/testRows";
 
-import { cardsAddedMessage, DAILY_NOTES, isRefreshable, noteMeta, refresherQueue, todayRefresher } from "./refresher";
+import {
+  cardsAddedMessage,
+  DAILY_NOTES,
+  isRefreshable,
+  noteDone,
+  noteMeta,
+  refresherQueue,
+  todayRefresher,
+} from "./refresher";
 
 const NOW = new Date(2026, 10, 8, 10, 0); // Sun Nov 8, local
 const local = (day: number, hour: number, minute = 0): string => new Date(2026, 10, day, hour, minute).toISOString();
@@ -201,5 +209,19 @@ describe("cardsAddedMessage", () => {
   it("pluralizes", () => {
     expect(cardsAddedMessage(1, "X")).toBe("1 review card added from X");
     expect(cardsAddedMessage(5, "X")).toBe("5 review cards added from X");
+  });
+});
+
+describe("noteDone", () => {
+  it("makes the cards in a chat when Ask is available and the phone is online", () => {
+    expect(noteDone(true, true)).toEqual({ inChat: true, label: "Done, make cards" });
+  });
+
+  it.each([
+    ["offline", true, false],
+    ["Ask isn't available to this account", false, true],
+    ["Ask's availability is still unknown", null, true],
+  ])("leaves the cards to Archie when %s", (_name, available, online) => {
+    expect(noteDone(available, online)).toEqual({ inChat: false, label: "Done, add review cards" });
   });
 });

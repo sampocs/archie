@@ -592,12 +592,16 @@ export function setFavorite(db: AppDb, sourceId: string, favorited: boolean): vo
   });
 }
 
-/** Marks a note refreshed from Bear (consuming it); `counted` says whether the refresh came from the queue. */
-export function refreshNote(db: AppDb, sourceId: string, counted: boolean): void {
+/**
+ * Marks a note refreshed from Bear (consuming it); `counted` says whether the refresh came from the queue, and
+ * `makeCards` false means the owner makes its cards in an Ask chat rather than the server writing them.
+ */
+export function refreshNote(db: AppDb, sourceId: string, counted: boolean, makeCards: boolean): void {
   db.transaction((tx) => {
     const at = new Date().toISOString();
     updateSource(tx, sourceId, { refreshedAt: at, refreshedFromQueue: counted ? 1 : 0, state: "consumed" });
-    enqueue(tx, "refresh_note", { id: sourceId, counted, at });
+    // make_cards false: the owner makes the cards in an Ask chat, so the server queues none.
+    enqueue(tx, "refresh_note", { id: sourceId, counted, at, make_cards: makeCards });
   });
 }
 

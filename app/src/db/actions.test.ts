@@ -784,15 +784,26 @@ describe("refreshNote", () => {
     const db = makeTestDb();
     seedSource(db, { kind: "note", state: "queued" });
 
-    refreshNote(db, "s1", counted);
+    refreshNote(db, "s1", counted, true);
 
     const row = sourceById(db, "s1")!;
     expect(row).toMatchObject({ state: "consumed", refreshedFromQueue: fromQueue });
     const [entry] = outboxEntries(db);
     expect(entry.type).toBe("refresh_note");
-    expect(entry.payload).toMatchObject({ id: "s1", counted });
+    expect(entry.payload).toMatchObject({ id: "s1", counted, make_cards: true });
     expect(row.refreshedAt).toBe((entry.payload as { at: string }).at);
     expect(new Date(row.refreshedAt!).toISOString()).toBe(row.refreshedAt);
+  });
+
+  it("tells the server not to write cards when the owner makes them in a chat", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "note", state: "queued" });
+
+    refreshNote(db, "s1", false, false);
+
+    expect(sourceById(db, "s1")).toMatchObject({ state: "consumed" });
+    const [entry] = outboxEntries(db);
+    expect(entry.payload).toMatchObject({ id: "s1", make_cards: false });
   });
 });
 

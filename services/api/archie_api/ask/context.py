@@ -114,7 +114,8 @@ def proposal_note(proposal: models.EditProposal) -> str:
 
 def card_set_note(card_set: models.CardSetProposal) -> str:
     """A `[cards proposed: …]` line with what the owner did with it; an open, saved or discarded set also carries its
-    cheat sheet and numbered cards, so the model can re-propose it with one change. A replaced one is only named.
+    cheat sheet (a note's set has none) and numbered cards, so the model can re-propose it with one change. A replaced
+    one is only named.
     """
     status = models.CardSetStatus(card_set.status)
     note = f"[cards proposed: {card_set.title} — {_CARD_SET_STATUS_NOTES[status]}]"
@@ -125,7 +126,8 @@ def card_set_note(card_set: models.CardSetProposal) -> str:
         f"{number}. ({card['kind']}) Q: {card['question']}\n   A: {card['answer']}"
         for number, card in enumerate(card_set.cards, start=1)
     ]
-    return "\n".join([note, "<cheat_sheet>", card_set.cheat_sheet, "</cheat_sheet>", *cards])
+    cheat_sheet = ["<cheat_sheet>", card_set.cheat_sheet, "</cheat_sheet>"] if card_set.cheat_sheet else []
+    return "\n".join([note, *cheat_sheet, *cards])
 
 
 def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:
@@ -174,6 +176,14 @@ def boost(db: orm.Session, *, conversation: models.Conversation) -> search.ItemR
         primer = _current_primer(db, primer_id=conversation.about_topic_primer_id)
         return search.ItemRef(kind=models.SearchItemKind.TOPIC_PRIMER, id=primer.id) if primer else None
     return None
+
+
+def note_title(db: orm.Session, *, conversation: models.Conversation) -> str | None:
+    """The title of the note the chat is about, whose cards a card set in it makes; None when it isn't about a note."""
+    if conversation.about_source_id is None:
+        return None
+    source = db.get_one(models.Source, conversation.about_source_id)
+    return (source.title or source.url) if source.kind == models.SourceKind.NOTE else None
 
 
 def _current_primer(db: orm.Session, *, primer_id: uuid.UUID) -> models.TopicPrimer | None:

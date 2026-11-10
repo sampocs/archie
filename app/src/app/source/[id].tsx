@@ -1,9 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
+import * as Network from "expo-network";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, Pressable, StyleSheet, View } from "react-native";
 
+import { MAKE_CARDS_MESSAGE } from "@/ask/cardSets";
+import { openChat } from "@/ask/openChat";
+import { useAskAvailable } from "@/ask/useAskAvailable";
 import { db } from "@/db/client";
 import { readLater, refreshNote, returnToInbox, setFavorite } from "@/db/actions";
 import * as schema from "@/db/schema";
@@ -26,7 +30,7 @@ import { useLibraryData } from "@/library/useLibraryData";
 import { NoteSources } from "@/notes/NoteSources";
 import { OriginalNoteSheet } from "@/notes/OriginalNoteSheet";
 import { setPendingRefreshToast } from "@/notes/pendingToast";
-import { todayRefresher } from "@/notes/refresher";
+import { noteDone, todayRefresher } from "@/notes/refresher";
 import { InlineMarkdown, Markdown } from "@/ui/Markdown";
 import { asDomain } from "@/topics/domains";
 import { splitFacts } from "@/summary/figures";
@@ -52,6 +56,9 @@ export default function SourceScreen() {
   const router = useRouter();
   const theme = useTheme();
   const libraryData = useLibraryData();
+  const askAvailable = useAskAvailable();
+  const network = Network.useNetworkState();
+  const online = network.isConnected !== false && network.isInternetReachable !== false;
   const { data: sources } = useLiveQuery(db.select().from(schema.sources).where(eq(schema.sources.id, id)), [id]);
   const { data: artifacts } = useLiveQuery(
     db
@@ -112,6 +119,7 @@ export default function SourceScreen() {
 
   // Done shows while the note waits for its refresh: cards on, not refreshed, write-up written.
   const canRefresh = isNote && source.cardsOff === 0 && source.refreshedAt === null && summaryContent !== null;
+  const done = noteDone(askAvailable, online);
 
   function refresh(): void {
     // Done acts once per visit: a double tap must not refresh twice (the second could reset the queue count).
@@ -122,10 +130,16 @@ export default function SourceScreen() {
     const today = todayRefresher(libraryData.sources, new Date());
     const counted = today?.kind === "pick" && today.note.id === source.id;
 
-    refreshNote(db, source.id, counted);
-    setPendingRefreshToast({ sourceId: source.id, title: source.title ?? "your note" });
+    refreshNote(db, source.id, counted, !done.inChat);
     haptic("success");
     requestSync();
+    // In a chat the owner shapes the cards with Ask, which asks for them at once; otherwise the worker writes them and
+    // a toast says when they land.
+    if (done.inChat) {
+      openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }, MAKE_CARDS_MESSAGE, true);
+      return;
+    }
+    setPendingRefreshToast({ sourceId: source.id, title: source.title ?? "your note" });
     router.back();
   }
 
@@ -142,7 +156,7 @@ export default function SourceScreen() {
         title=""
         onBack={router.back}
         footer={
-          canRefresh ? <Button testID="note-done" label="Done, add review cards" disabled={refreshing} onPress={refresh} /> : undefined
+          canRefresh ? <Button testID="note-done" label={done.label} disabled={refreshing} onPress={refresh} /> : undefined
         }
         headerRight={
           isNotice ? undefined : (

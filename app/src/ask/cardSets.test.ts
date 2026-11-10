@@ -3,9 +3,12 @@ import {
   asCardSetMode,
   cardSetBlock,
   cardSetValues,
+  hasCheatSheet,
   keptIndices,
+  opensByGoingBack,
   pageLabel,
   saveLabel,
+  savedToast,
   shownCardSetStatus,
   stepPage,
   toggleKept,
@@ -102,6 +105,14 @@ describe("cardSetBlock", () => {
     });
   });
 
+  it("names a discarded note's set by its cards, since it has no cheat sheet", () => {
+    expect(cardSetBlock(view({ status: "discarded", cheatSheet: "", title: "Liquid Staking" }))).toEqual({
+      kind: "collapsed",
+      left: "Cards · Liquid Staking",
+      right: "Discarded",
+    });
+  });
+
   it("says how many cards a saved set kept, and links its item", () => {
     expect(cardSetBlock(view({ status: "saved", kept: [0, 2], savedSourceId: "s9" }))).toEqual({
       kind: "saved",
@@ -111,6 +122,19 @@ describe("cardSetBlock", () => {
     expect(cardSetBlock(view({ status: "saved", kept: [1], savedSourceId: "s9" }))).toMatchObject({
       line: "✓ Saved · 1 card in review",
     });
+  });
+});
+
+describe("a note's set", () => {
+  it("has no cheat sheet when it is empty or blank, so the block hides the line", () => {
+    expect(hasCheatSheet(view({ cheatSheet: "" }))).toBe(false);
+    expect(hasCheatSheet(view({ cheatSheet: "  \n" }))).toBe(false);
+    expect(hasCheatSheet(view({}))).toBe(true);
+  });
+
+  it("toasts that its cards joined review, where a chat's set went to Library", () => {
+    expect(savedToast(view({ cheatSheet: "" }))).toBe("Added to review");
+    expect(savedToast(view({}))).toBe("Saved to Library");
   });
 });
 
@@ -148,5 +172,13 @@ describe("stored rows", () => {
 
   it("skips a row whose status this phone doesn't know", () => {
     expect(viewOfCardSetRow({ id: pulled.id, ...cardSetValues({ ...pulled, status: "archived" }) })).toBeNull();
+  });
+});
+
+describe("opensByGoingBack", () => {
+  it("goes back only when the chat was opened from that item's page", () => {
+    expect(opensByGoingBack("n1", "n1")).toBe(true);
+    expect(opensByGoingBack("n1", "n2")).toBe(false);
+    expect(opensByGoingBack(undefined, "n1")).toBe(false);
   });
 });

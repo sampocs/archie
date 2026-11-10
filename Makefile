@@ -108,7 +108,7 @@ maestro-newsletter: reset-local-data
 maestro-confirm: reset-local-data
 	@maestro/run_confirm_email.sh
 
-# Notes: the refresher, the note page and Done; Done's cards spend a fraction of a cent (one Haiku call).
+# Notes: the refresher, the note page and Done; saving a seeded chat's cards spends nothing on models.
 maestro-notes: reset-local-data
 	@maestro/run_notes.sh
 

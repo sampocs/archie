@@ -263,6 +263,23 @@ def test_refresh_note_consumes_it_and_queues_cards(live_stack: LiveStack, owner:
     assert len(_jobs(live_stack, models.JobKind.NOTE_CARDS)) == 1
 
 
+def test_refresh_note_without_cards_queues_none(live_stack: LiveStack, owner: httpx.Client) -> None:
+    """When the phone makes the note's cards in an Ask chat, Done still refreshes and files the note but queues no
+    cards."""
+    source_id = _import(owner, _note())[0]["id"]
+    _seed_write_up(owner, source_id)
+
+    results = _push(
+        owner, _action("refresh_note", {"id": source_id, "counted": True, "at": _now(), "make_cards": False})
+    )
+
+    assert results[0]["result"] == "applied"
+    row = _source(owner, source_id)
+    assert (row["state"], row["refreshed_from_queue"]) == ("consumed", True)
+    assert row["refreshed_at"] is not None
+    assert not _jobs(live_stack, models.JobKind.NOTE_CARDS)
+
+
 def test_refresh_note_never_stamps_the_future(owner: httpx.Client) -> None:
     """A phone clock ahead of the server cannot write a future refresh time."""
     source_id = _import(owner, _note())[0]["id"]

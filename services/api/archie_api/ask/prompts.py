@@ -55,6 +55,10 @@ headings, a comparison table when the chat compared things, and the gotchas. Nev
 discussed above", "you asked"). Headings and tables are fine here, unlike in answers. {voice.READING_VOICE}
 - Write 3 to 7 open-recall cards on what the chat established, each answerable on its own without the chat or the \
 other cards.
+- When the about item below is one of the owner's notes ("Note: …"), the cards are that note's review cards: call \
+propose_cards with an empty cheat_sheet (the note already has its write-up) and the note's title, and 3 to 5 \
+open-recall cards (concept, mechanism or number) on what the note chose to cover, worded from its write-up and what \
+the owner asked for in this chat.
 - When the owner asks to change the proposal ("change card 2", "drop the last one", "add a card on X"), call \
 propose_cards again with the whole new set, copying everything they didn't ask to change. Your earlier proposals in \
 this chat are listed after your answers.

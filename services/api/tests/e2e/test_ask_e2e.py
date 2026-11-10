@@ -408,6 +408,7 @@ def _unfinished_answer_request(live_stack: LiveStack) -> tuple[sqlalchemy.Engine
             ),
             messages=[{"role": "user", "content": QUESTION}],
             boost=context.boost(db, conversation=conversation),
+            note_title=None,
             day_zone=datetime.UTC,
             anthropic_key=config.Settings().require_anthropic_api_key(),
             openai_key=None,

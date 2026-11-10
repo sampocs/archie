@@ -1,5 +1,5 @@
-"""Cards from a chat end to end: a recorded `Make cards` answer that proposes a card set, then Save and Discard on card
-sets seeded through the test route (no model).
+"""Cards from a chat end to end: recorded `Make cards` answers that propose a card set (in a chat, and in a chat about
+a note), then Save and Discard on card sets seeded through the test route (no model).
 
 Anthropic is replayed from recorded real responses, round by round (`allow_playback_repeats=False`). Re-record a
 cassette by deleting it and running `uv run pytest services/api/tests/e2e/test_chat_cards_e2e.py --record-mode=once
@@ -81,12 +81,38 @@ def _seed(
     title: str = TITLE,
     cheat_sheet: str = CHEAT_SHEET,
     cards: list[dict[str, str]] = CARDS,
+    about_note_id: str | None = None,
 ) -> dict[str, Any]:
-    body = {"conversation_id": conversation_id, "title": title, "cheat_sheet": cheat_sheet, "cards": cards}
-    response = authed.post("/test/card-sets", json=body)
+    response = _seed_response(
+        authed,
+        conversation_id=conversation_id,
+        title=title,
+        cheat_sheet=cheat_sheet,
+        cards=cards,
+        about_note_id=about_note_id,
+    )
     assert response.status_code == 200, response.text
     proposal: dict[str, Any] = response.json()
     return proposal
+
+
+def _seed_response(
+    authed: httpx.Client,
+    *,
+    conversation_id: str | None = None,
+    title: str = TITLE,
+    cheat_sheet: str = CHEAT_SHEET,
+    cards: list[dict[str, str]] = CARDS,
+    about_note_id: str | None = None,
+) -> httpx.Response:
+    body = {
+        "conversation_id": conversation_id,
+        "title": title,
+        "cheat_sheet": cheat_sheet,
+        "cards": cards,
+        "about_note_id": about_note_id,
+    }
+    return authed.post("/test/card-sets", json=body)
 
 
 def _save(authed: httpx.Client, proposal_id: str, kept: list[int]) -> httpx.Response:
@@ -131,8 +157,10 @@ def _seed_chat(live_stack: LiveStack, *, user_id: int) -> uuid.UUID:
         return conversation.id
 
 
-def _ask(authed: httpx.Client, conversation_id: uuid.UUID, text: str) -> list[tuple[str, dict[str, Any]]]:
-    payload = {"user_message_id": str(uuid.uuid4()), "text": text, "web_search": False}
+def _ask(
+    authed: httpx.Client, conversation_id: uuid.UUID, text: str, *, about: dict[str, str] | None = None
+) -> list[tuple[str, dict[str, Any]]]:
+    payload = {"user_message_id": str(uuid.uuid4()), "text": text, "web_search": False, "about": about}
     path = f"/ask/conversations/{conversation_id}/messages"
     with authed.stream("POST", path, json=payload, timeout=180) as response:
         assert response.status_code == 200, response.read()
@@ -436,6 +464,181 @@ def test_cards_on_for_a_chat_item_queues_no_analysis(live_stack: LiveStack, owne
     with _db(live_stack) as db:
         kinds = set(db.scalars(sqlalchemy.select(models.Job.kind)))
     assert kinds == {models.JobKind.EMBED.value}
+
+
+NOTE_TITLE = "Liquid staking"
+NOTE_WRITE_UP = {
+    "domain": "Crypto",
+    "summary": {
+        "gist": "Liquid staking lets you stake ETH and still hold a tradable receipt token (an LST).",
+        "key_ideas": [
+            {"timestamp": None, "idea": "You stake with a provider such as Lido and get stETH back one for one."},
+            {"timestamp": None, "idea": "The LST earns staking rewards while you use it as collateral elsewhere."},
+            {"timestamp": None, "idea": "Direct stake waits in the exit queue to withdraw; an LST sells at once."},
+        ],
+        "numbers": [],
+    },
+    "sources": [{"url": "https://example.com/lido", "title": "Lido docs"}],
+}
+
+
+def _seed_note(authed: httpx.Client, *, mark: str = "cards") -> str:
+    """An imported note with a seeded write-up; returns its id."""
+    note = {
+        "bear_id": f"NOTE-{uuid.uuid4()}",
+        "title": NOTE_TITLE,
+        "markdown": f"# {NOTE_TITLE}\n\n- Stake with a provider, get an **LST** back\n",
+        "tags": ["crypto"],
+        "created_at": "2024-01-20T10:00:00+00:00",
+        "edited_at": "2024-02-13T09:00:00+00:00",
+        "mark": mark,
+    }
+    response = authed.post("/notes/import", json={"notes": [note]})
+    response.raise_for_status()
+    note_id: str = response.json()["results"][0]["id"]
+    authed.post(f"/test/notes/{note_id}/write-up", json=NOTE_WRITE_UP).raise_for_status()
+    return note_id
+
+
+def _source_artifacts(live_stack: LiveStack) -> list[tuple[str, str, int]]:
+    with _db(live_stack) as db:
+        rows = db.execute(
+            sqlalchemy.select(
+                models.SourceArtifact.source_id, models.SourceArtifact.kind, models.SourceArtifact.version
+            ).order_by(models.SourceArtifact.source_id, models.SourceArtifact.kind, models.SourceArtifact.version)
+        ).all()
+    return [(str(source_id), kind, version) for source_id, kind, version in rows]
+
+
+def test_make_cards_about_a_note_proposes_its_cards_without_a_cheat_sheet(
+    live_stack: LiveStack, owner: httpx.Client, request: pytest.FixtureRequest
+) -> None:
+    """`Make cards` in a new chat about a note: one set titled after the note, no cheat sheet, 3 to 5 cards of the
+    note's kinds; nothing is saved."""
+    note_id = _seed_note(owner)
+
+    recorder = recording.vcr_for(request, cassette_dir=CASSETTE_DIR)
+    recorder.ignore_localhost = True
+    with recorder.use_cassette("ask_make_note_cards.yaml", allow_playback_repeats=False):
+        events = _ask(owner, uuid.uuid4(), "Make cards", about={"kind": "source", "id": note_id})
+
+    [event] = [data for name, data in events if name == "cards"]
+    assert events[-1][0] == "done"
+    assert (event["title"], event["cheat_sheet"]) == (NOTE_TITLE, "")
+    assert 3 <= len(event["cards"]) <= 5
+    assert all(card["kind"] in {"concept", "mechanism", "number"} for card in event["cards"])
+    rows = _rows(owner)
+    assert [row["id"] for row in rows["card_set_proposals"]] == [event["id"]]
+    assert not rows["cards"]
+
+
+def test_saving_a_notes_set_puts_the_kept_cards_on_the_note_and_writes_nothing_else(
+    live_stack: LiveStack, owner: httpx.Client
+) -> None:
+    """No chat item, no new artifacts and no search job: the kept cards belong to the note, and the set names it as
+    where it was saved."""
+    note_id = _seed_note(owner)
+    proposal = _seed(owner, title=NOTE_TITLE, cheat_sheet="", about_note_id=note_id)
+    artifacts_before, embeds_before = _source_artifacts(live_stack), _embed_jobs(live_stack)
+
+    response = _save(owner, proposal["id"], [2, 0])
+
+    assert response.status_code == 200, response.text
+    assert (response.json()["status"], response.json()["saved_source_id"]) == ("saved", note_id)
+    rows = _rows(owner)
+    assert [source["id"] for source in rows["sources"]] == [note_id]
+    assert _source_artifacts(live_stack) == artifacts_before
+    assert _embed_jobs(live_stack) == embeds_before
+    cards = sorted(rows["cards"], key=lambda card: card["question"])
+    assert [(card["question"], card["source_id"], card["message_id"]) for card in cards] == [
+        (CARDS[0]["question"], note_id, proposal["message_id"]),
+        (CARDS[2]["question"], note_id, proposal["message_id"]),
+    ]
+
+
+def test_saving_a_notes_set_again_keeps_reviewed_cards_and_turns_cards_on(
+    live_stack: LiveStack, owner: httpx.Client
+) -> None:
+    """The second set follows the chat rules on the note: an identical card stays, a reviewed dropped one stays, an
+    unreviewed dropped one is retired, a new one is added; and a note whose cards were off has them on again."""
+    note_id = _seed_note(owner, mark="import")
+    first = _seed(owner, title=NOTE_TITLE, cheat_sheet="", about_note_id=note_id)
+    _save(owner, first["id"], [0, 1, 2])
+    saved = {card["question"]: card["id"] for card in _rows(owner)["cards"]}
+    with _db(live_stack) as db:
+        changes.lock_user_writes(db, int(owner.get("/me").json()["user_id"]))
+        reviewed = db.get_one(models.Card, uuid.UUID(saved[CARDS[1]["question"]]))
+        reviewed.reps = 1
+        reviewed.last_review_at = sqlalchemy.func.now()
+        reviewed.change_seq = changes.next_change_seq()
+        db.commit()
+    added = {"kind": "number", "question": "How much stETH does 1 ETH get?", "answer": "One stETH."}
+    second = _seed(
+        owner, conversation_id=first["conversation_id"], title=NOTE_TITLE, cheat_sheet="", cards=[CARDS[0], added]
+    )
+
+    assert _save(owner, second["id"], [0, 1]).json()["saved_source_id"] == note_id
+
+    rows = _rows(owner)
+    cards = {card["question"]: card for card in rows["cards"]}
+    assert cards[CARDS[0]["question"]]["id"] == saved[CARDS[0]["question"]]
+    assert cards[CARDS[1]["question"]]["deleted_at"] is None
+    assert cards[CARDS[2]["question"]]["deleted_at"] is not None
+    assert cards[added["question"]]["deleted_at"] is None
+    [note] = rows["sources"]
+    assert (note["id"], note["cards_off"]) == (note_id, False)
+
+
+def test_saving_in_one_note_chat_leaves_the_worker_cards_and_other_chats_cards_live(
+    live_stack: LiveStack, owner: httpx.Client
+) -> None:
+    """A note chat's Save retires only never-reviewed cards saved from that chat, not the worker's or another chat's."""
+    note_id = _seed_note(owner)
+    user_id = int(owner.get("/me").json()["user_id"])
+    with _db(live_stack) as db:
+        changes.lock_user_writes(db, user_id)
+        db.add(
+            models.Card(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                source_id=uuid.UUID(note_id),
+                kind=models.CardKind.CONCEPT.value,
+                question="A worker question?",
+                answer="A worker answer.",
+                change_seq=changes.next_change_seq(),
+            )
+        )
+        db.commit()
+    first = _seed(owner, title=NOTE_TITLE, cheat_sheet="", about_note_id=note_id)
+    _save(owner, first["id"], [0, 1, 2])
+    added = {"kind": "number", "question": "How much stETH does 1 ETH get?", "answer": "One stETH."}
+    second = _seed(owner, title=NOTE_TITLE, cheat_sheet="", cards=[added], about_note_id=note_id)
+    assert second["conversation_id"] != first["conversation_id"]
+
+    assert _save(owner, second["id"], [0]).status_code == 200
+
+    live = {card["question"] for card in _rows(owner)["cards"] if card["deleted_at"] is None}
+    assert live == {"A worker question?", added["question"], *(card["question"] for card in CARDS)}
+
+
+def test_a_notes_set_refusals(live_stack: LiveStack, owner: httpx.Client) -> None:
+    """An empty cheat sheet is refused outside a note's chat; a seed about another kind of item is 404; and Save once
+    the note is deleted is 404 and leaves the set open."""
+    assert _seed_response(owner, cheat_sheet="").status_code == 422
+    chat_item_id = _save(owner, _seed(owner)["id"], [0]).json()["saved_source_id"]
+    assert _seed_response(owner, cheat_sheet="", about_note_id=chat_item_id).status_code == 404
+
+    note_id = _seed_note(owner)
+    proposal = _seed(owner, title=NOTE_TITLE, cheat_sheet="", about_note_id=note_id)
+    deleted = owner.post("/sync/push", json={"actions": [_action("delete_source", {"id": note_id})]})
+    assert deleted.json()["results"][0]["result"] == "applied"
+
+    response = _save(owner, proposal["id"], [0])
+
+    assert (response.status_code, response.json()["detail"]) == (404, "note not found")
+    statuses = {row["id"]: row["status"] for row in _rows(owner)["card_set_proposals"]}
+    assert statuses[proposal["id"]] == "proposed"
+    assert not [card for card in _rows(owner)["cards"] if card["source_id"] == note_id]
 
 
 def _action(action_type: str, payload: dict[str, Any]) -> dict[str, Any]:

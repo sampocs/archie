@@ -379,7 +379,7 @@ function Collapsed({ testID, left, right }: { testID: string; left: string; righ
         justifyContent: "space-between",
         gap: theme.spacing.md,
         borderWidth: 1,
-        borderColor: theme.colors.line,
+        borderColor: theme.colors.cardEdge,
         backgroundColor: theme.colors.surface,
         borderRadius: theme.radii.chip,
         paddingHorizontal: theme.spacing.md,

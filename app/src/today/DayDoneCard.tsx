@@ -130,7 +130,7 @@ function Chip({ label, animate, delayMs }: { label: string; animate: boolean; de
 
   return (
     <Animated.View
-      style={[styles.chip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.line }, style]}
+      style={[styles.chip, { backgroundColor: theme.colors.surface, borderColor: theme.colors.cardEdge }, style]}
     >
       <Text variant="secondary" style={{ color: theme.signals.gotIt, fontFamily: fontFamily.bold }}>
         ✓

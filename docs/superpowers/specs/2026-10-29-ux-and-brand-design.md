@@ -25,13 +25,14 @@ Precision-tool type (Geist, heavy tight headings) on soft white cards with a lit
 
 | Token | Light | Dark (warm charcoal) | Use |
 |---|---|---|---|
-| bg | `#F4F2EC` | `#151412` | Page |
-| surface | `#FFFFFF` | `#201F1C` | Cards |
+| bg | `#F4F2EC` | `#111010` | Page |
+| surface | `#FFFFFF` | `#282622` | Cards |
 | ink | `#0E0E0C` | `#F1EFE9` | Primary text |
 | ink-2 | `#55534D` | `#B3AFA5` | Secondary text |
 | ink-3 | `#9A978F` | `#7E7A70` | Tertiary text, mono labels |
-| line | `#E8E6DF` | `#2D2B27` | Hairlines |
-| press | `#EFEDE6` | `#2A2824` | Chips, pressed rows, inputs |
+| line | `#E8E6DF` | `#36332E` | Hairlines |
+| press | `#EFEDE6` | `#302E2A` | Chips, pressed rows, inputs |
+| cardEdge | `#E8E6DF` | `#423E38` | Card border (1pt in dark, hairline in light) |
 | chrome | `#1C1B18` | `#F1EFE9` | Nav, primary buttons, active tab. **Inverts in dark**, with text on chrome flipping to `#141311` |
 
 **Domains (muted, one color per domain):**

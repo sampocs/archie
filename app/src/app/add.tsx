@@ -149,7 +149,7 @@ export default function AddScreen() {
           alignItems: "center",
           justifyContent: "space-between",
           backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.line,
+          borderColor: theme.colors.cardEdge,
           borderWidth: 1,
           borderRadius: 14,
           paddingVertical: 13,

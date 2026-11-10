@@ -26,7 +26,7 @@ export function Button({ label, variant = "primary", labelColor, disabled, ...re
           borderRadius: theme.radii.button,
           height: theme.spacing.buttonHeight,
           opacity: disabled ? 0.4 : 1,
-          ...(isPrimary ? null : secondaryCard(theme.scheme === "light", theme.colors.line)),
+          ...(isPrimary ? null : secondaryCard(theme.scheme === "light", theme.colors.cardEdge)),
           transform: [{ scale: pressed ? 0.97 : 1 }],
         },
       ]}

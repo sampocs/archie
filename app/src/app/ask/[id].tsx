@@ -1,7 +1,8 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Network from "expo-network";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { Alert, Pressable, View } from "react-native";
 
 import { aboutTitleOf } from "@/ask/aboutTitle";
 import { AnswerView } from "@/ask/AnswerView";
@@ -25,12 +26,17 @@ import { useAskAvailable } from "@/ask/useAskAvailable";
 import { useCardSetTicks, useChatItemId, useConversationCardSets } from "@/ask/useCardSets";
 import { useChat } from "@/ask/useChats";
 import { useChatSession } from "@/ask/useChatSession";
+import { deleteConversation } from "@/db/actions";
+import { db } from "@/db/client";
 import { EditProposalCard } from "@/edits/EditProposalCard";
 import { viewOfWire } from "@/edits/types";
 import { useConversationProposals } from "@/edits/useProposals";
+import { requestSync } from "@/sync/useSync";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
+import { haptic } from "@/ui/haptics";
+import { MenuSheet } from "@/ui/MenuSheet";
 import { Toast } from "@/ui/Toast";
 
 type Params = { id: string; q?: string; web?: string; aboutKind?: AboutKind; aboutId?: string; aboutTitle?: string };
@@ -77,6 +83,7 @@ export default function ChatScreen() {
     (pending?.live.cardSets ?? []).some((wire) => wire.status === "proposed") ||
     [...cardSets.values()].flat().some((cardSet) => shownCardSetStatus(cardSet, cardSetLive) === "proposed");
   const [toast, setToast] = useState<string | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   // Stable, so a re-render (a pull landing) doesn't restart the toast's timer.
   const hideToast = useCallback(() => setToast(null), []);
 
@@ -101,6 +108,13 @@ export default function ChatScreen() {
         title="Ask"
         nav={{ title: conversation?.title ?? "", backLabel: "Ask" }}
         onBack={router.back}
+        headerRight={
+          conversation ? (
+            <Pressable testID="chat-more" accessibilityLabel="More" hitSlop={12} onPress={() => setMenuOpen(true)}>
+              <Ionicons name="ellipsis-horizontal" size={24} color={theme.colors.ink} />
+            </Pressable>
+          ) : null
+        }
         footer={
           <View style={{ gap: theme.spacing.sm }}>
             {aboutTitle ? (
@@ -204,10 +218,36 @@ export default function ChatScreen() {
           ) : null}
         </View>
       </Screen>
+      <MenuSheet
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        items={[
+          {
+            testID: "chat-menu-delete",
+            label: "Delete chat",
+            destructive: true,
+            onPress: () =>
+              confirmDeleteChat(() => {
+                deleteConversation(db, params.id);
+                haptic("success");
+                requestSync();
+                router.back();
+              }),
+          },
+        ]}
+      />
       {/* Outside the scroll view, so it pins to the screen's bottom rather than the end of the chat. */}
       {toast ? <Toast message={toast} onHide={hideToast} /> : null}
     </View>
   );
+}
+
+/** Asks before deleting, saying that what was saved from the chat outlives it. */
+function confirmDeleteChat(onConfirm: () => void): void {
+  Alert.alert("Delete this chat?", "Cards and Library items you saved from it stay.", [
+    { text: "Cancel", style: "cancel" },
+    { text: "Delete", style: "destructive", onPress: onConfirm },
+  ]);
 }
 
 /** Try again on a stored failed answer: send its question again, with the globe as it was. */

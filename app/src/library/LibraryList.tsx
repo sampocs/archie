@@ -17,7 +17,7 @@ import { useTakesData } from "@/takes/useTakesData";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
-import { GroupedList } from "@/ui/GroupedList";
+import { GroupedList, RowBleedContext } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
 import { ItemRow } from "@/ui/ItemRow";
 import { ProcessingLine } from "@/ui/ProcessingLine";
@@ -181,6 +181,7 @@ function FilterChips(props: {
 }
 
 function QueueBody({ data, now, rowActions }: { data: LibraryData; now: Date; rowActions: RowActions }) {
+  const theme = useTheme();
   const queue = upNext(data.sources, now);
   const snoozed = byWeek(filterEntries(data, "queued"), now).snoozed;
 
@@ -197,13 +198,16 @@ function QueueBody({ data, now, rowActions }: { data: LibraryData; now: Date; ro
               // (and Maestro), and the swipe would compete with the drag.
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View style={{ flex: 1 }}>
-                  <SwipeRow actions={swipeActions(queueLibraryEntry(entry), "queued", rowActions)}>
-                    {entry.kind === "source" ? (
-                      <LibraryItem source={entry.source} trailing={<></>} />
-                    ) : (
-                      <QueuedPrimerRow source={entry.source} testID={`queued-primer-${entry.source.id}`} />
-                    )}
-                  </SwipeRow>
+                  {/* The handle holds the right edge, so the swipe reaches only the card's left edge. */}
+                  <RowBleedContext.Provider value={{ left: theme.spacing.lg, right: 0 }}>
+                    <SwipeRow actions={swipeActions(queueLibraryEntry(entry), "queued", rowActions)}>
+                      {entry.kind === "source" ? (
+                        <LibraryItem source={entry.source} trailing={<></>} />
+                      ) : (
+                        <QueuedPrimerRow source={entry.source} testID={`queued-primer-${entry.source.id}`} />
+                      )}
+                    </SwipeRow>
+                  </RowBleedContext.Provider>
                 </View>
                 {handle}
               </View>

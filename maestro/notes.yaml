@@ -8,7 +8,9 @@ appId: com.sampocs.archie
     visible:
       id: "today-refresher"
     timeout: 30000
-- assertVisible: "Refresh a note · 1 of 2 today"
+- assertVisible:
+    id: "today-refresher-detail"
+    text: "(?i)1 of 2 today"
 - assertVisible: ".*Liquid Staking.*"
 - tapOn:
     id: "today-refresher-note"
@@ -30,7 +32,9 @@ appId: com.sampocs.archie
     id: "original-note-sheet"
 - tapOn:
     id: "note-done"
-- assertVisible: "Refresh a note · 2 of 2 today"
+- assertVisible:
+    id: "today-refresher-detail"
+    text: "(?i)2 of 2 today"
 - assertVisible: ".*Liquid Restaking Tokens.*"
 # The worker writes the cards with Haiku, then the toast says so.
 - extendedWaitUntil:

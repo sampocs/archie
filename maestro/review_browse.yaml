@@ -1,0 +1,79 @@
+appId: com.sampocs.archie
+---
+# Run after chat_cards.yaml (run_chat_cards.sh): the Chat item it saved holds two cards, reviewable at once.
+# Spends nothing: an empty answer goes straight to self-grading.
+- launchApp
+- tapOn:
+    id: "tab-review"
+- extendedWaitUntil:
+    visible:
+      id: "review-tab-start"
+    timeout: 15000
+- assertVisible: "Search 2 cards"
+# Items → the Chat item's card list → Practice all starts a session on its cards.
+- tapOn:
+    id: "review-browse-items"
+- tapOn:
+    id: "review-item-.*"
+- assertVisible: "Practice all 2"
+- assertVisible:
+    id: "card-list-row-1"
+- tapOn:
+    id: "card-list-practice"
+- assertVisible:
+    id: "review-question"
+- assertVisible: "1 of 2"
+- tapOn:
+    id: "review-close"
+- tapOn:
+    id: "screen-back"
+# Review both due cards, missing each (Show answer → Missed → Next).
+- tapOn:
+    id: "review-tab-start"
+- repeat:
+    times: 2
+    commands:
+      - tapOn:
+          id: "review-submit"
+      - tapOn:
+          id: "self-grade-missed"
+      - tapOn:
+          id: "review-next"
+- assertVisible:
+    id: "review-done"
+- tapOn:
+    id: "done-back-today"
+- assertVisible:
+    id: "today-review-done|today-done"
+# Caught up: the card offers Review ahead and Shuffle; Missed lists both cards.
+- tapOn:
+    id: "tab-review"
+- assertVisible:
+    id: "review-caught-up"
+- assertVisible: "Review ahead · 2"
+- tapOn:
+    id: "review-browse-missed"
+- assertVisible: "Practice these 2"
+- assertVisible:
+    id: "review-missed-tag-0"
+- tapOn:
+    id: "review-missed-practice"
+- assertVisible:
+    id: "review-question"
+- tapOn:
+    id: "review-close"
+- tapOn:
+    id: "review-shuffle"
+- assertVisible:
+    id: "review-question"
+- assertVisible: "1 of 2"
+- tapOn:
+    id: "review-close"
+# The browse mode is remembered: Missed is still chosen.
+- assertVisible: "Practice these 2"
+# ...and survives a relaunch.
+- stopApp
+- launchApp
+- tapOn:
+    id: "tab-review"
+- assertVisible: "Practice these 2"

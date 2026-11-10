@@ -2,7 +2,7 @@
 
 import type { LibrarySource } from "@/library/join";
 import { readingMinutes, wordCount } from "@/library/primer";
-import { recentDayLabel } from "@/today/todayLabels";
+import { recentDayLabel, sameLocalDay } from "@/today/todayLabels";
 
 export const DAILY_NOTES = 2;
 
@@ -10,7 +10,8 @@ const NEXT_UP_COUNT = 2;
 
 export type TodayRefresher =
   | { kind: "pick"; position: number; note: LibrarySource; minutes: number; nextUp: string[] }
-  | { kind: "done"; nextUp: string[] };
+  // Done for today: how many came off the queue today, and the note tomorrow starts with.
+  | { kind: "done"; refreshed: number; next: LibrarySource | null };
 
 const editedAt = (source: LibrarySource): string => source.noteEditedAt ?? source.createdAt;
 
@@ -18,14 +19,6 @@ const runKey = (source: LibrarySource): string =>
   source.topicId ?? (source.domain ? `domain:${source.domain}` : "none");
 
 const titleOf = (source: LibrarySource): string => source.title ?? source.url;
-
-/** Whether two instants fall on the same calendar day on this phone. */
-function sameLocalDay(iso: string, now: Date): boolean {
-  const date = new Date(iso);
-  return (
-    date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
-  );
-}
 
 /** A note waiting in the refresher: a live note with cards on, not refreshed, whose write-up exists. */
 export function isRefreshable(source: LibrarySource): boolean {
@@ -68,7 +61,7 @@ export function todayRefresher(sources: LibrarySource[], now: Date): TodayRefres
   const queue = refresherQueue(sources);
 
   if (counted >= DAILY_NOTES || (queue.length === 0 && counted > 0)) {
-    return { kind: "done", nextUp: queue.slice(0, 1).map(titleOf) };
+    return { kind: "done", refreshed: counted, next: queue[0] ?? null };
   }
   if (queue.length === 0) return null;
 

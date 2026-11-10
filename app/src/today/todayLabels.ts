@@ -27,3 +27,17 @@ export function recentDayLabel(at: string, now: Date): string {
   if (now.getTime() - date.getTime() <= WEEKDAY_WINDOW_DAYS * DAY_MS) return WEEKDAYS[date.getDay()];
   return `${MONTHS[date.getMonth()]} ${date.getDate()}`;
 }
+
+/** Whether an instant falls on the same calendar day as `now` on this phone. */
+export function sameLocalDay(iso: string, now: Date): boolean {
+  const date = new Date(iso);
+  return (
+    date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
+  );
+}
+
+/** The phone's local date "YYYY-MM-DD". */
+export function localDate(day: Date): string {
+  const pad = (value: number): string => String(value).padStart(2, "0");
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
+}

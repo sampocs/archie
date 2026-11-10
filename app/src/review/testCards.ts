@@ -5,7 +5,7 @@ import type { ConversationRow } from "@/ask/types";
 import type { TakeRow, TakeVersionRow } from "@/takes/takes";
 
 import { makeReviewData, type ReviewData } from "./eligibility";
-import type { CardRow } from "./types";
+import type { CardRow, ReviewRow } from "./types";
 
 export { sourceRow, topicPrimerRow, topicRow };
 
@@ -57,7 +57,12 @@ export const reviewCard = (overrides: Partial<CardRow> & { dueAt: string }): Car
 /** Review data where source s1 is consumed with its primer opened, and topic t1 has an opened primer p1. */
 export function reviewData(
   cards: CardRow[],
-  rows: Partial<Pick<Parameters<typeof makeReviewData>[0], "sources" | "topicPrimers" | "topics" | "takes" | "conversations">> = {},
+  rows: Partial<
+    Pick<
+      Parameters<typeof makeReviewData>[0],
+      "sources" | "topicPrimers" | "topics" | "takes" | "conversations" | "reviews"
+    >
+  > = {},
 ): ReviewData {
   return makeReviewData({
     cards,
@@ -68,8 +73,24 @@ export function reviewData(
     topics: rows.topics ?? [topicRow({ id: "t1" })],
     takes: rows.takes ?? [],
     conversations: rows.conversations ?? [],
+    reviews: rows.reviews ?? [],
   });
 }
+
+export const reviewRow = (overrides: Partial<ReviewRow>): ReviewRow => ({
+  id: "r1",
+  cardId: "c1",
+  grade: "got_it",
+  gradedBy: "model",
+  answer: null,
+  missing: null,
+  wasDue: 1,
+  reviewedAt: NOW.toISOString(),
+  stateBefore: "{}",
+  stateAfter: "{}",
+  replacesReviewId: null,
+  ...overrides,
+});
 
 export const takeRow = (overrides: Partial<TakeRow>): TakeRow => ({
   id: "k1",

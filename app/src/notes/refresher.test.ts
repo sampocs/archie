@@ -113,7 +113,8 @@ describe("todayRefresher", () => {
   it("is done for the day after two counted refreshes, naming the next note", () => {
     const result = todayRefresher([...queued, countedToday("d1"), countedToday("d2")], NOW);
 
-    expect(result).toEqual({ kind: "done", nextUp: ["Q1"] });
+    expect(result).toMatchObject({ kind: "done", refreshed: 2 });
+    expect(result?.kind === "done" && result.next?.id).toBe("q1");
   });
 
   it("does not count a refresh from just before midnight yesterday", () => {
@@ -134,7 +135,7 @@ describe("todayRefresher", () => {
   });
 
   it("is done with nothing to name when the queue empties after a counted refresh", () => {
-    expect(todayRefresher([countedToday("d1")], NOW)).toEqual({ kind: "done", nextUp: [] });
+    expect(todayRefresher([countedToday("d1")], NOW)).toEqual({ kind: "done", refreshed: 1, next: null });
   });
 
   it("has fewer next-up titles when the queue is short", () => {

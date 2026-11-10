@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The chat-cards flow: log in, seed a chat holding a card-set proposal without a model, then save it with one card
-# unticked and open the Library item it made. Run from the repo root with the backend up (`make start-local`).
+# unticked and open the Library item it made; then browse and practice those cards on the Review tab. Run from the repo root with the backend up (`make start-local`).
 # Spends nothing on models (the save queues one embedding of the item).
 set -euo pipefail
 
@@ -21,4 +21,4 @@ curl -fsS -X POST "$API/test/card-sets" \
   -H 'content-type: application/json' \
   --data-binary @maestro/fixtures/chat_cards.json >/dev/null
 
-maestro test maestro/chat_cards.yaml
+maestro test maestro/chat_cards.yaml maestro/review_browse.yaml

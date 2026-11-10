@@ -1,0 +1,322 @@
+<title>Today and Review Polish</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: rows of phone mocks built from the app's real tokens (theme/tokens.ts, type.ts); "now" first, then options. */
+:root {
+  --page: #E6E3DB; --pageInk: #1C1B18; --pageInk2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --unread: #3D7BF2; --onDomain: #FFFFFF;
+  --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --reviewCard: #3F7262;
+  --macro: #3F7262; --ai: #6A5A9C; --startups: #3D6690; --crypto: #A8613A; --swe: #5A5F6E; --finance: #8A7533;
+  --shadow: 0 1px 2px rgba(14,14,12,.06);
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0F0E0D; --pageInk: #F1EFE9; --pageInk2: #A9A59B;
+  --bg: #151412; --surface: #201F1C; --ink: #F1EFE9; --ink2: #B3AFA5; --ink3: #7E7A70; --line: #2D2B27; --press: #2A2824;
+  --chrome: #F1EFE9; --onChrome: #141311; --unread: #6EA1FF; --onDomain: #151412;
+  --got: #79B39E; --partly: #D6AC4E; --missed: #E3806F; --reviewCard: #2F5A4C;
+  --macro: #79B39E; --ai: #A898DE; --startups: #7FA7D9; --crypto: #DC9867; --swe: #A3A8B8; --finance: #CDB46A; --shadow: none; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0F0E0D; --pageInk: #F1EFE9; --pageInk2: #A9A59B;
+  --bg: #151412; --surface: #201F1C; --ink: #F1EFE9; --ink2: #B3AFA5; --ink3: #7E7A70; --line: #2D2B27; --press: #2A2824;
+  --chrome: #F1EFE9; --onChrome: #141311; --unread: #6EA1FF; --onDomain: #151412;
+  --got: #79B39E; --partly: #D6AC4E; --missed: #E3806F; --reviewCard: #2F5A4C;
+  --macro: #79B39E; --ai: #A898DE; --startups: #7FA7D9; --crypto: #DC9867; --swe: #A3A8B8; --finance: #CDB46A; --shadow: none; color-scheme: dark }
+body { background: var(--page); color: var(--pageInk); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; }
+.intro { max-width: 1300px; margin: 0 auto 10px; display: grid; gap: 6px; }
+.intro .n, .n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pageInk2); text-transform: uppercase; }
+h1 { margin: 0; font-size: 28px; letter-spacing: -.03em; }
+h2 { max-width: 1300px; margin: 34px auto 14px; font-size: 19px; letter-spacing: -.02em; }
+.intro p, h2 + p { margin: 0 auto; max-width: 1300px; color: var(--pageInk2); line-height: 1.5; font-size: 14.5px; }
+h2 + p { margin-bottom: 16px; max-width: 1300px; }
+.row { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 30px 24px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; }
+figcaption b { font-size: 15px; } figcaption span { color: var(--pageInk2); font-size: 13.5px; line-height: 1.45; }
+
+/* ——— phone, using app tokens ——— */
+.phone { width: 100%; max-width: 320px; aspect-ratio: 320 / 690; background: var(--bg); color: var(--ink); border-radius: 40px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-family: var(--sans); font-size: 15px; }
+.screen { position: absolute; inset: 0; overflow: hidden; }
+.hdr { display: flex; justify-content: space-between; align-items: baseline; padding: 46px 18px 10px; }
+.large { font: 700 30px/1.05 var(--sans); letter-spacing: -.04em; }
+.mono { font: 500 10.5px var(--mono); text-transform: uppercase; letter-spacing: .02em; color: var(--ink3); }
+.content { padding: 0 13px 90px; display: grid; gap: 20px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; box-shadow: var(--shadow); }
+.headline { font: 600 15px/1.25 var(--sans); letter-spacing: -.018em; }
+.sec { font: 400 12.5px/1.35 var(--sans); color: var(--ink2); }
+.ink3 { color: var(--ink3); }
+.kicker { font: 600 9.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; }
+.rc { background: var(--reviewCard); color: #fff; border-radius: 20px; padding: 14px; display: grid; gap: 3px; }
+.rc .big { font: 700 25px/1.1 var(--sans); letter-spacing: -.04em; }
+.rc .mono { color: rgba(255,255,255,.85); }
+.rc .sec { color: rgba(255,255,255,.85); }
+.tile { width: 40px; height: 40px; border-radius: 9px; display: grid; place-items: center; color: var(--onDomain); font: 600 17px var(--sans); position: relative; flex: none; }
+.tile .dot { position: absolute; top: -2px; left: -2px; width: 8px; height: 8px; border-radius: 50%; background: var(--unread); border: 1.5px solid var(--surface); }
+.irow { display: flex; gap: 11px; align-items: center; padding: 11px 13px; border-bottom: 1px solid var(--line); }
+.irow:last-child { border-bottom: 0; }
+.irow .col { display: grid; gap: 2px; min-width: 0; }
+.irow .headline { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 14px; }
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); overflow: hidden; }
+.glabel { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; padding: 0 2px; }
+.bullets { display: grid; gap: 6px; font-size: 13px; line-height: 1.42; }
+.bullets div::before { content: "•  "; color: var(--ink3); } .bullets div.more::before { content: ""; }
+.link { font: 600 13px var(--sans); }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; border-top: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 88%, transparent);
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 8px; font: 500 9.5px var(--sans); color: var(--ink3); text-align: center; }
+.tabbar.four { grid-template-columns: repeat(4, 1fr); }
+.tabbar .on { color: var(--chrome); font-weight: 600; }
+.ico { width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 50%; border: 1.7px solid currentColor; }
+.on .ico { background: currentColor; }
+.chev { color: var(--ink3); }
+.simple { display: flex; justify-content: space-between; align-items: center; padding: 12px 13px; border-bottom: 1px solid var(--line); font-size: 14px; }
+.simple:last-child { border-bottom: 0; }
+/* new bits */
+.plan { padding: 0; overflow: hidden; }
+.prow { display: grid; grid-template-columns: 26px minmax(0,1fr) auto; gap: 11px; align-items: center; padding: 12px 13px; border-bottom: 1px solid var(--line); }
+.prow:last-child { border-bottom: 0; }
+.check { width: 24px; height: 24px; border-radius: 50%; border: 1.7px solid var(--line); display: grid; place-items: center; font-size: 12px; color: transparent; }
+.check.done { background: var(--got); border-color: var(--got); color: #fff; }
+.prow.done .headline { color: var(--ink3); }
+.pill { background: var(--chrome); color: var(--onChrome); border-radius: 999px; padding: 6px 12px; font: 600 12px var(--sans); white-space: nowrap; }
+.pill.green { background: var(--reviewCard); color: #fff; }
+.bar { height: 4px; border-radius: 3px; background: color-mix(in srgb, #fff 28%, transparent); overflow: hidden; margin-top: 8px; }
+.bar i { display: block; height: 100%; width: 40%; background: #fff; border-radius: 3px; }
+.donecard { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 16px; background: color-mix(in srgb, var(--got) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--got) 25%, var(--line)); }
+.donecard .check { flex: none; }
+.greet { padding: 0 18px; margin-top: -4px; margin-bottom: 14px; font-size: 13px; color: var(--ink2); }
+.forecast { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 70px; margin-top: 10px; }
+.forecast div { display: grid; gap: 4px; justify-items: center; align-content: end; height: 100%; }
+.forecast i { width: 100%; border-radius: 5px; background: color-mix(in srgb, var(--got) 35%, var(--press)); display: block; }
+.forecast i.today { background: var(--got); }
+.forecast span { font: 500 9px var(--mono); color: var(--ink3); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: grid; gap: 2px; box-shadow: var(--shadow); }
+.stat b { font: 700 19px var(--sans); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.search { background: var(--press); border-radius: 12px; padding: 9px 12px; color: var(--ink3); font-size: 13.5px; }
+.seg { display: flex; background: var(--press); border-radius: 10px; padding: 2px; font-size: 12px; }
+.seg span { flex: 1; text-align: center; padding: 5px; border-radius: 8px; color: var(--ink2); }
+.seg .on { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.meter { width: 44px; height: 5px; border-radius: 3px; background: var(--press); overflow: hidden; }
+.meter i { display: block; height: 100%; background: var(--got); }
+.tag { font: 500 9.5px var(--mono); padding: 2px 6px; border-radius: 6px; background: color-mix(in srgb, var(--missed) 14%, transparent); color: var(--missed); }
+</style>
+
+<style>
+.slim { display:flex; gap:10px; align-items:center; padding: 10px 13px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow); }
+.slim .check { width: 20px; height: 20px; font-size: 10px; flex: none; }
+.startrow { display:flex; gap:8px; }
+.btn2 { flex:1; text-align:center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 11px 6px; font: 600 13.5px var(--sans); box-shadow: var(--shadow); }
+.caught { display:grid; gap:10px; background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 14px; box-shadow: var(--shadow); }
+.btnp { background: var(--chrome); color: var(--onChrome); border-radius: 14px; padding: 11px; text-align: center; font: 600 13.5px var(--sans); }
+.streak { font: 500 10.5px var(--mono); color: var(--ink3); text-transform: uppercase; }
+.duepill { font: 500 10px var(--mono); color: var(--got); background: color-mix(in srgb, var(--got) 13%, transparent); border-radius: 6px; padding: 2px 6px; white-space: nowrap; }
+</style><style>
+.chead { display:flex; justify-content:space-between; align-items:baseline; }
+.chead .kicker { color: var(--ink2); }
+.rc .chead .kicker, .rc .chead .mono { color: rgba(255,255,255,.85); }
+.allDone { display:grid; gap:6px; justify-items:start; background: color-mix(in srgb, var(--got) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--got) 25%, var(--line)); border-radius: 20px; padding: 16px; }
+.allDone .big { font: 700 24px/1.1 var(--sans); letter-spacing: -.04em; }
+.ticks { display:flex; gap:6px; flex-wrap: wrap; }
+.tchip { display:inline-flex; gap:5px; align-items:center; font: 500 11.5px var(--sans); color: var(--ink2); background: var(--surface); border:1px solid var(--line); border-radius: 999px; padding: 4px 9px; }
+.tchip i { font-style: normal; color: var(--got); font-weight: 700; }
+</style><style>
+/* heading variants */
+.hA .lbl { font: 600 9.5px var(--sans); letter-spacing:.06em; text-transform:uppercase; color: var(--ink2); }
+.hA .det { font: 500 10px var(--mono); text-transform:uppercase; color: var(--ink3); }
+.hA .sect { font: 500 10.5px var(--mono); text-transform:uppercase; color: var(--ink3); }
+.hB .lbl, .hB .sect { font: 500 10.5px var(--mono); text-transform:uppercase; letter-spacing:.04em; color: var(--ink3); }
+.hB .det { font: 500 10.5px var(--mono); text-transform:uppercase; color: var(--ink3); }
+.hC .lbl { font: 600 13px var(--sans); color: var(--ink); letter-spacing:-.01em; }
+.hC .det { font: 400 12px var(--sans); color: var(--ink3); }
+.hC .sect { font: 700 17px var(--sans); color: var(--ink); letter-spacing:-.025em; }
+.hD .lbl { font: 600 9.5px var(--sans); letter-spacing:.06em; text-transform:uppercase; color: var(--ink2); display:inline-flex; gap:6px; align-items:center; }
+.hD .lbl b { width: 16px; height: 16px; border-radius: 5px; display:inline-grid; place-items:center; font-size: 9px; color:#fff; background: var(--ink3); letter-spacing:0; }
+.hD .det { font: 500 10px var(--mono); text-transform:uppercase; color: var(--ink3); }
+.hD .sect { font: 600 9.5px var(--sans); letter-spacing:.06em; text-transform:uppercase; color: var(--ink3); }
+.rc .lbl, .rc .det { color: rgba(255,255,255,.85) !important; }
+.hD .rc .lbl b { background: rgba(255,255,255,.25); }
+/* all-done animation demo */
+.demo { position: relative; display:grid; gap: 10px; }
+.demo .slim { transition: opacity .35s ease, transform .45s cubic-bezier(.2,.8,.2,1), max-height .45s ease, margin .45s ease, padding .45s ease; max-height: 60px; }
+.demo.go .slim { opacity: 0; transform: translateY(-18px) scale(.96); max-height: 0; padding-block: 0; margin: -5px 0; border-width: 0; }
+.demo .allDone { opacity: 0; transform: scale(.92); max-height: 0; overflow: hidden; padding-block: 0; border-width: 0; transition: opacity .4s ease .35s, transform .55s cubic-bezier(.2,1.4,.4,1) .35s, max-height .5s ease .3s, padding .5s ease .3s; }
+.demo.go .allDone { opacity: 1; transform: none; max-height: 220px; padding-block: 16px; border-width: 1px; }
+.demo .allDone .check { transform: scale(0); transition: transform .5s cubic-bezier(.2,1.8,.4,1) .7s; }
+.demo.go .allDone .check { transform: scale(1); }
+.demo .tchip { opacity: 0; transform: translateY(6px); transition: opacity .3s ease, transform .3s ease; }
+.demo.go .tchip { opacity: 1; transform: none; }
+.demo.go .tchip:nth-child(1) { transition-delay: .9s } .demo.go .tchip:nth-child(2) { transition-delay: 1s } .demo.go .tchip:nth-child(3) { transition-delay: 1.1s }
+.burst { position:absolute; left: 30px; top: 30px; pointer-events:none; }
+.burst i { position:absolute; width:6px; height:6px; border-radius:50%; background: var(--got); opacity:0; }
+.demo.go .burst i { animation: burst .7s ease-out .75s forwards; }
+@keyframes burst { 0% { opacity:1; transform: translate(0,0) scale(1) } 100% { opacity:0; transform: translate(var(--x), var(--y)) scale(.4) } }
+.replay { margin-top: 2px; justify-self: start; font: 600 12px var(--sans); background: var(--press); color: var(--pageInk); border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .demo *, .demo { transition: none !important; animation: none !important; } }
+</style><style>
+.demo2 { position: relative; display: grid; gap: 10px; }
+.demo2 .slim, .demo2 .bcard { transition: opacity .35s ease, transform .45s cubic-bezier(.2,.8,.2,1), max-height .45s ease, padding .45s ease, margin .45s ease, border-width .45s ease; overflow: hidden; }
+.demo2 .slim { max-height: 60px; }
+.demo2 .bcard { max-height: 200px; cursor: pointer; }
+.demo2 .slim3 { max-height: 0; opacity: 0; padding-block: 0; border-width: 0; margin: -5px 0; }
+.demo2.s1 .bcard { max-height: 0; opacity: 0; padding-block: 0; border-width: 0; margin: -5px 0; transform: scale(.97); }
+.demo2.s1 .slim3 { max-height: 60px; opacity: 1; padding-block: 10px; border-width: 1px; margin: 0; }
+.demo2 .slim3 .check { transform: scale(0); transition: transform .45s cubic-bezier(.2,1.8,.4,1) .25s; }
+.demo2.s1 .slim3 .check { transform: scale(1); }
+.demo2.s2 .slim { opacity: 0; transform: translateY(-18px) scale(.96); max-height: 0; padding-block: 0; margin: -5px 0; border-width: 0; }
+.demo2 .allDone { opacity: 0; transform: scale(.92); max-height: 0; overflow: hidden; padding-block: 0; border-width: 0; transition: opacity .4s ease .35s, transform .55s cubic-bezier(.2,1.4,.4,1) .35s, max-height .5s ease .3s, padding .5s ease .3s; }
+.demo2.s2 .allDone { opacity: 1; transform: none; max-height: 220px; padding-block: 16px; border-width: 1px; }
+.demo2 .allDone .check { transform: scale(0); transition: transform .5s cubic-bezier(.2,1.8,.4,1) .7s; }
+.demo2.s2 .allDone .check { transform: scale(1); }
+.demo2 .tchip { opacity: 0; transform: translateY(6px); transition: opacity .3s ease, transform .3s ease; }
+.demo2.s2 .tchip { opacity: 1; transform: none; }
+.demo2.s2 .tchip:nth-child(1) { transition-delay: .9s } .demo2.s2 .tchip:nth-child(2) { transition-delay: 1s } .demo2.s2 .tchip:nth-child(3) { transition-delay: 1.1s }
+.demo2 .burst i { position:absolute; width:6px; height:6px; border-radius:50%; background: var(--got); opacity:0; }
+.demo2.s2 .burst i { animation: burst .7s ease-out .75s forwards; }
+.tapme { font: 500 10px var(--mono); color: var(--unread); text-transform: uppercase; }
+.ctl { display:flex; gap:8px; align-items:center; }
+@media (prefers-reduced-motion: reduce) { .demo2 *, .demo2 { transition: none !important; animation: none !important; } }
+</style><div class="intro"><span class="n">Archie · Today and Review polish, round 2</span><h1>Smaller polish</h1>
+<p>Built from the app's real tokens and components. Today keeps its layout; Review keeps its name and gains a view of all your cards, with a way to start a review whether or not anything is due. Example content.</p></div>
+<h2>Today: section heading styles</h2><p>Same in-progress screen four ways, with a full Up next queue so the card headers and the list label sit side by side. In each, the three task cards share one header and Up next uses the section-label style.</p>
+<div class="row"><figure><div class="phone hA"><div class="screen"><div class="hdr"><span class="large">Today</span><span class="mono">Mon · Nov 10</span></div><div class="content" style="gap:16px">
+      <div class="rc"><div class="chead"><span class="lbl">Review</span><span class="det">5 of 12 done</span></div><span class="big">7 cards left</span><span class="mono">about 3 minutes</span><div class="bar"><i></i></div></div>
+      <div class="card" style="display:grid;gap:10px">
+        <div class="chead"><span class="lbl">Refresh a note</span><span class="det">1 of 2 today</span></div>
+        <div style="display:flex;gap:11px;align-items:center"><div class="tile" style="background:var(--swe)">✎</div><div style="display:grid;gap:2px;flex:1;min-width:0"><span class="headline">CAP theorem in practice</span><span class="sec">Notes · Software · 3 min read</span></div><span class="chev">›</span></div>
+      </div>
+      <div class="card" style="display:grid;gap:8px">
+        <div class="chead"><span class="lbl">Your brief</span><span class="det">6 stories · 3 min</span></div>
+        <div class="bullets"><div>Nvidia probes CEO over leaked chats</div><div>OpenAI valued at $1.25T</div></div>
+        <span class="link">Read the brief ›</span>
+      </div>
+      <div>
+        <div class="glabel"><span class="sect">Up next</span><span class="sec">See all 7 ›</span></div>
+        <div class="list">
+          <div class="irow"><div class="tile" style="background:var(--ai)">D<span class="dot"></span></div><div class="col"><span class="kicker" style="color:var(--ai)">AI</span><span class="headline">Jensen Huang – Will Nvidia's moat persist?</span><span class="sec ink3">YouTube · Dwarkesh Podcast</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--macro)">◆</div><div class="col"><span class="kicker" style="color:var(--macro)">Macro · Primer</span><span class="headline">Primer: The changing world order</span><span class="sec ink3">7 min read</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--startups)">A</div><div class="col"><span class="kicker" style="color:var(--startups)">Startups</span><span class="headline">Why venture capital is broken</span><span class="sec ink3">YouTube · All-In</span></div></div>
+        </div>
+      </div>
+    </div><nav class="tabbar"><span><span class="ico"></span>Library</span><span><span class="ico"></span>Review</span><span class="on"><span class="ico"></span>Today</span><span><span class="ico"></span>Ask</span><span><span class="ico"></span>Settings</span></nav></div></div><figcaption><span class="n">Headings · A</span><b>Uppercase label + mono detail</b><span>Small uppercase label (like the kickers on items) and a grey mono detail on the right. Up next stays grey mono. Quiet; the cards' contents carry the weight.</span></figcaption></figure>
+<figure><div class="phone hB"><div class="screen"><div class="hdr"><span class="large">Today</span><span class="mono">Mon · Nov 10</span></div><div class="content" style="gap:16px">
+      <div class="rc"><div class="chead"><span class="lbl">Review</span><span class="det">5 of 12 done</span></div><span class="big">7 cards left</span><span class="mono">about 3 minutes</span><div class="bar"><i></i></div></div>
+      <div class="card" style="display:grid;gap:10px">
+        <div class="chead"><span class="lbl">Refresh a note</span><span class="det">1 of 2 today</span></div>
+        <div style="display:flex;gap:11px;align-items:center"><div class="tile" style="background:var(--swe)">✎</div><div style="display:grid;gap:2px;flex:1;min-width:0"><span class="headline">CAP theorem in practice</span><span class="sec">Notes · Software · 3 min read</span></div><span class="chev">›</span></div>
+      </div>
+      <div class="card" style="display:grid;gap:8px">
+        <div class="chead"><span class="lbl">Your brief</span><span class="det">6 stories · 3 min</span></div>
+        <div class="bullets"><div>Nvidia probes CEO over leaked chats</div><div>OpenAI valued at $1.25T</div></div>
+        <span class="link">Read the brief ›</span>
+      </div>
+      <div>
+        <div class="glabel"><span class="sect">Up next</span><span class="sec">See all 7 ›</span></div>
+        <div class="list">
+          <div class="irow"><div class="tile" style="background:var(--ai)">D<span class="dot"></span></div><div class="col"><span class="kicker" style="color:var(--ai)">AI</span><span class="headline">Jensen Huang – Will Nvidia's moat persist?</span><span class="sec ink3">YouTube · Dwarkesh Podcast</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--macro)">◆</div><div class="col"><span class="kicker" style="color:var(--macro)">Macro · Primer</span><span class="headline">Primer: The changing world order</span><span class="sec ink3">7 min read</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--startups)">A</div><div class="col"><span class="kicker" style="color:var(--startups)">Startups</span><span class="headline">Why venture capital is broken</span><span class="sec ink3">YouTube · All-In</span></div></div>
+        </div>
+      </div>
+    </div><nav class="tabbar"><span><span class="ico"></span>Library</span><span><span class="ico"></span>Review</span><span class="on"><span class="ico"></span>Today</span><span><span class="ico"></span>Ask</span><span><span class="ico"></span>Settings</span></nav></div></div><figcaption><span class="n">Headings · B</span><b>Mono everywhere</b><span>Card labels use the same grey mono as UP NEXT, so every heading on the screen is one style. The most uniform; a little technical.</span></figcaption></figure>
+<figure><div class="phone hC"><div class="screen"><div class="hdr"><span class="large">Today</span><span class="mono">Mon · Nov 10</span></div><div class="content" style="gap:16px">
+      <div class="rc"><div class="chead"><span class="lbl">Review</span><span class="det">5 of 12 done</span></div><span class="big">7 cards left</span><span class="mono">about 3 minutes</span><div class="bar"><i></i></div></div>
+      <div class="card" style="display:grid;gap:10px">
+        <div class="chead"><span class="lbl">Refresh a note</span><span class="det">1 of 2 today</span></div>
+        <div style="display:flex;gap:11px;align-items:center"><div class="tile" style="background:var(--swe)">✎</div><div style="display:grid;gap:2px;flex:1;min-width:0"><span class="headline">CAP theorem in practice</span><span class="sec">Notes · Software · 3 min read</span></div><span class="chev">›</span></div>
+      </div>
+      <div class="card" style="display:grid;gap:8px">
+        <div class="chead"><span class="lbl">Your brief</span><span class="det">6 stories · 3 min</span></div>
+        <div class="bullets"><div>Nvidia probes CEO over leaked chats</div><div>OpenAI valued at $1.25T</div></div>
+        <span class="link">Read the brief ›</span>
+      </div>
+      <div>
+        <div class="glabel"><span class="sect">Up next</span><span class="sec">See all 7 ›</span></div>
+        <div class="list">
+          <div class="irow"><div class="tile" style="background:var(--ai)">D<span class="dot"></span></div><div class="col"><span class="kicker" style="color:var(--ai)">AI</span><span class="headline">Jensen Huang – Will Nvidia's moat persist?</span><span class="sec ink3">YouTube · Dwarkesh Podcast</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--macro)">◆</div><div class="col"><span class="kicker" style="color:var(--macro)">Macro · Primer</span><span class="headline">Primer: The changing world order</span><span class="sec ink3">7 min read</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--startups)">A</div><div class="col"><span class="kicker" style="color:var(--startups)">Startups</span><span class="headline">Why venture capital is broken</span><span class="sec ink3">YouTube · All-In</span></div></div>
+        </div>
+      </div>
+    </div><nav class="tabbar"><span><span class="ico"></span>Library</span><span><span class="ico"></span>Review</span><span class="on"><span class="ico"></span>Today</span><span><span class="ico"></span>Ask</span><span><span class="ico"></span>Settings</span></nav></div></div><figcaption><span class="n">Headings · C</span><b>Sentence-case titles</b><span>Card headers in small bold sentence case (Review, Refresh a note, Your brief) with a plain grey detail; Up next becomes a bold 17px section title. Friendlier, more like iOS.</span></figcaption></figure>
+<figure><div class="phone hD"><div class="screen"><div class="hdr"><span class="large">Today</span><span class="mono">Mon · Nov 10</span></div><div class="content" style="gap:16px">
+      <div class="rc"><div class="chead"><span class="lbl"><b>↻</b>Review</span><span class="det">5 of 12 done</span></div><span class="big">7 cards left</span><span class="mono">about 3 minutes</span><div class="bar"><i></i></div></div>
+      <div class="card" style="display:grid;gap:10px">
+        <div class="chead"><span class="lbl"><b>✎</b>Refresh a note</span><span class="det">1 of 2 today</span></div>
+        <div style="display:flex;gap:11px;align-items:center"><div class="tile" style="background:var(--swe)">✎</div><div style="display:grid;gap:2px;flex:1;min-width:0"><span class="headline">CAP theorem in practice</span><span class="sec">Notes · Software · 3 min read</span></div><span class="chev">›</span></div>
+      </div>
+      <div class="card" style="display:grid;gap:8px">
+        <div class="chead"><span class="lbl"><b>☰</b>Your brief</span><span class="det">6 stories · 3 min</span></div>
+        <div class="bullets"><div>Nvidia probes CEO over leaked chats</div><div>OpenAI valued at $1.25T</div></div>
+        <span class="link">Read the brief ›</span>
+      </div>
+      <div>
+        <div class="glabel"><span class="sect">Up next</span><span class="sec">See all 7 ›</span></div>
+        <div class="list">
+          <div class="irow"><div class="tile" style="background:var(--ai)">D<span class="dot"></span></div><div class="col"><span class="kicker" style="color:var(--ai)">AI</span><span class="headline">Jensen Huang – Will Nvidia's moat persist?</span><span class="sec ink3">YouTube · Dwarkesh Podcast</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--macro)">◆</div><div class="col"><span class="kicker" style="color:var(--macro)">Macro · Primer</span><span class="headline">Primer: The changing world order</span><span class="sec ink3">7 min read</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--startups)">A</div><div class="col"><span class="kicker" style="color:var(--startups)">Startups</span><span class="headline">Why venture capital is broken</span><span class="sec ink3">YouTube · All-In</span></div></div>
+        </div>
+      </div>
+    </div><nav class="tabbar"><span><span class="ico"></span>Library</span><span><span class="ico"></span>Review</span><span class="on"><span class="ico"></span>Today</span><span><span class="ico"></span>Ask</span><span><span class="ico"></span>Settings</span></nav></div></div><figcaption><span class="n">Headings · D</span><b>Label with a small glyph</b><span>A as above, with a tiny glyph per task (↻ review, ✎ note, ☰ brief) so each card is recognisable at a glance.</span></figcaption></figure></div>
+<h2>Today: the day finishing</h2><p>Two of three are done. Tap the brief card (standing in for coming back from reading it): it shrinks to a done row with a pop and a light haptic, then all three fold into Today's done. Reset puts it back.</p>
+<div class="row"><figure><div class="phone hA"><div class="screen"><div class="hdr"><span class="large">Today</span><span class="mono">Mon · Nov 10</span></div><div class="content" style="gap:16px">
+  <div class="demo2" id="demo2">
+    <div class="slim "><span class="check done">✓</span><span class="sec" style="color:var(--ink)"><b style="font-weight:600">12 cards reviewed</b> · next 5 tomorrow</span></div><div class="slim "><span class="check done">✓</span><span class="sec" style="color:var(--ink)"><b style="font-weight:600">2 notes refreshed</b> · next: B-trees</span></div>
+    <div class="card bcard" id="bcard" role="button" tabindex="0" style="display:grid;gap:8px">
+      <div class="chead"><span class="lbl">Your brief</span><span class="det">6 stories · 3 min</span></div>
+      <div class="bullets"><div>Nvidia probes CEO over leaked chats</div><div>OpenAI valued at $1.25T</div></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="link">Read the brief ›</span><span class="tapme">tap to finish</span></div>
+    </div>
+    <div class="slim slim3"><span class="check done">✓</span><span class="sec" style="color:var(--ink)"><b style="font-weight:600">Brief read</b> · 6 stories</span></div>
+    <div class="allDone"><span class="check done" style="width:28px;height:28px;font-size:14px">✓</span><span class="big">Today's done</span><span class="sec">Back tomorrow: 5 cards, 2 notes and a new brief.</span>
+      <div class="ticks"><span class="tchip"><i>✓</i>12 cards</span><span class="tchip"><i>✓</i>2 notes</span><span class="tchip"><i>✓</i>Brief</span></div></div>
+    <div class="burst" style="position:absolute;left:30px;top:30px;pointer-events:none"><i style="--x:-34px;--y:-26px"></i><i style="--x:30px;--y:-30px"></i><i style="--x:40px;--y:8px"></i><i style="--x:-40px;--y:12px"></i><i style="--x:4px;--y:-42px"></i><i style="--x:18px;--y:34px"></i><i style="--x:-16px;--y:36px"></i></div>
+  </div>
+  <div>
+        <div class="glabel"><span class="mono">Up next</span><span class="sec">See all 7 ›</span></div>
+        <div class="list">
+          <div class="irow"><div class="tile" style="background:var(--ai)">D<span class="dot"></span></div><div class="col"><span class="kicker" style="color:var(--ai)">AI</span><span class="headline">Jensen Huang – Will Nvidia's moat persist?</span><span class="sec ink3">YouTube · Dwarkesh Podcast</span></div></div>
+          <div class="irow"><div class="tile" style="background:var(--macro)">◆</div><div class="col"><span class="kicker" style="color:var(--macro)">Macro · Primer</span><span class="headline">Primer: The changing world order</span><span class="sec ink3">7 min read</span></div></div>
+        </div>
+      </div>
+</div><nav class="tabbar"><span><span class="ico"></span>Library</span><span><span class="ico"></span>Review</span><span class="on"><span class="ico"></span>Today</span><span><span class="ico"></span>Ask</span><span><span class="ico"></span>Settings</span></nav></div></div><div class="ctl"><button class="replay" id="reset2" type="button">Reset to 2 of 3</button></div><figcaption><span class="n">All done · animation</span><b>Finish the last one</b><span>Step 1 (about 0.5s): the brief card eases down into a done row and its check pops, light haptic. Step 2 (about 1s): the three rows slide up and fade, Today's done springs in, its check pops with a small burst and a success haptic, and the three chips tick in one by one with a light tap each. Reduced motion: the same changes, no movement.</span></figcaption></figure></div>
+<script>
+(function(){var d=document.getElementById('demo2'),c=document.getElementById('bcard'),r=document.getElementById('reset2'),t=[];
+function finish(){if(d.classList.contains('s1'))return;d.classList.add('s1');t.push(setTimeout(function(){d.classList.add('s2')},900));}
+c.addEventListener('click',finish);c.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();finish();}});
+r.addEventListener('click',function(){t.forEach(clearTimeout);t=[];d.classList.remove('s2','s1');});})();
+</script>
+<h2>Review: start anytime, see every card</h2><p>The tab keeps its name. Top: the green card when cards are due, or an "All caught up" card with two ways to start anyway. Under it, search and browse every card. No stats beyond a small streak.</p>
+<div class="row"><figure><div class="phone"><div class="screen">
+    <div class="hdr"><span class="large">Review</span><span class="mono"><span class="streak">9-day streak</span></span></div>
+    <div class="content"><div class="rc"><span class="big">12 cards</span><span class="mono">about 4 minutes</span></div>
+      <div style="display:grid;gap:8px"><div class="search">Search 146 cards</div><div class="seg"><span class="on">Topics</span><span>Items</span><span>Missed</span></div>
+      <div class="list">
+        <div class="irow"><div class="col" style="flex:1"><span class="kicker" style="color:var(--macro)">Macro</span><span class="headline">Fed &amp; monetary policy</span><span class="sec ink3">24 cards</span></div><span class="duepill">4 due</span><span class="chev">›</span></div>
+        <div class="irow"><div class="col" style="flex:1"><span class="kicker" style="color:var(--swe)">Software engineering</span><span class="headline">Distributed systems</span><span class="sec ink3">31 cards</span></div><span class="duepill">6 due</span><span class="chev">›</span></div>
+        <div class="irow"><div class="col" style="flex:1"><span class="kicker" style="color:var(--ai)">AI</span><span class="headline">Chips &amp; compute</span><span class="sec ink3">12 cards</span></div><span class="chev">›</span></div>
+      </div></div></div>
+    <nav class="tabbar"><span><span class="ico"></span>Library</span><span class="on"><span class="ico"></span>Review</span><span><span class="ico"></span>Today</span><span><span class="ico"></span>Ask</span><span><span class="ico"></span>Settings</span></nav></div></div><figcaption><span class="n">Review · cards due</span><b>Same start, plus your cards</b><span>The green card as today, then search and Topics / Items / Missed. Each topic shows its card count and how many are due now. The streak is a small label in the header.</span></figcaption></figure>
+<figure><div class="phone"><div class="screen">
+    <div class="hdr"><span class="large">Review</span><span class="mono"><span class="streak">9-day streak</span></span></div>
+    <div class="content"><div class="caught"><span class="headline">All caught up</span><span class="sec">Next 5 cards are due tomorrow.</span>
+        <div class="startrow"><span class="btn2">Review ahead · 8</span><span class="btn2">Shuffle 10</span></div></div>
+      <div style="display:grid;gap:8px"><div class="search">Search 146 cards</div><div class="seg"><span class="on">Topics</span><span>Items</span><span>Missed</span></div>
+      <div class="list">
+        <div class="irow"><div class="col" style="flex:1"><span class="kicker" style="color:var(--macro)">Macro</span><span class="headline">Fed &amp; monetary policy</span><span class="sec ink3">24 cards</span></div><span class="chev">›</span></div>
+        <div class="irow"><div class="col" style="flex:1"><span class="kicker" style="color:var(--swe)">Software engineering</span><span class="headline">Distributed systems</span><span class="sec ink3">31 cards</span></div><span class="chev">›</span></div>
+      </div></div></div>
+    <nav class="tabbar"><span><span class="ico"></span>Library</span><span class="on"><span class="ico"></span>Review</span><span><span class="ico"></span>Today</span><span><span class="ico"></span>Ask</span><span><span class="ico"></span>Settings</span></nav></div></div><figcaption><span class="n">Review · caught up</span><b>You can always start</b><span>Review ahead (cards due in the next few days) or Shuffle 10 (a random 10 from everything). Both start a normal session.</span></figcaption></figure>
+<figure><div class="phone"><div class="screen">
+    <div class="hdr"><span class="large"><span style="font-weight:500;color:var(--ink3)">‹</span> Fed &amp; monetary…</span><span class="mono"></span></div>
+    <div class="content"><div class="btnp">Practice all 24</div>
+      <div class="list">
+        <div class="irow" style="align-items:flex-start"><div class="col" style="flex:1;gap:3px"><span class="headline">Why does buying bonds add reserves to banks?</span><span class="sec ink3">From How the Fed creates money · due today</span></div></div>
+        <div class="irow" style="align-items:flex-start"><div class="col" style="flex:1;gap:3px"><span class="headline">What is the federal funds rate?</span><span class="sec ink3">Foundation · due Thu</span></div></div>
+        <div class="irow" style="align-items:flex-start"><div class="col" style="flex:1;gap:3px"><span class="headline">What does QT do to the balance sheet?</span><span class="sec ink3">From Fed minutes, Oct · due in 2 wks</span></div></div>
+      </div></div>
+    <nav class="tabbar"><span><span class="ico"></span>Library</span><span class="on"><span class="ico"></span>Review</span><span><span class="ico"></span>Today</span><span><span class="ico"></span>Ask</span><span><span class="ico"></span>Settings</span></nav></div></div><figcaption><span class="n">Review · a topic</span><b>Tap a topic: its cards, and practise them</b><span>Each card with where it came from and when it's next due. Tap one to open it (edit or drop); Practice all starts a session on this topic.</span></figcaption></figure></div>

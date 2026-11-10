@@ -79,3 +79,6 @@ appId: com.sampocs.archie
     id: "done-back-today"
 - assertNotVisible:
     id: "today-review"
+# Today's reviewed cards leave a done row (or "Today's done" when nothing else waits).
+- assertVisible:
+    id: "today-review-done|today-done"

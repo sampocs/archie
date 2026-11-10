@@ -40,6 +40,9 @@ appId: com.sampocs.archie
 - tapOn:
     id: "brief-done"
 - waitForAnimationToEnd
-# Done marks the shown newsletters briefed, so nothing is left to brief and the preview goes away.
+# Done marks the shown newsletters briefed, so nothing is left to brief and the preview gives way to a done row
+# (or, with nothing else waiting today, to "Today's done").
 - assertNotVisible:
     id: "today-brief"
+- assertVisible:
+    id: "today-brief-done|today-done"

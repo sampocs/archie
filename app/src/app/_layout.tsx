@@ -107,7 +107,7 @@ function AppStack() {
           <Stack.Screen name="settings/newsletters" />
           <Stack.Screen name="settings/review" />
           <Stack.Screen name="review/session" />
-          <Stack.Screen name="review/topics" />
+          <Stack.Screen name="review/cards" />
           <Stack.Screen name="share" />
           <Stack.Screen name="topic-picker" />
           <Stack.Screen name="add" options={{ presentation: "modal" }} />

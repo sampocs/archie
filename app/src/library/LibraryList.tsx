@@ -193,13 +193,20 @@ function QueueBody({ data, now, rowActions }: { data: LibraryData; now: Date; ro
         <GroupedList>
           <ReorderableQueue
             entries={queue}
-            renderRow={(entry, _index, handle) => (
+            renderRow={(entry, index, handle) => (
               // The handle sits beside the row, not inside it: the row's Pressable would swallow it for accessibility
               // (and Maestro), and the swipe would compete with the drag.
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View style={{ flex: 1 }}>
                   {/* The handle holds the right edge, so the swipe reaches only the card's left edge. */}
-                  <RowBleedContext.Provider value={{ left: theme.spacing.lg, right: 0 }}>
+                  <RowBleedContext.Provider
+                    value={{
+                      left: theme.spacing.lg,
+                      right: 0,
+                      roundTop: index === 0,
+                      roundBottom: index === queue.length - 1,
+                    }}
+                  >
                     <SwipeRow actions={swipeActions(queueLibraryEntry(entry), "queued", rowActions)}>
                       {entry.kind === "source" ? (
                         <LibraryItem source={entry.source} trailing={<></>} />

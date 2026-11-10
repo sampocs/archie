@@ -109,7 +109,7 @@ export default function ChatScreen() {
         nav={{ title: conversation?.title ?? "", backLabel: "Ask" }}
         onBack={router.back}
         headerRight={
-          conversation ? (
+          conversation && conversation.deletedAt === null ? (
             <Pressable testID="chat-more" accessibilityLabel="More" hitSlop={12} onPress={() => setMenuOpen(true)}>
               <Ionicons name="ellipsis-horizontal" size={24} color={theme.colors.ink} />
             </Pressable>

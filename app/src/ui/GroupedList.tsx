@@ -7,13 +7,16 @@ import { useTheme } from "@/theme/useTheme";
 
 type GroupedListProps = { title?: string; right?: ReactNode; children: ReactNode; testID?: string };
 
-export type RowBleed = { left: number; right: number };
+// `roundTop` / `roundBottom`: the row sits at the card's top or bottom, so what it slides out is clipped to the card's
+// rounded corners there.
+export type RowBleed = { left: number; right: number; roundTop: boolean; roundBottom: boolean };
 
 /**
  * How far a row's own background may reach past its padding to the card's edges. A swipe row bleeds by this much so
  * its actions run to the card's rounded edge instead of stopping at the padding.
  */
-export const RowBleedContext = createContext<RowBleed>({ left: 0, right: 0 });
+export const NO_BLEED: RowBleed = { left: 0, right: 0, roundTop: false, roundBottom: false };
+export const RowBleedContext = createContext<RowBleed>(NO_BLEED);
 
 /** A section label row above a card of children separated by hairlines. */
 export function GroupedList({ title, right, children, testID }: GroupedListProps) {
@@ -32,19 +35,18 @@ export function GroupedList({ title, right, children, testID }: GroupedListProps
         </View>
       ) : null}
       <Card style={{ padding: 0 }}>
-        {/* The card keeps its shadow; this inner layer clips swiped-out actions to the rounded corners. */}
-        <View style={{ borderRadius: theme.radii.card, overflow: "hidden" }}>
-          <RowBleedContext.Provider value={{ left: inset, right: inset }}>
-            {items.map((child, index) => (
-              <View key={index} style={{ paddingHorizontal: inset }}>
-                {index > 0 ? (
-                  <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: theme.colors.line }} />
-                ) : null}
-                {child}
-              </View>
-            ))}
-          </RowBleedContext.Provider>
-        </View>
+        {items.map((child, index) => (
+          <View key={index} style={{ paddingHorizontal: inset }}>
+            {index > 0 ? (
+              <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: theme.colors.line }} />
+            ) : null}
+            <RowBleedContext.Provider
+              value={{ left: inset, right: inset, roundTop: index === 0, roundBottom: index === items.length - 1 }}
+            >
+              {child}
+            </RowBleedContext.Provider>
+          </View>
+        ))}
       </Card>
     </View>
   );

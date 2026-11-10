@@ -232,13 +232,14 @@ function CardStep({ card, wasDue, data, sessionKey, online, onGraded, onNext, on
           onMic={recorder.toggle}
         />
       ) : null}
-      {phase.kind === "grading" ? <GradingCard answer={phase.answer} acceptedAnswer={card.answer} /> : null}
+      {phase.kind === "grading" ? <GradingCard answer={phase.answer} acceptedAnswer={card.answer} acceptedDetail={card.detail} /> : null}
       {phase.kind === "graded" ? (
         <GradedCard
           answer={phase.answer}
           grade={phase.grade}
           missing={phase.missing}
           acceptedAnswer={card.answer}
+          acceptedDetail={card.detail}
           canKnewIt={phase.replaced !== null}
           onKnewIt={knewIt}
           online={online}
@@ -249,6 +250,7 @@ function CardStep({ card, wasDue, data, sessionKey, online, onGraded, onNext, on
         <SelfGradeCard
           answer={phase.answer}
           acceptedAnswer={card.answer}
+          acceptedDetail={card.detail}
           reason={phase.reason}
           chosen={phase.chosen}
           onGrade={selfGrade}

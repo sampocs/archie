@@ -76,6 +76,8 @@ export type PulledCard = {
   kind: string;
   question: string;
   answer: string;
+  // "\n"-joined detail lines; absent when pulling from a server older than short card answers.
+  detail?: string;
   created_at: string;
   deleted_at: string | null;
   fsrs_state?: string;
@@ -202,6 +204,7 @@ export type PulledCardVersion = {
   version: number;
   question: string;
   answer: string;
+  detail?: string;
   origin: string;
   instruction: string | null;
   created_at: string;
@@ -230,7 +233,8 @@ export type PulledCardSetProposal = {
   message_id: string;
   title: string;
   cheat_sheet: string;
-  cards: { kind: string; question: string; answer: string }[];
+  // `detail` is absent from an older server; ask/cardSets.ts reads a missing one as no lines.
+  cards: { kind: string; question: string; answer: string; detail: string[] }[];
   status: string;
   saved_source_id: string | null;
   kept: number[] | null;

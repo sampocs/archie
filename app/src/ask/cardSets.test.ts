@@ -18,13 +18,14 @@ import {
   ticksOf,
   toggleKept,
   viewOfCardSetRow,
+  viewOfCardSetWire,
   type CardSetView,
 } from "./cardSets";
 
 const cards = [
-  { kind: "concept", question: "Why is a JWT hard to revoke?", answer: "Nothing is looked up." },
-  { kind: "concept", question: "What does a session store hold?", answer: "The session itself." },
-  { kind: "foundation", question: "Where should a browser keep auth cookies?", answer: "httpOnly cookies." },
+  { kind: "concept", question: "Why is a JWT hard to revoke?", answer: "Nothing is looked up.", detail: ["Sessions live on the server."] },
+  { kind: "concept", question: "What does a session store hold?", answer: "The session itself.", detail: [] },
+  { kind: "foundation", question: "Where should a browser keep auth cookies?", answer: "httpOnly cookies.", detail: [] },
 ];
 
 const view = (overrides: Partial<CardSetView>): CardSetView => ({
@@ -197,6 +198,17 @@ describe("stored rows", () => {
       savedSourceId: "s9",
       kept: [0, 2],
     });
+  });
+
+  it("reads a card with no detail (an older server's) as having no lines", () => {
+    const legacy = [{ kind: "concept", question: "Q?", answer: "A." }, { kind: "concept", question: "R?", answer: "B.", detail: ["x", 3] }];
+    const expected = [
+      { kind: "concept", question: "Q?", answer: "A.", detail: [] },
+      { kind: "concept", question: "R?", answer: "B.", detail: ["x"] },
+    ];
+    const row = { id: pulled.id, ...cardSetValues({ ...pulled, cards: legacy as never }) };
+    expect(viewOfCardSetRow(row)?.cards).toEqual(expected);
+    expect(viewOfCardSetWire({ ...pulled, cards: legacy as never }).cards).toEqual(expected);
   });
 
   it("stores a set that isn't saved yet with no kept list", () => {

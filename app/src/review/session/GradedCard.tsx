@@ -1,10 +1,13 @@
 import { type ReactNode, useEffect, useRef } from "react";
-import { Animated, Pressable, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 
+import { detailLines } from "@/review/detail";
 import type { ReviewGrade } from "@/review/types";
+import { DetailBullets } from "@/review/ui/DetailBullets";
 import { GRADE_SIGNALS, VerdictPill } from "@/review/ui/VerdictPill";
 import { Card } from "@/theme/components/Card";
 import { Text } from "@/theme/components/Text";
+import { fontFamily } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 
 const PULSE_MS = 600;
@@ -14,6 +17,7 @@ type GradedCardProps = {
   grade: ReviewGrade;
   missing: string;
   acceptedAnswer: string;
+  acceptedDetail: string;
   // "I actually knew it" shows under Partly and Missed until it is used.
   canKnewIt: boolean;
   onKnewIt: () => void;
@@ -50,7 +54,7 @@ export function GradedCard(props: GradedCardProps) {
             {props.missing}
           </Text>
         ) : null}
-        <AcceptedAnswer answer={props.acceptedAnswer} />
+        <AcceptedAnswer answer={props.acceptedAnswer} detail={props.acceptedDetail} />
       </ResultCard>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>
         {props.canKnewIt ? (
@@ -69,7 +73,15 @@ export function GradedCard(props: GradedCardProps) {
 }
 
 /** While the grader thinks: what you said, the answer, and a pulsing "Grading…". */
-export function GradingCard({ answer, acceptedAnswer }: { answer: string; acceptedAnswer: string }) {
+export function GradingCard({
+  answer,
+  acceptedAnswer,
+  acceptedDetail,
+}: {
+  answer: string;
+  acceptedAnswer: string;
+  acceptedDetail: string;
+}) {
   const opacity = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -95,7 +107,7 @@ export function GradingCard({ answer, acceptedAnswer }: { answer: string; accept
           Grading…
         </Text>
       </Animated.View>
-      <AcceptedAnswer answer={acceptedAnswer} />
+      <AcceptedAnswer answer={acceptedAnswer} detail={acceptedDetail} />
     </ResultCard>
   );
 }
@@ -119,13 +131,32 @@ export function Labelled({ label, children }: { label: string; children: ReactNo
   );
 }
 
-/** The card's own answer. */
-export function AcceptedAnswer({ answer }: { answer: string }) {
+/** The card's own answer; with detail it is set semibold and the detail lines follow under a hairline. */
+export function AcceptedAnswer({ answer, detail }: { answer: string; detail: string }) {
+  const theme = useTheme();
+  const lines = detailLines(detail);
+  if (lines.length === 0) {
+    return (
+      <Labelled label="Answer">
+        <Text testID="review-accepted-answer" variant="readingBody">
+          {answer}
+        </Text>
+      </Labelled>
+    );
+  }
   return (
     <Labelled label="Answer">
-      <Text testID="review-accepted-answer" variant="readingBody">
+      <Text testID="review-accepted-answer" variant="readingBody" style={{ fontFamily: fontFamily.semibold }}>
         {answer}
       </Text>
+      <View
+        style={{
+          height: StyleSheet.hairlineWidth,
+          backgroundColor: theme.colors.line,
+          marginVertical: theme.spacing.xs,
+        }}
+      />
+      <DetailBullets testID="review-accepted-detail" lines={lines} tone="ink2" />
     </Labelled>
   );
 }

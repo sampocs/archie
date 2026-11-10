@@ -27,6 +27,7 @@ export const cardRow = (overrides: Partial<CardRow>): CardRow => ({
   kind: "concept",
   question: "Q?",
   answer: "A.",
+  detail: "",
   createdAt: "2026-11-01T00:00:00Z",
   deletedAt: null,
   fsrsState: "new",

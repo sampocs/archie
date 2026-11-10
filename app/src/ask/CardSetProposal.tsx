@@ -7,6 +7,7 @@ import { clearSession, useSession } from "@/auth/session";
 import { isConflict, isNotFound } from "@/edits/api";
 import { NETWORK_FAILED } from "@/edits/proposalState";
 import { requestSync } from "@/sync/useSync";
+import { DetailBullets } from "@/review/ui/DetailBullets";
 import { Card } from "@/theme/components/Card";
 import { Text } from "@/theme/components/Text";
 import { fontFamily } from "@/theme/type";
@@ -282,6 +283,7 @@ function CardFace({ card, index, kept, onToggle }: { card: ProposedCard; index: 
         <Text variant="secondary" tone="ink2">
           {card.answer}
         </Text>
+        <DetailBullets lines={card.detail} tone="ink3" />
       </View>
     </View>
   );
@@ -302,9 +304,10 @@ function ListRow({ card, index, kept, onToggle }: { card: ProposedCard; index: n
             {card.question}
           </Text>
         </Text>
-        <Text variant="secondary" tone={kept ? "ink2" : "ink3"}>
+        <Text variant="secondary" tone={kept ? "ink" : "ink3"}>
           {card.answer}
         </Text>
+        <DetailBullets lines={card.detail} tone="ink3" />
       </View>
     </View>
   );

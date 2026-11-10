@@ -1,7 +1,8 @@
 # Short card answers, and the note beside its chat
 
-Mocks: `2026-11-10-short-card-answers-mocks.html` (approved). Eval of the rules below: two rounds with the owner on
-real notes, sources and a brief (round 2 approved, with the three-line allowance added).
+Mocks: `2026-11-10-short-card-answers-mocks.html` (approved). Eval of the rules below: rounds with the owner on real
+notes, sources and a brief, then a side-by-side of three detail rules on fixed cards; the rule below is the
+"middle" one, nudged toward the owner's picks (fewer, denser lines).
 
 ## Why
 
@@ -34,12 +35,15 @@ allowance:
   never more than 15. The learner is graded only on this, so it is what someone who knows the material would say off
   the top of their head. When two things are both essential, name both briefly ("Supply and demand"). A number
   card's answer is the rough figure with its unit.
-- **detail:** 0-3 short bullet lines, each under 12 words. Shown after the learner answers, never graded; every line
-  is more to read, so add one only when it carries something worth remembering on its own: the why behind the
-  answer, a contrast or example that makes it stick. Most cards need 0 or 1, and most number cards none; use 2 or 3
-  only when they genuinely build the explanation (a short chain: A happens, so B, so C). Never a line that restates
-  or is implied by the answer; that is trivia from this one source (who said it, when, a passing example or
-  anecdote) rather than a lasting fact about the subject; or that is a side remark that doesn't help recall.
+- **detail:** 0-3 bullet lines, each at most about 16 words. Shown after the learner answers, never graded. Each
+  line must help explain the answer (the why or how behind it, or a contrast that makes it click); a further fact
+  about the subject, however true, is not a reason for a line. Fewer, denser lines win: join a cause and its effect
+  in one line ("X, so Y") rather than two. So a plain fact or a number usually needs none; most whys need one line;
+  two only when the explanation really has two separate steps; three for a chain of three steps (A happens, so B, so
+  C) or three named parts that each matter (the three phases of a cycle). When in doubt, use fewer. Never a line
+  that restates or is implied by the answer; that is trivia from this one source (who said it, when, a passing
+  example or anecdote) rather than a lasting fact about the subject; or that is a side remark that doesn't help
+  recall. News quiz cards: at most one line.
 
 Writers that adopt it, replacing their own answer-length wording (and their "1-3 sentences"):
 

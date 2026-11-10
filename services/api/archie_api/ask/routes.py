@@ -1,13 +1,16 @@
 """`POST /ask/conversations/{id}/messages`: ask a question in a chat and stream the answer as server-sent events.
 
 The first question creates the chat (its title is the question, cut to 60 characters; `about` ties it to an item).
-The question is stored before the stream starts. Only whitelisted users may ask: answers spend the owner's keys.
+A question sent while a card set is open with some cards unticked carries those Keep ticks (`card_set_choice`): they
+are stored on the question and the model reads them as a line before it. The question is stored before the stream
+starts. Only whitelisted users may ask: answers spend the owner's keys.
 """
 
 from __future__ import annotations
 
 import datetime
 import uuid
+from dataclasses import dataclass
 from typing import Annotated
 
 import fastapi
@@ -35,6 +38,13 @@ class AboutIn(pydantic.BaseModel):
     id: uuid.UUID
 
 
+class CardSetChoiceIn(pydantic.BaseModel):
+    """The Keep ticks of the chat's open card set as the question was sent: the 0-based indices of the kept cards."""
+
+    proposal_id: uuid.UUID
+    kept: list[pydantic.StrictInt] = pydantic.Field(max_length=100)
+
+
 class AskRequest(pydantic.BaseModel):
     """A question; the phone makes its id so the question it shows is the one the server stores."""
 
@@ -44,6 +54,7 @@ class AskRequest(pydantic.BaseModel):
     about: AboutIn | None = None
     # The phone's IANA zone (e.g. "America/New_York"); unknown or missing means UTC.
     timezone: str | None = pydantic.Field(default=None, max_length=MAX_TIMEZONE_LENGTH)
+    card_set_choice: CardSetChoiceIn | None = None
 
 
 @router.post("/conversations/{conversation_id}/messages")
@@ -67,6 +78,8 @@ def ask(
     if db.get(models.Message, body.user_message_id) is not None:
         raise fastapi.HTTPException(status_code=409, detail="message id already used")
     conversation = _conversation(db, user=user, conversation_id=conversation_id, question=question, about=body.about)
+    choice = _card_set_choice(db, conversation=conversation, choice=body.card_set_choice)
+    turn_text = context.question_content(question, choice_line=choice.line if choice else None)
     day_zone = context.owner_zone(body.timezone)
     request = answer.AnswerRequest(
         user_id=user.id,
@@ -79,7 +92,7 @@ def ask(
             now=datetime.datetime.now(tz=day_zone),
         ),
         # Read before the question is added, so the history holds only earlier exchanges.
-        messages=[*context.history(db, conversation_id=conversation.id), {"role": "user", "content": question}],
+        messages=[*context.history(db, conversation_id=conversation.id), {"role": "user", "content": turn_text}],
         boost=context.boost(db, conversation=conversation),
         note_title=context.note_title(db, conversation=conversation),
         day_zone=day_zone,
@@ -94,7 +107,7 @@ def ask(
             conversation_id=conversation.id,
             role=models.MessageRole.USER.value,
             text=question,
-            segments=None,
+            segments=choice.stored.to_segments() if choice else None,
             web_search=body.web_search,
             status=models.MessageStatus.COMPLETE.value,
             change_seq=changes.next_change_seq(),
@@ -111,6 +124,42 @@ def ask(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@dataclass(frozen=True)
+class _Choice:
+    """Keep ticks that apply: what the question stores, and the line the model reads before it."""
+
+    stored: context.CardSetChoice
+    line: str
+
+
+def _card_set_choice(
+    db: orm.Session, *, conversation: models.Conversation, choice: CardSetChoiceIn | None
+) -> _Choice | None:
+    """The ticks, if they are for this chat's open set, name each card at most once and drop at least one.
+
+    Anything else (a decided, replaced or another chat's set; a bad index; every card kept) is ignored, not refused:
+    the ticks are a hint, and a stale one must not cost the owner their question.
+    """
+    if choice is None:
+        return None
+    card_set = db.get(models.CardSetProposal, choice.proposal_id)
+    if (
+        card_set is None
+        or card_set.conversation_id != conversation.id
+        or card_set.user_id != conversation.user_id
+        or card_set.status != models.CardSetStatus.PROPOSED.value
+    ):
+        return None
+    card_count = len(card_set.cards)
+    kept = sorted(set(choice.kept))
+    valid = len(kept) == len(choice.kept) and all(0 <= index < card_count for index in kept)
+    if not valid or len(kept) == card_count:
+        return None
+
+    stored = context.CardSetChoice(proposal_id=card_set.id, kept=tuple(kept), card_count=card_count)
+    return _Choice(stored=stored, line=context.choice_line(kept=kept, card_set=card_set))
 
 
 def _conversation(

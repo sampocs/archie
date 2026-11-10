@@ -6,7 +6,15 @@ import { useCallback, useMemo, useState } from "react";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 
-import { asCardSetMode, viewOfCardSetRow, type CardSetMode, type CardSetView } from "./cardSets";
+import {
+  asCardSetMode,
+  ticksOf,
+  toggleKept,
+  viewOfCardSetRow,
+  type CardSetMode,
+  type CardSetTicks,
+  type CardSetView,
+} from "./cardSets";
 
 // Phone-only, so it lives in the key-value store rather than a synced table.
 const MODE_KEY = "ask.cardSetMode";
@@ -60,4 +68,19 @@ export function useCardSetMode(): [CardSetMode, (mode: CardSetMode) => void] {
     Storage.setItemSync(MODE_KEY, next);
   }, []);
   return [mode, choose];
+}
+
+/**
+ * The chat's Keep ticks, by set id. The screen holds them rather than each block, so the next question can carry the
+ * open set's ticks (`seeded` is where a toggle starts when this visit has none yet), and a live set keeps its ticks when its stored row takes over. A new set starts with every card kept.
+ */
+export function useCardSetTicks(): {
+  ticks: CardSetTicks;
+  toggle: (view: Pick<CardSetView, "id" | "cards">, index: number, seeded: boolean[] | null) => void;
+} {
+  const [ticks, setTicks] = useState<CardSetTicks>({});
+  const toggle = useCallback((view: Pick<CardSetView, "id" | "cards">, index: number, seeded: boolean[] | null) => {
+    setTicks((current) => ({ ...current, [view.id]: toggleKept(ticksOf(current, view, seeded), index) }));
+  }, []);
+  return { ticks, toggle };
 }

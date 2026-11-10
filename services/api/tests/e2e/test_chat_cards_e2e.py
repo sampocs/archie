@@ -1,5 +1,6 @@
 """Cards from a chat end to end: recorded `Make cards` answers that propose a card set (in a chat, and in a chat about
-a note), then Save and Discard on card sets seeded through the test route (no model).
+a note), then Save and Discard on card sets seeded through the test route (no model), and the Keep ticks a question
+carries to the model (the answer itself skipped).
 
 Anthropic is replayed from recorded real responses, round by round (`allow_playback_repeats=False`). Re-record a
 cassette by deleting it and running `uv run pytest services/api/tests/e2e/test_chat_cards_e2e.py --record-mode=once
@@ -12,14 +13,14 @@ import contextlib
 import json
 import pathlib
 import uuid
-from collections.abc import Iterator
+from collections.abc import AsyncGenerator, Iterator
 from typing import Any
 
 import httpx
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
-from archie_api.ask import context
+from archie_api.ask import answer, context
 from archie_db import changes, models, pipeline, session
 from archie_testing import recording
 from archie_testing.harness import LiveStack
@@ -158,9 +159,20 @@ def _seed_chat(live_stack: LiveStack, *, user_id: int) -> uuid.UUID:
 
 
 def _ask(
-    authed: httpx.Client, conversation_id: uuid.UUID, text: str, *, about: dict[str, str] | None = None
+    authed: httpx.Client,
+    conversation_id: uuid.UUID,
+    text: str,
+    *,
+    about: dict[str, str] | None = None,
+    card_set_choice: dict[str, Any] | None = None,
 ) -> list[tuple[str, dict[str, Any]]]:
-    payload = {"user_message_id": str(uuid.uuid4()), "text": text, "web_search": False, "about": about}
+    payload = {
+        "user_message_id": str(uuid.uuid4()),
+        "text": text,
+        "web_search": False,
+        "about": about,
+        "card_set_choice": card_set_choice,
+    }
     path = f"/ask/conversations/{conversation_id}/messages"
     with authed.stream("POST", path, json=payload, timeout=180) as response:
         assert response.status_code == 200, response.read()
@@ -220,6 +232,121 @@ def test_a_new_card_set_replaces_the_open_one_and_the_model_sees_both(
     assert answers[1].endswith(f"[cards proposed: {TITLE} — replaced by a later proposal]")
     assert f"[cards proposed: {TITLE} — waiting for the owner to save it]" in answers[2]
     assert "2. (mechanism) Q: How is a JWT checked?" in answers[2] and CARDS[2]["question"] not in answers[2]
+
+
+@pytest.fixture
+def asked_turns(monkeypatch: pytest.MonkeyPatch) -> list[list[dict[str, Any]]]:
+    """The turns each question would send the model, as the route built them; the answer is skipped (no model call)."""
+    turns: list[list[dict[str, Any]]] = []
+
+    async def skipped_answer(engine: sqlalchemy.Engine, request: answer.AnswerRequest) -> AsyncGenerator[str, None]:
+        turns.append(request.messages)
+        yield ": answer skipped\n\n"
+
+    monkeypatch.setattr(answer, "stream_async", skipped_answer)
+    return turns
+
+
+def _question_segments(authed: httpx.Client, text: str) -> list[Any]:
+    """The stored `segments` of every question with this text, oldest first."""
+    messages = sorted(_rows(authed)["messages"], key=lambda message: message["created_at"])
+    return [message["segments"] for message in messages if message["role"] == "user" and message["text"] == text]
+
+
+def _add_answer(live_stack: LiveStack, *, user_id: int, conversation_id: uuid.UUID, text: str) -> None:
+    """A finished answer to the chat's last question, as a real stream would save it."""
+    with _db(live_stack) as db:
+        changes.lock_user_writes(db, user_id)
+        db.add(
+            models.Message(
+                id=uuid.uuid4(), user_id=user_id, conversation_id=conversation_id,
+                role=models.MessageRole.ASSISTANT.value, text=text, segments=None, web_search=False,
+                status=models.MessageStatus.COMPLETE.value, created_at=sqlalchemy.func.clock_timestamp(),
+                change_seq=changes.next_change_seq(),
+            )
+        )  # fmt: skip
+        db.commit()
+
+
+def test_keep_ticks_sent_with_a_question_reach_the_model_and_stay_in_its_history(
+    live_stack: LiveStack, owner: httpx.Client, asked_turns: list[list[dict[str, Any]]]
+) -> None:
+    """Cards 1 and 3 kept of the open set: the turn opens with the line naming the dropped card's question, the
+    question stores the ticks for the phone, and later turns rebuild the same line, even once the set is replaced."""
+    proposal = _seed(owner)
+    conversation_id = uuid.UUID(proposal["conversation_id"])
+    text = "Make the first one shorter"
+
+    _ask(owner, conversation_id, text, card_set_choice={"proposal_id": proposal["id"], "kept": [2, 0]})
+
+    line = f"The owner kept cards 1 and 3 of the proposed set and dropped 2 (“{CARDS[1]['question']}”)."
+    asked = {"role": "user", "content": f"{line}\n\n{text}"}
+    assert asked_turns[-1][-1] == asked
+    choice = {"proposal_id": proposal["id"], "kept": [0, 2], "card_count": 3}
+    assert _question_segments(owner, text) == [[{"card_set_choice": choice}]]
+
+    user_id = int(owner.get("/me").json()["user_id"])
+    _add_answer(live_stack, user_id=user_id, conversation_id=conversation_id, text="Here is the shorter set.")
+    _seed(owner, conversation_id=proposal["conversation_id"], cards=[CARDS[0], CARDS[2]])
+    with _db(live_stack) as db:
+        turns = context.history(db, conversation_id=conversation_id)
+    assert asked in turns
+    assert turns[turns.index(asked) + 1] == {"role": "assistant", "content": "Here is the shorter set."}
+
+
+def test_keep_ticks_that_dont_fit_the_open_set_are_ignored_and_the_question_still_goes(
+    live_stack: LiveStack, owner: httpx.Client, asked_turns: list[list[dict[str, Any]]]
+) -> None:
+    """A replaced, discarded, another chat's or another user's set, an unknown id, a repeated or out-of-range index and
+    every card kept all leave the question as typed, with nothing stored; dropping every card is a choice."""
+    replaced = _seed(owner)
+    in_chat = replaced["conversation_id"]
+    discarded = _seed(owner, conversation_id=in_chat)
+    assert owner.post(f"/ask/card-sets/{discarded['id']}/discard").status_code == 200
+    open_elsewhere = _seed(owner)
+    theirs = _seed(live_stack.authed(live_stack.sign_in(apple_sub="stranger")))
+
+    ignored = [
+        (in_chat, replaced["id"], [0]),
+        (in_chat, discarded["id"], [0]),
+        (in_chat, open_elsewhere["id"], [0]),
+        (in_chat, theirs["id"], [0]),
+        (in_chat, str(uuid.uuid4()), [0]),
+        (open_elsewhere["conversation_id"], open_elsewhere["id"], [0, 0]),
+        (open_elsewhere["conversation_id"], open_elsewhere["id"], [3]),
+        (open_elsewhere["conversation_id"], open_elsewhere["id"], [-1]),
+        (open_elsewhere["conversation_id"], open_elsewhere["id"], [0, 1, 2]),
+    ]
+    for number, (conversation_id, proposal_id, kept) in enumerate(ignored):
+        text = f"Ignored ticks {number}"
+        choice = {"proposal_id": proposal_id, "kept": kept}
+        _ask(owner, uuid.UUID(conversation_id), text, card_set_choice=choice)
+        assert asked_turns[-1][-1] == {"role": "user", "content": text}, (proposal_id, kept)
+        assert _question_segments(owner, text) == [None], (proposal_id, kept)
+
+    _ask(owner, uuid.UUID(open_elsewhere["conversation_id"]), "None of these", card_set_choice={
+        "proposal_id": open_elsewhere["id"], "kept": [],
+    })  # fmt: skip
+    dropped = ", ".join(f"{number} (“{card['question']}”)" for number, card in enumerate(CARDS[:2], start=1))
+    line = (
+        f"The owner kept none of the cards of the proposed set and dropped {dropped} and 3 (“{CARDS[2]['question']}”)."
+    )
+    assert asked_turns[-1][-1] == {"role": "user", "content": f"{line}\n\nNone of these"}
+
+
+def test_keep_ticks_must_be_integers(owner: httpx.Client) -> None:
+    """A boolean is not an index: `kept: [true]` is refused rather than read as card 2."""
+    proposal = _seed(owner)
+    payload = {
+        "user_message_id": str(uuid.uuid4()),
+        "text": "Bad ticks",
+        "web_search": False,
+        "card_set_choice": {"proposal_id": proposal["id"], "kept": [True]},
+    }
+
+    response = owner.post(f"/ask/conversations/{proposal['conversation_id']}/messages", json=payload)
+
+    assert response.status_code == 422
 
 
 def test_the_seed_route_makes_a_chat_when_none_is_given(owner: httpx.Client) -> None:

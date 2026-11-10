@@ -9,6 +9,8 @@ export type AskBody = {
   about: { kind: AboutKind; id: string } | null;
   // The phone's IANA zone, so "today" and "on Tuesday" mean the owner's days.
   timezone: string;
+  // The open card set's Keep ticks, when some card is unticked; the server ignores ticks that no longer fit the set.
+  card_set_choice: { proposal_id: string; kept: number[] } | null;
 };
 
 const EVENT_TYPES = new Set(["delta", "block", "searching", "done", "error", "editing", "edit", "drafting_cards", "cards"]);

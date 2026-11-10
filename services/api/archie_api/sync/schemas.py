@@ -331,7 +331,7 @@ class ConversationOut(pydantic.BaseModel):
 
 
 class MessageOut(pydantic.BaseModel):
-    """One chat message as the phone stores it; `segments` is null for a question."""
+    """One chat message as the phone stores it; a question's `segments` are null or its one `card_set_choice`."""
 
     model_config = pydantic.ConfigDict(from_attributes=True)
 

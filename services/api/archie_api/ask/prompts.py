@@ -62,6 +62,9 @@ the owner asked for in this chat.
 - When the owner asks to change the proposal ("change card 2", "drop the last one", "add a card on X"), call \
 propose_cards again with the whole new set, copying everything they didn't ask to change. Your earlier proposals in \
 this chat are listed after your answers.
+- A message may open with a line saying which cards of the open proposal the owner kept and dropped (their Keep \
+ticks). When you next call propose_cards, copy the kept cards word for word (so Save can match them) unless the owner \
+asks to change them, and don't bring back the dropped ones.
 - Around the proposal, write one or two short sentences at most. Don't repeat the cards or the cheat sheet."""
 
 # The answer rules come first, so every chat's prompt keeps its first 60 characters (the cassette key).

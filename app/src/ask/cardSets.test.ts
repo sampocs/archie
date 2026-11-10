@@ -2,15 +2,20 @@ import {
   allKept,
   asCardSetMode,
   cardSetBlock,
+  cardSetChoice,
   cardSetValues,
+  choiceLine,
   hasCheatSheet,
   keptIndices,
   opensByGoingBack,
   pageLabel,
   saveLabel,
   savedToast,
+  seededTicks,
   shownCardSetStatus,
   stepPage,
+  storedChoice,
+  ticksOf,
   toggleKept,
   viewOfCardSetRow,
   type CardSetView,
@@ -54,6 +59,34 @@ describe("keeping cards and the Save count", () => {
   it("keeps nothing once every card is unticked", () => {
     const none = [0, 1, 2].reduce(toggleKept, allKept(cards.length));
     expect(keptIndices(none)).toEqual([]);
+  });
+});
+
+describe("the ticks the next question carries", () => {
+  it("starts a set the owner never touched, or whose cards changed, with every card kept", () => {
+    expect(ticksOf({}, view({}))).toEqual([true, true, true]);
+    expect(ticksOf({ cs1: [false, true] }, view({}))).toEqual([true, true, true]);
+    expect(ticksOf({ cs1: [true, false, true], other: [false, false, false] }, view({}))).toEqual([true, false, true]);
+  });
+
+  it("carries the kept indices out of the card count only when some card is unticked", () => {
+    expect(cardSetChoice(view({}), [true, false, true])).toEqual({ proposal_id: "cs1", kept: [0, 2], card_count: 3 });
+    expect(cardSetChoice(view({}), [false, false, false])).toEqual({ proposal_id: "cs1", kept: [], card_count: 3 });
+    expect(cardSetChoice(view({}), [true, true, true])).toBeNull();
+    expect(cardSetChoice(null, [])).toBeNull();
+  });
+
+  it("reads a question's stored ticks back for its Kept line, and nothing from an answer or a plain question", () => {
+    const stored = JSON.stringify([{ card_set_choice: { proposal_id: "cs1", kept: [0, 2, 4], card_count: 5 } }]);
+    const choice = storedChoice(stored);
+    expect(choice).toEqual({ proposal_id: "cs1", kept: [0, 2, 4], card_count: 5 });
+    expect(choice && choiceLine(choice)).toBe("Kept 3 of 5 cards");
+    expect(choiceLine({ kept: [], card_count: 1 })).toBe("Kept 0 of 1 card");
+
+    expect(storedChoice(null)).toBeNull();
+    expect(storedChoice(JSON.stringify([{ label: "library", text: "A JWT is signed.", citations: [] }]))).toBeNull();
+    expect(storedChoice(JSON.stringify([{ card_set_choice: { proposal_id: "cs1", kept: ["0"], card_count: 5 } }]))).toBeNull();
+    expect(storedChoice("not json")).toBeNull();
   });
 });
 
@@ -180,5 +213,31 @@ describe("opensByGoingBack", () => {
     expect(opensByGoingBack("n1", "n1")).toBe(true);
     expect(opensByGoingBack("n1", "n2")).toBe(false);
     expect(opensByGoingBack(undefined, "n1")).toBe(false);
+  });
+});
+
+describe("seededTicks", () => {
+  const asked = (proposalId: string, kept: number[], cardCount = 3) => ({
+    role: "user",
+    segments: JSON.stringify([{ card_set_choice: { proposal_id: proposalId, kept, card_count: cardCount } }]),
+  });
+
+  it("takes the latest question's choice for this set", () => {
+    const messages = [asked("cs1", [0]), { role: "assistant", segments: null }, asked("cs1", [0, 2])];
+    expect(seededTicks(messages, view({}))).toEqual([true, false, true]);
+  });
+
+  it("ignores a choice for another set or for a different card count", () => {
+    expect(seededTicks([asked("cs1", [1]), asked("other", [0])], view({}))).toBeNull();
+    expect(seededTicks([asked("cs1", [1]), asked("cs1", [0], 2)], view({}))).toBeNull();
+  });
+
+  it("forgets older unticks once a later question went with every card ticked", () => {
+    const messages = [asked("cs1", [0, 2]), { role: "assistant", segments: null }, { role: "user", segments: null }];
+    expect(seededTicks(messages, view({}))).toBeNull();
+  });
+
+  it("is null when no question carried ticks for the set", () => {
+    expect(seededTicks([asked("other", [0]), { role: "user", segments: null }], view({}))).toBeNull();
   });
 });

@@ -5,6 +5,7 @@ import { UnauthorizedError } from "@/api/client";
 import { clearSession, useSession } from "@/auth/session";
 import { requestSync } from "@/sync/useSync";
 
+import type { CardSetChoice } from "./cardSets";
 import { applyEvent, EMPTY_LIVE, endOfStream, handedOver, type LiveAnswer, type PendingQuestion } from "./sections";
 import { streamAnswer } from "./stream";
 import type { AboutKind, MessageRow } from "./types";
@@ -15,12 +16,14 @@ export type { PendingQuestion };
  * Sending a question and showing its answer as it streams. Leaving the chat lets the stream run on: the server saves
  * the answer and the next pull brings it. The overlay stays until the pulled rows hold the question
  * and its answer (or, for a failed stream, a later assistant row), and the returned `pending` is already null on the
- * render where they land, so nothing flickers or shows twice.
+ * render where they land, so nothing flickers or shows twice. A question carries `cardSetChoice`, the open card set's
+ * Keep ticks as they stand when it is sent.
  */
 export function useChatSession(input: {
   conversationId: string;
   messages: MessageRow[];
   about: { kind: AboutKind; id: string } | null;
+  cardSetChoice: CardSetChoice | null;
 }): { pending: PendingQuestion | null; send: (text: string, webSearch: boolean) => void } {
   const { sessionKey } = useSession();
   const [overlay, setOverlay] = useState<PendingQuestion | null>(null);
@@ -53,7 +56,8 @@ export function useChatSession(input: {
           current && current.userMessageId === userMessageId ? { ...current, live: change(current.live) } : current,
         );
       };
-      setOverlay({ userMessageId, text: question, webSearch, sentAt: Date.now(), live: EMPTY_LIVE });
+      const choice = input.cardSetChoice;
+      setOverlay({ userMessageId, text: question, webSearch, sentAt: Date.now(), cardSetChoice: choice, live: EMPTY_LIVE });
 
       streamAnswer({
         conversationId: input.conversationId,
@@ -64,6 +68,7 @@ export function useChatSession(input: {
           web_search: webSearch,
           about: input.messages.length === 0 ? input.about : null,
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          card_set_choice: choice && { proposal_id: choice.proposal_id, kept: choice.kept },
         },
         sessionKey,
         onEvent: (event) => update((live) => applyEvent(live, event)),
@@ -75,7 +80,7 @@ export function useChatSession(input: {
         })
         .finally(() => requestSync());
     },
-    [input.conversationId, input.messages.length, input.about, pending, sessionKey],
+    [input.conversationId, input.messages.length, input.about, input.cardSetChoice, pending, sessionKey],
   );
 
   return { pending, send };

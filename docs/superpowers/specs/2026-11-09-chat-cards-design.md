@@ -129,3 +129,25 @@ Files: drizzle schema + migration, sync, `ThinkingRow`, `CardSetProposal`, `Chea
 `sections.ts`, `[id].tsx`, `api.ts`, item page and labels for kind chat, review source line, removal of
 `MakeCardSheet`, Maestro flow + Makefile target + README.
 Consumes chunk 1's contract as written here. Depends on: none (built against this spec; merged after chunk 1).
+
+## Follow-ups (2026-11-10)
+
+- **Only the tick flips Keep.** In the pager (`CardFace`) and See all (`ListRow`) the Keep checkbox is the only
+  pressable for Keep: a 44-point target around the 14-point tick (`hitSlop`), with a light selection haptic. The rest
+  of the row or card isn't pressable, so tapping or scrolling over a card never changes what is kept.
+- **The next message carries the ticks.** The chat screen holds every set's ticks by set id (a live set keeps them
+  when its stored row lands). When the owner sends any message (typed, Make cards, Try again) while the chat's stored
+  set is `proposed` with at least one card unticked, the body carries `card_set_choice: {proposal_id, kept}`
+  (0-based indices); with every card ticked it carries nothing. The server applies it only if the set is this chat's
+  and user's, is `proposed`, names each index once, in range, and drops at least one card; otherwise it is ignored and
+  the turn goes ahead as typed.
+  - Stored in the question's existing `segments` (null for a question until now) as one segment
+    `{card_set_choice: {proposal_id, kept, card_count}}`; no migration. Every reader already tolerates it (the
+    phone's `parseSegments` and the server's citation lines skip a segment without their keys), it syncs to the
+    phone with the message unchanged, and `card_count` lets the phone draw its line without finding the set.
+  - The model reads it as a line before the owner's words, in that turn and in every later turn's history:
+    "The owner kept cards 1, 3 and 5 of the proposed set and dropped 2 (“…”) and 4 (“…”)." `CARD_SET_RULES` says
+    the next proposal copies the kept cards word for word (so Save matches them) unless asked to change them, and
+    doesn't bring back dropped ones.
+  - The app shows a muted "Kept 3 of 5 cards" under that question's bubble, from the stored segment (or, while it
+    is pending, from what it sent). A new set has a new id, so its ticks start all kept.

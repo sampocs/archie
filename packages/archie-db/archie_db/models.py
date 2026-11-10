@@ -819,7 +819,11 @@ class Conversation(Base):
 
 
 class Message(Base):
-    """One question or answer in a chat. An answer's `segments` are its text blocks with their labels and citations."""
+    """One question or answer in a chat.
+
+    An answer's `segments` are its text blocks with their labels and citations. A question's are null, or one
+    `card_set_choice` segment: the Keep ticks of the chat's open card set it was sent with.
+    """
 
     __tablename__ = "messages"
     __table_args__ = (

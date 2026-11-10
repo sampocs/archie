@@ -2,6 +2,8 @@ appId: com.sampocs.archie
 ---
 # Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Spends nothing on models: the chat
 # with its card set is seeded by the script.
+# Relaunch (keeping the login) so the app syncs on start and pulls what the runner just seeded.
+- launchApp
 - tapOn:
     id: "tab-today"
 # The refresher arrives with the next sync, which can take a few seconds.
@@ -36,6 +38,8 @@ appId: com.sampocs.archie
     id: "note-done"
     text: "Done, make cards"
 # The seeded chat about the note shows its card set without a cheat sheet; Save puts the cards on the note.
+- tapOn:
+    id: "screen-back"
 - tapOn:
     id: "tab-ask"
 - extendedWaitUntil:

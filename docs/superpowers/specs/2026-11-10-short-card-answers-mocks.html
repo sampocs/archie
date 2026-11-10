@@ -1,0 +1,273 @@
+<title>Short Card Answers</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+/* Layout: rows of phone mocks built from the app's real tokens (theme/tokens.ts, type.ts); "now" first, then the proposal. */
+:root {
+  --page: #E6E3DB; --pageInk: #1C1B18; --pageInk2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6; --bubble: #E6E3DA;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --onDomain: #FFFFFF;
+  --got: #3F7262; --partly: #A97F22; --missed: #B04A3C; --swe: #5A5F6E;
+  --shadow: 0 1px 2px rgba(14,14,12,.06); --dim: rgba(10,10,8,.32);
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --page: #0F0E0D; --pageInk: #F1EFE9; --pageInk2: #A9A59B;
+  --bg: #151412; --surface: #201F1C; --ink: #F1EFE9; --ink2: #B3AFA5; --ink3: #7E7A70; --line: #2D2B27; --press: #2A2824; --bubble: #2E2C28;
+  --chrome: #F1EFE9; --onChrome: #141311; --onDomain: #151412;
+  --got: #79B39E; --partly: #D6AC4E; --missed: #E3806F; --swe: #A3A8B8; --shadow: none; --dim: rgba(0,0,0,.5); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --page: #0F0E0D; --pageInk: #F1EFE9; --pageInk2: #A9A59B;
+  --bg: #151412; --surface: #201F1C; --ink: #F1EFE9; --ink2: #B3AFA5; --ink3: #7E7A70; --line: #2D2B27; --press: #2A2824; --bubble: #2E2C28;
+  --chrome: #F1EFE9; --onChrome: #141311; --onDomain: #151412;
+  --got: #79B39E; --partly: #D6AC4E; --missed: #E3806F; --swe: #A3A8B8; --shadow: none; --dim: rgba(0,0,0,.5); color-scheme: dark }
+body { background: var(--page); color: var(--pageInk); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; }
+.intro { max-width: 1300px; margin: 0 auto 10px; display: grid; gap: 6px; }
+.n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pageInk2); text-transform: uppercase; }
+h1 { margin: 0; font-size: 28px; letter-spacing: -.03em; text-wrap: balance; }
+h2 { max-width: 1300px; margin: 38px auto 6px; font-size: 19px; letter-spacing: -.02em; text-wrap: balance; }
+.intro p, .lede { margin: 0 auto; max-width: 1300px; color: var(--pageInk2); line-height: 1.5; font-size: 14.5px; }
+.lede { margin-bottom: 16px; }
+.row { max-width: 1300px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 30px 24px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; min-width: 0; }
+figcaption b { font-size: 15px; } figcaption span { color: var(--pageInk2); font-size: 13.5px; line-height: 1.45; }
+.tagnow { font: 500 10px var(--mono); text-transform: uppercase; color: var(--pageInk2); }
+.tagnew { font: 500 10px var(--mono); text-transform: uppercase; color: var(--got); }
+
+/* ——— phone (≈0.82× real points) ——— */
+.phone { width: 100%; max-width: 320px; aspect-ratio: 320 / 690; background: var(--bg); color: var(--ink); border-radius: 40px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-family: var(--sans); font-size: 12.5px; }
+.screen { position: absolute; inset: 0; overflow: hidden; display: flex; flex-direction: column; }
+.status { height: 40px; flex: none; }
+.mono { font: 500 9px var(--mono); text-transform: uppercase; color: var(--ink3); }
+.kicker { font: 600 8.6px var(--sans); letter-spacing: .06em; text-transform: uppercase; }
+.headline { font: 600 13px/1.25 var(--sans); letter-spacing: -.018em; }
+.secondary { font: 400 11px/1.38 var(--sans); }
+.reading { font: 400 13px/1.62 var(--sans); }
+.ink2 { color: var(--ink2); } .ink3 { color: var(--ink3); }
+
+/* review session */
+.rhead { display: flex; justify-content: space-between; align-items: center; padding: 8px 18px; }
+.rhead .x { font: 600 16px var(--sans); color: var(--ink2); }
+.pbar { height: 3px; background: var(--line); border-radius: 2px; margin: 0 18px; overflow: hidden; }
+.pbar i { display: block; height: 100%; width: 40%; background: var(--chrome); }
+.rbody { padding: 13px; display: grid; gap: 13px; align-content: start; }
+.q { padding: 0 5px; display: grid; gap: 6px; }
+.q .kicker { color: var(--swe); }
+.q .rq { font: 600 21px/1.18 var(--sans); letter-spacing: -.02em; }
+.result { background: var(--surface); border-radius: 18px; padding: 13px; display: grid; gap: 10px; box-shadow: var(--shadow); }
+.lab { display: grid; gap: 3px; }
+.pillv { justify-self: start; border-radius: 10px; padding: 3px 10px; font: 600 13px var(--sans); }
+.pillv.got { color: var(--got); background: color-mix(in srgb, var(--got) 15%, transparent); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { background: var(--surface); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; font: 400 11px var(--sans); color: var(--ink2); }
+.next { background: var(--chrome); color: var(--onChrome); border-radius: 13px; height: 42px; display: grid; place-items: center; font: 600 13px var(--sans); }
+.core { font: 600 13px/1.5 var(--sans); }
+.more { display: grid; gap: 4px; padding-top: 8px; border-top: 1px solid var(--line); }
+.bul { display: grid; gap: 3px; }
+.bul div { display: grid; grid-template-columns: 10px 1fr; font: 400 11px/1.42 var(--sans); color: var(--ink2); }
+.bul div::before { content: "•"; color: var(--ink3); }
+.prose { font: 400 11px/1.45 var(--sans); color: var(--ink2); }
+
+/* chat */
+.nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 6px 14px 8px; gap: 6px; }
+.nav .back { color: var(--ink2); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav .title { font: 600 13px var(--sans); white-space: nowrap; }
+.nav .more { justify-self: end; color: var(--ink); font-size: 15px; letter-spacing: 1px; border: 0; padding: 0; }
+.cbody { flex: 1; padding: 4px 13px 0; display: grid; gap: 13px; align-content: start; overflow: hidden; }
+.bubble { justify-self: end; max-width: 85%; background: var(--bubble); border-radius: 15px; padding: 7px 11px; font-size: 12.5px; }
+.reply { font: 400 12.5px/1.5 var(--sans); }
+.labelk { font: 600 8.6px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); margin-bottom: 4px; }
+.prop { background: var(--surface); border-radius: 15px; padding: 10px; display: grid; gap: 8px; box-shadow: var(--shadow); }
+.lrow { display: grid; grid-template-columns: 14px 1fr; gap: 7px; align-items: start; }
+.tick { width: 11.5px; height: 11.5px; border-radius: 3.3px; background: var(--got); color: var(--onDomain); font-size: 7.5px; display: grid; place-items: center; margin-top: 2px; }
+.lrow .qq { font: 600 11px/1.35 var(--sans); }
+.lrow .qq .num { font: 500 9px var(--mono); color: var(--ink3); margin-right: 5px; }
+.lrow .aa { font: 400 11px/1.38 var(--sans); color: var(--ink); margin-top: 2px; }
+.lrow .bul { margin-top: 3px; }
+.lrow .bul div { color: var(--ink3); font-size: 10.5px; }
+.foot { display: flex; justify-content: space-between; align-items: center; }
+.foot .lnk { font: 600 11px var(--sans); color: var(--ink2); }
+.save { display: flex; gap: 8px; align-items: center; }
+.save b { background: var(--chrome); color: var(--onChrome); border-radius: 10px; padding: 5px 10px; font: 600 11px var(--sans); }
+.save span { color: var(--ink3); font-size: 15px; }
+.face { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; gap: 7px; }
+.face .top { display: flex; justify-content: space-between; align-items: center; }
+.face .keep { display: flex; gap: 4px; align-items: center; font: 600 11px var(--sans); color: var(--got); }
+.face .keep .tick { margin: 0; }
+.dash { height: 0; border-top: 1px dashed var(--line); }
+.cfoot { flex: none; padding: 8px 13px 22px; display: grid; gap: 7px; border-top: 1px solid var(--line); background: var(--bg); }
+.about { justify-self: start; display: inline-flex; gap: 6px; align-items: center; font: 400 11px var(--sans); color: var(--ink2); }
+.about.tap { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 4px 9px; color: var(--ink); }
+.about.tap i { font-style: normal; color: var(--ink3); }
+.composer { display: flex; gap: 8px; align-items: center; }
+.composer .field { flex: 1; background: var(--press); border-radius: 15px; padding: 9px 12px; color: var(--ink3); font-size: 12.5px; }
+.composer .g { width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--ink3); }
+.composer .s { width: 24px; height: 24px; border-radius: 50%; background: var(--ink3); color: var(--bg); display: grid; place-items: center; font-size: 13px; }
+.flag { outline: 2px dashed color-mix(in srgb, var(--missed) 70%, transparent); outline-offset: 3px; border-radius: 6px; }
+.spot { outline: 2px solid color-mix(in srgb, var(--got) 75%, transparent); outline-offset: 3px; border-radius: 8px; }
+
+/* sheet */
+.dimmer { position: absolute; inset: 0; background: var(--dim); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; top: 96px; background: var(--bg); border-radius: 22px 22px 0 0; padding: 8px 18px 20px; display: grid; gap: 10px; align-content: start; overflow: hidden; }
+.grab { width: 30px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto; }
+.shead { display: flex; justify-content: space-between; align-items: center; }
+.shead .done { color: var(--ink2); font-size: 12.5px; }
+.stitle { font: 700 22px/1.1 var(--sans); letter-spacing: -.04em; }
+.ideas { display: grid; gap: 8px; }
+.ideas div { display: grid; grid-template-columns: 14px 1fr; font: 400 12.5px/1.55 var(--sans); }
+.sect { font: 600 8.6px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--ink2); }
+.orig { font: 600 13px var(--sans); }
+</style>
+
+<div class="intro"><span class="n">Archie · cards you can be graded on fairly</span><h1>Short card answers</h1>
+<p>Each card gets a short answer, the thing you're graded on, plus a few lines of detail that show after you answer. Built from the app's real tokens and components; the card content is made up.</p></div>
+
+<h2>1 · Review: what you see after answering</h2>
+<p class="lede">You type "real time stuff". Today the grader compares that with a whole paragraph and can mark you Partly for leaving out the rest. With a short answer it only has to match "Real-time updates". The detail still shows afterwards to jog your memory. I've drawn the detail two ways.</p>
+<div class="row">
+  <figure><div class="phone"><div class="screen"><div class="status"></div>
+    <div class="rhead"><span class="x">✕</span><span class="mono">3 of 8</span></div><div class="pbar"><i></i></div>
+    <div class="rbody">
+      <div class="q"><span class="kicker">Software · Concept</span><div class="rq">When would you pick WebSockets over polling?</div></div>
+      <div class="result">
+        <div class="lab"><span class="mono">You said</span><span class="ink2">real time stuff</span></div>
+        <span class="pillv" style="color:var(--partly);background:color-mix(in srgb, var(--partly) 15%, transparent)">Partly</span>
+        <div class="secondary" style="background:color-mix(in srgb, var(--partly) 10%, transparent);border-radius:10px;padding:7px 10px">It doesn't say polling wastes requests when little changes.</div>
+        <div class="lab"><span class="mono">Answer</span><div class="reading">When the app needs updates the moment they happen, like chat, live dashboards or multiplayer games. The server pushes each change over one open connection, while polling keeps asking and wastes requests when little changes.</div></div>
+      </div>
+    </div></div></div>
+    <figcaption><span class="tagnow">Now</span><b>One long answer, graded whole</b><span>A fair answer gets marked down for missing the extra detail.</span></figcaption></figure>
+
+  <figure><div class="phone"><div class="screen"><div class="status"></div>
+    <div class="rhead"><span class="x">✕</span><span class="mono">3 of 8</span></div><div class="pbar"><i></i></div>
+    <div class="rbody">
+      <div class="q"><span class="kicker">Software · Concept</span><div class="rq">When would you pick WebSockets over polling?</div></div>
+      <div class="result">
+        <div class="lab"><span class="mono">You said</span><span class="ink2">real time stuff</span></div>
+        <span class="pillv got">Got it</span>
+        <div class="lab"><span class="mono">Answer</span><div class="core">Real-time updates</div></div>
+        <div class="more"><div class="bul"><div>The server pushes each change over one open connection</div><div>Chat, live dashboards, multiplayer games</div><div>Polling keeps asking and wastes requests when little changes</div></div></div>
+      </div>
+      <div class="chips"><span class="chip">What I care about…</span></div>
+      <div class="next">Next →</div>
+    </div></div></div>
+    <figcaption><span class="tagnew">Recommended</span><b>Short answer, detail as bullets</b><span>Graded only on the bold line. Under a hairline, 1–3 short bullets you can skim in a second.</span></figcaption></figure>
+
+  <figure><div class="phone"><div class="screen"><div class="status"></div>
+    <div class="rhead"><span class="x">✕</span><span class="mono">3 of 8</span></div><div class="pbar"><i></i></div>
+    <div class="rbody">
+      <div class="q"><span class="kicker">Software · Concept</span><div class="rq">When would you pick WebSockets over polling?</div></div>
+      <div class="result">
+        <div class="lab"><span class="mono">You said</span><span class="ink2">real time stuff</span></div>
+        <span class="pillv got">Got it</span>
+        <div class="lab"><span class="mono">Answer</span><div class="core">Real-time updates</div></div>
+        <div class="more"><div class="prose">The server pushes each change over one open connection, which suits chat, live dashboards and multiplayer games. Polling keeps asking and wastes requests when little changes.</div></div>
+      </div>
+      <div class="chips"><span class="chip">What I care about…</span></div>
+      <div class="next">Next →</div>
+    </div></div></div>
+    <figcaption><span class="tagnow">Alternative</span><b>Short answer, detail as prose</b><span>Same split, with the detail as two plain sentences. It reads more smoothly but is slower to scan.</span></figcaption></figure>
+</div>
+
+<h2>2 · Make cards: proposal, back label, note chip</h2>
+<p class="lede">The proposal shows each card's short answer in full ink and its detail lighter underneath. Opened from a note, the back button says "‹ WebSockets" and goes back to it. "About: WebSockets" becomes a tappable chip. The "Background" label over Archie's one-line reply goes away when the reply sits next to a proposal.</p>
+<div class="row">
+  <figure><div class="phone"><div class="screen"><div class="status"></div>
+    <div class="nav"><span class="back">‹ Ask</span><span class="title">Make cards</span><span class="more">•••</span></div>
+    <div class="cbody">
+      <div class="bubble">Make cards</div>
+      <div><div class="labelk flag">Background</div><div class="reply">Here are 4 cards from your note. Nothing is saved until you tap Save.</div></div>
+      <div class="prop">
+        <div class="lrow"><span class="tick">✓</span><div><div class="qq"><span class="num">1</span>What is a WebSocket, and how is it different from an HTTP request?</div><div class="aa ink2">A long-lived, two-way connection between browser and server, opened once with an HTTP upgrade. Unlike a request, either side can send a message at any time, so the server can push updates without being asked.</div></div></div>
+        <div class="lrow"><span class="tick">✓</span><div><div class="qq"><span class="num">2</span>When would you pick WebSockets over polling?</div><div class="aa ink2">When the app needs updates the moment they happen, like chat, live dashboards or multiplayer games. The server pushes each change over one open connection…</div></div></div>
+      </div>
+    </div>
+    <div class="cfoot"><span class="about">About: WebSockets</span><div class="composer"><span class="field">Change something…</span><span class="g"></span><span class="s">↑</span></div></div>
+  </div></div>
+    <figcaption><span class="tagnow">Now</span><b>Paragraph answers, a stray label</b><span>Compound questions and long answers, "‹ Ask" as the way back, and a Background label (outlined) over the short reply.</span></figcaption></figure>
+
+  <figure><div class="phone"><div class="screen"><div class="status"></div>
+    <div class="nav"><span class="back spot">‹ WebSockets</span><span class="title">Make cards</span><span class="more">•••</span></div>
+    <div class="cbody">
+      <div class="bubble">Make cards</div>
+      <div class="reply">Here are 4 cards from your note. Nothing is saved until you tap Save.</div>
+      <div class="prop">
+        <div class="lrow"><span class="tick">✓</span><div><div class="qq"><span class="num">1</span>What is a WebSocket?</div><div class="aa">A long-lived, two-way connection</div><div class="bul"><div>Opened once with an HTTP upgrade</div><div>Either side can send at any time</div></div></div></div>
+        <div class="lrow"><span class="tick">✓</span><div><div class="qq"><span class="num">2</span>When would you pick WebSockets over polling?</div><div class="aa">Real-time updates</div><div class="bul"><div>Chat, live dashboards, multiplayer games</div><div>Polling wastes requests when little changes</div></div></div></div>
+        <div class="lrow"><span class="tick">✓</span><div><div class="qq"><span class="num">3</span>What does a WebSocket cost the server?</div><div class="aa">One open connection per client</div><div class="bul"><div>Memory and file handles add up at scale</div></div></div></div>
+        <div class="foot"><span class="lnk">One at a time</span><span class="save"><b>Save 4</b><span>×</span></span></div>
+      </div>
+    </div>
+    <div class="cfoot"><span class="about tap spot">▤ About: WebSockets <i>›</i></span><div class="composer"><span class="field">Change something…</span><span class="g"></span><span class="s">↑</span></div></div>
+  </div></div>
+    <figcaption><span class="tagnew">New</span><b>See all, with short answers</b><span>One question per card. The short answer is in full ink, with the bullets lighter underneath. The back label and the note chip are outlined.</span></figcaption></figure>
+
+  <figure><div class="phone"><div class="screen"><div class="status"></div>
+    <div class="nav"><span class="back">‹ WebSockets</span><span class="title">Make cards</span><span class="more">•••</span></div>
+    <div class="cbody">
+      <div class="bubble">Make cards</div>
+      <div class="reply">Here are 4 cards from your note. Nothing is saved until you tap Save.</div>
+      <div class="prop">
+        <div class="face">
+          <div class="top"><span class="mono">Card 2</span><span class="keep"><span class="tick">✓</span>Keep</span></div>
+          <div class="headline" style="font-size:11.5px">When would you pick WebSockets over polling?</div>
+          <div class="dash"></div>
+          <div class="secondary">Real-time updates</div>
+          <div class="bul"><div style="color:var(--ink3)">Chat, live dashboards, multiplayer games</div><div style="color:var(--ink3)">Polling wastes requests when little changes</div></div>
+        </div>
+        <div class="foot"><span style="display:flex;gap:12px;align-items:center"><span class="mono" style="color:var(--ink2)">‹ 2 of 4 ›</span><span class="lnk">See all</span></span><span class="save"><b>Save 4</b><span>×</span></span></div>
+      </div>
+    </div>
+    <div class="cfoot"><span class="about tap">▤ About: WebSockets <i>›</i></span><div class="composer"><span class="field">Change something…</span><span class="g"></span><span class="s">↑</span></div></div>
+  </div></div>
+    <figcaption><span class="tagnew">New</span><b>One at a time</b><span>The pager card has the same split under its dashed rule.</span></figcaption></figure>
+</div>
+
+<h2>3 · The note, pulled up over the chat</h2>
+<p class="lede">Tapping the About chip slides up the note's write-up (the same sections as its page) without leaving the chat. "See original note ›" swaps in what you wrote. Done or a tap on the backdrop closes it. The chip works in any chat about an item, not only notes.</p>
+<div class="row">
+  <figure><div class="phone"><div class="screen"><div class="status"></div>
+    <div class="nav"><span class="back">‹ WebSockets</span><span class="title">Make cards</span><span class="more">•••</span></div>
+    <div class="cbody"><div class="bubble">Make cards</div><div class="reply">Here are 4 cards from your note.</div></div>
+    <div class="dimmer"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="shead"><span class="kicker" style="color:var(--swe)">Notes · Software</span><span class="done">Done</span></div>
+      <div class="stitle">WebSockets</div>
+      <div class="reading">A WebSocket keeps one connection open so the server can push data the moment it changes, instead of the browser asking again and again.</div>
+      <span class="sect">Key ideas</span>
+      <div class="ideas"><div><span>1.</span><span>Opened with an HTTP upgrade, then both sides talk freely.</span></div><div><span>2.</span><span>Best when updates are frequent and need to land instantly.</span></div><div><span>3.</span><span>Each client holds a connection, which costs memory at scale.</span></div></div>
+      <span class="orig">See original note ›</span>
+    </div>
+  </div></div>
+    <figcaption><span class="tagnew">New</span><b>Write-up sheet</b><span>It scrolls if the write-up is long. Your Keep ticks and anything you've typed stay as they were underneath.</span></figcaption></figure>
+
+  <figure><div class="phone"><div class="screen"><div class="status"></div>
+    <div class="nav"><span class="back">‹ WebSockets</span><span class="title">Make cards</span><span class="more">•••</span></div>
+    <div class="cbody"><div class="bubble">Make cards</div><div class="reply">Here are 4 cards from your note.</div></div>
+    <div class="dimmer"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <div class="shead"><span class="ink2" style="font-size:12.5px">‹ Write-up</span><span class="done">Done</span></div>
+      <div class="headline">Your original note</div>
+      <div class="secondary ink2">From Bear · last edited Sep 14</div>
+      <div class="reading"><b># WebSockets</b><br>- persistent conn, server push<br>- upgrade from http (101 switching protocols)<br>- vs polling / long polling / SSE<br>- good for chat, games, dashboards<br>- watch: conn limits, load balancer sticky sessions</div>
+    </div>
+  </div></div>
+    <figcaption><span class="tagnew">New</span><b>Original note, same sheet</b><span>"‹ Write-up" goes back. It's the same text as the note page's original-note sheet.</span></figcaption></figure>
+
+  <figure><div class="phone"><div class="screen" style="padding:56px 18px 20px;display:grid;gap:12px;align-content:start">
+      <span class="n" style="color:var(--ink3)">What changes underneath</span>
+      <div class="secondary" style="display:grid;gap:9px;font-size:11.5px;line-height:1.5">
+        <div><b>Every card writer</b> (summaries, primers, notes, takes, news quiz, chat card sets) writes a short answer of a few words plus 0–3 detail bullets, with one question per card.</div>
+        <div><b>The grader</b> checks only the short answer. The detail is passed along as background, so mentioning part of it never counts against you.</div>
+        <div><b>"What I care about…"</b> rewrites the short answer and can draw from the detail.</div>
+        <div><b>Ask edits</b> to a card can change the detail too, and versions keep it.</div>
+        <div><b>Old cards</b> keep their single answer and look as they do today. A one-off pass can split them later.</div>
+      </div>
+  </div></div>
+    <figcaption><b>Under the hood</b><span>Short version of the data and prompt changes, for the spec.</span></figcaption></figure>
+</div>

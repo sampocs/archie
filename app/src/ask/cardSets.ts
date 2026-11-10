@@ -147,18 +147,18 @@ export function ticksOf(
 }
 
 /**
- * The ticks the latest question about this set carried, for a screen that remounted and lost its own: the newest user
- * message whose stored choice is for this set and this many cards; null when there is none.
+ * The ticks the latest question carried for this set, for a screen that remounted and lost its own. Only the newest
+ * question counts: one sent with every card ticked stores no choice, so an older question's unticks must not come back.
+ * Null when the newest question carried no choice for this set and this many cards.
  */
 export function seededTicks(
   messages: { role: string; segments: string | null }[],
   view: Pick<CardSetView, "id" | "cards">,
 ): boolean[] | null {
-  const choices = messages.filter((message) => message.role === "user").map((message) => storedChoice(message.segments));
-  const latest = choices.findLast(
-    (choice) => choice?.proposal_id === view.id && choice.card_count === view.cards.length,
-  );
-  return latest ? view.cards.map((_, index) => latest.kept.includes(index)) : null;
+  const newest = messages.findLast((message) => message.role === "user");
+  const choice = newest ? storedChoice(newest.segments) : null;
+  if (choice?.proposal_id !== view.id || choice.card_count !== view.cards.length) return null;
+  return view.cards.map((_, index) => choice.kept.includes(index));
 }
 
 /**

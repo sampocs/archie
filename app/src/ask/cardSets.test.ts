@@ -228,8 +228,13 @@ describe("seededTicks", () => {
   });
 
   it("ignores a choice for another set or for a different card count", () => {
-    const messages = [asked("cs1", [1]), asked("other", [0]), asked("cs1", [0], 2)];
-    expect(seededTicks(messages, view({}))).toEqual([false, true, false]);
+    expect(seededTicks([asked("cs1", [1]), asked("other", [0])], view({}))).toBeNull();
+    expect(seededTicks([asked("cs1", [1]), asked("cs1", [0], 2)], view({}))).toBeNull();
+  });
+
+  it("forgets older unticks once a later question went with every card ticked", () => {
+    const messages = [asked("cs1", [0, 2]), { role: "assistant", segments: null }, { role: "user", segments: null }];
+    expect(seededTicks(messages, view({}))).toBeNull();
   });
 
   it("is null when no question carried ticks for the set", () => {

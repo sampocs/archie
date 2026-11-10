@@ -1,5 +1,5 @@
 import * as WebBrowser from "expo-web-browser";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, TextStyle, View } from "react-native";
 
 import { Text } from "@/theme/components/Text";
 import { fontFamily } from "@/theme/type";
@@ -108,7 +108,8 @@ function appendListItem(blocks: Block[], { ordered, item }: { ordered: boolean; 
   blocks.push({ type: "list", ordered, items: [item] });
 }
 
-function parseSpans(text: string): Span[] {
+/** One line of inline markdown (bold, italic, links) as spans; exported for text that is a single paragraph. */
+export function parseSpans(text: string): Span[] {
   // Highlights and strikethrough have no rendering here; only their markers go.
   const plain = text.replace(/==(.+?)==/g, "$1").replace(/~(.+?)~/g, "$1");
   const spans: Span[] = [];
@@ -128,6 +129,18 @@ function inlineSpan(match: RegExpMatchArray): Span {
   if (match[1] !== undefined) return { text: match[1], bold: true };
   if (match[2] !== undefined) return { text: match[2], italic: true };
   return { text: match[3], href: match[4] };
+}
+
+/**
+ * A single paragraph whose text may carry inline markdown, e.g. a summary's key idea written with **bold**; without
+ * this the markers show literally.
+ */
+export function InlineMarkdown({ text, testID, style }: { text: string; testID?: string; style?: TextStyle }) {
+  return (
+    <Text testID={testID} variant="readingBody" style={style}>
+      <Spans spans={parseSpans(text)} />
+    </Text>
+  );
 }
 
 export function Markdown({ text }: { text: string }) {

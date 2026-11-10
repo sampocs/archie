@@ -27,7 +27,7 @@ import { NoteSources } from "@/notes/NoteSources";
 import { OriginalNoteSheet } from "@/notes/OriginalNoteSheet";
 import { setPendingRefreshToast } from "@/notes/pendingToast";
 import { todayRefresher } from "@/notes/refresher";
-import { Markdown } from "@/ui/Markdown";
+import { InlineMarkdown, Markdown } from "@/ui/Markdown";
 import { asDomain } from "@/topics/domains";
 import { splitFacts } from "@/summary/figures";
 import { requestSync } from "@/sync/useSync";
@@ -399,9 +399,7 @@ function SummarySections({ summary, source }: { summary: SummaryContent; source:
   return (
     <>
       <View style={{ gap: theme.spacing.sm }}>
-        <Text testID="source-gist" variant="readingBody">
-          {summary.gist}
-        </Text>
+        <InlineMarkdown testID="source-gist" text={summary.gist} />
       </View>
 
       {summary.key_ideas.length > 0 ? (
@@ -410,9 +408,7 @@ function SummarySections({ summary, source }: { summary: SummaryContent; source:
           {summary.key_ideas.map((item, index) => (
             <View key={index} style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start" }}>
               <Text variant="readingBody">{index + 1}.</Text>
-              <Text variant="readingBody" style={{ flex: 1 }}>
-                {item.idea}
-              </Text>
+              <InlineMarkdown text={item.idea} style={{ flex: 1 }} />
               <TimestampChip timestamp={item.timestamp} source={source} />
             </View>
           ))}

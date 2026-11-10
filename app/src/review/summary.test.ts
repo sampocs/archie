@@ -29,8 +29,8 @@ describe("dueSummary and aheadSummary", () => {
     reviewCard({ id: "later", dueAt: dayAt(5) }),
   ]);
 
-  it("counts due cards and how many are foundations", () => {
-    expect(dueSummary(data, NOW)).toEqual({ count: 2, foundations: 1 });
+  it("counts due cards", () => {
+    expect(dueSummary(data, NOW)).toEqual({ count: 2 });
   });
 
   it("counts cards due within the ahead window", () => {

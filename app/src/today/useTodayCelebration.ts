@@ -73,7 +73,7 @@ export function useTodayCelebration(live: TodayTasks, day: string): TodayCelebra
 
   return {
     tasks,
-    isFresh: (kind) => !celebrated.has(kind),
+    isFresh: (kind) => settled && !celebrated.has(kind),
     showDayCard: tasks.dayDone && celebrated.has(DAY_DONE),
     celebrateDay: playingDay,
     settled,

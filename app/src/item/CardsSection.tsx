@@ -10,7 +10,6 @@ import { cardDueLabel } from "@/review/summary";
 import { CardListRow } from "@/review/ui/CardListRow";
 import { useReviewData } from "@/review/useReviewData";
 import { Text } from "@/theme/components/Text";
-import { useTheme } from "@/theme/useTheme";
 import { GroupedList } from "@/ui/GroupedList";
 import { Toast } from "@/ui/Toast";
 import { useNow } from "@/ui/useNow";
@@ -23,7 +22,6 @@ export type CardsOf = { kind: "source"; id: string } | { kind: "take"; id: strin
  * to Remove.
  */
 export function CardsSection({ of }: { of: CardsOf }) {
-  const theme = useTheme();
   const router = useRouter();
   const data = useReviewData();
   const now = useNow();

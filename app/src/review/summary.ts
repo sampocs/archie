@@ -16,10 +16,9 @@ export function minutesFor(count: number): number {
   return Math.max(1, Math.ceil((count * SECONDS_PER_CARD) / 60));
 }
 
-/** The due session's length, and how many of its cards are foundations. */
-export function dueSummary(data: ReviewData, now: Date): { count: number; foundations: number } {
-  const session = buildSession(data, "due", null, now);
-  return { count: session.length, foundations: session.filter(({ card }) => card.kind === "foundation").length };
+/** The due session's length. */
+export function dueSummary(data: ReviewData, now: Date): { count: number } {
+  return { count: buildSession(data, "due", null, now).length };
 }
 
 /** The ahead session's length, and when its window ends. */

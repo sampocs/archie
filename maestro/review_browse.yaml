@@ -43,6 +43,8 @@ appId: com.sampocs.archie
     id: "review-done"
 - tapOn:
     id: "done-back-today"
+- assertVisible:
+    id: "today-review-done|today-done"
 # Caught up: the card offers Review ahead and Shuffle; Missed lists both cards.
 - tapOn:
     id: "tab-review"
@@ -68,4 +70,10 @@ appId: com.sampocs.archie
 - tapOn:
     id: "review-close"
 # The browse mode is remembered: Missed is still chosen.
+- assertVisible: "Practice these 2"
+# ...and survives a relaunch.
+- stopApp
+- launchApp
+- tapOn:
+    id: "tab-review"
 - assertVisible: "Practice these 2"

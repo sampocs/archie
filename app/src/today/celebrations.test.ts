@@ -11,6 +11,11 @@ describe("celebration memory", () => {
     expect(celebratedOn(stored, "2026-11-05")).toEqual(new Set(["review", "brief"]));
   });
 
+  it("treats a garbage stored value as empty", () => {
+    expect(celebratedOn("garbage", "2026-11-05")).toEqual(new Set());
+    expect(celebratedOn('{"day":5}', "2026-11-05")).toEqual(new Set());
+  });
+
   it("forgets yesterday's celebrations once the local day turns", () => {
     const stored = storedCelebrations("2026-11-04", ["review", "day"]);
 

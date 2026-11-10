@@ -157,16 +157,40 @@ def test_a_page_with_too_little_text_fails_the_job_once_and_the_source(
     assert _queued_kinds(engine) == []
 
 
-def test_a_short_capture_fails_like_a_short_page(engine: sqlalchemy.Engine, replay: Replay) -> None:
-    """The 50-word minimum applies to captures too (the empty cassette raises on any request)."""
+def test_a_short_article_capture_falls_back_to_the_page(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """A capture that only caught the author box is replaced by the readable page, which titles the source."""
     source_id = _add_source(
-        engine, url=SHORT_PAGE_URL, kind=models.SourceKind.ARTICLE, capture=("Short", "Only a few words here.")
+        engine,
+        url=ARTICLE_URL,
+        kind=models.SourceKind.ARTICLE,
+        capture=("Captured title - The Blog", "Jane Doe\n@jdoe-example\nDistinguished Engineer\n"),
     )
 
-    with replay("no_requests"):
+    with replay("article_greatwork") as cassette:
         loop.run_one(engine, handlers=handlers.HANDLERS)
 
-    assert _source(engine, source_id).processing == models.ProcessingStatus.FAILED
+    assert cassette.play_count == 1
+    assert len(_only_artifact(engine, source_id).content["text"].split()) > 1000
+    source = _source(engine, source_id)
+    assert source.processing != models.ProcessingStatus.FAILED
+    assert source.title == "How to Do Great Work"
+
+
+def test_a_short_capture_of_a_short_page_fails_but_keeps_the_captured_title(
+    engine: sqlalchemy.Engine, replay: Replay
+) -> None:
+    """Both under the 50-word minimum: the job fails once, and the row shows Safari's title rather than the URL."""
+    source_id = _add_source(
+        engine, url=SHORT_PAGE_URL, kind=models.SourceKind.ARTICLE, capture=("Short title", "Only a few words here.")
+    )
+
+    with replay("title_page"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    source = _source(engine, source_id)
+    assert source.processing == models.ProcessingStatus.FAILED
+    assert source.processing_error == errors.FailureReason.TEXT_MISSING
+    assert source.title == "Short title"
     assert _job(engine, models.JobKind.FETCH_CONTENT).attempts == 1
 
 

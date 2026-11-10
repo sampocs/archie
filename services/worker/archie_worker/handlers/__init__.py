@@ -7,6 +7,7 @@ import sqlalchemy.orm
 from archie_db import changes, models, pipeline
 
 from archie_worker.handlers import (
+    _text,
     analyze,
     clean_take,
     clean_text,
@@ -41,9 +42,23 @@ def mark_source_failed(db: sqlalchemy.orm.Session, job: models.Job, reason: str)
     pipeline.set_processing(db, source=source, status=models.ProcessingStatus.FAILED, error=reason)
 
 
+def mark_fetch_failed(db: sqlalchemy.orm.Session, job: models.Job, reason: str) -> None:
+    """Failure hook for `fetch_content`: as `mark_source_failed`, and a failed share keeps its captured title.
+
+    Without it the row would show the bare URL, though Safari told us the page's title.
+    """
+    mark_source_failed(db, job, reason)
+    source = db.get(models.Source, uuid.UUID(job.payload[pipeline.SOURCE_ID_KEY]))
+    capture = db.get(models.SourceCapture, source.id) if source is not None else None
+    if source is None or source.deleted_at is not None or capture is None:
+        return
+
+    _text.set_title_if_empty(source, title=capture.title)
+
+
 HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.FETCH_TITLE: HandlerSpec(run=fetch_title.handle),
-    models.JobKind.FETCH_CONTENT: HandlerSpec(run=fetch_content.handle, on_final_failure=mark_source_failed),
+    models.JobKind.FETCH_CONTENT: HandlerSpec(run=fetch_content.handle, on_final_failure=mark_fetch_failed),
     models.JobKind.ANALYZE: HandlerSpec(run=analyze.handle, on_final_failure=mark_source_failed),
     models.JobKind.PRIMER: HandlerSpec(run=primer.handle, on_final_failure=mark_source_failed),
     models.JobKind.TOPIC_PRIMER: HandlerSpec(run=topic_primer.handle),

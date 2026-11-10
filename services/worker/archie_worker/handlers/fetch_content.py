@@ -1,16 +1,18 @@
 """`fetch_content`: get a source's readable text, store it as a `text` artifact, and queue the kind's next steps.
 
-The text comes from the Safari capture when the phone sent one, else from the X thread (for X posts) or
-the fetched page (for articles). Too little text, or a page that answers 401, 403, 404, 410 or 451 (a
-paywall, block or missing page), fails the job at once as `TEXT_MISSING`, since fetching the same page
-again will not help; the user is told to share it from Safari instead. A newsletter has no page to fetch (its URL is
-`newsletter:<message-id>`), so one without a capture, or with too little text, fails as `NEWSLETTER_UNREADABLE`.
-Other failures are retried. Following the loop's handler contract, the source is read and marked `processing` in a
-committed transaction before any outside call, and the result is written under the user's lock afterwards.
+The text comes from the Safari capture when the phone sent one, else from the X thread (for X posts) or the fetched
+page (for articles, and for an article whose capture is too short to use). Too little text, or a page that answers
+401, 403, 404, 410 or 451 (a paywall, block or missing page), fails the job at once as `TEXT_MISSING`, since fetching
+the same page again will not help; the user is told to share it from Safari instead, and the row keeps the captured
+title. A newsletter has no page to fetch (its URL is `newsletter:<message-id>`), so one without a capture, or with too
+little text, fails as `NEWSLETTER_UNREADABLE`. Other failures are retried. Following the loop's handler contract, the
+source is read and marked `processing` in a committed transaction before any outside call, and the result is written
+under the user's lock afterwards.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import uuid
 from dataclasses import dataclass
 
@@ -147,11 +149,21 @@ def _start_processing(db: sqlalchemy.orm.Session, *, source: models.Source) -> _
 
 
 def _get_text(source_input: _SourceInput) -> content.ExtractedText:
-    """The source's text: its capture if it has one, else the X thread or the fetched page."""
+    """The source's text: its capture if it has one, else the X thread or the fetched page.
+
+    An article whose capture is too short to use falls back to its page: the share sheet sometimes reads the wrong part
+    of a page (only the author box, say) while the page itself is readable. The capture's title stays the fallback.
+    """
     if source_input.capture_text is not None:
-        return content.ExtractedText(
+        captured = content.ExtractedText(
             title=source_input.capture_title, text=article.clean_capture(source_input.capture_text)
         )
+        if source_input.kind != models.SourceKind.ARTICLE or len(captured.text.split()) >= _MIN_ARTICLE_WORDS:
+            return captured
+        _logger.info("Source %s capture is too short; fetching its page", source_input.source_id)
+        page = _fetch_article(source_input)
+        # A paywall teaser can be no better than the capture; the page wins only when it has more text.
+        return page if len(page.text.split()) > len(captured.text.split()) else captured
 
     if source_input.kind == models.SourceKind.X:
         post_id = urls.x_post_id(source_input.url)
@@ -159,6 +171,11 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
             raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING)
         return x.fetch_thread(post_id=post_id)
 
+    return _fetch_article(source_input)
+
+
+def _fetch_article(source_input: _SourceInput) -> content.ExtractedText:
+    """The fetched page's text, titled by the capture when the page has no title of its own."""
     try:
         page = fetch_title.fetch_page(
             url=source_input.url, timeout_seconds=_PAGE_TIMEOUT_SECONDS, max_bytes=_PAGE_MAX_BYTES
@@ -169,7 +186,10 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
         _logger.info("Source %s page answered %d", source_input.source_id, error.response.status_code)
         raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING) from error
 
-    return article.extract(html=page, url=source_input.url) or content.ExtractedText(title=None, text="")
+    extracted = article.extract(html=page, url=source_input.url) or content.ExtractedText(title=None, text="")
+    if not extracted.title and source_input.capture_title:
+        return dataclasses.replace(extracted, title=source_input.capture_title)
+    return extracted
 
 
 def _fetch_youtube(db: sqlalchemy.orm.Session, *, source: models.Source, source_input: _SourceInput) -> None:

@@ -37,7 +37,7 @@ def store_text(
     pipeline.write_artifact(
         db, source=source, kind=models.ArtifactKind.TEXT, content=text_content, model=None, prompt_version=None
     )
-    _set_title_if_empty(source, title=title)
+    set_title_if_empty(source, title=title)
     _set_image_if_empty(source, image_url=image_url)
     _set_published_at(source, published_at=published_at)
     jobs.enqueue_embed(db, user_id=source.user_id, item_kind=models.SearchItemKind.SOURCE, item_id=source.id)
@@ -54,7 +54,7 @@ def enqueue_transcribe(
     if not _lock_live(db, source=source):
         return
 
-    _set_title_if_empty(source, title=episode.title)
+    set_title_if_empty(source, title=episode.title)
     _set_image_if_empty(source, image_url=episode.image_url)
     _set_published_at(source, published_at=content.noon_utc(episode.published))
     jobs.enqueue(
@@ -73,7 +73,7 @@ def _lock_live(db: sqlalchemy.orm.Session, *, source: models.Source) -> bool:
     return source.deleted_at is None
 
 
-def _set_title_if_empty(source: models.Source, *, title: str | None) -> None:
+def set_title_if_empty(source: models.Source, *, title: str | None) -> None:
     cleaned = " ".join(content.strip_nul(title or "").split())[:_MAX_TITLE_LENGTH]
     if source.title or not cleaned:
         return

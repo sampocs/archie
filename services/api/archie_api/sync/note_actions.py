@@ -24,6 +24,8 @@ class _RefreshPayload(pydantic.BaseModel):
     id: uuid.UUID
     counted: bool
     at: pydantic.AwareDatetime
+    # False when the phone makes the cards in an Ask chat instead; older phones don't send it.
+    make_cards: bool = True
 
 
 class _SkipPayload(pydantic.BaseModel):
@@ -32,7 +34,8 @@ class _SkipPayload(pydantic.BaseModel):
 
 
 def refresh_note(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
-    """Done on a note: it becomes a Done item refreshed at the phone's tap time, and its review cards are queued."""
+    """Done on a note: it becomes a Done item refreshed at the phone's tap time, and its review cards are queued unless
+    the phone makes them in an Ask chat (`make_cards` false)."""
     parsed = rows.parse(_RefreshPayload, payload)
     if parsed is None:
         return rows.MALFORMED
@@ -47,7 +50,10 @@ def refresh_note(db: orm.Session, *, user: models.User, payload: dict[str, objec
     source.refreshed_from_queue = parsed.counted
     source.state = models.SourceState.CONSUMED.value
     changes.touch(source)
-    jobs.enqueue(db, kind=models.JobKind.NOTE_CARDS, user_id=user.id, payload={pipeline.SOURCE_ID_KEY: str(source.id)})
+    if parsed.make_cards:
+        jobs.enqueue(
+            db, kind=models.JobKind.NOTE_CARDS, user_id=user.id, payload={pipeline.SOURCE_ID_KEY: str(source.id)}
+        )
     return None
 
 

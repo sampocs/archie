@@ -13,7 +13,7 @@ from archie_db import changes, models, pipeline, user_topics
 from sqlalchemy import orm
 
 from archie_api import deps
-from archie_api.ask import card_routes, card_set_tools, citations
+from archie_api.ask import card_routes, card_set_tools, citations, context
 from archie_api.auth import sessions
 from archie_api.sync import conversation_actions, schemas
 
@@ -110,11 +110,18 @@ def seed_note_write_up(
 
 class SeedCardSetRequest(card_set_tools.CardSetIn):
     """A ready-made card set for a chat, so Maestro needs no model; without `conversation_id` (or with an unknown one)
-    a chat with one exchange about `title` is made first."""
+    a chat with one exchange about `title` is made first, about the note `about_note_id` when given."""
 
     __test__ = False
 
     conversation_id: uuid.UUID | None = None
+    about_note_id: uuid.UUID | None = None
+
+    @pydantic.field_validator("cheat_sheet")
+    @classmethod
+    def _cheat_sheet(cls, text: str, info: pydantic.ValidationInfo) -> str:
+        # Replaces the tool's check: whether it may be empty depends on the chat, which the route checks.
+        return text.strip()
 
 
 @router.post("/card-sets")
@@ -126,6 +133,8 @@ def seed_card_set(
     """Add a `Make cards` question and an answer carrying the card set to the chat, as a real answer would."""
     changes.lock_user_writes(db, user.id)
     conversation = _seed_conversation(db, user=user, request=request)
+    if not request.cheat_sheet and context.note_title(db, conversation=conversation) is None:
+        raise fastapi.HTTPException(status_code=422, detail="cheat_sheet: must not be blank outside a note's chat")
 
     _seed_message(db, user=user, conversation=conversation, role=models.MessageRole.USER, text=MAKE_CARDS_MESSAGE)
     answer = _seed_message(
@@ -161,6 +170,7 @@ def _seed_conversation(db: orm.Session, *, user: models.User, request: SeedCardS
         id=request.conversation_id or uuid.uuid4(),
         user_id=user.id,
         title=question[: models.CONVERSATION_TITLE_LENGTH],
+        about_source_id=_seed_note_id(db, user=user, note_id=request.about_note_id),
         change_seq=changes.next_change_seq(),
     )
     db.add(conversation)
@@ -171,6 +181,16 @@ def _seed_conversation(db: orm.Session, *, user: models.User, request: SeedCardS
         text=card_routes.gist_of(request.cheat_sheet, title=request.title),
     )  # fmt: skip
     return conversation
+
+
+def _seed_note_id(db: orm.Session, *, user: models.User, note_id: uuid.UUID | None) -> uuid.UUID | None:
+    """`note_id` when it is the user's live note; another item is a 404."""
+    if note_id is None:
+        return None
+    note = db.get(models.Source, note_id)
+    if note is None or note.user_id != user.id or note.deleted_at is not None or note.kind != models.SourceKind.NOTE:
+        raise fastapi.HTTPException(status_code=404, detail="note not found")
+    return note_id
 
 
 def _seed_message(

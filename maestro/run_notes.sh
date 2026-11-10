@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The notes flow: log in, import two invented Bear notes, seed their write-ups without a model, then refresh one and press Done.
-# Run from the repo root with the backend and worker up (`make start-local`). Spends a fraction of a cent (one Haiku call for the cards).
+# Run from the repo root with the backend and worker up (`make start-local`). Spends a few cents (one Sonnet answer that proposes the cards in a chat).
 # scripts/import_bear.py is not used here: the flow posts the fixture to the endpoint directly.
 set -euo pipefail
 

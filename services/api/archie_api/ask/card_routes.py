@@ -1,4 +1,5 @@
-"""Save or discard a card set Ask proposed: Save turns it into the chat's Library item and its review cards.
+"""Save or discard a card set Ask proposed: Save turns it into the chat's Library item and its review cards, or, in a
+chat about a note, into the note's review cards.
 
 Neither calls a model, so each runs in one transaction under the user's write lock. One chat has at most one live
 item (kind `chat`, tied by `chat_conversation_id`): the first Save creates it, later ones update it. The item's primer
@@ -6,6 +7,7 @@ is the cheat sheet, its summary a gist of it, and its text the chat's transcript
 through the queue or the analyze/primer pipeline. Its cards are the kept ones: a Save in a chat that already saved
 keeps an identical live card (and its review progress), adds the new ones, and retires the rest that were never
 reviewed; a reviewed card is never retired, so the owner's review progress survives a reworded or dropped card.
+A note's set follows the same card rules on the note itself: no chat item is made and nothing is written but cards.
 """
 
 from __future__ import annotations
@@ -26,6 +28,7 @@ from archie_api import deps
 from archie_api.sync import schemas
 
 NO_CARD_SET = "card set not found"
+NO_NOTE = "note not found"
 CHAT_URL_PREFIX = "chat:"
 MAX_GIST_CHARACTERS = 300
 _SPEAKERS = {models.MessageRole.USER: "You", models.MessageRole.ASSISTANT: "Archie"}
@@ -64,14 +67,14 @@ def save(
     db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
     user: Annotated[models.User, fastapi.Depends(deps.current_user)],
 ) -> schemas.CardSetProposalOut:
-    """Write the card set to the chat's item (created on the first Save) with the kept cards; 409 unless open."""
+    """Write the card set to the chat's item (created on the first Save), or to the note the chat is about, with the
+    kept cards; 409 unless open, 404 when the note is gone."""
     changes.lock_user_writes(db, user.id)
     proposal = _open_proposal(db, user=user, proposal_id=proposal_id)
     if any(index < 0 or index >= len(proposal.cards) for index in body.kept):
         raise fastapi.HTTPException(status_code=422, detail="a kept index is out of range")
 
-    item, existed = _chat_item(db, user=user, proposal=proposal)
-    _write_artifacts(db, item=item, proposal=proposal, existed=existed)
+    item = _about_note(db, proposal=proposal) or _written_chat_item(db, user=user, proposal=proposal)
     _keep_cards(db, item=item, proposal=proposal, kept=body.kept)
 
     proposal.saved_source_id = item.id
@@ -124,6 +127,28 @@ def _open_proposal(db: orm.Session, *, user: models.User, proposal_id: uuid.UUID
     if proposal.status != models.CardSetStatus.PROPOSED:
         raise fastapi.HTTPException(status_code=409, detail=f"card set is {proposal.status}")
     return proposal
+
+
+def _about_note(db: orm.Session, *, proposal: models.CardSetProposal) -> models.Source | None:
+    """The note the chat is about, cards turned back on, or None for any other chat; a deleted note is a 404."""
+    conversation = db.get_one(models.Conversation, proposal.conversation_id)
+    source = db.get(models.Source, conversation.about_source_id) if conversation.about_source_id is not None else None
+    if source is None or source.kind != models.SourceKind.NOTE:
+        return None
+    if source.deleted_at is not None:
+        raise fastapi.HTTPException(status_code=404, detail=NO_NOTE)
+
+    # Saving is the owner asking for these cards, as for a chat item.
+    source.cards_off = False
+    changes.touch(source)
+    return source
+
+
+def _written_chat_item(db: orm.Session, *, user: models.User, proposal: models.CardSetProposal) -> models.Source:
+    """The chat's item with the set's cheat sheet, gist and transcript written to it."""
+    item, existed = _chat_item(db, user=user, proposal=proposal)
+    _write_artifacts(db, item=item, proposal=proposal, existed=existed)
+    return item
 
 
 def _chat_item(db: orm.Session, *, user: models.User, proposal: models.CardSetProposal) -> tuple[models.Source, bool]:

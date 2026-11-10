@@ -1,6 +1,7 @@
 appId: com.sampocs.archie
 ---
-# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Done's cards spend a fraction of a cent.
+# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. The user may Ask, so Done makes
+# the cards in a chat: one Sonnet answer, a few cents.
 - tapOn:
     id: "tab-today"
 # The refresher arrives with the next sync, which can take a few seconds.
@@ -30,13 +31,36 @@ appId: com.sampocs.archie
     end: "50%, 90%"
 - assertNotVisible:
     id: "original-note-sheet"
+- assertVisible: "Done, make cards"
 - tapOn:
     id: "note-done"
-- assertVisible:
-    id: "today-refresher-detail"
-    text: "(?i)2 of 2 today"
-- assertVisible: ".*Liquid Restaking Tokens.*"
-# The worker writes the cards with Haiku, then the toast says so.
+# Done opens a chat about the note that asks for its cards at once; Ask proposes them without a cheat sheet.
 - extendedWaitUntil:
-    visible: ".*review cards? added from Liquid Staking.*"
-    timeout: 60000
+    visible:
+      id: "chat-about"
+    timeout: 5000
+- assertVisible: "Make cards"
+- scrollUntilVisible:
+    element:
+      id: "card-set-save"
+    direction: DOWN
+    centerElement: true
+    timeout: 90000
+- assertNotVisible:
+    id: "card-set-cheat-sheet"
+- tapOn:
+    id: "card-set-save"
+- extendedWaitUntil:
+    visible: "Added to review"
+    timeout: 10000
+- assertVisible: ".*Saved · \\d+ cards? in review.*"
+# Open goes back to the note, now refreshed (no Done) and holding the kept cards.
+- tapOn:
+    id: "card-set-open"
+- extendedWaitUntil:
+    visible:
+      id: "item-title"
+      text: "Liquid Staking"
+    timeout: 15000
+- assertNotVisible:
+    id: "note-done"

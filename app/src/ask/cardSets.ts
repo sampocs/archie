@@ -93,9 +93,21 @@ export function cardSetBlock(view: CardSetView, replacedLive = false): CardSetBl
       return { kind: "saved", line: savedLine(view), itemId: view.savedSourceId };
     case "replaced":
       return { kind: "collapsed", left: "Earlier proposal", right: "Replaced" };
-    case "discarded":
-      return { kind: "collapsed", left: `Cheat sheet · ${view.title}`, right: "Discarded" };
+    case "discarded": {
+      const what = hasCheatSheet(view) ? "Cheat sheet" : "Cards";
+      return { kind: "collapsed", left: `${what} · ${view.title}`, right: "Discarded" };
+    }
   }
+}
+
+/** A note's set has no cheat sheet (the note already has its write-up), so its block shows only the cards. */
+export function hasCheatSheet(view: Pick<CardSetView, "cheatSheet">): boolean {
+  return view.cheatSheet.trim() !== "";
+}
+
+/** The toast after Save: a chat's set goes to Library as an item, a note's set only adds cards to the note. */
+export function savedToast(view: Pick<CardSetView, "cheatSheet">): string {
+  return hasCheatSheet(view) ? "Saved to Library" : "Added to review";
 }
 
 /** Every card starts kept; a new proposal is a new block, so its ticks start over. */

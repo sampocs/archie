@@ -103,6 +103,8 @@ class AnswerRequest:
     system: str
     messages: list[dict[str, Any]]
     boost: search.ItemRef | None
+    # The note the chat is about, if it is about one: a card set proposed here is that note's cards, named after it.
+    note_title: str | None
     # The owner's zone: what day an item belongs to, for the date bounds and the result titles.
     day_zone: datetime.tzinfo
     anthropic_key: str
@@ -331,7 +333,7 @@ def _run_tool(
 ) -> Generator[Event, None, dict[str, Any]]:
     """One tool call's result block; a proposal is kept for the save and shown at once as an `edit` or `cards` event."""
     if tool_use.name in card_set_tools.TOOL_NAMES:
-        card_set = card_set_tools.run(tool_use_id=tool_use.id, tool_input=tool_use.input)
+        card_set = card_set_tools.run(tool_use_id=tool_use.id, tool_input=tool_use.input, note_title=request.note_title)
         if card_set.proposal is not None:
             progress.card_sets.append(card_set.proposal)
             data = card_set.proposal.to_event(conversation_id=request.conversation_id, message_id=progress.message_id)

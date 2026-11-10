@@ -90,6 +90,19 @@ export function noteMeta(source: LibrarySource, queue: LibrarySource[], now: Dat
   return "Notes";
 }
 
+/** What a note's Done does: make its cards in an Ask chat, or have Archie write them in the background. */
+export type NoteDone = { inChat: boolean; label: string };
+
+/**
+ * Done opens a chat that makes the cards only when Ask is known to be available (not merely unknown, since a chat that
+ * can't answer would leave the refreshed note with no cards) and the phone is online; otherwise the worker writes them.
+ */
+export function noteDone(askAvailable: boolean | null, online: boolean): NoteDone {
+  return askAvailable === true && online
+    ? { inChat: true, label: "Done, make cards" }
+    : { inChat: false, label: "Done, add review cards" };
+}
+
 /** "5 review cards added from Liquid Staking". */
 export function cardsAddedMessage(count: number, title: string): string {
   return `${count} review ${count === 1 ? "card" : "cards"} added from ${title}`;

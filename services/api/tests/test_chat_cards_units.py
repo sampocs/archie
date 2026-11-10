@@ -12,7 +12,7 @@ CARD = {"kind": "concept", "question": "What is a JWT?", "answer": "A signed tok
 
 def _propose(**changes: object) -> card_set_tools.ToolOutcome:
     tool_input = {"title": "JWTs", "cheat_sheet": "# JWTs\n\nSigned tokens.", "cards": [CARD], **changes}
-    return card_set_tools.run(tool_use_id="t1", tool_input=tool_input)
+    return card_set_tools.run(tool_use_id="t1", tool_input=tool_input, note_title=None)
 
 
 def test_a_valid_card_set_is_a_proposal_and_a_bad_one_an_error_the_model_can_fix() -> None:
@@ -32,6 +32,23 @@ def test_a_valid_card_set_is_a_proposal_and_a_bad_one_an_error_the_model_can_fix
     for field, outcome in invalid.items():
         assert outcome.proposal is None
         assert outcome.result["is_error"] and outcome.result["content"].startswith(f"Invalid input: {field}:")
+
+
+def test_a_chat_needs_a_cheat_sheet_but_a_notes_set_is_titled_after_the_note_without_one() -> None:
+    """A free-standing chat's blank cheat sheet is an error; in a chat about a note the set takes the note's title (cut
+    to the limit) and drops any cheat sheet the model wrote, so the empty one validates."""
+    blank = _propose(cheat_sheet="  ")
+    assert blank.proposal is None and blank.result["content"].startswith("Invalid input: cheat_sheet:")
+
+    long_title = "Liquid staking " * 20
+    tool_input = {"title": "Anything", "cheat_sheet": "# A sheet the note doesn't need", "cards": [CARD]}
+    for_note = card_set_tools.run(tool_use_id="t1", tool_input=tool_input, note_title=long_title)
+    assert for_note.proposal is not None and "is_error" not in for_note.result
+    card_set = for_note.proposal.card_set
+    assert (card_set.title, card_set.cheat_sheet) == (long_title[: card_set_tools.MAX_TITLE_CHARACTERS].strip(), "")
+
+    no_cards = card_set_tools.run(tool_use_id="t1", tool_input={**tool_input, "cards": []}, note_title="Staking")
+    assert no_cards.proposal is None and no_cards.result["content"].startswith("Invalid input: cards:")
 
 
 def test_the_cards_event_is_the_row_as_pulled_before_it_has_a_position() -> None:
@@ -90,3 +107,13 @@ def test_the_history_line_carries_an_open_set_and_only_names_a_replaced_one() ->
     )
     card_set.status = models.CardSetStatus.REPLACED.value
     assert context.card_set_note(card_set) == "[cards proposed: JWTs — replaced by a later proposal]"
+
+
+def test_the_history_line_of_a_notes_set_has_no_cheat_sheet() -> None:
+    """A note's set has an empty cheat sheet, so its line goes straight from the status to the cards."""
+    card_set = models.CardSetProposal(title="Staking", cheat_sheet="", cards=[CARD], status="proposed")
+
+    assert context.card_set_note(card_set) == (
+        "[cards proposed: Staking — waiting for the owner to save it]\n"
+        "1. (concept) Q: What is a JWT?\n   A: A signed token that carries its claims."
+    )

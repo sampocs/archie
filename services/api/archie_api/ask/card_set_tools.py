@@ -1,5 +1,8 @@
 """Ask's `propose_cards` tool: a cheat sheet and review cards from the chat, which the owner saves from the chat.
 
+In a chat about a note the set is the note's own cards: it is titled after the note and has no cheat sheet, since the
+note already has its write-up.
+
 A proposal changes nothing: it is validated here, shown to the owner at once as a `cards` event carrying the row as
 the phone will pull it, and stored with the answer by `save_proposals`, which marks the chat's earlier open proposals
 `replaced`. The owner's Save goes through `archie_api.ask.card_routes`. A bad input goes back to the model as an
@@ -30,6 +33,8 @@ MAX_TITLE_CHARACTERS = 120
 MAX_CHEAT_SHEET_CHARACTERS = 20_000
 MAX_CARDS = 10
 PROPOSED = "shown to the owner with Save and Discard; nothing is saved yet"
+# The validation context key that lets a set have no cheat sheet: it is for a note, which has its write-up.
+FOR_A_NOTE = "for_a_note"
 
 # A chat's cards are about what it established; foundation cards are for background a primer covers.
 CARD_KINDS = (
@@ -45,7 +50,8 @@ PROPOSE_CARDS_TOOL: dict[str, Any] = {
         "Propose review cards and a cheat sheet from this chat, when the owner asks for cards. The owner sees them "
         "with Keep ticks and taps Save; nothing is saved before that. title: a short name for the cheat sheet "
         f"(at most {MAX_TITLE_CHARACTERS} characters). cheat_sheet: markdown, at most "
-        f"{MAX_CHEAT_SHEET_CHARACTERS} characters. cards: 1 to {MAX_CARDS}, each a question (at most "
+        f"{MAX_CHEAT_SHEET_CHARACTERS} characters, or empty in a chat about a note. cards: 1 to {MAX_CARDS}, "
+        "each a question (at most "
         f"{edit_tools.MAX_QUESTION_CHARACTERS} characters) and its answer (at most "
         f"{edit_tools.MAX_ANSWER_CHARACTERS}). To change a proposal, call this again with the whole new set."
     ),
@@ -102,13 +108,21 @@ class CardSetIn(pydantic.BaseModel):
     """A whole card set, as the tool (and the test seed route) takes it."""
 
     title: str = pydantic.Field(min_length=1, max_length=MAX_TITLE_CHARACTERS)
-    cheat_sheet: str = pydantic.Field(min_length=1, max_length=MAX_CHEAT_SHEET_CHARACTERS)
+    cheat_sheet: str = pydantic.Field(max_length=MAX_CHEAT_SHEET_CHARACTERS)
     cards: list[CardIn] = pydantic.Field(min_length=1, max_length=MAX_CARDS)
 
-    @pydantic.field_validator("title", "cheat_sheet")
+    @pydantic.field_validator("title")
     @classmethod
     def _not_blank(cls, text: str) -> str:
         if not text.strip():
+            raise ValueError("must not be blank")
+        return text.strip()
+
+    @pydantic.field_validator("cheat_sheet")
+    @classmethod
+    def _cheat_sheet(cls, text: str, info: pydantic.ValidationInfo) -> str:
+        """Required, unless the set is for a note (the `FOR_A_NOTE` context)."""
+        if not text.strip() and not (info.context or {}).get(FOR_A_NOTE):
             raise ValueError("must not be blank")
         return text.strip()
 
@@ -149,10 +163,19 @@ class ToolOutcome:
     proposal: Proposal | None = None
 
 
-def run(*, tool_use_id: str, tool_input: object) -> ToolOutcome:
-    """Validate a `propose_cards` call; a bad input is an error result the model can act on."""
+def run(*, tool_use_id: str, tool_input: object, note_title: str | None) -> ToolOutcome:
+    """Validate a `propose_cards` call; a bad input is an error result the model can act on.
+
+    In a chat about a note (`note_title` given) the set is titled after the note and any cheat sheet is dropped: Save
+    puts only the cards on the note.
+    """
+    for_note = (
+        {**tool_input, "title": note_title[:MAX_TITLE_CHARACTERS], "cheat_sheet": ""}
+        if note_title is not None and isinstance(tool_input, dict)
+        else tool_input
+    )
     try:
-        card_set = CardSetIn.model_validate(tool_input)
+        card_set = CardSetIn.model_validate(for_note, context={FOR_A_NOTE: note_title is not None})
     except pydantic.ValidationError as error:
         return ToolOutcome(
             result={

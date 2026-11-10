@@ -81,6 +81,7 @@ def ask(
         # Read before the question is added, so the history holds only earlier exchanges.
         messages=[*context.history(db, conversation_id=conversation.id), {"role": "user", "content": question}],
         boost=context.boost(db, conversation=conversation),
+        note_title=context.note_title(db, conversation=conversation),
         day_zone=day_zone,
         anthropic_key=settings.anthropic_api_key,
         openai_key=settings.openai_api_key or None,

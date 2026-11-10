@@ -17,9 +17,11 @@ import { discardCardSet, saveCardSet } from "./api";
 import {
   allKept,
   cardSetBlock,
+  hasCheatSheet,
   keptIndices,
   pageLabel,
   saveLabel,
+  savedToast,
   stepPage,
   toggleKept,
   type CardSetView,
@@ -44,7 +46,7 @@ const STRUCK = 0.45;
 const CARD_SET_GONE = "This card set is gone";
 
 /**
- * A card set Ask proposed: the cheat-sheet line, the cards one at a time (or all in a list) with a Keep tick each, and
+ * A card set Ask proposed: the cheat-sheet line (none for a note's set), the cards one at a time (or all in a list) with a Keep tick each, and
  * one footer row with Save K / Update K and Discard. Once it is decided it shrinks to how it ended.
  */
 export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive, updating, onToast }: CardSetProposalProps) {
@@ -95,7 +97,9 @@ export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive
       onClose={() => setSheetOpen(false)}
     />
   );
-  const cheatSheetLine = <CheatSheetLine title={cardSet.title} onPress={() => setSheetOpen(true)} />;
+  const cheatSheetLine = hasCheatSheet(cardSet) ? (
+    <CheatSheetLine title={cardSet.title} onPress={() => setSheetOpen(true)} />
+  ) : null;
 
   if (block.kind === "saved") {
     const itemId = block.itemId;
@@ -175,7 +179,7 @@ export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive
             <Pressable
               testID="card-set-save"
               disabled={!ready || busy || keptCount === 0}
-              onPress={() => act((key) => saveCardSet({ proposalId: id, kept: keptIndices(kept), sessionKey: key }), "Saved to Library")}
+              onPress={() => act((key) => saveCardSet({ proposalId: id, kept: keptIndices(kept), sessionKey: key }), savedToast(cardSet))}
               style={{
                 backgroundColor: theme.colors.chrome,
                 borderRadius: theme.radii.chip,
@@ -337,7 +341,10 @@ function FooterLink({ testID, label, onPress }: { testID: string; label: string;
   );
 }
 
-/** A set that is over without a save, one line: "Earlier proposal · Replaced" or "Cheat sheet · … · Discarded". */
+/**
+ * A set that is over without a save, one line: "Earlier proposal · Replaced" or "Cheat sheet · … · Discarded"
+ * ("Cards · … · Discarded" for a note's set).
+ */
 function Collapsed({ testID, left, right }: { testID: string; left: string; right: string }) {
   const theme = useTheme();
   return (

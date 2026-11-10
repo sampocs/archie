@@ -23,7 +23,7 @@ export function CollectionTile({ collection, onPress, onLongPress }: CollectionT
       style={[
         {
           backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.line,
+          borderColor: theme.colors.cardEdge,
           borderRadius: 16,
           overflow: "hidden",
         },

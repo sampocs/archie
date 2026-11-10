@@ -120,7 +120,7 @@ export default function TakeEditorScreen() {
             alignItems: "center",
             gap: 12,
             backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.line,
+            borderColor: theme.colors.cardEdge,
             borderWidth: 1,
             borderRadius: 14,
             padding: 14,

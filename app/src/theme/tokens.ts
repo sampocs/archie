@@ -16,7 +16,7 @@ export type ColorTokens = {
   // at low brightness with Night Shift, where the fills alone blur together.
   cardEdge: string;
   press: string;
-  // A chat question's bubble: a step darker than `press`, so it stands off the page background.
+  // A chat question's bubble: a step past `press` (darker in light mode, lighter in dark), so it stands off the page.
   bubble: string;
   chrome: string;
   onChrome: string;
@@ -50,7 +50,7 @@ export const colors: Record<ColorScheme, ColorTokens> = {
     line: "#36332E",
     cardEdge: "#423E38",
     press: "#302E2A",
-    bubble: "#2E2C28",
+    bubble: "#36332E",
     chrome: "#F1EFE9",
     // Text on chrome flips in dark mode.
     onChrome: "#141311",

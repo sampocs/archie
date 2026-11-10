@@ -68,7 +68,7 @@ export function CollectionsSection() {
             width: "48.5%",
             minHeight: NEW_TILE_MIN_HEIGHT,
             borderWidth: 1.5,
-            borderColor: theme.colors.line,
+            borderColor: theme.colors.cardEdge,
             borderRadius: 16,
             alignItems: "center",
             justifyContent: "center",

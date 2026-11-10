@@ -1,4 +1,5 @@
-import { buildSession, effectiveDue, isDue, orderCards } from "./session";
+import { effectiveDue, isDue } from "./due";
+import { buildSession, orderCards } from "./session";
 import { cardRow, dayAt, NOW, reviewCard, reviewData, sourceRow, takeRow } from "./testCards";
 import type { CardRow } from "./types";
 

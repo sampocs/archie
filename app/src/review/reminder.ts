@@ -1,9 +1,9 @@
 import type { ReviewSettings } from "@/db/reviewSettings";
 
 import { REMINDER_DAYS } from "./constants";
+import { effectiveDue } from "./due";
 import { isReviewable, type ReviewData } from "./eligibility";
 import { cardsWord } from "./labels";
-import { effectiveDue } from "./session";
 import { minutesFor } from "./summary";
 
 export type PlannedReminder = { at: Date; count: number; body: string };

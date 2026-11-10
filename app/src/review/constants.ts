@@ -9,3 +9,7 @@ export const SECONDS_PER_CARD = 20;
 export const MAX_RECORDING_MS = 120_000;
 // Reminders are planned this many days out.
 export const REMINDER_DAYS = 7;
+// "Shuffle" starts a session of up to this many random cards.
+export const SHUFFLE_COUNT = 10;
+// The Missed list looks at reviews from this many days back.
+export const MISSED_WINDOW_DAYS = 30;

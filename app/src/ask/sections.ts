@@ -195,11 +195,15 @@ export function relativeTime(iso: string, now: Date): string {
   return `${MONTHS[then.getMonth()]} ${then.getDate()}`;
 }
 
-/** A chat row's second line: the last answer's first line after its label, e.g. "Background: Apple's…". */
+/**
+ * A chat row's second line: the last answer's first line, after its label when it came from somewhere ("Your library:
+ * …", "Web: …"). Background text has no source to name, so its label would only be noise in a one-line preview.
+ */
 export function rowPreview(segments: AnswerSegment[]): string {
   const [first] = groupSections(segments);
   if (!first) return "";
-  return `${ANSWER_LABEL_TEXT[first.label]}: ${first.text.split("\n")[0]}`;
+  const line = first.text.split("\n")[0];
+  return first.label === "background" ? line : `${ANSWER_LABEL_TEXT[first.label]}: ${line}`;
 }
 
 function uniqueCitations(citations: Citation[]): Citation[] {

@@ -222,9 +222,11 @@ describe("relativeTime and rowPreview", () => {
     expect(relativeTime(new Date(2026, 9, 2, 9, 0).toISOString(), now)).toBe("Oct 2");
   });
 
-  it("previews the last answer's first line after its label", () => {
-    const segments: AnswerSegment[] = [{ label: "background", text: "Apple's buybacks run about $90B.\nMore.", citations: [] }];
-    expect(rowPreview(segments)).toBe("Background: Apple's buybacks run about $90B.");
+  it("previews the last answer's first line after its source label, and background text bare", () => {
+    const background: AnswerSegment[] = [{ label: "background", text: "Apple's buybacks run about $90B.\nMore.", citations: [] }];
+    expect(rowPreview(background)).toBe("Apple's buybacks run about $90B.");
+    const fromLibrary: AnswerSegment[] = [{ label: "library", text: "Buybacks shrink the share count.", citations: [library()] }];
+    expect(rowPreview(fromLibrary)).toBe("Your library: Buybacks shrink the share count.");
     expect(rowPreview([])).toBe("");
   });
 });

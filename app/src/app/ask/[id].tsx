@@ -6,12 +6,21 @@ import { View } from "react-native";
 import { aboutTitleOf } from "@/ask/aboutTitle";
 import { AnswerView } from "@/ask/AnswerView";
 import { CardSetProposal } from "@/ask/CardSetProposal";
-import { MAKE_CARDS_MESSAGE, shownCardSetStatus, viewOfCardSetWire } from "@/ask/cardSets";
+import {
+  cardSetChoice,
+  choiceLine,
+  MAKE_CARDS_MESSAGE,
+  shownCardSetStatus,
+  storedChoice,
+  ticksOf,
+  viewOfCardSetWire,
+  type CardSetChoice,
+} from "@/ask/cardSets";
 import { Composer } from "@/ask/Composer";
 import { groupSections, liveView } from "@/ask/sections";
 import { parseSegments, type AboutKind } from "@/ask/types";
 import { useAskAvailable } from "@/ask/useAskAvailable";
-import { useChatItemId, useConversationCardSets } from "@/ask/useCardSets";
+import { useCardSetTicks, useChatItemId, useConversationCardSets } from "@/ask/useCardSets";
 import { useChat } from "@/ask/useChats";
 import { useChatSession } from "@/ask/useChatSession";
 import { EditProposalCard } from "@/edits/EditProposalCard";
@@ -36,11 +45,22 @@ export default function ChatScreen() {
     () => (params.aboutKind && params.aboutId ? { kind: params.aboutKind, id: params.aboutId } : null),
     [params.aboutKind, params.aboutId],
   );
-  const { pending, send } = useChatSession({ conversationId: params.id, messages, about });
+  const cardSets = useConversationCardSets(params.id);
+  const { ticks, toggle } = useCardSetTicks();
+  // The next question carries the open set's ticks when some card is unticked. Only a stored set can be open then: a
+  // live answer blocks sending until its rows land.
+  const openStoredSet = useMemo(
+    () => [...cardSets.values()].flat().find((cardSet) => cardSet.status === "proposed") ?? null,
+    [cardSets],
+  );
+  const choice = useMemo(
+    () => cardSetChoice(openStoredSet, openStoredSet ? ticksOf(ticks, openStoredSet) : []),
+    [openStoredSet, ticks],
+  );
+  const { pending, send } = useChatSession({ conversationId: params.id, messages, about, cardSetChoice: choice });
   const proposals = useConversationProposals(params.id);
   // Targets with a proposal in the live answer: older still-proposed ones for them are superseded.
   const liveTargets = new Set((pending?.live.proposals ?? []).map((wire) => `${wire.target_kind}:${wire.target_id}`));
-  const cardSets = useConversationCardSets(params.id);
   // A set in the live answer replaces every still-proposed stored one, as the server does when it saves it.
   const cardSetLive = (pending?.live.cardSets.length ?? 0) > 0;
   // Once the chat has saved its Library item, a later Save updates that item.
@@ -100,7 +120,7 @@ export default function ChatScreen() {
         <View testID="chat-screen" style={{ gap: theme.spacing.lg }}>
           {turns.map((message, index) =>
             message.role === "user" ? (
-              <UserBubble key={message.id} text={message.text} index={index} />
+              <UserBubble key={message.id} text={message.text} index={index} choice={storedChoice(message.segments)} />
             ) : (
               <AnswerView
                 key={message.id}
@@ -133,6 +153,8 @@ export default function ChatScreen() {
                     online={online}
                     replacedLive={cardSetLive}
                     updating={updating}
+                    kept={ticksOf(ticks, cardSet)}
+                    onToggle={(index) => toggle(cardSet, index)}
                     onToast={setToast}
                   />
                 ))}
@@ -141,7 +163,7 @@ export default function ChatScreen() {
           )}
           {pending ? (
             <>
-              <UserBubble text={pending.text} index={turns.length} />
+              <UserBubble text={pending.text} index={turns.length} choice={pending.cardSetChoice} />
               <AnswerView
                 index={turns.length + 1}
                 {...liveView(pending.live)}
@@ -165,6 +187,8 @@ export default function ChatScreen() {
                     ready={pending.live.messageId !== null}
                     online={online}
                     updating={updating}
+                    kept={ticksOf(ticks, wire)}
+                    onToggle={(index) => toggle(wire, index)}
                     onToast={setToast}
                   />
                 ))}
@@ -189,21 +213,27 @@ function retry(
   if (question) send(question.text, question.webSearch === 1);
 }
 
-function UserBubble({ text, index }: { text: string; index: number }) {
+/** A question, with a muted "Kept 3 of 5 cards" under it when it carried the open card set's Keep ticks. */
+function UserBubble({ text, index, choice }: { text: string; index: number; choice: CardSetChoice | null }) {
   const theme = useTheme();
   return (
-    <View
-      testID={`chat-user-${index}`}
-      style={{
-        alignSelf: "flex-end",
-        maxWidth: "85%",
-        backgroundColor: theme.colors.press,
-        borderRadius: theme.radii.card,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-      }}
-    >
-      <Text>{text}</Text>
+    <View style={{ alignSelf: "flex-end", alignItems: "flex-end", maxWidth: "85%", gap: theme.spacing.xs }}>
+      <View
+        testID={`chat-user-${index}`}
+        style={{
+          backgroundColor: theme.colors.press,
+          borderRadius: theme.radii.card,
+          paddingHorizontal: theme.spacing.md,
+          paddingVertical: theme.spacing.sm,
+        }}
+      >
+        <Text>{text}</Text>
+      </View>
+      {choice ? (
+        <Text testID={`chat-user-${index}-kept`} variant="secondary" tone="ink3">
+          {choiceLine(choice)}
+        </Text>
+      ) : null}
     </View>
   );
 }

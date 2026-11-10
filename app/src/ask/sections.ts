@@ -1,6 +1,6 @@
 import type { EditProposalWire } from "@/edits/types";
 
-import type { CardSetWire } from "./cardSets";
+import type { CardSetChoice, CardSetWire } from "./cardSets";
 import { ANSWER_LABEL_TEXT, formatClock, type AnswerLabel, type AnswerSegment, type AskEvent, type Citation } from "./types";
 
 /** A labelled run of an answer: consecutive blocks with the same label shown as one section. */
@@ -28,6 +28,8 @@ export type PendingQuestion = {
   text: string;
   webSearch: boolean;
   sentAt: number;
+  // The Keep ticks it carried, for the "Kept 3 of 5 cards" line under it.
+  cardSetChoice: CardSetChoice | null;
   live: LiveAnswer;
 };
 

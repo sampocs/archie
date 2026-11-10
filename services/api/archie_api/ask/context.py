@@ -30,6 +30,8 @@ _CARD_SET_STATUS_NOTES: dict[models.CardSetStatus, str] = {
     models.CardSetStatus.DISCARDED: "the owner discarded it",
 }
 _CITED_ITEM_KEYS = (("source", "source_id"), ("topic_primer", "topic_primer_id"), ("take", "take_id"))
+# A question's `segments` hold at most one segment, under this key: the Keep ticks it was sent with.
+CARD_SET_CHOICE_KEY = "card_set_choice"
 
 
 @dataclass(frozen=True)
@@ -40,6 +42,20 @@ class HistoryMessage:
     text: str
     status: models.MessageStatus
     notes: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class CardSetChoice:
+    """The Keep ticks a question was sent with: the open set's kept card indices (sorted) out of its `card_count`."""
+
+    proposal_id: uuid.UUID
+    kept: tuple[int, ...]
+    card_count: int
+
+    def to_segments(self) -> list[dict[str, Any]]:
+        """The question's stored `segments`; the phone reads `kept` and `card_count` for its "Kept 3 of 5" line."""
+        choice = {"proposal_id": str(self.proposal_id), "kept": list(self.kept), "card_count": self.card_count}
+        return [{CARD_SET_CHOICE_KEY: choice}]
 
 
 def owner_zone(name: str | None) -> datetime.tzinfo:
@@ -57,6 +73,7 @@ def owner_zone(name: str | None) -> datetime.tzinfo:
 def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, Any]]:
     """The conversation's earlier finished exchanges as Messages API turns, oldest first.
 
+    A question sent with Keep ticks opens with the line saying which cards the owner kept and dropped, as its turn did.
     Each answer is followed by lines naming the items it cited, the edits it proposed and the card sets it proposed
     (with what became of each), so a follow-up like "and fix that card too" or "change card 2" can find its target.
     """
@@ -75,6 +92,7 @@ def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, An
         .where(models.CardSetProposal.conversation_id == conversation_id)
         .order_by(models.CardSetProposal.created_at)
     ).all()
+    card_sets_by_id = {card_set.id: card_set for card_set in card_sets}
     proposal_notes: dict[uuid.UUID, list[str]] = {}
     for proposal in proposals:
         proposal_notes.setdefault(proposal.message_id, []).append(proposal_note(proposal))
@@ -85,7 +103,7 @@ def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, An
         [
             HistoryMessage(
                 role=models.MessageRole(row.role),
-                text=row.text,
+                text=_stored_question(row, card_sets_by_id=card_sets_by_id),
                 status=models.MessageStatus(row.status),
                 notes=(*citation_notes(row.segments), *proposal_notes.get(row.id, [])),
             )
@@ -128,6 +146,40 @@ def card_set_note(card_set: models.CardSetProposal) -> str:
     ]
     cheat_sheet = ["<cheat_sheet>", card_set.cheat_sheet, "</cheat_sheet>"] if card_set.cheat_sheet else []
     return "\n".join([note, *cheat_sheet, *cards])
+
+
+def question_content(text: str, *, choice_line: str | None) -> str:
+    """A question as the model reads it: the line about the owner's Keep ticks, if any, then the owner's words."""
+    return f"{choice_line}\n\n{text}" if choice_line else text
+
+
+def choice_line(*, kept: Sequence[int], card_set: models.CardSetProposal) -> str:
+    """The sentence the model reads before a question sent with Keep ticks, from the 0-based kept indices.
+
+    For example: The owner kept cards 1 and 3 of the proposed set and dropped 2 (“…”).
+    """
+    kept_numbers = [index + 1 for index in sorted(kept)]
+    dropped = [
+        f"{number} (“{card['question']}”)"
+        for number, card in enumerate(card_set.cards, start=1)
+        if number not in kept_numbers
+    ]
+    if not kept_numbers:
+        kept_part = "none of the cards"
+    else:
+        cards_word = "card" if len(kept_numbers) == 1 else "cards"
+        kept_part = f"{cards_word} {_spoken_list([str(number) for number in kept_numbers])}"
+    return f"The owner kept {kept_part} of the proposed set and dropped {_spoken_list(dropped)}."
+
+
+def stored_choice(segments: list[dict[str, Any]] | None) -> CardSetChoice | None:
+    """The Keep ticks stored on a question, or None (an answer's segments, or a question sent without ticks)."""
+    choice = next((segment[CARD_SET_CHOICE_KEY] for segment in segments or [] if CARD_SET_CHOICE_KEY in segment), None)
+    if choice is None:
+        return None
+    return CardSetChoice(
+        proposal_id=uuid.UUID(choice["proposal_id"]), kept=tuple(choice["kept"]), card_count=choice["card_count"]
+    )
 
 
 def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:
@@ -212,6 +264,20 @@ def _source_text(db: orm.Session, *, source_id: uuid.UUID) -> str:
     if source.note:
         lines.append(f"The owner's note: {source.note}")
     return "\n".join(lines)
+
+
+def _stored_question(row: models.Message, *, card_sets_by_id: dict[uuid.UUID, models.CardSetProposal]) -> str:
+    """A question's text as its turn read it (with its Keep-ticks line); any other message's text as stored."""
+    choice = stored_choice(row.segments) if row.role == models.MessageRole.USER else None
+    card_set = card_sets_by_id.get(choice.proposal_id) if choice is not None else None
+    if choice is None or card_set is None:
+        return row.text
+    return question_content(row.text, choice_line=choice_line(kept=choice.kept, card_set=card_set))
+
+
+def _spoken_list(items: Sequence[str]) -> str:
+    """Items joined as spoken: `1`, `1 and 3`, `1, 3 and 5`."""
+    return items[0] if len(items) == 1 else f"{', '.join(items[:-1])} and {items[-1]}"
 
 
 def _item_tag(citation: dict[str, Any]) -> str | None:

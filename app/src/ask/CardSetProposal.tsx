@@ -15,7 +15,6 @@ import { haptic } from "@/ui/haptics";
 
 import { discardCardSet, saveCardSet } from "./api";
 import {
-  allKept,
   cardSetBlock,
   hasCheatSheet,
   keptIndices,
@@ -24,7 +23,6 @@ import {
   saveLabel,
   savedToast,
   stepPage,
-  toggleKept,
   type CardSetView,
   type ProposedCard,
 } from "./cardSets";
@@ -40,17 +38,32 @@ type CardSetProposalProps = {
   replacedLive?: boolean;
   // The chat already saved its Library item, so Save updates it.
   updating: boolean;
+  // The Keep ticks, held by the chat screen so the next question can carry them.
+  kept: boolean[];
+  onToggle: (index: number) => void;
   onToast: (message: string) => void;
 };
 
 const STRUCK = 0.45;
+// Grows the 14-point tick to a 44-point target, the only place Keep can be changed.
+const TICK_HIT_SLOP = 15;
 const CARD_SET_GONE = "This card set is gone";
 
 /**
  * A card set Ask proposed: the cheat-sheet line (none for a note's set), the cards one at a time (or all in a list) with a Keep tick each, and
- * one footer row with Save K / Update K and Discard. Once it is decided it shrinks to how it ended.
+ * one footer row with Save K / Update K and Discard. Only the tick itself flips Keep, so scrolling over a card never
+ * does. Once it is decided it shrinks to how it ended.
  */
-export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive, updating, onToast }: CardSetProposalProps) {
+export function CardSetProposal({
+  cardSet: streamed,
+  ready,
+  online,
+  replacedLive,
+  updating,
+  kept,
+  onToggle,
+  onToast,
+}: CardSetProposalProps) {
   const theme = useTheme();
   const router = useRouter();
   const { fromNote } = useLocalSearchParams<{ fromNote?: string }>();
@@ -58,7 +71,6 @@ export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive
   // The stored row wins once the phone has it: it carries what Save or Discard did.
   const cardSet = useCardSetRow(streamed.id) ?? streamed;
   const block = cardSetBlock(cardSet, replacedLive);
-  const [kept, setKept] = useState(() => allKept(cardSet.cards.length));
   const [page, setPage] = useState(0);
   const [mode, setMode] = useCardSetMode();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -136,7 +148,7 @@ export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive
   const total = cardSet.cards.length;
   const toggle = (index: number) => {
     haptic("selection");
-    setKept((current) => toggleKept(current, index));
+    onToggle(index);
   };
 
   return (
@@ -255,19 +267,12 @@ function CardFace({ card, index, kept, onToggle }: { card: ProposedCard; index: 
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text variant="monoLabel" tone="ink3">{`Card ${index + 1}`}</Text>
-        <Pressable
-          testID={`card-set-keep-${index}`}
-          accessibilityRole="checkbox"
-          accessibilityState={{ checked: kept }}
-          hitSlop={10}
-          onPress={onToggle}
-          style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}
-        >
-          <Tick kept={kept} />
+        <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}>
+          <KeepTick index={index} kept={kept} onToggle={onToggle} />
           <Text variant="secondary" style={{ fontFamily: fontFamily.semibold, color: kept ? theme.signals.gotIt : theme.colors.ink3 }}>
             Keep
           </Text>
-        </Pressable>
+        </View>
       </View>
       <View style={{ gap: theme.spacing.sm, opacity: kept ? 1 : STRUCK }}>
         <Text style={{ fontFamily: fontFamily.semibold, textDecorationLine: kept ? "none" : "line-through" }}>
@@ -282,19 +287,13 @@ function CardFace({ card, index, kept, onToggle }: { card: ProposedCard; index: 
   );
 }
 
-/** One numbered row of See all; tapping anywhere on it flips its tick. */
+/** One numbered row of See all; only its tick flips Keep. */
 function ListRow({ card, index, kept, onToggle }: { card: ProposedCard; index: number; kept: boolean; onToggle: () => void }) {
   const theme = useTheme();
   return (
-    <Pressable
-      testID={`card-set-keep-${index}`}
-      accessibilityRole="checkbox"
-      accessibilityState={{ checked: kept }}
-      onPress={onToggle}
-      style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start" }}
-    >
+    <View style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start" }}>
       <View style={{ paddingTop: 2 }}>
-        <Tick kept={kept} />
+        <KeepTick index={index} kept={kept} onToggle={onToggle} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="secondary" tone={kept ? "ink" : "ink3"}>
@@ -307,6 +306,22 @@ function ListRow({ card, index, kept, onToggle }: { card: ProposedCard; index: n
           {card.answer}
         </Text>
       </View>
+    </View>
+  );
+}
+
+/** A card's Keep checkbox: the only control that flips it, with a 44-point target around the small tick. */
+function KeepTick({ index, kept, onToggle }: { index: number; kept: boolean; onToggle: () => void }) {
+  return (
+    <Pressable
+      testID={`card-set-keep-${index}`}
+      accessibilityRole="checkbox"
+      accessibilityLabel={`Keep card ${index + 1}`}
+      accessibilityState={{ checked: kept }}
+      hitSlop={TICK_HIT_SLOP}
+      onPress={onToggle}
+    >
+      <Tick kept={kept} />
     </Pressable>
   );
 }

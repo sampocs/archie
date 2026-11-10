@@ -115,7 +115,7 @@ export function savedToast(view: Pick<CardSetView, "cheatSheet">): string {
   return hasCheatSheet(view) ? "Saved to Library" : "Added to review";
 }
 
-/** Every card starts kept; a new proposal is a new block, so its ticks start over. */
+/** Every card starts kept; a new proposal has a new id, so its ticks start over. */
 export function allKept(count: number): boolean[] {
   return Array.from({ length: count }, () => true);
 }
@@ -127,6 +127,43 @@ export function toggleKept(kept: boolean[], index: number): boolean[] {
 /** The indices Save sends: the kept cards, in order. */
 export function keptIndices(kept: boolean[]): number[] {
   return kept.flatMap((value, index) => (value ? [index] : []));
+}
+
+/** Each card set's Keep ticks, by set id; the screen holds them so the next question can carry them. */
+export type CardSetTicks = Record<string, boolean[]>;
+
+/** A set's ticks as the owner left them; one never touched (or whose cards changed) has every card kept. */
+export function ticksOf(ticks: CardSetTicks, view: Pick<CardSetView, "id" | "cards">): boolean[] {
+  const stored = ticks[view.id];
+  return stored && stored.length === view.cards.length ? stored : allKept(view.cards.length);
+}
+
+/**
+ * The Keep ticks a question carries (`card_set_choice`, as a question's stored segment holds them): the open set's kept
+ * indices out of its card count. The server takes `proposal_id` and `kept`.
+ */
+export type CardSetChoice = { proposal_id: string; kept: number[]; card_count: number };
+
+/** What the next question carries for the chat's open set: nothing when there is none or every card is still kept. */
+export function cardSetChoice(view: Pick<CardSetView, "id"> | null, kept: boolean[]): CardSetChoice | null {
+  if (!view || kept.every(Boolean)) return null;
+  return { proposal_id: view.id, kept: keptIndices(kept), card_count: kept.length };
+}
+
+/** "Kept 3 of 5 cards": the muted line under a question that carried Keep ticks. */
+export function choiceLine(choice: Pick<CardSetChoice, "kept" | "card_count">): string {
+  return `Kept ${choice.kept.length} of ${cardsWord(choice.card_count)}`;
+}
+
+/** The Keep ticks a stored question carried; null for one without them (or anything malformed). */
+export function storedChoice(segments: string | null): CardSetChoice | null {
+  const parsed = segments === null ? null : parseJson(segments);
+  const choice: unknown = Array.isArray(parsed) ? (parsed[0] as { card_set_choice?: unknown } | null)?.card_set_choice : null;
+  if (typeof choice !== "object" || choice === null) return null;
+  const { proposal_id, kept, card_count } = choice as Record<string, unknown>;
+  if (typeof proposal_id !== "string" || typeof card_count !== "number" || !Array.isArray(kept)) return null;
+  if (!kept.every((index) => typeof index === "number")) return null;
+  return { proposal_id, kept: kept as number[], card_count };
 }
 
 /** "Save 4", or "Update 4" when this chat already saved its item (a save then updates that item). */

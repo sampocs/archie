@@ -129,3 +129,22 @@ def test_the_history_line_of_a_notes_set_has_no_cheat_sheet() -> None:
         "[cards proposed: Staking — waiting for the owner to save it]\n"
         "1. (concept) Q: What is a JWT?\n   A: A signed token that carries its claims."
     )
+
+
+def test_the_keep_ticks_line_names_the_kept_numbers_and_the_dropped_questions() -> None:
+    """One kept card is "card 1"; several dropped ones are listed with their questions in order, however the kept
+    indices came; a question's stored ticks read back, and an answer's segments hold none."""
+    cards = [{**CARD, "question": f"Q{number}?"} for number in range(1, 5)]
+    card_set = models.CardSetProposal(title="JWTs", cheat_sheet="", cards=cards, status="proposed")
+
+    assert context.choice_line(kept=[0], card_set=card_set) == (
+        "The owner kept card 1 of the proposed set and dropped 2 (“Q2?”), 3 (“Q3?”) and 4 (“Q4?”)."
+    )
+    assert context.choice_line(kept=[3, 1], card_set=card_set) == (
+        "The owner kept cards 2 and 4 of the proposed set and dropped 1 (“Q1?”) and 3 (“Q3?”)."
+    )
+
+    choice = context.CardSetChoice(proposal_id=uuid.uuid4(), kept=(1, 3), card_count=4)
+    assert context.stored_choice(choice.to_segments()) == choice
+    answer_segments = [{"label": "background", "text": "A JWT is signed.", "citations": []}]
+    assert context.stored_choice(answer_segments) is None and context.stored_choice(None) is None

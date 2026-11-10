@@ -279,7 +279,7 @@ export const messages = sqliteTable("messages", {
   conversationId: text("conversation_id").notNull(),
   role: text("role").notNull(),
   text: text("text").notNull(),
-  // An answer's segments as JSON (`AnswerSegment[]`); null for a question.
+  // An answer's segments as JSON (`AnswerSegment[]`); a question's are null or its Keep ticks (`storedChoice`).
   segments: text("segments"),
   webSearch: integer("web_search").notNull().default(0),
   status: text("status").notNull(),

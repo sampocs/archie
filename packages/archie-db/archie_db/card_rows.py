@@ -23,6 +23,7 @@ QUIZ_BRIEF_WINDOW = datetime.timedelta(days=7)
 WEEK_START_KEY = "week_start"
 # A card's detail lines are stored as one text, joined by this.
 DETAIL_SEPARATOR = "\n"
+MAX_DETAIL_LINES = 3
 
 
 @dataclass(frozen=True)
@@ -42,9 +43,10 @@ def owned_live_card(db: sqlalchemy.orm.Session, *, user_id: int, card_id: uuid.U
 
 
 def detail_lines(lines: Sequence[str]) -> list[str]:
-    """A card's detail lines cleaned as a writer gave them: a newline inside a line becomes a space, blank lines go."""
+    """A card's detail lines cleaned as a writer gave them: a newline inside a line becomes a space, blank lines go,
+    and only the first `MAX_DETAIL_LINES` are kept."""
     cleaned = (" ".join(line.split()) for line in lines)
-    return [line for line in cleaned if line]
+    return [line for line in cleaned if line][:MAX_DETAIL_LINES]
 
 
 def joined_detail(lines: Sequence[str]) -> str:

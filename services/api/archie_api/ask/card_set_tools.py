@@ -286,5 +286,14 @@ def cards_of(card_set: CardSetIn) -> list[dict[str, Any]]:
 
 
 def stored_cards(card_set: models.CardSetProposal) -> list[CardIn]:
-    """A stored set's cards, read back; a card stored before cards had detail has none."""
-    return [CardIn.model_validate(card) for card in card_set.cards]
+    """A stored set's cards, read back as stored: not re-validated, so an older row never raises, and a card stored
+    before cards had detail has none."""
+    return [
+        CardIn.model_construct(
+            kind=models.CardKind(card["kind"]),
+            question=card["question"],
+            answer=card["answer"],
+            detail=card.get("detail", []),
+        )
+        for card in card_set.cards
+    ]

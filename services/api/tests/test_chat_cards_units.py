@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 
 from archie_api.ask import card_routes, card_set_tools, context
-from archie_db import models
+from archie_db import card_rows, models
 
 CARD = {
     "kind": "concept",
@@ -130,6 +130,13 @@ def test_a_stored_set_from_before_detail_reads_its_cards_with_none() -> None:
 
     assert (old.question, old.answer, old.detail) == (OLD_CARD["question"], OLD_CARD["answer"], [])
     assert new.detail == CARD["detail"]
+
+
+def test_detail_lines_keep_only_the_first_three_cleaned_lines() -> None:
+    """A fourth and fifth line are dropped, after blank lines are cleaned away."""
+    lines = ["one", "", "two\nwrapped", "three", "four", "five"]
+
+    assert card_rows.detail_lines(lines) == ["one", "two wrapped", "three"]
 
 
 def test_the_history_line_carries_an_open_set_and_only_names_a_replaced_one() -> None:

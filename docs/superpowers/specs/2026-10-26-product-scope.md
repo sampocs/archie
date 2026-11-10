@@ -81,6 +81,7 @@ The ＋ in the Library header opens the add sheet: the same Finished / Queue flo
 - **Open recall only.** No multiple choice, because it gives away the answer.
 - Answer by **typing or voice**. Voice goes through Groq Whisper with the card as vocabulary; the mic is hidden offline.
 - **Graded on the idea, not the wording**, with three outcomes: *got it / partly / missed*. Grading is Haiku. After 3 seconds, on an error, or offline, the screen shows the model answer and I grade myself.
+- **A short answer plus detail.** Each card has a short graded answer and 0-3 detail lines, shown after answering and never graded; the grader grades only the answer.
 - **I can always override** a grade ("actually I knew that").
 - *Partly* and *missed* show a short explanation of what was missing.
 - **Tell Carl**: after any grade, I can say what I actually care about (e.g. "I mainly want to remember which agency is Soviet and which is British; the secret police part matters less"). That **rewrites the card's accepted answer** and informs future card generation.

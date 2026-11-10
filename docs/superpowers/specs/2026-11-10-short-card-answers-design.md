@@ -2,7 +2,7 @@
 
 Mocks: `2026-11-10-short-card-answers-mocks.html` (approved). Eval of the rules below: rounds with the owner on real
 notes, sources and a brief, then a side-by-side of three detail rules on fixed cards; the rule below is the
-"middle" one, nudged toward the owner's picks (fewer, denser lines).
+"middle" one, with the weight on no padding and no redundancy (not on merging lines).
 
 ## Why
 
@@ -35,15 +35,14 @@ allowance:
   never more than 15. The learner is graded only on this, so it is what someone who knows the material would say off
   the top of their head. When two things are both essential, name both briefly ("Supply and demand"). A number
   card's answer is the rough figure with its unit.
-- **detail:** 0-3 bullet lines, each at most about 16 words. Shown after the learner answers, never graded. Each
+- **detail:** 0-3 short bullet lines, each under 12 words. Shown after the learner answers, never graded. Each
   line must help explain the answer (the why or how behind it, or a contrast that makes it click); a further fact
-  about the subject, however true, is not a reason for a line. Fewer, denser lines win: join a cause and its effect
-  in one line ("X, so Y") rather than two. So a plain fact or a number usually needs none; most whys need one line;
-  two only when the explanation really has two separate steps; three for a chain of three steps (A happens, so B, so
-  C) or three named parts that each matter (the three phases of a cycle). When in doubt, use fewer. Never a line
-  that restates or is implied by the answer; that is trivia from this one source (who said it, when, a passing
-  example or anecdote) rather than a lasting fact about the subject; or that is a side remark that doesn't help
-  recall. News quiz cards: at most one line.
+  about the subject, however true, is not a reason for a line. No padding and no redundancy: never a line that
+  restates the answer, is implied by it or repeats another line; that is trivia from this one source (who said it,
+  when, a passing example or anecdote) rather than a lasting fact about the subject; or that is a side remark that
+  doesn't help recall. So a plain fact or a number usually needs none and most whys need one; use two or three only
+  when the explanation really has that many steps (A happens, so B, so C) or named parts (the three phases of a
+  cycle). When in doubt, use fewer. News quiz cards: at most one line.
 
 Writers that adopt it, replacing their own answer-length wording (and their "1-3 sentences"):
 

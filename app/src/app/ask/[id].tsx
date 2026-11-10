@@ -238,16 +238,16 @@ export default function ChatScreen() {
                 {pending.live.cardSets.map((wire) => {
                   const view = viewOfCardSetWire(wire);
                   return (
-                  <CardSetProposal
-                    key={wire.id}
-                    cardSet={view}
-                    ready={pending.live.messageId !== null}
-                    online={online}
-                    updating={updating}
-                    kept={ticksFor(view)}
-                    onToggle={(index) => toggle(view, index, seededTicks(messages, view))}
-                    onToast={setToast}
-                  />
+                    <CardSetProposal
+                      key={wire.id}
+                      cardSet={view}
+                      ready={pending.live.messageId !== null}
+                      online={online}
+                      updating={updating}
+                      kept={ticksFor(view)}
+                      onToggle={(index) => toggle(view, index, seededTicks(messages, view))}
+                      onToast={setToast}
+                    />
                   );
                 })}
               </AnswerView>

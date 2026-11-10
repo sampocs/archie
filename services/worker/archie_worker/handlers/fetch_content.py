@@ -161,6 +161,9 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
         if source_input.kind != models.SourceKind.ARTICLE or len(captured.text.split()) >= _MIN_ARTICLE_WORDS:
             return captured
         _logger.info("Source %s capture is too short; fetching its page", source_input.source_id)
+        page = _fetch_article(source_input)
+        # A paywall teaser can be no better than the capture; the page wins only when it has more text.
+        return page if len(page.text.split()) > len(captured.text.split()) else captured
 
     if source_input.kind == models.SourceKind.X:
         post_id = urls.x_post_id(source_input.url)
@@ -168,6 +171,11 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
             raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING)
         return x.fetch_thread(post_id=post_id)
 
+    return _fetch_article(source_input)
+
+
+def _fetch_article(source_input: _SourceInput) -> content.ExtractedText:
+    """The fetched page's text, titled by the capture when the page has no title of its own."""
     try:
         page = fetch_title.fetch_page(
             url=source_input.url, timeout_seconds=_PAGE_TIMEOUT_SECONDS, max_bytes=_PAGE_MAX_BYTES
@@ -179,7 +187,7 @@ def _get_text(source_input: _SourceInput) -> content.ExtractedText:
         raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING) from error
 
     extracted = article.extract(html=page, url=source_input.url) or content.ExtractedText(title=None, text="")
-    if extracted.title is None and source_input.capture_title:
+    if not extracted.title and source_input.capture_title:
         return dataclasses.replace(extracted, title=source_input.capture_title)
     return extracted
 

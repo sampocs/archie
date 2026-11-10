@@ -9,7 +9,7 @@ import { DAILY_NOTES, refresherQueue, todayRefresher, type TodayRefresher } from
 import { isReviewable, type ReviewData } from "@/review/eligibility";
 import { cardsWord } from "@/review/labels";
 import { quizOffer } from "@/review/newsQuiz";
-import { effectiveDue, isDue } from "@/review/session";
+import { effectiveDue, isDue } from "@/review/due";
 import { daysFrom, dueSummary, minutesFor, nextReview, shortWeekday } from "@/review/summary";
 import type { ReviewRow } from "@/review/types";
 import { MONTHS, sameLocalDay } from "@/today/todayLabels";

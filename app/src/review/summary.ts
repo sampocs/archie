@@ -1,12 +1,11 @@
-import type * as schema from "@/db/schema";
 import { WEEKDAYS } from "@/today/todayLabels";
 
 import { AHEAD_DAYS, SECONDS_PER_CARD } from "./constants";
-import { cardTopicId, isReviewable, type ReviewData } from "./eligibility";
-import { buildSession, effectiveDue, isDue } from "./session";
+import { effectiveDue, isDue } from "./due";
+import { isReviewable, type ReviewData } from "./eligibility";
+import { cardsWord } from "./labels";
+import { buildSession } from "./session";
 import type { CardRow } from "./types";
-
-type TopicRow = typeof schema.topics.$inferSelect;
 
 const DAY_MS = 86_400_000;
 // Past tomorrow, a day this close is named by its weekday; further out by its date or a day count.
@@ -41,12 +40,20 @@ export function nextReview(data: ReviewData, now: Date): { at: Date; count: numb
   return { at, count: waiting.filter((due) => due < dayEnd).length };
 }
 
-/** "today" / "tomorrow" / "Saturday" within 6 days / "Nov 14". */
-export function dayWord(day: Date, now: Date): string {
+/** The caught-up card's line: "Next 5 cards are due tomorrow." / "Next card is due Thu." / "… due Nov 14." */
+export function nextDueLine(next: { at: Date; count: number }, now: Date): string {
+  const when = dayWord(next.at, now, "short");
+  return next.count === 1 ? `Next card is due ${when}.` : `Next ${cardsWord(next.count)} are due ${when}.`;
+}
+
+/** "today" / "tomorrow" / "Saturday" (or "Sat" with `weekday: "short"`) within 6 days / "Nov 14". */
+export function dayWord(day: Date, now: Date, weekday: "long" | "short" = "long"): string {
   const days = daysFrom(now, day);
   if (days === 0) return "today";
   if (days === 1) return "tomorrow";
-  if (days > 1 && days <= WEEKDAY_WINDOW_DAYS) return day.toLocaleDateString("en-US", { weekday: "long" });
+  if (days > 1 && days <= WEEKDAY_WINDOW_DAYS) {
+    return weekday === "short" ? shortWeekday(day) : day.toLocaleDateString("en-US", { weekday: "long" });
+  }
   return day.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
@@ -65,22 +72,6 @@ export function cardDueLabel(card: CardRow, data: ReviewData, now: Date): string
   if (days === 1) return "Due tomorrow";
   if (days <= WEEKDAY_WINDOW_DAYS) return `Due ${shortWeekday(due)}`;
   return `Due in ${days} days`;
-}
-
-/** Each live topic with reviewable cards and how many it has: busiest first, then by name. */
-export function topicPractice(data: ReviewData): { topic: TopicRow; count: number }[] {
-  const countByTopic = new Map<string, number>();
-  for (const card of data.cards) {
-    const topicId = cardTopicId(card, data);
-    if (topicId === null || !isReviewable(card, data)) continue;
-    countByTopic.set(topicId, (countByTopic.get(topicId) ?? 0) + 1);
-  }
-
-  return [...data.topicsById.values()]
-    .filter((topic) => topic.removedAt === null && topic.mergedIntoId === null)
-    .map((topic) => ({ topic, count: countByTopic.get(topic.id) ?? 0 }))
-    .filter(({ count }) => count > 0)
-    .sort((a, b) => b.count - a.count || a.topic.name.localeCompare(b.topic.name));
 }
 
 function startOfDay(date: Date): Date {

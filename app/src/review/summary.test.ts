@@ -4,11 +4,11 @@ import {
   dayWord,
   dueSummary,
   minutesFor,
+  nextDueLine,
   nextReview,
   shortWeekday,
-  topicPractice,
 } from "./summary";
-import { cardRow, dayAt, NOW, reviewCard, reviewData, sourceRow, takeRow, topicRow } from "./testCards";
+import { cardRow, dayAt, NOW, reviewCard, reviewData, takeRow } from "./testCards";
 
 describe("minutesFor", () => {
   it.each([
@@ -70,6 +70,12 @@ describe("dayWord and shortWeekday", () => {
   it("names the weekday briefly", () => {
     expect(shortWeekday(new Date(dayAt(2)))).toBe("Sat");
   });
+
+  it("short form: only the weekday is shortened", () => {
+    expect(dayWord(new Date(dayAt(2)), NOW, "short")).toBe("Sat");
+    expect(dayWord(new Date(dayAt(1)), NOW, "short")).toBe("tomorrow");
+    expect(dayWord(new Date(dayAt(7, 1)), NOW, "short")).toBe("Nov 12");
+  });
 });
 
 describe("cardDueLabel", () => {
@@ -90,39 +96,13 @@ describe("cardDueLabel", () => {
   });
 });
 
-describe("topicPractice", () => {
-  it("counts each live topic's reviewable cards, busiest first, then by name", () => {
-    const data = reviewData(
-      [
-        cardRow({ id: "a1", sourceId: "sa" }),
-        cardRow({ id: "b1", sourceId: "sb" }),
-        cardRow({ id: "b2", sourceId: "sb" }),
-        cardRow({ id: "c1", sourceId: "sc" }),
-        cardRow({ id: "unreviewable", sourceId: "sd" }),
-        cardRow({ id: "removed", sourceId: "se" }),
-      ],
-      {
-        sources: [
-          sourceRow({ id: "sa", state: "consumed", topicId: "ta" }),
-          sourceRow({ id: "sb", state: "consumed", topicId: "tb" }),
-          sourceRow({ id: "sc", state: "consumed", topicId: "tc" }),
-          sourceRow({ id: "sd", state: "inbox", topicId: "td" }),
-          sourceRow({ id: "se", state: "consumed", topicId: "te" }),
-        ],
-        topics: [
-          topicRow({ id: "tc", name: "Chips" }),
-          topicRow({ id: "ta", name: "Agents" }),
-          topicRow({ id: "tb", name: "Batteries" }),
-          topicRow({ id: "td", name: "Drones" }),
-          topicRow({ id: "te", name: "Energy", removedAt: dayAt(-1) }),
-        ],
-      },
-    );
-
-    expect(topicPractice(data).map(({ topic, count }) => [topic.name, count])).toEqual([
-      ["Batteries", 2],
-      ["Agents", 1],
-      ["Chips", 1],
-    ]);
+describe("nextDueLine", () => {
+  it.each([
+    [{ at: new Date(dayAt(1, 9)), count: 5 }, "Next 5 cards are due tomorrow."],
+    [{ at: new Date(dayAt(0, 18)), count: 2 }, "Next 2 cards are due today."],
+    [{ at: new Date(dayAt(2)), count: 1 }, "Next card is due Sat."],
+    [{ at: new Date(dayAt(9)), count: 3 }, "Next 3 cards are due Nov 14."],
+  ])("%p → %p", (next, line) => {
+    expect(nextDueLine(next, NOW)).toBe(line);
   });
 });

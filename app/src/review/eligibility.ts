@@ -2,7 +2,7 @@ import type * as schema from "@/db/schema";
 import type { TakeRow } from "@/takes/takes";
 import { CHAT_KIND } from "@/ui/sourceLabels";
 
-import type { CardRow } from "./types";
+import type { CardRow, ReviewRow } from "./types";
 
 type SourceRow = typeof schema.sources.$inferSelect;
 type TopicPrimerRow = typeof schema.topicPrimers.$inferSelect;
@@ -16,6 +16,8 @@ export type ReviewData = {
   topicsById: Map<string, TopicRow>;
   takesById: Map<string, TakeRow>;
   conversationsById: Map<string, ConversationRow>;
+  // The phone's review log (every card's), for the streak and the Missed list.
+  reviews: ReviewRow[];
 };
 
 // Where a card came from. An origin this phone doesn't know yet (a newer server's) is never reviewable here.
@@ -108,6 +110,7 @@ export function makeReviewData(rows: {
   topics: TopicRow[];
   takes?: TakeRow[];
   conversations?: ConversationRow[];
+  reviews?: ReviewRow[];
 }): ReviewData {
   return {
     cards: rows.cards,
@@ -116,5 +119,6 @@ export function makeReviewData(rows: {
     topicsById: new Map(rows.topics.map((topic) => [topic.id, topic])),
     takesById: new Map((rows.takes ?? []).map((take) => [take.id, take])),
     conversationsById: new Map((rows.conversations ?? []).map((conversation) => [conversation.id, conversation])),
+    reviews: rows.reviews ?? [],
   };
 }

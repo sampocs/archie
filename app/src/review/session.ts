@@ -1,4 +1,6 @@
-import { AHEAD_DAYS } from "./constants";
+import { missedCards, shufflePick } from "./browse";
+import { AHEAD_DAYS, SHUFFLE_COUNT } from "./constants";
+import { effectiveDue, isDue } from "./due";
 import { cardTopicId, isOpenQuiz, isReviewable, type ReviewData } from "./eligibility";
 import type { CardRow } from "./types";
 
@@ -8,19 +10,19 @@ const ORDER_GROUP: Record<string, number> = { foundation: 0, concept: 1, mechani
 const LAST_GROUP = 3;
 const DAY_MS = 86_400_000;
 
-export type SessionMode = "due" | "ahead" | "topic" | "source" | "take" | "card" | "quiz";
-export const SESSION_MODES: readonly SessionMode[] = ["due", "ahead", "topic", "source", "take", "card", "quiz"];
+export type SessionMode = "due" | "ahead" | "topic" | "source" | "take" | "card" | "quiz" | "shuffle" | "missed";
+export const SESSION_MODES: readonly SessionMode[] = [
+  "due",
+  "ahead",
+  "topic",
+  "source",
+  "take",
+  "card",
+  "quiz",
+  "shuffle",
+  "missed",
+];
 export type SessionCard = { card: CardRow; wasDue: boolean };
-
-/** New cards are always due; others once their due date has come. */
-export function isDue(card: CardRow, now: Date): boolean {
-  return card.fsrsState === "new" || (card.dueAt !== null && Date.parse(card.dueAt) <= now.getTime());
-}
-
-// A new card has no due date; it counts as due since it was made.
-export function effectiveDue(card: CardRow): number {
-  return Date.parse(card.dueAt ?? card.createdAt);
-}
 
 /** Session order: by kind group, then most overdue first, then by id so the order is stable. */
 export function orderCards(cards: CardRow[]): CardRow[] {
@@ -32,8 +34,18 @@ export function orderCards(cards: CardRow[]): CardRow[] {
   );
 }
 
-/** The cards a session shows, in order, each with whether it was due when the session began. */
-export function buildSession(data: ReviewData, mode: SessionMode, id: string | null, now: Date): SessionCard[] {
+/**
+ * The cards a session shows, in order, each with whether it was due when the session began. Shuffle takes up to 10
+ * random reviewable cards in random order (`random` is injectable for tests); missed takes the Missed list, worst
+ * first. Like an ahead review, both record each card as due or not by its own due date.
+ */
+export function buildSession(
+  data: ReviewData,
+  mode: SessionMode,
+  id: string | null,
+  now: Date,
+  random: () => number = Math.random,
+): SessionCard[] {
   if (mode === "quiz") {
     return data.cards
       .filter((card) => isOpenQuiz(card, now))
@@ -42,6 +54,9 @@ export function buildSession(data: ReviewData, mode: SessionMode, id: string | n
   }
 
   const reviewable = data.cards.filter((card) => isReviewable(card, data));
+  if (mode === "shuffle") return asSession(shufflePick(reviewable, SHUFFLE_COUNT, random), now);
+  if (mode === "missed") return asSession(missedCards(data, now).map(({ card }) => card), now);
+
   const aheadLimit = now.getTime() + AHEAD_DAYS * DAY_MS;
   const chosen = reviewable.filter((card) => {
     switch (mode) {
@@ -59,5 +74,9 @@ export function buildSession(data: ReviewData, mode: SessionMode, id: string | n
         return card.id === id;
     }
   });
-  return orderCards(chosen).map((card) => ({ card, wasDue: isDue(card, now) }));
+  return asSession(orderCards(chosen), now);
+}
+
+function asSession(cards: CardRow[], now: Date): SessionCard[] {
+  return cards.map((card) => ({ card, wasDue: isDue(card, now) }));
 }

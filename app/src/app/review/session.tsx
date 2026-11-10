@@ -34,7 +34,10 @@ import { Toast } from "@/ui/Toast";
 
 const PROGRESS_BAR_HEIGHT = 3;
 
-/** A review session. `mode`: due | ahead | topic | source | card | quiz (unknown → due); `id`: the topic, source or card. */
+/**
+ * A review session. `mode`: due | ahead | topic | source | take | card | quiz | shuffle | missed (unknown → due); `id`:
+ * the topic, source, take or card.
+ */
 export default function ReviewSessionScreen() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();

@@ -2,20 +2,16 @@ import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { Pressable, View } from "react-native";
 
-import { dropCard } from "@/db/actions";
-import { db } from "@/db/client";
 import { VersionsSheet } from "@/edits/VersionsSheet";
 import { isReviewable } from "@/review/eligibility";
 import { KIND_LABELS } from "@/review/labels";
 import { orderCards } from "@/review/session";
 import { cardDueLabel } from "@/review/summary";
+import { CardListRow } from "@/review/ui/CardListRow";
 import { useReviewData } from "@/review/useReviewData";
-import { SwipeRow } from "@/library/SwipeRow";
-import { requestSync } from "@/sync/useSync";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { GroupedList } from "@/ui/GroupedList";
-import { haptic } from "@/ui/haptics";
 import { Toast } from "@/ui/Toast";
 import { useNow } from "@/ui/useNow";
 
@@ -64,46 +60,16 @@ export function CardsSection({ of }: { of: CardsOf }) {
         const due = cardDueLabel(card, data, now);
 
         return (
-          <SwipeRow
+          <CardListRow
             key={card.id}
-            actions={[
-              ...(card.version > 1
-                ? [
-                    {
-                      key: "versions",
-                      label: "Versions",
-                      tone: "neutral" as const,
-                      testID: `card-versions-${index}`,
-                      onPress: () => setVersionsOf(card.id),
-                    },
-                  ]
-                : []),
-              {
-                key: "remove",
-                label: "Remove",
-                tone: "missed",
-                testID: `card-remove-${index}`,
-                onPress: () => {
-                  dropCard(db, card.id);
-                  requestSync();
-                  haptic("success");
-                },
-              },
-            ]}
-          >
-            <Pressable
-              testID={`card-row-${index}`}
-              disabled={!reviewable}
-              onPress={() => router.push(`/review/session?mode=card&id=${card.id}`)}
-              style={{ gap: theme.spacing.xs, paddingVertical: theme.spacing.md }}
-            >
-              <Text>{card.question}</Text>
-              {/* A take card's kind label ("Take") adds nothing on the take's own page. */}
-              <Text variant="secondary" tone="ink3">
-                {`${of.kind === "take" ? due : `${KIND_LABELS[card.kind] ?? card.kind} · ${due}`}${card.version > 1 ? " · Edited" : ""}`}
-              </Text>
-            </Pressable>
-          </SwipeRow>
+            card={card}
+            // A take card's kind label ("Take") adds nothing on the take's own page.
+            detail={of.kind === "take" ? due : `${KIND_LABELS[card.kind] ?? card.kind} · ${due}`}
+            reviewable={reviewable}
+            index={index}
+            testIDPrefix="card"
+            onVersions={() => setVersionsOf(card.id)}
+          />
         );
       })}
     </GroupedList>

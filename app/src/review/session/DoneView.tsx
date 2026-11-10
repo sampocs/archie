@@ -59,7 +59,10 @@ export function DoneView({ tally, startedAt, data }: DoneViewProps) {
         aheadCount={ahead.count}
         aheadBy={ahead.by}
         onAhead={() => router.replace({ pathname: "/review/session", params: { mode: "ahead" } })}
-        onTopic={() => router.push("/review/topics")}
+        // Topics now live on the Review tab's browse list.
+        onTopic={() =>
+          router.dismissTo({ pathname: "/(tabs)/review", params: { browse: "topics", at: String(Date.now()) } })
+        }
       />
       <Button testID="done-back-today" label="Back to Today" onPress={() => router.dismissTo("/(tabs)/today")} />
     </View>

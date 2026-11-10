@@ -8,8 +8,8 @@ import * as schema from "@/db/schema";
 import { makeReviewData, type ReviewData } from "./eligibility";
 
 /**
- * The rows review logic reads: non-deleted cards, sources and takes, current topic primers, and every topic and chat
- * (a deleted chat's cards stay and still take its colour).
+ * The rows review logic reads: non-deleted cards, sources and takes, current topic primers, every topic and chat
+ * (a deleted chat's cards stay and still take its colour), and the review log.
  */
 export function reviewQueries(database: AppDb) {
   return {
@@ -19,6 +19,7 @@ export function reviewQueries(database: AppDb) {
     topics: database.select().from(schema.topics),
     takes: database.select().from(schema.takes).where(isNull(schema.takes.deletedAt)),
     conversations: database.select().from(schema.conversations),
+    reviews: database.select().from(schema.reviews),
   };
 }
 
@@ -32,6 +33,7 @@ export function readReviewData(database: AppDb): ReviewData {
     topics: queries.topics.all(),
     takes: queries.takes.all(),
     conversations: queries.conversations.all(),
+    reviews: queries.reviews.all(),
   });
 }
 
@@ -44,9 +46,10 @@ export function useReviewData(): ReviewData {
   const { data: topics } = useLiveQuery(queries.topics);
   const { data: takes } = useLiveQuery(queries.takes);
   const { data: conversations } = useLiveQuery(queries.conversations);
+  const { data: reviews } = useLiveQuery(queries.reviews);
 
   return useMemo(
-    () => makeReviewData({ cards, sources, topicPrimers, topics, takes, conversations }),
-    [cards, sources, topicPrimers, topics, takes, conversations],
+    () => makeReviewData({ cards, sources, topicPrimers, topics, takes, conversations, reviews }),
+    [cards, sources, topicPrimers, topics, takes, conversations, reviews],
   );
 }

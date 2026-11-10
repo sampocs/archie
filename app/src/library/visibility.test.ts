@@ -20,6 +20,8 @@ describe("statusTag", () => {
     [{ kind: "article", state: "inbox", processing: "ready", readAt: PAST }, "Read"],
     [{ kind: "note", state: "inbox", processing: "ready", readAt: null }, "Read"],
     [{ kind: "note", state: "consumed", processing: "ready", readAt: null }, "Done"],
+    [{ kind: "chat", state: "inbox", processing: "ready", readAt: null }, "Read"],
+    [{ kind: "chat", state: "inbox", processing: "processing", readAt: null }, "Processing"],
   ] as const)("%p → %s", (row, expected) => {
     expect(statusTag(row)).toBe(expected);
   });

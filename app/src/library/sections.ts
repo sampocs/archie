@@ -1,3 +1,5 @@
+import { CHAT_KIND } from "@/ui/sourceLabels";
+
 import { isLiveTopic, type LibraryData, type LibrarySource, type TopicPrimerRow, type TopicRow } from "./join";
 import { isSnoozed } from "./visibility";
 
@@ -37,7 +39,8 @@ export function entrySnoozedUntil(entry: LibraryEntry): string | null {
 
 /**
  * The entries a filter shows, snoozed ones included (Decision 12); topic primers of removed or merged topics never
- * show. Queued lists queued primers too; Primers lists every source with a primer, plus topic primers.
+ * show. Queued lists queued primers too; Primers lists every source with a primer, plus topic primers. Chat items
+ * (whose cheat sheet is stored as a primer) show only under All.
  */
 export function filterEntries(data: LibraryData, filter: LibraryFilter): LibraryEntry[] {
   const sources = (keep: (source: LibrarySource) => boolean): LibraryEntry[] =>
@@ -50,12 +53,18 @@ export function filterEntries(data: LibraryData, filter: LibraryFilter): Library
     return [...sources((source) => source.state === "queued"), ...queuedPrimers];
   }
   if (filter === "done") return sources((source) => source.state === "consumed");
-  // Notes wait in Today's refresher, not the inbox.
+  // Notes wait in Today's refresher, not the inbox; a chat item is never waiting to be read.
   if (filter === "inbox") {
-    return sources((source) => source.kind !== "note" && (source.state === "inbox" || source.state === "briefed"));
+    return sources(
+      (source) =>
+        source.kind !== "note" && source.kind !== CHAT_KIND && (source.state === "inbox" || source.state === "briefed"),
+    );
   }
   if (filter === "primers") {
-    return [...sources((source) => source.primerCreatedAt !== null), ...topicPrimerEntries(data)];
+    return [
+      ...sources((source) => source.kind !== CHAT_KIND && source.primerCreatedAt !== null),
+      ...topicPrimerEntries(data),
+    ];
   }
   return [...sources(() => true), ...topicPrimerEntries(data)];
 }

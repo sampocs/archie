@@ -1,5 +1,5 @@
-# Ask: finish an article, ask about it on the Ask tab, see a YOUR LIBRARY section, Make a card, and find the chat in
-# the list. Needs the owner's keys in .env (analyze, embeddings, Sonnet 5.5 and one Haiku draft: a few cents); local
+# Ask: finish an article, ask about it on the Ask tab, see a YOUR LIBRARY section, Make cards, and find the chat in
+# the list. Needs the owner's keys in .env (analyze, embeddings and two Sonnet 5.5 answers: a few cents); local
 # backend only; run it through `make maestro-ask`.
 appId: com.sampocs.archie
 ---
@@ -60,28 +60,17 @@ appId: com.sampocs.archie
 # The button sits under the answer, below the fold; it appears once the answer completes.
 - scrollUntilVisible:
     element:
-      id: "answer-make-card-.*"
+      id: "answer-make-cards-.*"
     direction: DOWN
     timeout: 60000
 - tapOn:
-    id: "answer-make-card-.*"
+    id: "answer-make-cards-.*"
+# It sends "Make cards" in the chat; Sonnet answers with a proposed cheat sheet and cards.
 - extendedWaitUntil:
     visible:
-      id: "card-draft-question"
-    timeout: 5000
-# The draft fills both fields; Save is enabled once it has.
-- extendedWaitUntil:
-    visible:
-      id: "card-draft-save"
-      enabled: true
-    timeout: 30000
-- tapOn:
-    id: "card-draft-save"
-- extendedWaitUntil:
-    notVisible:
-      id: "card-draft-question"
-    timeout: 10000
-- assertVisible: "Card added to Review"
+      id: "card-set-save"
+    timeout: 120000
+- assertVisible: ".*Cheat sheet · .*"
 - tapOn:
     id: "screen-back"
 - extendedWaitUntil:

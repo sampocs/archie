@@ -57,6 +57,14 @@ describe("isReviewable", () => {
     ).toBe(false);
   });
 
+  it("a chat item's card at once, though the item stays in the inbox, while the item lives", () => {
+    const chatItem = (deletedAt: string | null) =>
+      reviewData([], { sources: [sourceRow({ id: "s1", kind: "chat", state: "inbox", deletedAt })] });
+    expect(isReviewable(cardRow({}), chatItem(null))).toBe(true);
+    expect(isReviewable(cardRow({ kind: "foundation" }), chatItem(null))).toBe(true);
+    expect(isReviewable(cardRow({}), chatItem(dayAt(-1)))).toBe(false);
+  });
+
   it("a deleted card is not", () => {
     expect(isReviewable(cardRow({ deletedAt: dayAt(-1) }), reviewData([]))).toBe(false);
   });

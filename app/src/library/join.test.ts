@@ -42,6 +42,7 @@ const source = (overrides: Partial<SourceRow>): SourceRow => ({
   refreshSkippedAt: null,
   senderAddress: null,
   senderPending: false,
+  chatConversationId: null,
   ...overrides,
 });
 

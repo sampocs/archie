@@ -128,6 +128,7 @@ class SourceOut(pydantic.BaseModel):
     refresh_skipped_at: datetime.datetime | None
     sender_address: str | None
     sender_pending: bool
+    chat_conversation_id: uuid.UUID | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None
@@ -383,6 +384,26 @@ class EditProposalOut(pydantic.BaseModel):
     change_seq: int
 
 
+class CardSetProposalOut(pydantic.BaseModel):
+    """A card set Ask proposed in a chat, as the phone stores it, as the `cards` event carries it and as the card-set
+    routes return it."""
+
+    model_config = pydantic.ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    conversation_id: uuid.UUID
+    message_id: uuid.UUID
+    title: str
+    cheat_sheet: str
+    cards: list[dict[str, Any]]
+    status: str
+    saved_source_id: uuid.UUID | None
+    kept: list[int] | None
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    change_seq: int
+
+
 class PulledRows(pydantic.BaseModel):
     """Changed rows by table."""
 
@@ -400,6 +421,7 @@ class PulledRows(pydantic.BaseModel):
     messages: list[MessageOut]
     card_versions: list[CardVersionOut]
     edit_proposals: list[EditProposalOut]
+    card_set_proposals: list[CardSetProposalOut]
     newsletter_senders: list[NewsletterSenderOut]
 
 

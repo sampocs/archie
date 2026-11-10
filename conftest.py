@@ -14,6 +14,7 @@ possibly-live `DATABASE_URL`) names.
 from __future__ import annotations
 
 import _socket  # The real, unpatchable primitives `socket` wraps; see the postgres-marker branch below.
+import gc
 import os
 import socket
 from collections.abc import Iterator
@@ -126,6 +127,10 @@ def migrated_database_url(test_database_url: str) -> Iterator[str]:
     migrate.upgrade(test_database_url)
     yield test_database_url
 
+    # Test helpers open throwaway engines and drop them without `dispose()`. An engine sits in a reference cycle, so
+    # its pooled connections only close when the cycle collector runs; collect now so they can't pile up across the
+    # suite past Postgres's connection limit (as they did in CI) or hold locks the truncate below waits on.
+    gc.collect()
     engine = session.engine_for(test_database_url)
     with engine.begin() as connection:
         connection.execute(sqlalchemy.text(f"TRUNCATE {', '.join(_TRUNCATE_TABLES)} RESTART IDENTITY CASCADE"))

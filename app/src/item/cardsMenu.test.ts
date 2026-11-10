@@ -46,6 +46,11 @@ describe("makeCardsAction", () => {
     }
   });
 
+  it("never offers it on a chat item, whose cards come only from Save in its chat", () => {
+    expect(makeCardsAction(sourceRow({ ...ready, kind: "chat", state: "inbox" }), 0)).toBeNull();
+    expect(makeCardsAction(sourceRow({ ...ready, kind: "chat", state: "inbox", cardsOff: 1 }), 0)).toBeNull();
+  });
+
   it("hides a note's action until it is ready", () => {
     expect(makeCardsAction(sourceRow({ ...ready, kind: "note", processing: "processing", cardsOff: 1 }), 0)).toBeNull();
   });

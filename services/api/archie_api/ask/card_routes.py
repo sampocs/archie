@@ -1,147 +1,245 @@
-"""Make a card from an Ask answer: Haiku drafts it (owner's key, whitelisted only), the owner's edit is saved.
+"""Save or discard a card set Ask proposed: Save turns it into the chat's Library item and its review cards.
 
-The draft call holds no transaction. A saved card is a `concept` card whose origin is the chat (`conversation_id`),
-with `message_id` naming the answer; it starts new, as every new card does, and reaches the phone through pull.
+Neither calls a model, so each runs in one transaction under the user's write lock. One chat has at most one live
+item (kind `chat`, tied by `chat_conversation_id`): the first Save creates it, later ones update it. The item's primer
+is the cheat sheet, its summary a gist of it, and its text the chat's transcript; it is ready at once and never goes
+through the queue or the analyze/primer pipeline. Its cards are the kept ones: a Save in a chat that already saved
+keeps an identical live card (and its review progress), adds the new ones, and retires the rest that were never
+reviewed; a reviewed card is never retired, so the owner's review progress survives a reworded or dropped card.
 """
 
 from __future__ import annotations
 
+import re
 import uuid
-from typing import Annotated
+from collections.abc import Sequence
+from dataclasses import dataclass
+from typing import Annotated, Any
 
-import anthropic
 import fastapi
 import pydantic
 import sqlalchemy
-from archie_db import changes, models
-from archie_llm import llm
-from archie_shared import config, logging
+from archie_db import card_rows, changes, jobs, models, pipeline
 from sqlalchemy import orm
 
 from archie_api import deps
-from archie_api.ask import card_prompts
 from archie_api.sync import schemas
 
-DRAFT_MAX_TOKENS = 1000
+NO_CARD_SET = "card set not found"
+CHAT_URL_PREFIX = "chat:"
+MAX_GIST_CHARACTERS = 300
+_SPEAKERS = {models.MessageRole.USER: "You", models.MessageRole.ASSISTANT: "Archie"}
+# Markdown blocks that aren't prose: a heading, a table, a code fence, a rule, a quote or a list.
+_NON_PROSE_STARTS = ("#", "|", "```", "---", "***", ">", "- ", "* ", "+ ")
+_NUMBERED_START = re.compile(r"^\d+\.\s")
 
 router = fastapi.APIRouter(prefix="/ask", tags=["ask"])
-_logger = logging.get_logger(logging.LoggerName.API, "ask_cards")
 
 
-class CardDraftView(pydantic.BaseModel):
-    """A drafted card for the owner to edit."""
+class SaveRequest(pydantic.BaseModel):
+    """The indices of the proposal's cards the owner kept: at least one, each once."""
 
-    question: str
-    answer: str
+    kept: list[int] = pydantic.Field(min_length=1)
 
-
-class _Draft(pydantic.BaseModel):
-    """The model's JSON."""
-
-    question: str = pydantic.Field(min_length=1)
-    answer: str = pydantic.Field(min_length=1)
-
-
-class CardIn(pydantic.BaseModel):
-    """The card as the owner edited it."""
-
-    message_id: uuid.UUID
-    question: str = pydantic.Field(min_length=1, max_length=500)
-    answer: str = pydantic.Field(min_length=1, max_length=2000)
+    @pydantic.field_validator("kept")
+    @classmethod
+    def _unique(cls, kept: list[int]) -> list[int]:
+        if len(set(kept)) != len(kept):
+            raise ValueError("an index appears more than once")
+        return kept
 
 
-@router.post("/messages/{message_id}/card-draft")
-def card_draft(
-    message_id: uuid.UUID,
+@dataclass(frozen=True)
+class TranscriptLine:
+    """One message of the chat, as the transcript shows it."""
+
+    role: models.MessageRole
+    text: str
+
+
+@router.post("/card-sets/{proposal_id}/save")
+def save(
+    proposal_id: uuid.UUID,
+    body: SaveRequest,
     db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
     user: Annotated[models.User, fastapi.Depends(deps.current_user)],
-) -> CardDraftView:
-    """Draft one card from the answer with Haiku (Sonnet if Haiku gives no usable answer)."""
-    if not user.is_whitelisted:
-        raise fastapi.HTTPException(status_code=403, detail=deps.NEEDS_OWN_KEY)
-    answer = _owned_answer(db, user=user, message_id=message_id)
-    user_message = card_prompts.card_draft_message(question=_question_before(db, answer=answer), answer=answer.text)
-    context = llm.CallContext(user_id=user.id, source_id=None, job_id=None, step=llm.CARD_DRAFT_STEP)
-    api_key = config.Settings().require_anthropic_api_key()
-    engine = db.get_bind()
-    assert isinstance(engine, sqlalchemy.Engine)
-
-    # No transaction is held during the model call.
-    db.commit()
-    try:
-        completion = llm.complete(
-            engine,
-            api_key=api_key,
-            context=context,
-            models=llm.CARD_DRAFT_MODELS,
-            system=card_prompts.CARD_DRAFT_SYSTEM,
-            user_message=user_message,
-            max_tokens=DRAFT_MAX_TOKENS,
-            json_schema=card_prompts.CARD_DRAFT_SCHEMA,
-        )
-        draft = _Draft.model_validate_json(completion.text)
-    except (anthropic.APIError, llm.ModelOutputError, pydantic.ValidationError) as error:
-        _logger.warning("Card draft failed: %r", error)
-        raise fastapi.HTTPException(status_code=502, detail="draft failed") from error
-    return CardDraftView(question=draft.question.strip(), answer=draft.answer.strip())
-
-
-@router.post("/cards")
-def create_card(
-    body: CardIn,
-    db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
-    user: Annotated[models.User, fastapi.Depends(deps.current_user)],
-) -> schemas.CardOut:
-    """Save the owner's card; Review offers it at once."""
-    question, answer_text = body.question.strip(), body.answer.strip()
-    if not question or not answer_text:
-        raise fastapi.HTTPException(status_code=422, detail="card is empty")
-
+) -> schemas.CardSetProposalOut:
+    """Write the card set to the chat's item (created on the first Save) with the kept cards; 409 unless open."""
     changes.lock_user_writes(db, user.id)
-    answer = _owned_answer(db, user=user, message_id=body.message_id)
-    card = models.Card(
+    proposal = _open_proposal(db, user=user, proposal_id=proposal_id)
+    if any(index < 0 or index >= len(proposal.cards) for index in body.kept):
+        raise fastapi.HTTPException(status_code=422, detail="a kept index is out of range")
+
+    item, existed = _chat_item(db, user=user, proposal=proposal)
+    _write_artifacts(db, item=item, proposal=proposal, existed=existed)
+    _keep_cards(db, item=item, proposal=proposal, kept=body.kept)
+
+    proposal.saved_source_id = item.id
+    proposal.kept = sorted(body.kept)
+    _set_status(proposal, models.CardSetStatus.SAVED)
+    return _committed(db, proposal)
+
+
+@router.post("/card-sets/{proposal_id}/discard")
+def discard(
+    proposal_id: uuid.UUID,
+    db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
+    user: Annotated[models.User, fastapi.Depends(deps.current_user)],
+) -> schemas.CardSetProposalOut:
+    """Set an open card set aside for good; 409 unless open."""
+    changes.lock_user_writes(db, user.id)
+    proposal = _open_proposal(db, user=user, proposal_id=proposal_id)
+
+    _set_status(proposal, models.CardSetStatus.DISCARDED)
+    return _committed(db, proposal)
+
+
+def transcript(lines: Sequence[TranscriptLine]) -> str:
+    """The chat as markdown: each message as `**You:** …` or `**Archie:** …`, a blank line between them."""
+    return "\n\n".join(f"**{_SPEAKERS[line.role]}:** {line.text.strip()}" for line in lines if line.text.strip())
+
+
+def gist_of(cheat_sheet: str, *, title: str) -> str:
+    """The cheat sheet's first prose paragraph on one line, cut at a word to `MAX_GIST_CHARACTERS`; else the title."""
+    blocks = (block.strip() for block in cheat_sheet.split("\n\n"))
+    prose = (block for block in blocks if block and not _is_non_prose(block))
+    paragraph = next(prose, title)
+    text = " ".join(paragraph.split())
+    if len(text) <= MAX_GIST_CHARACTERS:
+        return text
+    cut = text[: MAX_GIST_CHARACTERS - 1].rsplit(" ", 1)[0]
+    return f"{cut}…"
+
+
+def _is_non_prose(block: str) -> bool:
+    return block.startswith(_NON_PROSE_STARTS) or bool(_NUMBERED_START.match(block))
+
+
+def _open_proposal(db: orm.Session, *, user: models.User, proposal_id: uuid.UUID) -> models.CardSetProposal:
+    """The user's still-open card set in a live chat: 404 when it isn't theirs or the chat is gone, 409 when decided."""
+    proposal = db.get(models.CardSetProposal, proposal_id)
+    conversation = db.get(models.Conversation, proposal.conversation_id) if proposal is not None else None
+    if proposal is None or proposal.user_id != user.id or conversation is None or conversation.deleted_at is not None:
+        raise fastapi.HTTPException(status_code=404, detail=NO_CARD_SET)
+    if proposal.status != models.CardSetStatus.PROPOSED:
+        raise fastapi.HTTPException(status_code=409, detail=f"card set is {proposal.status}")
+    return proposal
+
+
+def _chat_item(db: orm.Session, *, user: models.User, proposal: models.CardSetProposal) -> tuple[models.Source, bool]:
+    """The chat's live item, retitled, or a new one; and whether it already existed."""
+    existing = db.scalars(
+        sqlalchemy.select(models.Source).where(
+            models.Source.user_id == user.id, models.Source.chat_conversation_id == proposal.conversation_id
+        )
+    ).one_or_none()
+
+    # Saving is the owner asking for these cards, so it turns cards back on for an item they had turned off.
+    if existing is not None and existing.deleted_at is None:
+        existing.title = proposal.title
+        existing.cards_off = False
+        changes.touch(existing)
+        return existing, True
+
+    # The owner deleted the chat's item: it stays deleted, and frees the chat for a new one.
+    if existing is not None:
+        existing.chat_conversation_id = None
+        changes.touch(existing)
+        db.flush()
+
+    url = f"{CHAT_URL_PREFIX}{proposal.conversation_id}"
+    item = models.Source(
         id=uuid.uuid4(),
         user_id=user.id,
-        conversation_id=answer.conversation_id,
-        message_id=answer.id,
-        kind=models.CardKind.CONCEPT.value,
-        question=question,
-        answer=answer_text,
+        url=url,
+        normalized_url=url,
+        title=proposal.title,
+        kind=models.SourceKind.CHAT.value,
+        state=models.SourceState.INBOX.value,
+        intent=models.SourceIntent.FINISHED.value,
+        processing=models.ProcessingStatus.READY.value,
+        chat_conversation_id=proposal.conversation_id,
         change_seq=changes.next_change_seq(),
     )
-    db.add(card)
-    db.commit()
-    db.refresh(card)
-    return schemas.CardOut.model_validate(card)
+    db.add(item)
+    db.flush()
+    return item, False
 
 
-def _owned_answer(db: orm.Session, *, user: models.User, message_id: uuid.UUID) -> models.Message:
-    """The user's answer in a live chat, or 404."""
-    message = db.get(models.Message, message_id)
-    conversation = db.get(models.Conversation, message.conversation_id) if message is not None else None
-    is_owned = (
-        message is not None
-        and conversation is not None
-        and conversation.user_id == user.id
-        and conversation.deleted_at is None
-        and message.role == models.MessageRole.ASSISTANT
-        and bool(message.text.strip())
-    )
-    if not is_owned:
-        raise fastapi.HTTPException(status_code=404, detail="answer not found")
-    assert message is not None
-    return message
-
-
-def _question_before(db: orm.Session, *, answer: models.Message) -> str | None:
-    """The owner's question the answer replied to."""
-    return db.scalar(
-        sqlalchemy.select(models.Message.text)
-        .where(
-            models.Message.conversation_id == answer.conversation_id,
-            models.Message.role == models.MessageRole.USER.value,
-            models.Message.created_at <= answer.created_at,
+def _write_artifacts(db: orm.Session, *, item: models.Source, proposal: models.CardSetProposal, existed: bool) -> None:
+    """The cheat sheet as the primer, its gist as the summary and the chat as the text, then queue it for search."""
+    # An update is the owner choosing the new set in the chat, so it becomes current even over a version they edited
+    # (`hands_back`), without being labelled as one of their chat edits.
+    summary = {"gist": gist_of(proposal.cheat_sheet, title=proposal.title), "key_ideas": [], "numbers": []}
+    contents: dict[models.ArtifactKind, dict[str, Any]] = {
+        models.ArtifactKind.PRIMER: {"markdown": proposal.cheat_sheet},
+        models.ArtifactKind.SUMMARY: {"summary": summary},
+        models.ArtifactKind.TEXT: {"text": transcript(_transcript_lines(db, conversation_id=proposal.conversation_id))},
+    }
+    for kind, content in contents.items():
+        pipeline.write_artifact(
+            db, source=item, kind=kind, content=content, model=None, prompt_version=None, hands_back=existed
         )
-        .order_by(models.Message.created_at.desc(), models.Message.id.desc())
-        .limit(1)
-    )
+    jobs.enqueue_embed(db, user_id=item.user_id, item_kind=models.SearchItemKind.SOURCE, item_id=item.id)
+
+
+def _transcript_lines(db: orm.Session, *, conversation_id: uuid.UUID) -> list[TranscriptLine]:
+    """The chat's complete messages, oldest first (a failed answer is left out)."""
+    messages = db.scalars(
+        sqlalchemy.select(models.Message)
+        .where(
+            models.Message.conversation_id == conversation_id,
+            models.Message.status == models.MessageStatus.COMPLETE.value,
+        )
+        .order_by(models.Message.created_at, models.Message.id)
+    ).all()
+    return [TranscriptLine(role=models.MessageRole(message.role), text=message.text) for message in messages]
+
+
+def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSetProposal, kept: list[int]) -> None:
+    """Make the item's live cards the kept ones: identical ones stay as they are, new ones are added, and unkept ones
+    are retired unless reviewed (a reviewed card is never retired, so its FSRS progress survives)."""
+    kept_cards = [proposal.cards[index] for index in sorted(kept)]
+    wanted = {(card["question"], card["answer"]) for card in kept_cards}
+    live = db.scalars(
+        sqlalchemy.select(models.Card).where(models.Card.source_id == item.id, models.Card.deleted_at.is_(None))
+    ).all()
+    have = {(card.question, card.answer) for card in live}
+
+    retired = [
+        card.id
+        for card in live
+        if (card.question, card.answer) not in wanted and card.reps == 0 and card.last_review_at is None
+    ]
+    if retired:
+        card_rows.retire_cards(db, models.Card.id.in_(retired))
+
+    for card in kept_cards:
+        if (card["question"], card["answer"]) in have:
+            continue
+        have.add((card["question"], card["answer"]))
+        db.add(
+            models.Card(
+                id=uuid.uuid4(),
+                user_id=item.user_id,
+                source_id=item.id,
+                message_id=proposal.message_id,
+                kind=card["kind"],
+                question=card["question"],
+                answer=card["answer"],
+                change_seq=changes.next_change_seq(),
+            )
+        )
+
+
+def _set_status(proposal: models.CardSetProposal, status: models.CardSetStatus) -> None:
+    """Change the status with a fresh position, so phones pull the new state."""
+    proposal.status = status.value
+    proposal.updated_at = sqlalchemy.func.now()
+    proposal.change_seq = changes.next_change_seq()
+
+
+def _committed(db: orm.Session, proposal: models.CardSetProposal) -> schemas.CardSetProposalOut:
+    db.commit()
+    db.refresh(proposal)
+    return schemas.CardSetProposalOut.model_validate(proposal)

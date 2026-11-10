@@ -40,6 +40,11 @@ export async function restoreVersion(input: {
   return Number(body.version);
 }
 
+/** A 404: the proposal or item is gone (deleted elsewhere). */
+export function isNotFound(error: unknown): boolean {
+  return error instanceof ClientError && error.status === 404;
+}
+
 /** A 409: the edit or the item changed since the phone last looked. */
 export function isConflict(error: unknown): boolean {
   return error instanceof ClientError && error.status === 409;

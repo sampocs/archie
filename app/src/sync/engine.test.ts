@@ -1110,7 +1110,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
   });
 
   // Each migration that adds server columns ends by resetting the saved position, so phones re-pull every row.
-  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at", "0013_chat_edits", "0014_confirm_url", "0015_newsletter_senders", "0016_notes"])("the %s migration ends by resetting a saved position to 0", (tag) => {
+  it.each(["0005_queued_primers", "0006_briefs", "0007_review", "0008_favorites", "0009_collections", "0010_takes", "0011_search_ask", "0012_published_at", "0013_chat_edits", "0014_confirm_url", "0015_newsletter_senders", "0016_notes", "0017_chat_cards"])("the %s migration ends by resetting a saved position to 0", (tag) => {
     const { db } = makeDbStore();
     db.update(schema.syncState).set({ position: 42 }).where(eq(schema.syncState.id, 1)).run();
     const entry = migrations.journal.entries.find((candidate) => candidate.tag === tag)!;
@@ -1164,6 +1164,54 @@ describe("database SyncStore: M4 migration and rejections", () => {
     expect(db.select().from(schema.editProposals).get()).toEqual(
       expect.objectContaining({ status: "applied", appliedVersion: 2, after: JSON.stringify({ question: "Q?", answer: "B." }) }),
     );
+  });
+
+  it("stores pulled card sets, and a chat item's chat, with a missing one as null", async () => {
+    const { db, store } = makeDbStore();
+    const cardSet = {
+      id: "cs1",
+      conversation_id: "k1",
+      message_id: "m1",
+      title: "JWT vs session tokens",
+      cheat_sheet: "## The difference",
+      cards: [{ kind: "concept", question: "Q?", answer: "A." }],
+      status: "proposed",
+      saved_source_id: null,
+      kept: null,
+      created_at: "x",
+      updated_at: "x",
+      change_seq: 5,
+    };
+    await store.applyPage({
+      rows: {
+        sources: [pulledSource({ kind: "chat", chat_conversation_id: "k1" })],
+        artifacts: [],
+        cards: [],
+        card_set_proposals: [cardSet],
+      },
+      position: 5,
+      more: false,
+    });
+    expect(sourceRow(db)?.chatConversationId).toBe("k1");
+    expect(db.select().from(schema.cardSetProposals).get()).toEqual(
+      expect.objectContaining({ status: "proposed", kept: null, cards: JSON.stringify(cardSet.cards) }),
+    );
+
+    // A later pull of the same set (saved now) updates it in place.
+    await store.applyPage({
+      rows: {
+        sources: [pulledSource({})],
+        artifacts: [],
+        cards: [],
+        card_set_proposals: [{ ...cardSet, status: "saved", saved_source_id: "s1", kept: [0], change_seq: 6 }],
+      },
+      position: 6,
+      more: false,
+    });
+    expect(sourceRow(db)?.chatConversationId).toBeNull();
+    expect(db.select().from(schema.cardSetProposals).all()).toEqual([
+      expect.objectContaining({ id: "cs1", status: "saved", savedSourceId: "s1", kept: "[0]" }),
+    ]);
   });
 
   it("a rejected go_deeper surfaces syncError, rewinds the position, and the next pull restores the server copy", async () => {

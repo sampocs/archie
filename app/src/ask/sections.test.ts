@@ -9,6 +9,8 @@ import {
   liveView,
   relativeTime,
   rowPreview,
+  thinkingLabel,
+  type LiveAnswer,
 } from "./sections";
 
 const library = (overrides: Partial<LibraryCitation> = {}): LibraryCitation => ({
@@ -63,7 +65,7 @@ describe("applyEvent and liveView", () => {
     ] as const;
     const streaming = events.reduce(applyEvent, EMPTY_LIVE);
 
-    expect(liveView(streaming)).toEqual({ sections: [], streamingText: "It buys bonds.", searching: null, editing: false });
+    expect(liveView(streaming)).toEqual({ sections: [], streamingText: "It buys bonds.", thinking: null });
 
     const finished = applyEvent(streaming, { type: "block", block: 0, label: "library", citations: [library()] });
     expect(liveView(finished).sections).toEqual([{ label: "library", text: "It buys bonds.", citations: [library()] }]);
@@ -71,9 +73,10 @@ describe("applyEvent and liveView", () => {
     expect(applyEvent(finished, { type: "error", message: "x" }).failed).toBe(true);
   });
 
-  it("shows the searching line until text arrives", () => {
+  it("labels the thinking row by the search running, until text arrives", () => {
     const live = applyEvent(EMPTY_LIVE, { type: "searching", kind: "web", query: "fed funds rate" });
-    expect(liveView(live).searching).toBe("web");
+    expect(liveView(live).thinking).toBe("Searching the web…");
+    expect(liveView(applyEvent(live, { type: "delta", block: 0, text: "About" })).thinking).toBeNull();
   });
 
   it("an editing event shows the drafting line and an edit event adds its proposal once", () => {
@@ -94,7 +97,8 @@ describe("applyEvent and liveView", () => {
     const proposed = applyEvent(applyEvent(drafting, { type: "edit", ...wire }), { type: "edit", ...wire });
     expect(proposed.proposals).toEqual([wire]);
     expect(proposed.editing).toBe(false);
-    expect(liveView(proposed).editing).toBe(false);
+    expect(liveView(drafting).thinking).toBe("Drafting an edit…");
+    expect(liveView(proposed).thinking).toBe("Thinking");
 
     const searched = applyEvent(drafting, { type: "searching", kind: "library", query: "x" });
     expect(searched.editing).toBe(false);
@@ -128,6 +132,82 @@ describe("edit events for one target", () => {
     const repeated = applyEvent(applyEvent(EMPTY_LIVE, { ...base, id: "a" }), { ...base, id: "a" });
     expect(repeated.proposals).toHaveLength(1);
     expect(repeated.proposals[0].status).toBe("proposed");
+  });
+});
+
+describe("card-set events", () => {
+  const cardSet = (overrides: { id: string; status?: string }) => ({
+    conversation_id: "k1",
+    message_id: "m1",
+    title: "JWT vs session tokens",
+    cheat_sheet: "## The difference",
+    cards: [{ kind: "concept", question: "Q?", answer: "A." }],
+    status: "proposed",
+    saved_source_id: null,
+    kept: null,
+    created_at: "x",
+    updated_at: "x",
+    change_seq: 1,
+    ...overrides,
+  });
+
+  it("drafting_cards labels the row, and a cards event adds its set and stops drafting", () => {
+    const drafting = applyEvent(EMPTY_LIVE, { type: "drafting_cards" });
+    expect(drafting.draftingCards).toBe(true);
+    expect(liveView(drafting).thinking).toBe("Drafting cards…");
+
+    const proposed = applyEvent(drafting, { type: "cards", ...cardSet({ id: "a" }) });
+    expect(proposed.draftingCards).toBe(false);
+    expect(proposed.cardSets).toEqual([cardSet({ id: "a" })]);
+  });
+
+  it("text, a search, an edit draft and the end of the answer each stop drafting cards", () => {
+    const drafting = applyEvent(EMPTY_LIVE, { type: "drafting_cards" });
+    expect(applyEvent(drafting, { type: "delta", block: 0, text: "Here" }).draftingCards).toBe(false);
+    expect(applyEvent(drafting, { type: "searching", kind: "library", query: "jwt" }).draftingCards).toBe(false);
+    expect(applyEvent(drafting, { type: "editing", target_kind: null }).draftingCards).toBe(false);
+    expect(applyEvent(drafting, { type: "done", message_id: "m2" }).draftingCards).toBe(false);
+    expect(applyEvent(drafting, { type: "error", message: "x" }).draftingCards).toBe(false);
+    expect(endOfStream(drafting).draftingCards).toBe(false);
+  });
+
+  it("a newer set replaces the still-proposed ones, leaves a saved one, and a repeated id isn't added twice", () => {
+    const withSaved = applyEvent(EMPTY_LIVE, { type: "cards", ...cardSet({ id: "saved", status: "saved" }) });
+    const two = applyEvent(applyEvent(withSaved, { type: "cards", ...cardSet({ id: "a" }) }), {
+      type: "cards",
+      ...cardSet({ id: "b" }),
+    });
+    expect(two.cardSets.map((set) => [set.id, set.status])).toEqual([
+      ["saved", "saved"],
+      ["a", "replaced"],
+      ["b", "proposed"],
+    ]);
+
+    const repeated = applyEvent(applyEvent(EMPTY_LIVE, { type: "cards", ...cardSet({ id: "a" }) }), {
+      type: "cards",
+      ...cardSet({ id: "a" }),
+    });
+    expect(repeated.cardSets.map((set) => [set.id, set.status])).toEqual([["a", "proposed"]]);
+  });
+});
+
+describe("thinkingLabel", () => {
+  const live = (overrides: Partial<LiveAnswer>): LiveAnswer => ({ ...EMPTY_LIVE, ...overrides });
+
+  it("reads Thinking from send until text streams, then hides", () => {
+    expect(thinkingLabel(EMPTY_LIVE, false)).toBe("Thinking");
+    expect(thinkingLabel(EMPTY_LIVE, true)).toBeNull();
+  });
+
+  it("names the tool running, even after text has streamed", () => {
+    expect(thinkingLabel(live({ searching: "library" }), true)).toBe("Searching your library…");
+    expect(thinkingLabel(live({ editing: true }), true)).toBe("Drafting an edit…");
+    expect(thinkingLabel(live({ draftingCards: true }), true)).toBe("Drafting cards…");
+  });
+
+  it("hides once the answer is done or failed, whatever was running", () => {
+    expect(thinkingLabel(live({ messageId: "m2" }), false)).toBeNull();
+    expect(thinkingLabel(live({ failed: true, draftingCards: true }), false)).toBeNull();
   });
 });
 

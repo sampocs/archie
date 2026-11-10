@@ -274,7 +274,7 @@ def run(
                     "type": "tool_result",
                     "tool_use_id": tool_use_id,
                     "is_error": True,
-                    "content": _error_text(error),
+                    "content": error_text(error),
                 }
             )
     return ToolOutcome(
@@ -498,7 +498,8 @@ def _card_origin(db: sqlalchemy.orm.Session, *, item: _CardOriginIn) -> sqlalche
     return models.Card.topic_primer_id.in_(versions_of_topic)
 
 
-def _error_text(error: ToolInputError | pydantic.ValidationError) -> str:
+def error_text(error: ToolInputError | pydantic.ValidationError) -> str:
+    """A tool error the model can act on: the message, or the first three validation problems."""
     if isinstance(error, ToolInputError):
         return str(error)
     problems = [f"{'.'.join(str(part) for part in problem['loc'])}: {problem['msg']}" for problem in error.errors()]

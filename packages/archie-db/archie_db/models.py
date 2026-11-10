@@ -45,6 +45,8 @@ class SourceKind(StrEnum):
     PODCAST = "podcast"
     NEWSLETTER = "newsletter"
     NOTE = "note"
+    # Saved from an Ask chat's card set: a cheat sheet (the primer), the transcript (the text) and its cards.
+    CHAT = "chat"
 
 
 class CollectionItemKind(StrEnum):
@@ -311,6 +313,15 @@ class EditStatus(StrEnum):
     SUPERSEDED = "superseded"
 
 
+class CardSetStatus(StrEnum):
+    """Where a card set Ask proposed stands: waiting for the owner, saved, replaced by a later one, or set aside."""
+
+    PROPOSED = "proposed"
+    SAVED = "saved"
+    REPLACED = "replaced"
+    DISCARDED = "discarded"
+
+
 INGEST_TOKEN_LENGTH = 10
 _INGEST_TOKEN_ALPHABET = string.ascii_lowercase + string.digits
 
@@ -370,6 +381,13 @@ class Source(Base):
         sqlalchemy.Index("uq_sources_user_id_newsletter_message_id", "user_id", "newsletter_message_id", unique=True),
         # A note imported twice maps to one source (nulls never collide).
         sqlalchemy.Index("uq_sources_user_id_bear_id", "user_id", "bear_id", unique=True),
+        # One item per chat: a later save from the same chat updates it.
+        sqlalchemy.Index(
+            "uq_sources_chat_conversation_id",
+            "chat_conversation_id",
+            unique=True,
+            postgresql_where=sqlalchemy.text("chat_conversation_id IS NOT NULL"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
@@ -445,6 +463,15 @@ class Source(Base):
     sender_pending: Mapped[bool] = mapped_column(sqlalchemy.Boolean, server_default=sqlalchemy.false())
     # Server only (never pulled): the feed guid the user chose with "Wrong episode?".
     episode_guid: Mapped[str | None] = mapped_column(sqlalchemy.String(1024))
+    # Chat items only (kind `chat`): the chat it was saved from; synced, so the item page offers Continue in Ask. A
+    # deleted chat leaves the item (its transcript is the text artifact).
+    chat_conversation_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True),
+        # `conversations.about_source_id` points back here, so this key is added after both tables exist.
+        sqlalchemy.ForeignKey(
+            "conversations.id", ondelete="SET NULL", use_alter=True, name="sources_chat_conversation_id_fkey"
+        ),
+    )
     # Always assigned via changes.next_change_seq() under changes.lock_user_writes(); see changes.py for why.
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
 
@@ -882,7 +909,8 @@ class Card(Base):
     Its origin is a source (cards from the summary, or foundation cards from the source's primer, with `artifact_id`
     naming that summary or primer version), a topic primer (foundation cards), a brief (quiz cards), a take (take
     cards, with `take_version_id` naming the version they were written from) or a chat (a card made from an answer,
-    with `message_id` naming it).
+    with `message_id` naming it; no longer made). A card saved from a chat's card set belongs to the chat item (a
+    `chat` source), with `message_id` naming the answer that proposed it.
     """
 
     __tablename__ = "cards"
@@ -1017,6 +1045,41 @@ class EditProposal(Base):
     after: Mapped[dict[str, Any]] = mapped_column(postgresql.JSONB)
     status: Mapped[str] = mapped_column(sqlalchemy.String(16))
     applied_version: Mapped[int | None] = mapped_column(sqlalchemy.Integer)
+    created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
+    change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)
+
+
+class CardSetProposal(Base):
+    """A card set Ask proposed in a chat: a cheat sheet and cards; nothing is saved until the owner taps Save.
+
+    `cards` holds `[{kind, question, answer}]`; `kept` the indices the owner saved, and `saved_source_id` the chat item
+    they went to.
+    """
+
+    __tablename__ = "card_set_proposals"
+    __table_args__ = (
+        sqlalchemy.Index("ix_card_set_proposals_user_id_change_seq", "user_id", "change_seq"),
+        sqlalchemy.Index("ix_card_set_proposals_conversation_id", "conversation_id"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
+    conversation_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("conversations.id", ondelete="CASCADE")
+    )
+    message_id: Mapped[uuid.UUID] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("messages.id", ondelete="CASCADE")
+    )
+    title: Mapped[str] = mapped_column(sqlalchemy.Text)
+    # Markdown; becomes the chat item's primer.
+    cheat_sheet: Mapped[str] = mapped_column(sqlalchemy.Text)
+    cards: Mapped[list[dict[str, Any]]] = mapped_column(postgresql.JSONB)
+    status: Mapped[str] = mapped_column(sqlalchemy.String(16))
+    saved_source_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="SET NULL")
+    )
+    kept: Mapped[list[int] | None] = mapped_column(postgresql.JSONB)
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     change_seq: Mapped[int] = mapped_column(sqlalchemy.BigInteger)

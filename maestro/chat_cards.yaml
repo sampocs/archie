@@ -1,0 +1,87 @@
+appId: com.sampocs.archie
+---
+# Run after run_chat_cards.sh has seeded a chat with a three-card proposal. Spends nothing on models.
+# Relaunch (keeping the login) so the app syncs on start and pulls the chat the runner just seeded.
+- launchApp
+- tapOn:
+    id: "tab-ask"
+# The seeded chat arrives with the next sync, which can take a few seconds.
+- extendedWaitUntil:
+    visible:
+      id: "ask-row-.*"
+    timeout: 30000
+- tapOn:
+    id: "ask-row-.*"
+- scrollUntilVisible:
+    element:
+      id: "card-set-save"
+    direction: DOWN
+    timeout: 15000
+- assertVisible: ".*Cheat sheet · JWT vs session tokens.*"
+- assertVisible: "Save 3"
+- assertVisible: "1 / 3"
+# The cheat sheet opens in full, rendered (a heading, not its markdown source), and Done closes it.
+- tapOn:
+    id: "card-set-cheat-sheet"
+- assertVisible:
+    id: "cheat-sheet-sheet"
+- assertVisible: "The difference"
+- assertNotVisible: "## The difference"
+- tapOn:
+    id: "cheat-sheet-done"
+- assertNotVisible:
+    id: "cheat-sheet-sheet"
+# Page to card 2 and untick it: Save counts only the kept cards.
+- tapOn:
+    id: "card-set-next"
+- assertVisible: "2 / 3"
+- assertVisible: "Where should a browser keep auth tokens?"
+- tapOn:
+    id: "card-set-keep-1"
+- assertVisible: "Save 2"
+# See all lists every card with its tick; the untick carried over.
+- tapOn:
+    id: "card-set-see-all"
+- assertVisible:
+    id: "card-set-list"
+# The list is taller than one card, so its last card and the footer sit below the composer until scrolled to.
+- scrollUntilVisible:
+    element: ".*What problem does a refresh token solve\\?.*"
+    direction: DOWN
+    centerElement: true
+    timeout: 10000
+# Maestro counts the footer as visible even while the composer covers it, so centre it before tapping Save.
+- scrollUntilVisible:
+    element:
+      id: "card-set-save"
+    direction: DOWN
+    centerElement: true
+    timeout: 10000
+- assertVisible: "One at a time"
+- assertVisible: "Save 2"
+- tapOn:
+    id: "card-set-save"
+- extendedWaitUntil:
+    visible: "Saved to Library"
+    timeout: 10000
+- assertVisible: ".*Saved · 2 cards in review.*"
+# Open goes to the new Library item: the cheat sheet first, then the chat it came from.
+- tapOn:
+    id: "card-set-open"
+- extendedWaitUntil:
+    visible:
+      id: "chat-item-archie"
+    timeout: 15000
+- assertVisible:
+    id: "item-title"
+- assertVisible: "JWT vs session tokens"
+- assertVisible: "The difference"
+- tapOn:
+    id: "chat-item-original"
+- extendedWaitUntil:
+    visible:
+      id: "chat-item-original"
+    timeout: 10000
+- assertVisible: ".*You:.*"
+- assertVisible:
+    id: "chat-item-continue"

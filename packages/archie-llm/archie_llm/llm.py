@@ -32,7 +32,6 @@ CARE_STEP = "care"
 ANSWER_TRANSCRIPTION_STEP = "transcribe_answer"
 EMBED_STEP = "embed"
 ASK_STEP = "ask"
-CARD_DRAFT_STEP = "card_draft"
 GROQ_WHISPER = "whisper-large-v3-turbo"
 OPENAI_TRANSCRIBE = "gpt-4o-mini-transcribe"
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -71,7 +70,6 @@ NEWS_QUIZ_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 # Writing quality matters for a cleaned-up take; its cards are short and checked against the owner's own text.
 CLEAN_TAKE_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 TAKE_CARDS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
-CARD_DRAFT_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 NOTE_CARDS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 
 # A note's write-up is the whole reading experience of an imported note, so it gets the writing-quality tier.

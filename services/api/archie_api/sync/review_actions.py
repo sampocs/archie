@@ -127,7 +127,8 @@ def set_cards_off(db: orm.Session, *, user: models.User, payload: dict[str, obje
     """Cards off retires the source's cards (foundation cards too) and stops new ones; cards on re-runs analyze.
 
     A note is never analyzed: cards on for a refreshed note re-queues its `note_cards` job, and for an unrefreshed
-    one only flips the flag (the refresher writes its cards when it is refreshed).
+    one only flips the flag (the refresher writes its cards when it is refreshed). Neither is a chat item: cards on
+    only flips the flag, since Save in the chat writes its cards (and turns them back on).
     """
     parsed = rows.parse(_CardsOffPayload, payload)
     if parsed is None:
@@ -144,6 +145,8 @@ def set_cards_off(db: orm.Session, *, user: models.User, payload: dict[str, obje
 
     if source.kind == models.SourceKind.NOTE:
         _requeue_note_cards(db, source=source)
+        return None
+    if source.kind == models.SourceKind.CHAT:
         return None
 
     # Only a source with text can be analyzed again; one still fetching gets its cards when its analyze runs.

@@ -2,6 +2,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Network from "expo-network";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { eq } from "drizzle-orm";
+import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { Alert, Pressable, View } from "react-native";
 
 import { aboutTitleOf } from "@/ask/aboutTitle";
@@ -19,7 +21,9 @@ import {
   type CardSetChoice,
   type CardSetView,
 } from "@/ask/cardSets";
+import { backLabelOf } from "@/ask/chatChrome";
 import { Composer } from "@/ask/Composer";
+import { ItemSheet } from "@/ask/ItemSheet";
 import { groupSections, liveView } from "@/ask/sections";
 import { parseSegments, type AboutKind } from "@/ask/types";
 import { useAskAvailable } from "@/ask/useAskAvailable";
@@ -28,6 +32,7 @@ import { useChat } from "@/ask/useChats";
 import { useChatSession } from "@/ask/useChatSession";
 import { deleteConversation } from "@/db/actions";
 import { db } from "@/db/client";
+import * as schema from "@/db/schema";
 import { EditProposalCard } from "@/edits/EditProposalCard";
 import { viewOfWire } from "@/edits/types";
 import { useConversationProposals } from "@/edits/useProposals";
@@ -39,7 +44,7 @@ import { haptic } from "@/ui/haptics";
 import { MenuSheet } from "@/ui/MenuSheet";
 import { Toast } from "@/ui/Toast";
 
-type Params = { id: string; q?: string; web?: string; aboutKind?: AboutKind; aboutId?: string; aboutTitle?: string };
+type Params = { id: string; q?: string; web?: string; aboutKind?: AboutKind; aboutId?: string; aboutTitle?: string; fromNote?: string };
 
 export default function ChatScreen() {
   const theme = useTheme();
@@ -84,6 +89,7 @@ export default function ChatScreen() {
     [...cardSets.values()].flat().some((cardSet) => shownCardSetStatus(cardSet, cardSetLive) === "proposed");
   const [toast, setToast] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [itemOpen, setItemOpen] = useState(false);
   // Stable, so a re-render (a pull landing) doesn't restart the toast's timer.
   const hideToast = useCallback(() => setToast(null), []);
 
@@ -100,13 +106,19 @@ export default function ChatScreen() {
     () => params.aboutTitle ?? aboutTitleOf(conversation),
     [params.aboutTitle, conversation],
   );
+  // The About chip opens the item only while it is still in the Library; a topic, a take or a gone source stays text.
+  const { data: aboutSources } = useLiveQuery(
+    db.select().from(schema.sources).where(eq(schema.sources.id, conversation?.aboutSourceId ?? "")),
+    [conversation?.aboutSourceId],
+  );
+  const liveAboutSource = aboutSources[0]?.deletedAt === null ? aboutSources[0] : null;
   const turns = useMemo(() => messages.filter((message) => message.id !== pending?.userMessageId), [messages, pending]);
 
   return (
     <View style={{ flex: 1 }}>
       <Screen
         title="Ask"
-        nav={{ title: conversation?.title ?? "", backLabel: "Ask" }}
+        nav={{ title: conversation?.title ?? "", backLabel: backLabelOf(params.fromNote, aboutTitle) }}
         onBack={router.back}
         headerRight={
           conversation && conversation.deletedAt === null ? (
@@ -117,7 +129,27 @@ export default function ChatScreen() {
         }
         footer={
           <View style={{ gap: theme.spacing.sm }}>
-            {aboutTitle ? (
+            {aboutTitle && liveAboutSource ? (
+              <Pressable
+                testID="chat-about"
+                accessibilityRole="button"
+                onPress={() => setItemOpen(true)}
+                style={{
+                  alignSelf: "flex-start",
+                  maxWidth: "100%",
+                  backgroundColor: theme.colors.surface,
+                  borderWidth: 1,
+                  borderColor: theme.colors.line,
+                  borderRadius: theme.radii.chipSmall,
+                  paddingHorizontal: theme.spacing.md,
+                  paddingVertical: theme.spacing.xs,
+                }}
+              >
+                <Text variant="secondary" tone="ink2" numberOfLines={1}>
+                  ▤ About: {aboutTitle} <Text variant="secondary" tone="ink3">›</Text>
+                </Text>
+              </Pressable>
+            ) : aboutTitle ? (
               <Text testID="chat-about" variant="secondary" tone="ink2">
                 About: {aboutTitle}
               </Text>
@@ -147,6 +179,7 @@ export default function ChatScreen() {
                 key={message.id}
                 index={index}
                 sections={groupSections(parseSegments(message.segments))}
+                quietLabels={(proposals.get(message.id) ?? []).length > 0 || cardSets.has(message.id)}
                 failed={message.status === "failed"}
                 onRetry={() => retry(turns, index, send)}
                 onMakeCards={
@@ -189,6 +222,7 @@ export default function ChatScreen() {
                 index={turns.length + 1}
                 {...liveView(pending.live)}
                 sentAt={pending.sentAt}
+                quietLabels={pending.live.proposals.length > 0 || pending.live.cardSets.length > 0}
                 failed={pending.live.failed}
                 onRetry={() => send(pending.text, pending.webSearch)}
               >
@@ -218,6 +252,9 @@ export default function ChatScreen() {
           ) : null}
         </View>
       </Screen>
+      {liveAboutSource ? (
+        <ItemSheet sourceId={liveAboutSource.id} visible={itemOpen} onClose={() => setItemOpen(false)} />
+      ) : null}
       <MenuSheet
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}

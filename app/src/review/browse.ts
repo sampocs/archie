@@ -5,7 +5,7 @@ import type { TakeRow } from "@/takes/takes";
 
 import { MISSED_WINDOW_DAYS } from "./constants";
 import { isDue } from "./due";
-import { cardOrigin, cardTopicId, isReviewable, type ReviewData } from "./eligibility";
+import { cardOrigin, cardTopicId, isReviewable, type ReviewData, type ReviewLogRow } from "./eligibility";
 import { KIND_LABELS } from "./labels";
 import type { CardRow, ReviewGrade, ReviewRow } from "./types";
 
@@ -90,15 +90,17 @@ export type MissedCard = { card: CardRow; missed: number; partly: number; lastRe
 export function missedCards(data: ReviewData, now: Date): MissedCard[] {
   const since = now.getTime() - MISSED_WINDOW_DAYS * DAY_MS;
   const replaced = new Set(data.reviews.map((review) => review.replacesReviewId).filter((id) => id !== null));
-  const reviewsByCard = new Map<string, ReviewRow[]>();
+  const reviewsByCard = new Map<string, ReviewLogRow[]>();
   for (const review of data.reviews) {
     if (replaced.has(review.id) || Date.parse(review.reviewedAt) < since) continue;
-    reviewsByCard.set(review.cardId, [...(reviewsByCard.get(review.cardId) ?? []), review]);
+    const own = reviewsByCard.get(review.cardId);
+    if (own) own.push(review);
+    else reviewsByCard.set(review.cardId, [review]);
   }
 
   const entries = browsableCards(data).flatMap((card) => {
     const reviews = reviewsByCard.get(card.id) ?? [];
-    const latest = reviews.reduce<ReviewRow | null>(
+    const latest = reviews.reduce<ReviewLogRow | null>(
       (best, review) => (best === null || Date.parse(review.reviewedAt) > Date.parse(best.reviewedAt) ? review : best),
       null,
     );

@@ -6,12 +6,11 @@
 import { parseBriefContent, storiesInOrder, todayBrief, type BriefRow, type TodayBrief } from "@/brief/brief";
 import type { LibrarySource } from "@/library/join";
 import { DAILY_NOTES, refresherQueue, todayRefresher, type TodayRefresher } from "@/notes/refresher";
-import { isReviewable, type ReviewData } from "@/review/eligibility";
+import { isReviewable, type ReviewData, type ReviewLogRow } from "@/review/eligibility";
 import { cardsWord } from "@/review/labels";
 import { quizOffer } from "@/review/newsQuiz";
 import { effectiveDue, isDue } from "@/review/due";
 import { daysFrom, dueSummary, minutesFor, nextReview, shortWeekday } from "@/review/summary";
-import type { ReviewRow } from "@/review/types";
 import { MONTHS, sameLocalDay } from "@/today/todayLabels";
 
 export const TASK_KINDS = ["review", "notes", "quiz", "brief"] as const;
@@ -55,8 +54,8 @@ export type TodayTasks = {
 
 export type TodayInputs = {
   reviewData: ReviewData;
-  // The phone's review log; only today's (and, for the quiz, this week's) rows matter.
-  reviews: ReviewRow[];
+  // The phone's whole review log; only today's (and, for the quiz, each card's latest) rows matter.
+  reviews: ReviewLogRow[];
   sources: LibrarySource[];
   briefs: BriefRow[];
   now: Date;
@@ -134,7 +133,7 @@ function reviewTask({ reviewData, reviews, now }: TodayInputs): ReviewTask | nul
 
 // Distinct cards, so a re-graded answer ("I actually knew it") or a missed card seen twice counts once; quiz answers
 // belong to the quiz.
-function reviewedDueToday(reviewData: ReviewData, reviews: ReviewRow[], now: Date): number {
+function reviewedDueToday(reviewData: ReviewData, reviews: ReviewLogRow[], now: Date): number {
   const quizCards = new Set(reviewData.cards.filter((card) => card.kind === QUIZ_KIND).map((card) => card.id));
   const cardIds = reviews
     .filter((review) => review.wasDue === 1 && sameLocalDay(review.reviewedAt, now) && !quizCards.has(review.cardId))
@@ -181,9 +180,9 @@ function quizTask({ reviewData, reviews, now }: TodayInputs): QuizTask | null {
   return { status: DONE, gotIt, answered: quiz.length };
 }
 
-function latestGrade(reviews: ReviewRow[], cardId: string): string | null {
+function latestGrade(reviews: ReviewLogRow[], cardId: string): string | null {
   const own = reviews.filter((review) => review.cardId === cardId);
-  const latest = own.reduce<ReviewRow | null>(
+  const latest = own.reduce<ReviewLogRow | null>(
     (best, review) => (best === null || review.reviewedAt > best.reviewedAt ? review : best),
     null,
   );

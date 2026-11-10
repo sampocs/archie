@@ -48,8 +48,13 @@ export default function ReviewScreen() {
   const [mode, setMode] = useBrowseMode();
   const [query, setQuery] = useState("");
   const cards = useMemo(() => browsableCards(data), [data]);
-  const due = dueSummary(data, now);
-  const streak = reviewStreak(data.reviews, now);
+  // Derived from the whole log and card set, so they're recomputed only when the data or the clock changes, not on
+  // every keystroke in the search box.
+  const due = useMemo(() => dueSummary(data, now), [data, now]);
+  const streak = useMemo(() => reviewStreak(data.reviews, now), [data, now]);
+  const next = useMemo(() => nextReview(data, now), [data, now]);
+  const aheadCount = useMemo(() => aheadSummary(data, now).count, [data, now]);
+  const searchResults = useMemo(() => orderCards(searchCards(cards, query)), [cards, query]);
   const startSession = (session: SessionParams) => router.push({ pathname: "/review/session", params: session });
 
   // The session's Done screen links here to a browse mode (with a fresh `at`, so the same link works twice).
@@ -75,8 +80,8 @@ export default function ReviewScreen() {
       ) : (
         <CaughtUpCard
           cardCount={cards.length}
-          next={nextReview(data, now)}
-          aheadCount={aheadSummary(data, now).count}
+          next={next}
+          aheadCount={aheadCount}
           now={now}
           onAhead={() => startSession({ mode: "ahead" })}
           onShuffle={() => startSession({ mode: "shuffle" })}
@@ -94,7 +99,7 @@ export default function ReviewScreen() {
             clearButtonMode="while-editing"
           />
           {query.trim() !== "" ? (
-            <CardSearchResults cards={orderCards(searchCards(cards, query))} data={data} now={now} />
+            <CardSearchResults cards={searchResults} data={data} now={now} />
           ) : (
             <>
               <BrowseModeControl mode={mode} onChange={setMode} />
@@ -107,13 +112,30 @@ export default function ReviewScreen() {
   );
 }
 
+// Each list is computed in its own component so only the visible mode's work runs, and memoised so a re-render with
+// the same data and clock (typing, toggling) doesn't redo it.
 function BrowsePanel({ mode, data, now }: { mode: BrowseMode; data: ReviewData; now: Date }) {
   switch (mode) {
     case "topics":
-      return <TopicsList rows={browseTopics(data, now)} />;
+      return <TopicsPanel data={data} now={now} />;
     case "items":
-      return <ItemsList rows={browseItems(data, now)} />;
+      return <ItemsPanel data={data} now={now} />;
     case "missed":
-      return <MissedList entries={missedCards(data, now)} data={data} now={now} />;
+      return <MissedPanel data={data} now={now} />;
   }
+}
+
+function TopicsPanel({ data, now }: { data: ReviewData; now: Date }) {
+  const rows = useMemo(() => browseTopics(data, now), [data, now]);
+  return <TopicsList rows={rows} />;
+}
+
+function ItemsPanel({ data, now }: { data: ReviewData; now: Date }) {
+  const rows = useMemo(() => browseItems(data, now), [data, now]);
+  return <ItemsList rows={rows} />;
+}
+
+function MissedPanel({ data, now }: { data: ReviewData; now: Date }) {
+  const entries = useMemo(() => missedCards(data, now), [data, now]);
+  return <MissedList entries={entries} data={data} now={now} />;
 }

@@ -1,5 +1,5 @@
 """Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic`, `clean_text`, `update_brief`,
-`clean_take`, `take_cards`, `write_note` and `note_cards` steps.
+`clean_take`, `take_cards`, `write_note`, `note_cards` and `url_title` steps.
 
 Bump the matching version whenever a prompt or the schema changes in a way that alters output: it is stored
 on every artifact, so old versions stay attributable. A brief is rewritten on every newsletter and keeps no
@@ -258,6 +258,23 @@ def topic_primer_message(*, domain: str, topic: str, source_titles: Sequence[str
     titles = "\n".join(f"- {title}" for title in source_titles) or "- (none yet)"
     return f"Domain: {domain}\nTopic: {topic}\n\nThe user's sources on this topic (for emphasis only):\n{titles}"
 
+
+URL_TITLE_SYSTEM = """You write a title for a web page that could not be read, from its URL alone. The URL is all you \
+know: use the domain and the words in the path (a slug), and never guess at what the page says beyond them.
+
+Rules:
+- Write a short, natural title in sentence case, at most 12 words, as the page's own headline might read. Plain text: \
+no quotes, no site name, no trailing punctuation.
+- Restore the words a slug runs together, such as "githubs" to "GitHub's".
+- If the URL says nothing useful about the page (a bare domain, an opaque id, a path of numbers), return an empty \
+string."""
+
+URL_TITLE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"title": {"type": "string"}},
+    "required": ["title"],
+    "additionalProperties": False,
+}
 
 FILE_TOPIC_SYSTEM = """You file sources for a personal learning app into the user's own list of topics. Each topic \
 sits under one domain.

@@ -3,27 +3,34 @@
 The text comes from the Safari capture when the phone sent one, else from the X thread (for X posts) or the fetched
 page (for articles, and for an article whose capture is too short to use). Too little text, or a page that answers
 401, 403, 404, 410 or 451 (a paywall, block or missing page), fails the job at once as `TEXT_MISSING`, since fetching
-the same page again will not help; the user is told to share it from Safari instead, and the row keeps the captured
-title. A newsletter has no page to fetch (its URL is `newsletter:<message-id>`), so one without a capture, or with too
-little text, fails as `NEWSLETTER_UNREADABLE`. Other failures are retried. Following the loop's handler contract, the
-source is read and marked `processing` in a committed transaction before any outside call, and the result is written
-under the user's lock afterwards.
+the same page again will not help; the user is told to share it from Safari instead. The failed row still gets a title
+so it never shows a bare URL, from the first of: the title it already has, the captured title, the fetched page's own
+title, or a short one Haiku writes from the URL alone (a page that answered a blocked status has none). The model sees
+only the URL, is skipped for a user without a key, and a failed model call changes nothing: the title is a nicety.
+A newsletter has no page to fetch (its URL is `newsletter:<message-id>`), so one without a capture, or with too little
+text, fails as `NEWSLETTER_UNREADABLE`. Other failures are retried. Following the loop's handler contract, the source
+is read and marked `processing` in a committed transaction before any outside call (the title's model call included),
+and the result is written under the user's lock afterwards.
 """
 
 from __future__ import annotations
 
 import dataclasses
+import json
+import urllib.parse
 import uuid
 from dataclasses import dataclass
 
+import anthropic
 import httpx
 import sqlalchemy
 import sqlalchemy.orm
 import youtube_transcript_api
 from archie_db import changes, models, pipeline
+from archie_llm import llm
 from archie_shared import config, logging, urls
 
-from archie_worker import content, errors
+from archie_worker import content, errors, keys, prompts
 from archie_worker.content import article, podcast, transcripts, x, youtube
 from archie_worker.content import episode as episode_content
 from archie_worker.handlers import _text, fetch_title
@@ -32,6 +39,8 @@ _PAGE_TIMEOUT_SECONDS = 15
 _PAGE_MAX_BYTES = 5_000_000
 _MIN_ARTICLE_WORDS = 50
 _MIN_X_WORDS = 1
+_URL_TITLE_MAX_WORDS = 15
+_URL_TITLE_MAX_TOKENS = 100
 # Page statuses that mean "paywalled, blocked or gone"; a retry cannot fix them, sharing from Safari can.
 _PERMANENT_PAGE_STATUSES = frozenset({401, 403, 404, 410, 451})
 
@@ -46,6 +55,7 @@ class _SourceInput:
     user_id: int
     url: str
     kind: str
+    title: str | None
     capture_title: str | None
     capture_text: str | None
     episode_guid: str | None
@@ -73,11 +83,19 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
     if is_newsletter and source_input.capture_text is None:
         raise errors.PermanentJobError(errors.FailureReason.NEWSLETTER_UNREADABLE)
 
-    extracted = _get_text(source_input)
+    try:
+        extracted = _get_text(source_input)
+    except errors.PermanentJobError as error:
+        if error.reason == errors.FailureReason.TEXT_MISSING and _is_page_kind(source_input):
+            _title_failed_source(db, job=job, source_input=source_input, page_title=None)
+        raise
+
     word_count = len(extracted.text.split())
     minimum_words = _MIN_X_WORDS if source_input.kind == models.SourceKind.X else _MIN_ARTICLE_WORDS
     if word_count < minimum_words:
         _logger.info("Source %s has %d words, needs %d", source_input.source_id, word_count, minimum_words)
+        if _is_page_kind(source_input):
+            _title_failed_source(db, job=job, source_input=source_input, page_title=extracted.title)
         raise errors.PermanentJobError(
             errors.FailureReason.NEWSLETTER_UNREADABLE if is_newsletter else errors.FailureReason.TEXT_MISSING
         )
@@ -90,6 +108,89 @@ def handle(db: sqlalchemy.orm.Session, job: models.Job) -> None:
         image_url=extracted.image_url,
         published_at=extracted.published_at,
     )
+
+
+def _is_page_kind(source_input: _SourceInput) -> bool:
+    """Whether the source is read from a page (an article or any other link), not an X thread or an email."""
+    return source_input.kind not in {models.SourceKind.X, models.SourceKind.NEWSLETTER}
+
+
+def _title_failed_source(
+    db: sqlalchemy.orm.Session, *, job: models.Job, source_input: _SourceInput, page_title: str | None
+) -> None:
+    """Give a source whose text is missing a title before its job fails, so its row does not show the bare URL.
+
+    The captured title, else the page's, when there is one; otherwise the model's guess from the URL. Written under the
+    user's lock after the model call, and never replacing a title the source has. The title is a nicety: anything that
+    goes wrong here is logged and rolled back, so the job still fails once, for its own reason.
+    """
+    if source_input.title:
+        return
+
+    try:
+        _write_failed_title(db, job=job, source_input=source_input, page_title=page_title)
+    except Exception:  # noqa: BLE001 (a database or model surprise must not replace the permanent failure)
+        db.rollback()
+        _logger.exception("Could not title failed source %s", source_input.source_id)
+
+
+def _write_failed_title(
+    db: sqlalchemy.orm.Session, *, job: models.Job, source_input: _SourceInput, page_title: str | None
+) -> None:
+    title = source_input.capture_title or page_title or _title_from_url(db, job=job, source_input=source_input)
+    if not title:
+        return
+
+    changes.lock_user_writes(db, source_input.user_id)
+    source = db.get_one(models.Source, source_input.source_id)
+    db.refresh(source)
+    if source.deleted_at is not None:
+        return
+
+    _text.set_title_if_empty(source, title=title)
+    db.commit()
+
+
+def _title_from_url(db: sqlalchemy.orm.Session, *, job: models.Job, source_input: _SourceInput) -> str | None:
+    """A short title Haiku writes from the URL alone; None without a key, a useful URL or a usable answer."""
+    user = db.get_one(models.User, source_input.user_id)
+    try:
+        api_key = keys.anthropic_key_for(user)
+    except (errors.PermanentJobError, config.ConfigError) as error:
+        # Without a key the job still fails for its own reason (the text is missing), not for this nicety.
+        _logger.info("No key to title source %s from its URL: %r", source_input.source_id, error)
+        return None
+
+    # Read before the commit, which expires the job and would reload it inside the model call's wait.
+    job_id = job.id
+    # Committing ends the transaction so no connection is held during the model call.
+    db.commit()
+    engine = db.get_bind()
+    assert isinstance(engine, sqlalchemy.Engine)
+    try:
+        completion = llm.complete(
+            engine,
+            api_key=api_key,
+            context=llm.CallContext(
+                user_id=source_input.user_id, source_id=source_input.source_id, job_id=job_id, step=llm.URL_TITLE_STEP
+            ),
+            models=llm.URL_TITLE_MODELS,
+            system=prompts.URL_TITLE_SYSTEM,
+            # Host and path only: a query string can carry tokens or an email address.
+            user_message=_host_and_path(source_input.url),
+            max_tokens=_URL_TITLE_MAX_TOKENS,
+            json_schema=prompts.URL_TITLE_SCHEMA,
+        )
+        words = str(json.loads(completion.text)["title"]).split()
+        return " ".join(words[:_URL_TITLE_MAX_WORDS]) or None
+    except (llm.ModelOutputError, anthropic.APIError, json.JSONDecodeError) as error:
+        _logger.warning("No title from the URL for source %s: %r", source_input.source_id, error)
+        return None
+
+
+def _host_and_path(url: str) -> str:
+    parts = urllib.parse.urlsplit(url)
+    return f"{parts.netloc}{parts.path}"
 
 
 def _fetch_podcast(db: sqlalchemy.orm.Session, *, source: models.Source, source_input: _SourceInput) -> None:
@@ -133,6 +234,7 @@ def _start_processing(db: sqlalchemy.orm.Session, *, source: models.Source) -> _
         user_id=source.user_id,
         url=source.url,
         kind=source.kind,
+        title=source.title,
         capture_title=capture.title if capture else None,
         capture_text=capture.text if capture else None,
         episode_guid=source.episode_guid,
@@ -186,7 +288,10 @@ def _fetch_article(source_input: _SourceInput) -> content.ExtractedText:
         _logger.info("Source %s page answered %d", source_input.source_id, error.response.status_code)
         raise errors.PermanentJobError(errors.FailureReason.TEXT_MISSING) from error
 
-    extracted = article.extract(html=page, url=source_input.url) or content.ExtractedText(title=None, text="")
+    # A page with no main text still has a title worth keeping on the failed row.
+    extracted = article.extract(html=page, url=source_input.url) or content.ExtractedText(
+        title=fetch_title.extract_title(page=page), text=""
+    )
     if not extracted.title and source_input.capture_title:
         return dataclasses.replace(extracted, title=source_input.capture_title)
     return extracted

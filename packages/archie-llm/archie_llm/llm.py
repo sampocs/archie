@@ -32,6 +32,7 @@ CARE_STEP = "care"
 ANSWER_TRANSCRIPTION_STEP = "transcribe_answer"
 EMBED_STEP = "embed"
 ASK_STEP = "ask"
+URL_TITLE_STEP = "url_title"
 GROQ_WHISPER = "whisper-large-v3-turbo"
 OPENAI_TRANSCRIBE = "gpt-4o-mini-transcribe"
 EMBEDDING_MODEL = "text-embedding-3-small"
@@ -64,6 +65,7 @@ FILE_TOPIC_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 CLEAN_TEXT_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 BRIEF_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
 GRADE_MODELS = ModelPair(primary=HAIKU)
+URL_TITLE_MODELS = ModelPair(primary=HAIKU)
 CARE_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 NEWS_QUIZ_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 

@@ -1,7 +1,8 @@
 """`fetch_content` end to end: real jobs in a real Postgres, real handlers, HTTP replayed from recorded cassettes.
 
 Re-record with `uv run pytest services/worker/tests/test_fetch_content_e2e.py --record-mode=once -m postgres`
-after deleting a cassette.
+after deleting a cassette. `url_title_from_missing_page` also holds one Haiku call (a fraction of a cent; needs
+ANTHROPIC_API_KEY in the repo root .env).
 """
 
 from __future__ import annotations
@@ -11,12 +12,15 @@ import datetime
 import pathlib
 import uuid
 from collections.abc import Callable, Iterator
+from typing import Any
 
 import pytest
 import sqlalchemy
 import sqlalchemy.orm
 import vcr as vcr_module
 from archie_db import changes, jobs, models, pipeline, session
+from archie_llm import llm
+from archie_testing import recording
 from archie_worker import errors, handlers, loop
 from archie_worker.content import x
 from archie_worker.handlers import fetch_title
@@ -31,6 +35,10 @@ ARTICLE_URL = "https://www.paulgraham.com/greatwork.html"
 ARTICLE_TITLE = "How to Do Great Work"
 # example.com has about 20 words, under the 50 an article needs.
 SHORT_PAGE_URL = "https://example.com/"
+SHORT_PAGE_TITLE = "Example Domain"
+# A made-up path with a descriptive slug: github.blog answers 404 for it, as it would for a page that was taken down.
+MISSING_PAGE_TITLE = "How we rebuilt our merge queue for monorepos"
+MISSING_PAGE_URL = "https://github.blog/engineering/how-we-rebuilt-our-merge-queue-for-monorepos/"
 OG_IMAGE_ARTICLE_URL = "https://blog.bytebytego.com/p/how-netflix-uses-ai-agents-for-performance"
 OG_IMAGE_ARTICLE_IMAGE = (
     "https://substackcdn.com/image/fetch/$s_!uk-_!,w_1200,h_675,c_fill,f_jpg,q_auto:good,fl_progressive:steep,g_auto/"
@@ -51,6 +59,12 @@ X_ARTICLE_URL = "https://x.com/hwchase17/status/2116553654857867330"
 X_QUOTE_URL = "https://x.com/hwchase17/status/2116230499140251964"
 
 
+@pytest.fixture(autouse=True)
+def recording_api_key(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The real key while recording, a placeholder on replay."""
+    recording.use_recording_api_key(request, monkeypatch)
+
+
 @pytest.fixture
 def engine(migrated_database_url: str) -> Iterator[sqlalchemy.Engine]:
     """An engine on the migrated test database."""
@@ -63,14 +77,10 @@ def engine(migrated_database_url: str) -> Iterator[sqlalchemy.Engine]:
 def replay(request: pytest.FixtureRequest) -> Replay:
     """Returns `use_cassette(name)`: the recorded HTTP for one source, shared across tests.
 
-    Replay-only unless pytest is given `--record-mode`, so a normal run can never reach the network.
+    Replay-only unless pytest is given `--record-mode`, so a normal run can never reach the network. Anthropic calls
+    replay by model and system prompt.
     """
-    recorder = vcr_module.VCR(
-        cassette_library_dir=str(CASSETTE_DIR),
-        record_mode=request.config.getoption("--record-mode") or "none",
-        filter_headers=["authorization", "cookie", "set-cookie"],
-        decode_compressed_response=True,
-    )
+    recorder = recording.vcr_for(request, cassette_dir=CASSETTE_DIR)
     return lambda name: recorder.use_cassette(f"{name}.yaml", allow_playback_repeats=True)
 
 
@@ -358,6 +368,124 @@ def test_a_blocked_or_missing_page_fails_for_good_without_a_retry(
     assert _source(engine, source_id).processing_error == errors.FailureReason.TEXT_MISSING
 
 
+def test_a_short_page_keeps_its_own_title_when_the_job_fails(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """The page was fetched but too short: its title survives the failure, and no model is asked (none is recorded)."""
+    source_id = _add_source(engine, url=SHORT_PAGE_URL, kind=models.SourceKind.ARTICLE, is_whitelisted=True)
+
+    with replay("title_page") as cassette:
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    source = _source(engine, source_id)
+    assert source.processing_error == errors.FailureReason.TEXT_MISSING
+    assert source.title == SHORT_PAGE_TITLE
+    assert cassette.play_count == 1
+    assert _llm_steps(engine) == []
+
+
+def test_a_missing_page_without_any_title_gets_one_from_its_url(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """A 404 leaves no page title and there is no capture: Haiku writes the title from the URL's slug."""
+    source_id = _add_source(engine, url=MISSING_PAGE_URL, kind=models.SourceKind.ARTICLE, is_whitelisted=True)
+
+    with replay("url_title_from_missing_page") as cassette:
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    source = _source(engine, source_id)
+    assert source.processing == models.ProcessingStatus.FAILED
+    assert source.processing_error == errors.FailureReason.TEXT_MISSING
+    assert source.title == MISSING_PAGE_TITLE
+    assert _job(engine, models.JobKind.FETCH_CONTENT).attempts == 1
+    assert cassette.play_count == 2
+    assert _llm_steps(engine) == [llm.URL_TITLE_STEP]
+
+
+@pytest.mark.parametrize("has_capture", [False, True], ids=["existing-title", "capture-title"])
+def test_a_source_with_a_title_makes_no_model_call(
+    engine: sqlalchemy.Engine, replay: Replay, has_capture: bool
+) -> None:
+    """A title the source already has, or Safari's captured one, is the title: the URL is not sent to a model."""
+    source_id = _add_source(
+        engine,
+        url=MISSING_PAGE_URL,
+        kind=models.SourceKind.ARTICLE,
+        title=None if has_capture else "My own title",
+        capture=("Captured title", "Only a few words here.") if has_capture else None,
+        is_whitelisted=True,
+    )
+
+    # The cassette holds a Haiku answer too, so a model request would show as a second play.
+    with replay("url_title_from_missing_page") as cassette:
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert _source(engine, source_id).title == ("Captured title" if has_capture else "My own title")
+    assert cassette.play_count == 1
+    assert _llm_steps(engine) == []
+
+
+def test_a_missing_page_without_a_key_still_fails_as_text_missing(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """A user without an API key gets no model title and the same failure as before, not a needs-key one."""
+    source_id = _add_source(engine, url=MISSING_PAGE_URL, kind=models.SourceKind.ARTICLE)
+
+    with replay("url_title_from_missing_page") as cassette:
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    source = _source(engine, source_id)
+    assert source.processing_error == errors.FailureReason.TEXT_MISSING
+    assert source.title is None
+    assert cassette.play_count == 1
+
+
+def test_a_failed_model_call_leaves_the_title_empty_and_the_failure_unchanged(
+    engine: sqlalchemy.Engine, replay: Replay, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The title is a nicety: an Anthropic error is logged, the job still fails once as text-missing."""
+
+    def refuse(*args: object, **kwargs: object) -> llm.Completion:
+        raise llm.ModelOutputError("no usable answer")
+
+    monkeypatch.setattr(llm, "complete", refuse)
+    source_id = _add_source(engine, url=MISSING_PAGE_URL, kind=models.SourceKind.ARTICLE, is_whitelisted=True)
+
+    with replay("url_title_from_missing_page"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    source = _source(engine, source_id)
+    assert source.processing_error == errors.FailureReason.TEXT_MISSING
+    assert source.title is None
+    assert _job(engine, models.JobKind.FETCH_CONTENT).attempts == 1
+
+
+def test_a_source_deleted_during_the_title_call_is_left_alone(
+    engine: sqlalchemy.Engine, replay: Replay, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The user deletes the source while Haiku writes its title: the title is dropped, the job still fails."""
+    source_id = _add_source(engine, url=MISSING_PAGE_URL, kind=models.SourceKind.ARTICLE, is_whitelisted=True)
+    real_complete = llm.complete
+
+    def complete_then_delete(*args: Any, **kwargs: Any) -> llm.Completion:
+        completion = real_complete(*args, **kwargs)
+        _delete_source(engine, source_id)
+        return completion
+
+    monkeypatch.setattr(llm, "complete", complete_then_delete)
+
+    with replay("url_title_from_missing_page"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert _source(engine, source_id).title is None
+    assert _job(engine, models.JobKind.FETCH_CONTENT).status == models.JobStatus.FAILED
+
+
+def test_an_x_source_that_fails_gets_no_url_title(engine: sqlalchemy.Engine, replay: Replay) -> None:
+    """X posts are out of scope: an unparseable X URL fails as before without asking a model for a title."""
+    source_id = _add_source(engine, url="https://x.com/sama", kind=models.SourceKind.X, is_whitelisted=True)
+
+    with replay("no_requests"):
+        loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert _source(engine, source_id).title is None
+    assert _llm_steps(engine) == []
+
+
 def test_a_source_deleted_before_the_job_runs_is_left_alone(engine: sqlalchemy.Engine, replay: Replay) -> None:
     """No request is made, nothing is written, and the tombstone keeps its change position."""
     source_id = _add_source(engine, url=ARTICLE_URL, kind=models.SourceKind.ARTICLE)
@@ -420,11 +548,12 @@ def _add_source(
     kind: models.SourceKind,
     title: str | None = None,
     capture: tuple[str | None, str] | None = None,
+    is_whitelisted: bool = False,
 ) -> uuid.UUID:
     """A user's source, its optional capture and its queued `fetch_content` job, as the sync push will create them."""
     source_id = uuid.uuid4()
     with sqlalchemy.orm.Session(engine) as db:
-        user = models.User(apple_sub=f"sub-{uuid.uuid4()}")
+        user = models.User(apple_sub=f"sub-{uuid.uuid4()}", is_whitelisted=is_whitelisted)
         db.add(user)
         db.flush()
 
@@ -481,6 +610,11 @@ def _only_artifact(engine: sqlalchemy.Engine, source_id: uuid.UUID) -> models.So
 def _job(engine: sqlalchemy.Engine, kind: models.JobKind) -> models.Job:
     with sqlalchemy.orm.Session(engine) as db:
         return db.execute(sqlalchemy.select(models.Job).where(models.Job.kind == kind.value)).scalar_one()
+
+
+def _llm_steps(engine: sqlalchemy.Engine) -> list[str]:
+    with sqlalchemy.orm.Session(engine) as db:
+        return list(db.scalars(sqlalchemy.select(models.LlmCall.step).order_by(models.LlmCall.id)))
 
 
 def _queued_kinds(engine: sqlalchemy.Engine) -> list[models.JobKind]:

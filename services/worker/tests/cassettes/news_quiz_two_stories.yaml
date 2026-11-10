@@ -1,24 +1,58 @@
 interactions:
 - request:
-    body: '{"max_tokens":2000,"messages":[{"role":"user","content":"Story 1\nHeadline:
-      Fed holds rates steady\nWhat happened: The Federal Reserve kept its benchmark
-      rate unchanged, citing sticky inflation and a firm job market.\nWhy it matters:
-      It shapes what comes next.\nDetail: The Federal Reserve kept its benchmark rate
-      unchanged, citing sticky inflation and a firm job market.\n\nStory 2\nHeadline:
-      Chipmaker unveils new AI accelerator\nWhat happened: A major chipmaker announced
-      an accelerator it says trains large models twice as fast as its last one.\nWhy
-      it matters: It shapes what comes next.\nDetail: A major chipmaker announced
-      an accelerator it says trains large models twice as fast as its last one."}],"model":"claude-haiku-5-5","output_config":{"format":{"type":"json_schema","schema":{"type":"object","properties":{"cards":{"type":"array","items":{"type":"object","properties":{"story_index":{"type":"integer"},"question":{"type":"string"},"answer":{"type":"string"}},"required":["story_index","question","answer"],"additionalProperties":false}}},"required":["cards"],"additionalProperties":false}}},"system":"You
+    body: "{\"max_tokens\":2000,\"messages\":[{\"role\":\"user\",\"content\":\"Story
+      1\\nHeadline: Fed holds rates steady\\nWhat happened: The Federal Reserve kept
+      its benchmark rate unchanged, citing sticky inflation and a firm job market.\\nWhy
+      it matters: It shapes what comes next.\\nDetail: The Federal Reserve kept its
+      benchmark rate unchanged, citing sticky inflation and a firm job market.\\n\\nStory
+      2\\nHeadline: Chipmaker unveils new AI accelerator\\nWhat happened: A major
+      chipmaker announced an accelerator it says trains large models twice as fast
+      as its last one.\\nWhy it matters: It shapes what comes next.\\nDetail: A major
+      chipmaker announced an accelerator it says trains large models twice as fast
+      as its last one.\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"story_index\":{\"type\":\"integer\"},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"story_index\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false}}},\"required\":[\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
       write a weekly news quiz for a personal learning app: short open-recall cards
-      on the week''s most important news stories, so the user remembers what happened
-      and why it matters.\n\nYou get numbered stories (headline, what happened, why
-      it matters, detail). Write exactly one card per story, in the order given: one
-      focused question about the core of the story (what happened, or why it matters),
-      never trivia like exact dates or a minor name, and an answer of 1-2 sentences.
-      Give each card the story''s number as story_index.\n\nWrite in plain, conversational
-      English for a smart reader who is new to the subject. Short sentences. Define
-      any jargon the first time it appears. Prefer concrete examples and rough numbers
-      (\"~1 GW\", not \"1.07 GW\")."}'
+      on the week's most important news stories, so the user remembers what happened
+      and why it matters.\\n\\nYou get numbered stories (headline, what happened,
+      why it matters, detail). Write exactly one card per story, in the order given:
+      a question about the core of the story (what happened, or why it matters), never
+      trivia like exact dates or a minor name, written to the card rules below. Give
+      each card the story's number as story_index.\\n\\nEach card has a question,
+      an answer and a detail:\\n- question: ONE focused question with ONE thing to
+      recall. Never join two asks with \\\"and\\\" (\\\"What does X give you, and
+      what can you lose?\\\" is two cards, or pick one). Ask only what has a short
+      answer.\\n- answer: the one thing to recall, in as few words as carry it: a
+      phrase, not a sentence. Aim for 2-8 words, never more than 15. The learner is
+      graded only on this, so it is what someone who knows the material would say
+      off the top of their head. When two things are both essential, name both briefly
+      (\\\"Supply and demand\\\"). A number card's answer is the rough figure with
+      its unit.\\n- detail: 0-3 short bullet lines, each under 12 words. Shown after
+      the learner answers, never graded. Each line must help explain the answer (the
+      why or how behind it, or a contrast that makes it click); a further fact about
+      the subject, however true, is not a reason for a line. No padding and no redundancy:
+      never a line that restates the answer, is implied by it or repeats another line;
+      that is trivia from this one source (who said it, when, a passing example or
+      anecdote) rather than a lasting fact about the subject; or that is a side remark
+      that doesn't help recall. So a plain fact or a number usually needs none and
+      most whys need one; use two or three only when the explanation really has that
+      many steps (A happens, so B, so C) or named parts (the three phases of a cycle).
+      When in doubt, use fewer.\\nNews quiz cards are the one exception to the detail
+      rule: a quiz card's detail is at most ONE line (or none), never two or three.\\n\\nVoice:
+      a great teacher who respects the reader's time. Warm and direct; talk to \\\"you\\\".\\n-
+      Open with the core idea in one or two plain sentences: what it is and why it
+      matters.\\n- Match depth to the idea. A simple point gets one or two crisp sentences.
+      Only an idea with a real mechanism gets a plain everyday analogy to make it
+      click, then the specifics.\\n- Tell something as a story only when there genuinely
+      is one (real people, a rise and fall, a turning point). Never invent drama,
+      scenes or suspense.\\n- Define jargon in plain words the first time it appears.
+      Prefer concrete examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n-
+      Short sentences and no padding: every sentence carries information. Friendliness
+      comes from the phrasing, not from extra sentences.\\n- Never open with throat-clearing
+      (\\\"Okay so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's
+      dive in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never
+      close with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\"}"
     headers:
       accept:
       - application/json
@@ -29,7 +63,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '1869'
+      - '4488'
       content-type:
       - application/json
       host:
@@ -60,63 +94,59 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: '{"model":"claude-haiku-5-5","id":"msg_011CgkkNko6ystLye8MRvzuS","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"CAQSwQsKEAgTGAI4AUIIdGhpbmtpbmcSDOqbnYgaJcfTHEoRqRoMRVGnEtJDPit85BA8IjCujwfOR9RXXaZpyaSt64lop7kGpzbsCCrWBZ78qIgT/G/vy2QRQR8MP8Is5LVwg80q3gr61cbkINhHGHY4HArLodGLzBVejofABqFdPxY41g2ruYFG4S+HmF7yFUr9PVOuVAffJfhY+vZ8jbn13kbFcrqAUuctY5Nnzk3xOEqW0Peh6MxyVbxxoQj7lHUjpLKF1N4qGZQezNronGe68hwOS69GnJ/w80kMqRX/LE9IU2HSO+mrHXlX4MCJvCjldCR6VfLm7Aj6y3fVkFb+3kINkEZZXePCopWgAX+VGjGD0h6UHFIdwTpe8lN3XkL3aGvHMbtka9wR3o5mkEjIgmaZ334q5fdKXaI7YT5fxQ6pTNXlLUiGW5ozwmNdb2yiO6K6qlluovuxv46MfM/qCqt13LEIYXoVdQ5qEL/RiXvsF0wkvJ43ekTI2e2/KmtCkUEMfNtJOLtqNgJ3/heXTR2wCDShxfvXESsMzGXGjrzHKia3BPgH1CCm8mOBNM1a9Eh0qom8dsRoAMp1CkPBevz3ers5+0bJcXPQNRZnZs0bPdnUlve+WE/a8uTtHVV4wdpFvc/iKaAf7Tos7ghDW/8ALBjSTt8wrJUOmNQzo5wwVYdRN5zsJof22hT73xHNlRd/wDIVgjKhK6630/eEEaBI3XYZhWMNLTDwzF8jRz0LZhyWlGJcJWPmZ3vIPKyKjAMV1m3wmNMhJ0dDt+/cJ87E0umZBXTn10zFrk0/5cs2H7PO2+CV7Zzsksf2oISvgxPhPVNXi39VjJW0gQ3pIcuu5lgydVJ0cpLM6OIeREGhGTuEQT9d5ER8PkjAlJUw3ke6L9POjH9Km05vW1FCcHy8N4taXvVwTiVaqUk33sOM6VzDyCDpI+bmAAjA43tlrxcyZqSGvLtCa4c+bwOlUwdOPf69iybvK9VeUj0tECTucQC+KTapehneoIhBXogxXR+5oTU/uh6LeJuBMAI4dww7V82xXhxvQU1B7njDSFhIJ1Aw8KSTx5PdP5Ai8ixR7PmbiczNUYZJvsbLQXqqsXisbtNstB5llpavj3sseb3wDfceY6GBvUl7sfZrTWvgJzkVPVIX1BVPFZRbUUdqh716vhKi4lv7fg3VLReFdUhrYv/Hgx0l1i9G3IRdBkcvHxI5Sc/Mjc/PXYZ7zZC1h71EktQsD3bda7qCoIZ3T/qJV2fygS83Z2NObE4mxl8nENL9e/ScyFyqn66Jktx3qzgsm0XXWLOOB47oN3Al2ONx0CdWnGQjMyu5huRuxD0lwxgZ/d1lYBvH0JzHiEmJhhwgBa7bBt9L6Cdp3SgO/E4aZ21e+Pc/3IomEKrTVAZwsQTfvxc4N7G2FJ8n5eAOOBMxFPuIvGLnrM3kcmMzQIz5PYAFwUjwu/v6mD3UAL2DnEYljdrN5hU+o8qIv7qZ0KCGOsP51SRV1aTjJYehkoglOORfxYVtEvKxFHhZs6k08QwMhp9g8zKLjSr08FAqcuMQMMYXoogn6mg1uRr8X4ws58QOGwEzuU/PPKVIcOddr9CZnQc6Ms7nvOXpD62XJBJaue07RcqEJjqTE6f/V+6kkF5HQMQCHvFzXvvn4/93VXHDxONZ8uMYkkQm9RSG+P+azcFu4nGWi6khtc0gNP2Z8jW94bUj1CKwo6W0HAioHRxWZTOyA8wa3b0+4ztVSf2NJyiRByad/UBW1wcUFqPNyR/FyfQ3Bi0loEgIojUfG+aCUbJRqqRF/rtzQPsH5nufFbF1Vk6gD5kVnVH93kPAYBheTibaaJff8eOtmdvM0Ofvxb6NsFXbTiM6qY/OwPN/nI33mE0t2d4GmOR6y1BO7B7pHRW/06E6i5dZiM4aeExIHhrKZc/gU4mT8N4LR2mdDO8SgFfFLJKjsNFzAGpo+MkYAQ=="},{"type":"text","text":"{\"cards\":[{\"story_index\":1,\"question\":\"Why
-        did the Federal Reserve leave its benchmark interest rate unchanged, and what
-        does that rate do?\",\"answer\":\"The benchmark rate is the main interest
-        rate the Fed sets, and it affects borrowing costs across the economy. The
-        Fed held it steady because inflation (prices rising) is stuck above its target
-        and the job market is still strong.\"},{\"story_index\":2,\"question\":\"What
-        did the chipmaker announce, and what does it claim the chip can do?\",\"answer\":\"The
-        chipmaker unveiled a new AI accelerator, a specialized chip that speeds up
-        AI computing. The company says it trains large AI models twice as fast as
-        its previous chip.\"}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":774,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":536,"output_tokens_details":{"thinking_tokens":305},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgv3t9tyrj1mAFPLFPTfy","type":"message","role":"assistant","content":[{"type":"thinking","thinking":"","signature":"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"},{"type":"text","text":"{\"cards\":[{\"story_index\":1,\"question\":\"What
+        did the Federal Reserve do with its benchmark rate?\",\"answer\":\"Held it
+        unchanged\",\"detail\":[\"Inflation stayed sticky and hiring stayed firm,
+        so no cut.\"]},{\"story_index\":2,\"question\":\"How much faster does the
+        new AI accelerator train large models?\",\"answer\":\"About twice as fast
+        as its predecessor\",\"detail\":[]}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1626,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":599,"output_tokens_details":{"thinking_tokens":460},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
-      - '10000000'
+      - '9999000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-06T00:44:15Z'
+      - '2026-11-10T22:39:11Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
       - '1999000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-06T00:44:17Z'
+      - '2026-11-10T22:39:13Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-06T00:44:14Z'
+      - '2026-11-10T22:39:10Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11999000'
+      - '11998000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-06T00:44:15Z'
+      - '2026-11-10T22:39:11Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a560118d3da2de7e-ORD
+      - a5888d36cc17f14d-ORD
       connection:
       - keep-alive
       content-length:
-      - '3263'
+      - '3377'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Fri, 06 Nov 2026 00:44:17 GMT
+      - Tue, 10 Nov 2026 22:39:13 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=3317
+      - x-originResponse;dur=4045
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-87424573df037a6fc4063755edaa5ce6-3dba28a6784b415f-01
+      - 00-6fdbb7dacde9760328f985f464907cd4-2de9cecd17317c0a-01
       transfer-encoding:
       - chunked
       vary:

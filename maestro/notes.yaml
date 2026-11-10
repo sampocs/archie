@@ -56,6 +56,15 @@ appId: com.sampocs.archie
     timeout: 15000
 - assertNotVisible:
     id: "card-set-cheat-sheet"
+# The About chip opens the note beside the chat, and Done closes it.
+- tapOn:
+    id: "chat-about"
+- assertVisible:
+    id: "item-sheet"
+- tapOn:
+    id: "item-sheet-done"
+- assertNotVisible:
+    id: "item-sheet"
 - tapOn:
     id: "card-set-save"
 - extendedWaitUntil:

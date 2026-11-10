@@ -26,10 +26,13 @@ from archie_testing.harness import LiveStack
 pytestmark = pytest.mark.postgres
 
 CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
+# The card rules' ceiling on an answer.
+MAX_ANSWER_WORDS = 15
 AUDIO_PATH = pathlib.Path(__file__).parents[1] / "fixtures" / "audio" / "answer.m4a"
 
 QUESTION = "Why does the Fed raise rates when inflation is high?"
-ANSWER = "Higher rates make borrowing costlier, which slows spending and cools inflation."
+ANSWER = "Costlier borrowing cools spending"
+DETAIL = "Loans cost more, so people and firms borrow and spend less\nLess spending eases the pressure on prices"
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +48,7 @@ def recording_api_keys(request: pytest.FixtureRequest, monkeypatch: pytest.Monke
 def test_grading_an_answer_by_its_idea_is_one_costed_haiku_call(
     live_stack: LiveStack, request: pytest.FixtureRequest
 ) -> None:
-    """A paraphrase of the accepted answer gets a verdict, and the call is recorded without a job."""
+    """A paraphrase of the short accepted answer, in other words, is got_it; the call is recorded without a job."""
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     card = _seed_card(live_stack, user_id=_user_id(authed))
 
@@ -56,9 +59,7 @@ def test_grading_an_answer_by_its_idea_is_one_costed_haiku_call(
 
     assert response.status_code == 200
     verdict = response.json()
-    assert verdict["grade"] in {grade.value for grade in models.ReviewGrade}
-    assert isinstance(verdict["missing"], str)
-    assert (verdict["missing"] == "") == (verdict["grade"] == models.ReviewGrade.GOT_IT)
+    assert (verdict["grade"], verdict["missing"]) == (models.ReviewGrade.GOT_IT.value, "")
 
     [call] = _llm_calls(live_stack)
     assert (call.step, call.job_id, call.model, call.source_id) == ("grade", None, "claude-haiku-5-5", card.source_id)
@@ -110,11 +111,12 @@ def test_model_output_that_is_not_valid_json_for_the_schema_is_502(
 def test_a_care_note_rewrites_the_answer_and_is_remembered(
     live_stack: LiveStack, request: pytest.FixtureRequest
 ) -> None:
-    """The card comes back with a new answer, a pull carries it at a later position, and the note is a preference."""
+    """The card comes back with a new short answer and its detail unchanged, a pull carries it at a later position,
+    and the note is a preference."""
     authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
     card = _seed_card(live_stack, user_id=_user_id(authed))
     before = _pulled_card(authed, card.id)
-    note = "I mostly care that borrowing gets costlier"
+    note = "I mostly care that it eases the pressure on prices"
 
     with _replay(request, "review_care"):
         response = authed.post(f"/review/cards/{card.id}/care", json={"note": note})
@@ -123,6 +125,8 @@ def test_a_care_note_rewrites_the_answer_and_is_remembered(
     returned = response.json()
     assert returned["id"] == str(card.id)
     assert returned["answer"] != ANSWER
+    assert len(returned["answer"].split()) <= MAX_ANSWER_WORDS
+    assert returned["detail"] == DETAIL
 
     pulled = _pulled_card(authed, card.id)
     assert pulled["answer"] == returned["answer"]
@@ -130,6 +134,7 @@ def test_a_care_note_rewrites_the_answer_and_is_remembered(
     card_versions = [row for row in _rows(authed)["card_versions"] if row["card_id"] == str(card.id)]
     assert [(row["version"], row["origin"]) for row in card_versions] == [(1, "archie"), (2, "care")]
     assert card_versions[0]["answer"] == ANSWER and card_versions[1]["answer"] == returned["answer"]
+    assert [row["detail"] for row in card_versions] == [DETAIL, DETAIL]
     assert pulled["version"] == 2
 
     [preference] = _preferences(live_stack)
@@ -338,6 +343,7 @@ def _seed_card(live_stack: LiveStack, *, user_id: int, deleted: bool = False) ->
             kind=models.CardKind.MECHANISM.value,
             question=QUESTION,
             answer=ANSWER,
+            detail=DETAIL,
             deleted_at=datetime.datetime.now(datetime.UTC) if deleted else None,
             change_seq=changes.next_change_seq(),
         )

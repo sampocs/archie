@@ -41,6 +41,8 @@ INVALID_API_KEY = "sk-ant-invalid"
 MIN_CARDS = 3
 MAX_CARDS = 5
 MIN_FOUNDATION_CARDS = 2
+# The card rules' ceiling on an answer.
+MAX_ANSWER_WORDS = 15
 CARE_NOTE = "how incentives shape what people work on"
 DROP_QUESTION = "What year did Paul Graham write this essay?"
 
@@ -96,6 +98,10 @@ def test_analyze_writes_a_summary_and_cards(engine: sqlalchemy.Engine, replay: R
     assert all(card.artifact_id == summary.id and card.deleted_at is None for card in cards)
     assert all(card.kind in prompts.CARD_KINDS and card.question.strip() and card.answer.strip() for card in cards)
     assert len({card.change_seq for card in cards}) == len(cards)
+    _assert_short_answers_with_detail(cards)
+    # Each card's detail is the model's lines, joined.
+    written = {card["question"]: "\n".join(card["detail"]) for card in summary.content["cards"]}
+    assert {card.question: card.detail for card in cards} == written
     assert _only_job(engine).status == models.JobStatus.DONE.value
     _assert_embed_queued(engine, source_id)
     assert [(call.step, call.model) for call in _llm_calls(engine)] == [(models.JobKind.ANALYZE.value, llm.HAIKU)]
@@ -154,7 +160,7 @@ def test_analyze_and_primer_together_make_the_source_ready(engine: sqlalchemy.En
     [primer] = _artifacts(engine, source_id, models.ArtifactKind.PRIMER)
     assert primer.is_current
     assert primer.model == llm.SONNET
-    assert primer.prompt_version == prompts.PRIMER_PROMPT_VERSION == "primer-v2"
+    assert primer.prompt_version == prompts.PRIMER_PROMPT_VERSION == "primer-v3"
     assert primer.content["markdown"].strip().startswith("#")
     assert "<foundation_cards>" not in primer.content["markdown"]
 
@@ -453,7 +459,7 @@ def test_a_primer_writes_two_or_three_foundation_cards(engine: sqlalchemy.Engine
         loop.run_one(engine, handlers=handlers.HANDLERS)
 
     [primer] = _artifacts(engine, source_id, models.ArtifactKind.PRIMER)
-    assert primer.prompt_version == "primer-v2"
+    assert primer.prompt_version == prompts.PRIMER_PROMPT_VERSION
     assert "<foundation_cards>" not in primer.content["markdown"]
     assert "</foundation_cards>" not in primer.content["markdown"]
 
@@ -462,6 +468,7 @@ def test_a_primer_writes_two_or_three_foundation_cards(engine: sqlalchemy.Engine
     assert all(card.kind == models.CardKind.FOUNDATION.value for card in cards)
     assert all(card.artifact_id == primer.id and card.question.strip() and card.answer.strip() for card in cards)
     assert len({card.change_seq for card in cards}) == len(cards)
+    _assert_short_answers_with_detail(cards)
     _assert_embed_queued(engine, source_id)
 
 
@@ -576,6 +583,16 @@ def test_split_primer_output_cuts_the_cards_block_and_caps_it() -> None:
         ("Q1?", "A1."),
         ("Q2?", "A2."),
     ]
+
+
+def test_split_primer_output_reads_each_cards_detail_and_none_from_an_older_primer() -> None:
+    """A card's detail lines come through; a card written before cards had detail has none."""
+    cards = [{"question": "Q?", "answer": "A.", "detail": ["Why.", "So."]}, {"question": "Old?", "answer": "B."}]
+    text = f"# P\n\nBody.\n\n<foundation_cards>{json.dumps(cards)}</foundation_cards>"
+
+    output = prompts.split_primer_output(text)
+
+    assert [card.detail for card in output.foundation_cards] == [["Why.", "So."], []]
 
 
 def test_split_primer_output_keeps_a_tag_mentioned_mid_text_before_the_real_block() -> None:
@@ -771,6 +788,13 @@ def _artifacts(
                 .order_by(models.SourceArtifact.version)
             )
         )
+
+
+def _assert_short_answers_with_detail(cards: list[models.Card]) -> None:
+    """The card rules held: short answers, some detail, and no blank detail line."""
+    assert all(len(card.answer.split()) <= MAX_ANSWER_WORDS for card in cards)
+    assert any(card.detail for card in cards)
+    assert all(line.strip() for card in cards if card.detail for line in card.detail.split("\n"))
 
 
 def _cards(engine: sqlalchemy.Engine, source_id: uuid.UUID) -> list[models.Card]:

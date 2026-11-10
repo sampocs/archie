@@ -21,7 +21,8 @@ from typing import Any
 import pydantic
 import sqlalchemy
 import sqlalchemy.orm
-from archie_db import changes, models
+from archie_db import card_rows, changes, models
+from archie_llm import cards
 
 from archie_api.ask import edit_tools
 from archie_api.sync import schemas
@@ -52,8 +53,9 @@ PROPOSE_CARDS_TOOL: dict[str, Any] = {
         f"(at most {MAX_TITLE_CHARACTERS} characters). cheat_sheet: markdown, at most "
         f"{MAX_CHEAT_SHEET_CHARACTERS} characters, or empty in a chat about a note. cards: 1 to {MAX_CARDS}, "
         "each a question (at most "
-        f"{edit_tools.MAX_QUESTION_CHARACTERS} characters) and its answer (at most "
-        f"{edit_tools.MAX_ANSWER_CHARACTERS}). To change a proposal, call this again with the whole new set."
+        f"{edit_tools.MAX_QUESTION_CHARACTERS} characters), its short answer (at most "
+        f"{edit_tools.MAX_ANSWER_CHARACTERS}) and its detail lines (may be empty). To change a proposal, call this "
+        "again with the whole new set."
     ),
     "input_schema": {
         "type": "object",
@@ -68,8 +70,9 @@ PROPOSE_CARDS_TOOL: dict[str, Any] = {
                         "kind": {"type": "string", "enum": [kind.value for kind in CARD_KINDS]},
                         "question": {"type": "string"},
                         "answer": {"type": "string"},
+                        "detail": cards.DETAIL_SCHEMA,
                     },
-                    "required": ["kind", "question", "answer"],
+                    "required": ["kind", "question", "answer", "detail"],
                     "additionalProperties": False,
                 },
             },
@@ -83,11 +86,12 @@ TOOLS: list[dict[str, Any]] = [PROPOSE_CARDS_TOOL]
 
 
 class CardIn(pydantic.BaseModel):
-    """One proposed card."""
+    """One proposed card; `detail` is missing from sets stored (or seeded) before cards had it, and reads as none."""
 
     kind: models.CardKind
     question: str = pydantic.Field(min_length=1, max_length=edit_tools.MAX_QUESTION_CHARACTERS)
     answer: str = pydantic.Field(min_length=1, max_length=edit_tools.MAX_ANSWER_CHARACTERS)
+    detail: list[str] = []
 
     @pydantic.field_validator("kind")
     @classmethod
@@ -102,6 +106,11 @@ class CardIn(pydantic.BaseModel):
         if not text.strip():
             raise ValueError("must not be blank")
         return text.strip()
+
+    @pydantic.field_validator("detail")
+    @classmethod
+    def _clean_detail(cls, lines: list[str]) -> list[str]:
+        return card_rows.detail_lines(lines)
 
 
 class CardSetIn(pydantic.BaseModel):
@@ -196,10 +205,10 @@ def _error_outcome(*, tool_use_id: str, text: str) -> ToolOutcome:
 
 
 def _has_foundation_card(tool_input: object) -> bool:
-    cards = tool_input.get("cards") if isinstance(tool_input, dict) else None
-    if not isinstance(cards, list):
+    proposed = tool_input.get("cards") if isinstance(tool_input, dict) else None
+    if not isinstance(proposed, list):
         return False
-    return any(isinstance(card, dict) and card.get("kind") == models.CardKind.FOUNDATION for card in cards)
+    return any(isinstance(card, dict) and card.get("kind") == models.CardKind.FOUNDATION for card in proposed)
 
 
 def save_proposals(
@@ -268,6 +277,23 @@ def add_proposal(
     return row
 
 
-def cards_of(card_set: CardSetIn) -> list[dict[str, str]]:
+def cards_of(card_set: CardSetIn) -> list[dict[str, Any]]:
     """The set's cards in their stored shape."""
-    return [{"kind": card.kind.value, "question": card.question, "answer": card.answer} for card in card_set.cards]
+    return [
+        {"kind": card.kind.value, "question": card.question, "answer": card.answer, "detail": card.detail}
+        for card in card_set.cards
+    ]
+
+
+def stored_cards(card_set: models.CardSetProposal) -> list[CardIn]:
+    """A stored set's cards, read back as stored: not re-validated, so an older row never raises, and a card stored
+    before cards had detail has none."""
+    return [
+        CardIn.model_construct(
+            kind=models.CardKind(card["kind"]),
+            question=card["question"],
+            answer=card["answer"],
+            detail=card.get("detail", []),
+        )
+        for card in card_set.cards
+    ]

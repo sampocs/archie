@@ -27,6 +27,8 @@ CASSETTE_DIR = pathlib.Path(__file__).parent / "cassettes"
 TOPIC_NAME = "Fed & monetary policy"
 SOURCE_TITLES = ["Powell's Jackson Hole speech", "Why the yield curve inverted"]
 MIN_FOUNDATION_CARDS = 2
+# The card rules' ceiling on an answer.
+MAX_ANSWER_WORDS = 15
 
 
 @pytest.fixture(autouse=True)
@@ -63,7 +65,7 @@ def test_topic_primer_writes_the_first_version(engine: sqlalchemy.Engine, replay
     assert primer.version == 1
     assert primer.content["markdown"].startswith("#")
     assert primer.model == llm.SONNET
-    assert primer.prompt_version == prompts.TOPIC_PRIMER_PROMPT_VERSION == "topic-primer-v2"
+    assert primer.prompt_version == prompts.TOPIC_PRIMER_PROMPT_VERSION == "topic-primer-v3"
     assert "<foundation_cards>" not in primer.content["markdown"]
     with sqlalchemy.orm.Session(engine) as db:
         [embed] = db.scalars(sqlalchemy.select(models.Job).where(models.Job.kind == models.JobKind.EMBED.value))
@@ -90,6 +92,9 @@ def test_topic_primer_writes_foundation_cards(engine: sqlalchemy.Engine, replay:
     assert all(card.topic_primer_id == primer.id and card.source_id is None for card in cards)
     assert all(card.kind == models.CardKind.FOUNDATION.value and card.deleted_at is None for card in cards)
     assert all(card.question.strip() and card.answer.strip() for card in cards)
+    # The card rules: a short answer, with the why in the detail lines.
+    assert all(len(card.answer.split()) <= MAX_ANSWER_WORDS for card in cards)
+    assert any(card.detail for card in cards)
 
 
 def test_a_new_topic_primer_version_retires_the_older_versions_cards(engine: sqlalchemy.Engine, replay: Replay) -> None:

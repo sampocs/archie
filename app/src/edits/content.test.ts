@@ -26,7 +26,14 @@ describe("editLines", () => {
       "The Fed sets them.",
       "- Short ones",
     ]);
-    expect(editLines("card", { question: "What?", answer: "That." })).toEqual(["Question: What?", "Answer: That."]);
+    expect(editLines("card", { question: "What?", answer: "That.", detail: "" })).toEqual(["Question: What?", "Answer: That."]);
+    expect(editLines("card", { question: "What?", answer: "That.", detail: "Because.\n \nSo." })).toEqual([
+      "Question: What?",
+      "Answer: That.",
+      "Detail:",
+      "Because.",
+      "So.",
+    ]);
     expect(editLines("take", null)).toEqual([]);
   });
 });
@@ -37,7 +44,12 @@ describe("parseContent", () => {
     expect(parseContent("summary", { gist: "x" })).toBeNull();
     expect(parseContent("take", { markdown: "Body" })).toEqual({ markdown: "Body" });
     expect(parseContent("topic_primer", { text: "Body" })).toBeNull();
-    expect(parseContent("card", { question: "Q?", answer: "A." })).toEqual({ question: "Q?", answer: "A." });
+    expect(parseContent("card", { question: "Q?", answer: "A." })).toEqual({ question: "Q?", answer: "A.", detail: "" });
+    expect(parseContent("card", { question: "Q?", answer: "A.", detail: "Why." })).toEqual({
+      question: "Q?",
+      answer: "A.",
+      detail: "Why.",
+    });
     expect(parseContent("card", "Q?")).toBeNull();
   });
 });

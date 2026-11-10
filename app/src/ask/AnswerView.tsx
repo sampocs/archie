@@ -11,6 +11,7 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { Markdown } from "@/ui/Markdown";
 
+import { showsSectionLabel } from "./chatChrome";
 import { chipText, type Section } from "./sections";
 import { ThinkingRow } from "./ThinkingRow";
 import { ANSWER_LABEL_TEXT, formatClock, type Citation } from "./types";
@@ -27,6 +28,8 @@ type AnswerViewProps = {
   onRetry?: () => void;
   // Set only for a complete stored answer.
   onMakeCards?: () => void;
+  // Drops the "Background" kicker from uncited sections, for an answer that carries proposals.
+  quietLabels?: boolean;
   index: number;
 };
 
@@ -40,6 +43,7 @@ export function AnswerView({
   failed,
   onRetry,
   onMakeCards,
+  quietLabels = false,
   index,
 }: AnswerViewProps) {
   const theme = useTheme();
@@ -49,9 +53,11 @@ export function AnswerView({
     <View testID={`chat-answer-${index}`} style={{ gap: theme.spacing.lg }}>
       {sections.map((section, sectionIndex) => (
         <View key={sectionIndex} testID={`answer-section-${section.label}`} style={{ gap: theme.spacing.sm }}>
-          <Text variant="kicker" tone="ink2">
-            {ANSWER_LABEL_TEXT[section.label]}
-          </Text>
+          {showsSectionLabel(section, quietLabels) ? (
+            <Text variant="kicker" tone="ink2">
+              {ANSWER_LABEL_TEXT[section.label]}
+            </Text>
+          ) : null}
           <Markdown text={section.text.trim()} />
           {section.citations.length > 0 ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>

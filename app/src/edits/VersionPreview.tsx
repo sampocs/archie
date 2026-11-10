@@ -1,5 +1,6 @@
 import { View } from "react-native";
 
+import { detailLines } from "@/review/detail";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { Markdown } from "@/ui/Markdown";
@@ -7,12 +8,13 @@ import { Markdown } from "@/ui/Markdown";
 import { summaryAsMarkdown, type CardShape, type EditContent, type MarkdownShape, type SummaryShape } from "./content";
 import type { EditTargetKind } from "./types";
 
-/** One version's content, read-only: a summary as its sections, markdown rendered, a card's question and answer. */
+/** One version's content, read-only: a summary as its sections, markdown rendered, a card's question, answer and detail. */
 export function VersionPreview({ kind, content }: { kind: EditTargetKind; content: EditContent | null }) {
   const theme = useTheme();
   if (content === null) return <Text tone="ink3">This version can't be shown.</Text>;
   if (kind === "card") {
     const card = content as CardShape;
+    const detail = detailLines(card.detail);
     return (
       <View style={{ gap: theme.spacing.sm }}>
         <Text variant="kicker" tone="ink2">
@@ -23,6 +25,16 @@ export function VersionPreview({ kind, content }: { kind: EditTargetKind; conten
           Answer
         </Text>
         <Text>{card.answer}</Text>
+        {detail.length > 0 ? (
+          <>
+            <Text variant="kicker" tone="ink2">
+              Detail
+            </Text>
+            {detail.map((line, index) => (
+              <Text key={index}>{line}</Text>
+            ))}
+          </>
+        ) : null}
       </View>
     );
   }

@@ -331,6 +331,7 @@ export function createDbSyncStore(
             kind: card.kind,
             question: card.question,
             answer: card.answer,
+            detail: card.detail ?? "",
             createdAt: card.created_at,
             deletedAt: card.deleted_at,
             fsrsState: card.fsrs_state ?? "new",

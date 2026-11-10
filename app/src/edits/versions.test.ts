@@ -28,20 +28,20 @@ describe("version lists", () => {
   });
 
   it("gives a card with no history one current entry, and otherwise its rows", () => {
-    const card = { id: "c1", question: "Q?", answer: "B.", version: 2, createdAt: "2026-11-01T00:00:00Z" };
+    const card = { id: "c1", question: "Q?", answer: "B.", detail: "Why.", version: 2, createdAt: "2026-11-01T00:00:00Z" };
     expect(cardEntries({ ...card, version: 1 }, [])).toEqual([
       {
         version: 1,
         createdAt: card.createdAt,
         origin: "archie",
         instruction: null,
-        content: { question: "Q?", answer: "B." },
+        content: { question: "Q?", answer: "B.", detail: "Why." },
         current: true,
       },
     ]);
     const rows = [
-      { id: "v1", cardId: "c1", version: 1, question: "Q?", answer: "A.", origin: "archie", instruction: null, createdAt: "x" },
-      { id: "v2", cardId: "c1", version: 2, question: "Q?", answer: "B.", origin: "care", instruction: "Rates", createdAt: "y" },
+      { id: "v1", cardId: "c1", version: 1, question: "Q?", answer: "A.", detail: "", origin: "archie", instruction: null, createdAt: "x" },
+      { id: "v2", cardId: "c1", version: 2, question: "Q?", answer: "B.", detail: "Why.", origin: "care", instruction: "Rates", createdAt: "y" },
     ];
     expect(cardEntries(card, rows).map((entry) => [entry.version, entry.current])).toEqual([
       [2, true],

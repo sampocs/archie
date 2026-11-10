@@ -14,6 +14,7 @@ const GRADE_BUTTON_HEIGHT = 46;
 type SelfGradeCardProps = {
   answer: string;
   acceptedAnswer: string;
+  acceptedDetail: string;
   reason: string | null;
   // The grade already chosen; the buttons lock once one is.
   chosen: ReviewGrade | null;
@@ -21,7 +22,7 @@ type SelfGradeCardProps = {
 };
 
 /** No model verdict (mock 02): compare with the answer and pick a grade yourself. */
-export function SelfGradeCard({ answer, acceptedAnswer, reason, chosen, onGrade }: SelfGradeCardProps) {
+export function SelfGradeCard({ answer, acceptedAnswer, acceptedDetail, reason, chosen, onGrade }: SelfGradeCardProps) {
   const theme = useTheme();
 
   return (
@@ -34,7 +35,7 @@ export function SelfGradeCard({ answer, acceptedAnswer, reason, chosen, onGrade 
             </Text>
           </Labelled>
         )}
-        <AcceptedAnswer answer={acceptedAnswer} />
+        <AcceptedAnswer answer={acceptedAnswer} detail={acceptedDetail} />
         <View style={{ flexDirection: "row", gap: theme.spacing.sm }}>
           {GRADES.map((grade) => (
             <GradeButton

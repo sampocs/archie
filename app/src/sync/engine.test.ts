@@ -537,6 +537,7 @@ describe("database SyncStore", () => {
     expect(db.select().from(schema.cards).get()).toMatchObject({
       question: "Q?",
       answer: "A.",
+      detail: "",
       deletedAt: null,
     });
 
@@ -1122,6 +1123,28 @@ describe("database SyncStore: M4 migration and rejections", () => {
     expect(db.select().from(schema.syncState).get()?.position).toBe(0);
   });
 
+  it("stores a pulled card's and card version's detail, and reads an older server's missing one as empty", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: {
+        sources: [],
+        artifacts: [],
+        cards: [pulledCard({ detail: "Why.\nHow." })],
+        card_versions: [
+          { id: "cv1", card_id: "c1", version: 1, question: "Q?", answer: "A.", detail: "Why.", origin: "archie", instruction: null, created_at: "x", change_seq: 3 },
+          { id: "cv2", card_id: "c1", version: 2, question: "Q?", answer: "B.", origin: "care", instruction: null, created_at: "y", change_seq: 4 },
+        ],
+      },
+      position: 4,
+      more: false,
+    });
+    expect(db.select().from(schema.cards).get()?.detail).toBe("Why.\nHow.");
+    expect(db.select().from(schema.cardVersions).all().map((row) => row.detail)).toEqual(["Why.", ""]);
+
+    await store.applyPage({ rows: { sources: [], artifacts: [], cards: [pulledCard({})] }, position: 5, more: false });
+    expect(db.select().from(schema.cards).get()?.detail).toBe("");
+  });
+
   it("stores pulled card versions, edit proposals and version origins", async () => {
     const { db, store } = makeDbStore();
     await store.applyPage({
@@ -1174,7 +1197,7 @@ describe("database SyncStore: M4 migration and rejections", () => {
       message_id: "m1",
       title: "JWT vs session tokens",
       cheat_sheet: "## The difference",
-      cards: [{ kind: "concept", question: "Q?", answer: "A." }],
+      cards: [{ kind: "concept", question: "Q?", answer: "A.", detail: [] }],
       status: "proposed",
       saved_source_id: null,
       kept: null,

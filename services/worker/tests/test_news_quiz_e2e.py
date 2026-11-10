@@ -33,6 +33,8 @@ Replay = Callable[[str], contextlib.AbstractContextManager[object]]
 
 TESTS_DIR = pathlib.Path(__file__).parent
 CASSETTE_DIR = TESTS_DIR / "cassettes"
+# The card rules' ceiling on an answer.
+MAX_ANSWER_WORDS = 15
 MORNING_BREW_TEXT = (TESTS_DIR / "fixtures" / "morning_brew.md").read_text()
 # Fixed, so the recorded update_brief answer's source ids name the newsletter again on replay.
 MORNING_BREW_ID = uuid.UUID("6f0c1a52-3d4e-4b7a-9c1e-2a5b8d7e0f11")
@@ -187,6 +189,9 @@ def test_the_weeks_top_stories_become_quiz_cards_that_expire_in_a_week(
         for card in cards
     )
     assert len({card.change_seq for card in cards}) == len(cards)
+    # The card rules, with a quiz card's detail at most one line.
+    assert all(len(card.answer.split()) <= MAX_ANSWER_WORDS and "\n" not in card.detail for card in cards)
+    assert any(card.detail for card in cards)
     now = datetime.datetime.now(datetime.UTC)
     expected = now + card_rows.QUIZ_LIFETIME
     assert all(

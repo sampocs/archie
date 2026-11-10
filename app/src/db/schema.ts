@@ -83,6 +83,8 @@ export const cards = sqliteTable("cards", {
   kind: text("kind").notNull(),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
+  // 0-3 bullet lines shown after answering and never graded, joined by "\n"; "" when none.
+  detail: text("detail").notNull().default(""),
   createdAt: text("created_at").notNull(),
   deletedAt: text("deleted_at"),
   // FSRS state; the phone schedules and the server stores what it last sent.
@@ -293,6 +295,7 @@ export const cardVersions = sqliteTable("card_versions", {
   version: integer("version").notNull(),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
+  detail: text("detail").notNull().default(""),
   origin: text("origin").notNull(),
   instruction: text("instruction"),
   createdAt: text("created_at").notNull(),

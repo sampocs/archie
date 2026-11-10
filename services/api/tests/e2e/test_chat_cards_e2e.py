@@ -21,7 +21,7 @@ import pytest
 import sqlalchemy
 import sqlalchemy.orm
 from archie_api.ask import answer, context
-from archie_db import changes, models, pipeline, session
+from archie_db import card_rows, changes, models, pipeline, session
 from archie_testing import recording
 from archie_testing.harness import LiveStack
 
@@ -40,11 +40,28 @@ CHEAT_SHEET = (
     "A session token is a random id the server looks up; a JWT carries signed claims any server can check.\n\n"
     "| | Session token | JWT |\n|---|---|---|\n| Revoke | Instant | Wait for expiry |"
 )
-CARDS: list[dict[str, str]] = [
-    {"kind": "concept", "question": "What does a session token hold?", "answer": "A random id the server looks up."},
-    {"kind": "mechanism", "question": "How is a JWT checked?", "answer": "By verifying the server's signature."},
-    {"kind": "concept", "question": "Why is revoking a JWT hard?", "answer": "It stays valid until it expires."},
+CARDS: list[dict[str, Any]] = [
+    {
+        "kind": "concept",
+        "question": "What does a session token hold?",
+        "answer": "A random id the server looks up.",
+        "detail": [],
+    },
+    {
+        "kind": "mechanism",
+        "question": "How is a JWT checked?",
+        "answer": "By verifying the server's signature.",
+        "detail": ["Any server with the key can check it", "So no session lookup is needed"],
+    },
+    {
+        "kind": "concept",
+        "question": "Why is revoking a JWT hard?",
+        "answer": "It stays valid until it expires.",
+        "detail": ["No server-side list holds it to delete"],
+    },
 ]
+# The card rules' ceiling on an answer.
+MAX_ANSWER_WORDS = 15
 
 
 @pytest.fixture(autouse=True)
@@ -81,7 +98,7 @@ def _seed(
     conversation_id: str | None = None,
     title: str = TITLE,
     cheat_sheet: str = CHEAT_SHEET,
-    cards: list[dict[str, str]] = CARDS,
+    cards: list[dict[str, Any]] = CARDS,
     about_note_id: str | None = None,
 ) -> dict[str, Any]:
     response = _seed_response(
@@ -103,7 +120,7 @@ def _seed_response(
     conversation_id: str | None = None,
     title: str = TITLE,
     cheat_sheet: str = CHEAT_SHEET,
-    cards: list[dict[str, str]] = CARDS,
+    cards: list[dict[str, Any]] = CARDS,
     about_note_id: str | None = None,
 ) -> httpx.Response:
     body = {
@@ -211,6 +228,7 @@ def test_make_cards_proposes_one_card_set_streamed_as_the_row_the_phone_pulls(
     )
     assert 3 <= len(row["cards"]) <= 7
     assert all(card["kind"] in {"concept", "mechanism", "number", "foundation"} for card in row["cards"])
+    _assert_short_answers_with_detail(row["cards"])
     assert "jwt" in row["cheat_sheet"].lower()
     assert not any(source["kind"] == "chat" for source in rows["sources"])
 
@@ -349,6 +367,13 @@ def test_keep_ticks_must_be_integers(owner: httpx.Client) -> None:
     assert response.status_code == 422
 
 
+def _assert_short_answers_with_detail(cards: list[dict[str, Any]]) -> None:
+    """The card rules held: short answers, each card with a detail list, some of them not empty."""
+    assert all(len(card["answer"].split()) <= MAX_ANSWER_WORDS for card in cards)
+    assert all(isinstance(card["detail"], list) for card in cards)
+    assert any(card["detail"] for card in cards)
+
+
 def test_the_seed_route_makes_a_chat_when_none_is_given(owner: httpx.Client) -> None:
     """A new chat holds an exchange about the title, then `Make cards` and the answer the set hangs on."""
     proposal = _seed(owner)
@@ -403,10 +428,11 @@ def test_save_creates_the_chat_item_with_three_artifacts_and_only_the_kept_cards
     assert contents["text"]["text"].endswith(f"**You:** Make cards\n\n**Archie:** Here are cards on {TITLE}.")
     assert _embed_jobs(live_stack) == 1
 
+    # Each kept card carries its detail lines, joined; a card without detail has "".
     cards = sorted(rows["cards"], key=lambda card: card["question"])
-    assert [(card["question"], card["kind"], card["fsrs_state"]) for card in cards] == [
-        (CARDS[0]["question"], "concept", "new"),
-        (CARDS[2]["question"], "concept", "new"),
+    assert [(card["question"], card["kind"], card["fsrs_state"], card["detail"]) for card in cards] == [
+        (CARDS[0]["question"], "concept", "new", ""),
+        (CARDS[2]["question"], "concept", "new", CARDS[2]["detail"][0]),
     ]
     assert all(
         (card["source_id"], card["message_id"], card["conversation_id"]) == (item["id"], proposal["message_id"], None)
@@ -455,6 +481,64 @@ def test_a_later_save_in_the_chat_updates_the_same_item(live_stack: LiveStack, o
     assert live[CARDS[0]["answer"]]["id"] == kept_before[CARDS[0]["question"]]
     [retired] = [card for card in rows["cards"] if card["deleted_at"] is not None]
     assert retired["answer"] == CARDS[1]["answer"]
+
+
+def _card_versions(live_stack: LiveStack, card_id: str) -> list[models.CardVersion]:
+    with _db(live_stack) as db:
+        return list(
+            db.scalars(
+                sqlalchemy.select(models.CardVersion)
+                .where(models.CardVersion.card_id == uuid.UUID(card_id))
+                .order_by(models.CardVersion.version)
+            ).all()
+        )
+
+
+def test_a_later_save_with_only_new_detail_versions_the_chats_card(live_stack: LiveStack, owner: httpx.Client) -> None:
+    """A re-proposed card whose question and answer are unchanged but whose detail lines changed keeps its row and
+    schedule and gets the new detail as its next, restorable version."""
+    first = _seed(owner)
+    _save(owner, first["id"], [0, 1])
+    [before] = [card for card in _rows(owner)["cards"] if card["question"] == CARDS[1]["question"]]
+    new_lines = ["It carries its own claims", "Signed, so tampering shows"]
+    second = _seed(owner, conversation_id=first["conversation_id"], cards=[CARDS[0], {**CARDS[1], "detail": new_lines}])
+
+    assert _save(owner, second["id"], [0, 1]).status_code == 200
+
+    live = [card for card in _rows(owner)["cards"] if card["deleted_at"] is None]
+    assert len(live) == 2
+    [after] = [card for card in live if card["question"] == CARDS[1]["question"]]
+    assert after["id"] == before["id"]
+    assert after["detail"] == card_rows.joined_detail(new_lines)
+    history = _card_versions(live_stack, before["id"])
+    assert [(version.version, version.detail, version.origin) for version in history] == [
+        (1, card_rows.joined_detail(CARDS[1]["detail"]), models.VersionOrigin.ARCHIE.value),
+        (2, card_rows.joined_detail(new_lines), models.VersionOrigin.CHAT_EDIT.value),
+    ]
+    [unchanged] = [card for card in live if card["question"] == CARDS[0]["question"]]
+    assert _card_versions(live_stack, unchanged["id"]) == []
+
+
+def test_a_notes_set_never_rewrites_another_chats_card_detail(live_stack: LiveStack, owner: httpx.Client) -> None:
+    """A card with the same question and answer made by another chat on the note keeps its own detail."""
+    note_id = _seed_note(owner)
+    first = _seed(owner, title=NOTE_TITLE, cheat_sheet="", about_note_id=note_id)
+    _save(owner, first["id"], [1])
+    [mine] = [card for card in _rows(owner)["cards"] if card["question"] == CARDS[1]["question"]]
+    other = _seed(
+        owner,
+        title=NOTE_TITLE,
+        cheat_sheet="",
+        cards=[{**CARDS[1], "detail": ["A different line"]}],
+        about_note_id=note_id,
+    )
+    assert other["conversation_id"] != first["conversation_id"]
+
+    assert _save(owner, other["id"], [0]).status_code == 200
+
+    [after] = [card for card in _rows(owner)["cards"] if card["question"] == CARDS[1]["question"]]
+    assert (after["id"], after["detail"]) == (mine["id"], mine["detail"])
+    assert _card_versions(live_stack, mine["id"]) == []
 
 
 def test_a_later_save_replaces_a_primer_the_owner_edited(live_stack: LiveStack, owner: httpx.Client) -> None:
@@ -654,6 +738,7 @@ def test_make_cards_about_a_note_proposes_its_cards_without_a_cheat_sheet(
     assert (event["title"], event["cheat_sheet"]) == (NOTE_TITLE, "")
     assert 3 <= len(event["cards"]) <= 5
     assert all(card["kind"] in {"concept", "mechanism", "number"} for card in event["cards"])
+    _assert_short_answers_with_detail(event["cards"])
     rows = _rows(owner)
     assert [row["id"] for row in rows["card_set_proposals"]] == [event["id"]]
     assert not rows["cards"]

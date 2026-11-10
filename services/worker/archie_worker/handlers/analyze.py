@@ -99,6 +99,8 @@ def _insert_cards(
                 kind=card["kind"],
                 question=card["question"],
                 answer=card["answer"],
+                # Analyses recorded before cards had detail lack the key.
+                detail=card_rows.joined_detail(card.get("detail", [])),
                 change_seq=changes.next_change_seq(),
             )
         )

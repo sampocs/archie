@@ -51,17 +51,50 @@ interactions:
       said its tech was hit here and in a similar French attack last month. The Pentagon
       is investigating August hacks on military commissary fridges. Forescout counts
       over 20 attacks on refrigeration systems this year, some linked to Russia-aligned
-      hackers.\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"story_index\":{\"type\":\"integer\"},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"}},\"required\":[\"story_index\",\"question\",\"answer\"],\"additionalProperties\":false}}},\"required\":[\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
+      hackers.\"}],\"model\":\"claude-haiku-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"story_index\":{\"type\":\"integer\"},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"story_index\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false}}},\"required\":[\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
       write a weekly news quiz for a personal learning app: short open-recall cards
       on the week's most important news stories, so the user remembers what happened
       and why it matters.\\n\\nYou get numbered stories (headline, what happened,
       why it matters, detail). Write exactly one card per story, in the order given:
-      one focused question about the core of the story (what happened, or why it matters),
-      never trivia like exact dates or a minor name, and an answer of 1-2 sentences.
-      Give each card the story's number as story_index.\\n\\nWrite in plain, conversational
-      English for a smart reader who is new to the subject. Short sentences. Define
-      any jargon the first time it appears. Prefer concrete examples and rough numbers
-      (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\"}"
+      a question about the core of the story (what happened, or why it matters), never
+      trivia like exact dates or a minor name, written to the card rules below. Give
+      each card the story's number as story_index.\\n\\nEach card has a question,
+      an answer and a detail:\\n- question: ONE focused question with ONE thing to
+      recall. Never join two asks with \\\"and\\\" (\\\"What does X give you, and
+      what can you lose?\\\" is two cards, or pick one). Ask only what has a short
+      answer.\\n- answer: the one thing to recall, in as few words as carry it: a
+      phrase, not a sentence. Aim for 2-8 words, never more than 15. The learner is
+      graded only on this, so it is what someone who knows the material would say
+      off the top of their head. When two things are both essential, name both briefly
+      (\\\"Supply and demand\\\"). A number card's answer is the rough figure with
+      its unit.\\n- detail: 0-3 short bullet lines, each under 12 words. Shown after
+      the learner answers, never graded. Each line must help explain the answer (the
+      why or how behind it, or a contrast that makes it click); a further fact about
+      the subject, however true, is not a reason for a line. No padding and no redundancy:
+      never a line that restates the answer, is implied by it or repeats another line;
+      that is trivia from this one source (who said it, when, a passing example or
+      anecdote) rather than a lasting fact about the subject; or that is a side remark
+      that doesn't help recall. So a plain fact or a number usually needs none and
+      most whys need one; use two or three only when the explanation really has that
+      many steps (A happens, so B, so C) or named parts (the three phases of a cycle).
+      When in doubt, use fewer.\\nNews quiz cards are the one exception to the detail
+      rule: a quiz card's detail is at most ONE line (or none), never two or three.\\n\\nVoice:
+      a great teacher who respects the reader's time. Warm and direct; talk to \\\"you\\\".\\n-
+      Open with the core idea in one or two plain sentences: what it is and why it
+      matters.\\n- Match depth to the idea. A simple point gets one or two crisp sentences.
+      Only an idea with a real mechanism gets a plain everyday analogy to make it
+      click, then the specifics.\\n- Tell something as a story only when there genuinely
+      is one (real people, a rise and fall, a turning point). Never invent drama,
+      scenes or suspense.\\n- Define jargon in plain words the first time it appears.
+      Prefer concrete examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n-
+      Short sentences and no padding: every sentence carries information. Friendliness
+      comes from the phrasing, not from extra sentences.\\n- Never open with throat-clearing
+      (\\\"Okay so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's
+      dive in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never
+      close with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\"}"
     headers:
       accept:
       - application/json
@@ -72,7 +105,7 @@ interactions:
       connection:
       - keep-alive
       content-length:
-      - '5173'
+      - '7792'
       content-type:
       - application/json
       host:
@@ -103,74 +136,67 @@ interactions:
     uri: https://api.anthropic.com/v1/messages
   response:
     body:
-      string: "{\"model\":\"claude-haiku-5-5\",\"id\":\"msg_011CgkkNLrh2pJM6wkpf5jcc\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"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\"},{\"type\":\"text\",\"text\":\"{\\\"cards\\\":[{\\\"story_index\\\":1,\\\"question\\\":\\\"What
-        is the US midterm election deciding today?\\\",\\\"answer\\\":\\\"It decides
-        which party controls Congress for the last two years of Trump's second term.
-        Republicans hold narrow majorities now, and Democrats could take the House.\\\"},{\\\"story_index\\\":2,\\\"question\\\":\\\"Why
-        is Marvell buying Lumentum, and why did investors react badly?\\\",\\\"answer\\\":\\\"Marvell
-        agreed to buy Lumentum, which makes lasers that move data between chips and
-        servers, for $115 billion including debt. Investors worried it was a huge
-        bet on AI data center gear and possibly an AI bubble, so both stocks fell
-        sharply.\\\"},{\\\"story_index\\\":3,\\\"question\\\":\\\"Why did Apple's
-        stock slip even though its revenue beat expectations?\\\",\\\"answer\\\":\\\"Revenue
-        grew 12% to $114.5 billion, but profit margins (the share of each sale kept
-        as profit) are shrinking. Higher memory costs and AI-related expenses are
-        the main reasons.\\\"},{\\\"story_index\\\":4,\\\"question\\\":\\\"What milestone
-        did Palantir reach in its latest quarter?\\\",\\\"answer\\\":\\\"Its US business
-        sales ($984 million) passed its US government sales ($953 million) for the
-        first time. Companies are adopting its AI software fast enough to rival government
-        demand.\\\"},{\\\"story_index\\\":5,\\\"question\\\":\\\"What did hackers
-        do to supermarket fridges across seven European countries?\\\",\\\"answer\\\":\\\"They
-        remotely switched dozens of fridges and freezers into defrost mode, and some
-        heated up to 122\xB0F. The attack raises fears that AI-enabled hackers could
-        target critical systems run on digital controls.\\\"}]}\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":1901,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":1041,\"output_tokens_details\":{\"thinking_tokens\":530},\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
+      string: '{"model":"claude-haiku-5-5","id":"msg_011Cgv3swkzLF1agsNDvM4Hg","type":"message","role":"assistant","content":[{"type":"text","text":"{\"cards\":[{\"story_index\":1,\"question\":\"Which
+        party is at risk of losing control of the House in today''s midterms?\",\"answer\":\"Republicans,
+        possibly losing the House to Democrats\",\"detail\":[\"Midterms usually cost
+        the president''s party seats.\"]},{\"story_index\":2,\"question\":\"What is
+        the core reason Marvell is buying Lumentum?\",\"answer\":\"Gain a foothold
+        in AI data center infrastructure\",\"detail\":[\"Lumentum makes the lasers
+        and optical hardware linking chips and servers.\"]},{\"story_index\":3,\"question\":\"Why
+        did Apple''s stock slip despite beating revenue expectations?\",\"answer\":\"Shrinking
+        profit margins\",\"detail\":[\"Memory costs and Siri AI expenses are squeezing
+        margins.\"]},{\"story_index\":4,\"question\":\"What milestone did Palantir
+        hit in Q3 revenue?\",\"answer\":\"Business sales passed government sales\",\"detail\":[]},{\"story_index\":5,\"question\":\"How
+        did hackers make the supermarket fridges dangerous?\",\"answer\":\"Switched
+        them to defrost mode remotely\",\"detail\":[\"They hit a digital system that
+        controls the devices remotely.\"]}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":2753,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":375,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
     headers:
       anthropic-ratelimit-input-tokens-limit:
       - '10000000'
       anthropic-ratelimit-input-tokens-remaining:
       - '9999000'
       anthropic-ratelimit-input-tokens-reset:
-      - '2026-11-06T00:44:10Z'
+      - '2026-11-10T22:39:08Z'
       anthropic-ratelimit-output-tokens-limit:
       - '2000000'
       anthropic-ratelimit-output-tokens-remaining:
-      - '1999000'
+      - '2000000'
       anthropic-ratelimit-output-tokens-reset:
-      - '2026-11-06T00:44:14Z'
+      - '2026-11-10T22:39:09Z'
       anthropic-ratelimit-requests-limit:
       - '13000'
       anthropic-ratelimit-requests-remaining:
       - '12999'
       anthropic-ratelimit-requests-reset:
-      - '2026-11-06T00:44:08Z'
+      - '2026-11-10T22:39:07Z'
       anthropic-ratelimit-tokens-limit:
       - '12000000'
       anthropic-ratelimit-tokens-remaining:
-      - '11998000'
+      - '11999000'
       anthropic-ratelimit-tokens-reset:
-      - '2026-11-06T00:44:10Z'
+      - '2026-11-10T22:39:08Z'
       cf-cache-status:
       - DYNAMIC
       cf-ray:
-      - a560116949b7eae7-ORD
+      - a5888d2479624312-ORD
       connection:
       - keep-alive
       content-length:
-      - '4989'
+      - '1643'
       content-security-policy:
       - default-src 'none'; frame-ancestors 'none'
       content-type:
       - application/json
       date:
-      - Fri, 06 Nov 2026 00:44:14 GMT
+      - Tue, 10 Nov 2026 22:39:09 GMT
       server:
       - cloudflare
       server-timing:
-      - x-originResponse;dur=5503
+      - x-originResponse;dur=2529
       strict-transport-security:
       - max-age=31536000; includeSubDomains; preload
       traceresponse:
-      - 00-ea83a7811fff495cf23a5a1b7c1cd3ac-0cf9e804593b5be5-01
+      - 00-e3b704d89402ff3022041dd5becd6d41-1832a93e3fc9bd12-01
       transfer-encoding:
       - chunked
       vary:

@@ -6,7 +6,7 @@ import type { CardVersionRow, VersionOrigin } from "./types";
 type ArtifactRow = typeof schema.artifacts.$inferSelect;
 type TopicPrimerRow = typeof schema.topicPrimers.$inferSelect;
 type TakeVersionRow = typeof schema.takeVersions.$inferSelect;
-type CardLike = { question: string; answer: string; version: number; createdAt: string };
+type CardLike = { question: string; answer: string; detail: string; version: number; createdAt: string };
 
 /** One version as the versions sheet lists it. */
 export type VersionEntry = {
@@ -83,7 +83,7 @@ export function cardEntries(card: CardLike, rows: CardVersionRow[]): VersionEntr
         createdAt: card.createdAt,
         origin: "archie",
         instruction: null,
-        content: { question: card.question, answer: card.answer },
+        content: { question: card.question, answer: card.answer, detail: card.detail },
         current: true,
       },
     ];
@@ -94,7 +94,7 @@ export function cardEntries(card: CardLike, rows: CardVersionRow[]): VersionEntr
       createdAt: row.createdAt,
       origin: asOrigin(row.origin),
       instruction: row.instruction,
-      content: { question: row.question, answer: row.answer },
+      content: { question: row.question, answer: row.answer, detail: row.detail },
       current: row.version === card.version,
     })),
   );

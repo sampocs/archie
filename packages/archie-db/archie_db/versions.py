@@ -7,7 +7,8 @@ and makes it current; nothing is overwritten. Content travels in one edit shape 
   only that version's `summary` object, so the rest of the analysis (domain, tags, cards) stays as in the current
   version;
 - primer, topic primer and take: `{"markdown": ...}` (a take's body);
-- card: `{"question": ..., "answer": ...}`.
+- card: `{"question": ..., "answer": ..., "detail": ...}`, the detail as stored (lines joined by newlines); `detail`
+  is always written but optional on read, since older versions and edit proposals lack it (read as "").
 Writing a topic primer version also moves the topic's live foundation cards onto it, since Review only knows the
 current primer version.
 Cards are versioned lazily: a card has no `card_versions` rows until its first change, which writes version 1 (the
@@ -31,6 +32,7 @@ MARKDOWN_KEY = "markdown"
 SUMMARY_KEY = "summary"
 QUESTION_KEY = "question"
 ANSWER_KEY = "answer"
+DETAIL_KEY = "detail"
 
 _ARTIFACT_KINDS: dict[models.EditTarget, models.ArtifactKind] = {
     models.EditTarget.SUMMARY: models.ArtifactKind.SUMMARY,
@@ -96,7 +98,7 @@ def current(db: sqlalchemy.orm.Session, *, target: Target) -> Snapshot:
         assert version is not None
         return Snapshot(version=take.current_version, content={MARKDOWN_KEY: takes.shown_body(version)})
     card = db.get_one(models.Card, target.id)
-    return Snapshot(version=card.version, content={QUESTION_KEY: card.question, ANSWER_KEY: card.answer})
+    return Snapshot(version=card.version, content=_card_shape(card))
 
 
 def at_version(db: sqlalchemy.orm.Session, *, target: Target, version: int) -> dict[str, Any] | None:
@@ -113,9 +115,9 @@ def at_version(db: sqlalchemy.orm.Session, *, target: Target, version: int) -> d
 
     card = db.get_one(models.Card, target.id)
     if version == card.version:
-        return {QUESTION_KEY: card.question, ANSWER_KEY: card.answer}
+        return _card_shape(card)
     row = _card_version(db, card_id=card.id, version=version)
-    return {QUESTION_KEY: row.question, ANSWER_KEY: row.answer} if row is not None else None
+    return _card_shape(row) if row is not None else None
 
 
 def write(
@@ -189,6 +191,12 @@ def restore(db: sqlalchemy.orm.Session, *, target: Target, version: int, is_undo
     )
 
 
+def card_detail(content: dict[str, Any]) -> str:
+    """A card content's detail; "" for older content written before cards had one."""
+    detail: str = content.get(DETAIL_KEY, "")
+    return detail
+
+
 def _origin_at(db: sqlalchemy.orm.Session, *, target: Target, version: int) -> models.VersionOrigin | None:
     """Who made a summary, primer or topic primer version; None for takes and cards, which Archie never regenerates."""
     if target.kind in _ARTIFACT_KINDS:
@@ -222,6 +230,10 @@ def _topic_target(db: sqlalchemy.orm.Session, *, user_id: int, item_id: uuid.UUI
     if topic_primers.current(db, topic_id=topic.id) is None:
         return None
     return Target(kind=models.EditTarget.TOPIC_PRIMER, id=topic.id)
+
+
+def _card_shape(card: models.Card | models.CardVersion) -> dict[str, Any]:
+    return {QUESTION_KEY: card.question, ANSWER_KEY: card.answer, DETAIL_KEY: card.detail}
 
 
 def _artifact_shape(kind: models.EditTarget, content: dict[str, Any]) -> dict[str, Any]:
@@ -360,6 +372,7 @@ def _write_card(
             card=card,
             question=card.question,
             answer=card.answer,
+            detail=card.detail,
             origin=models.VersionOrigin.ARCHIE,
             instruction=None,
             # The version is the card as it was, so it dates from when the card was made.
@@ -370,9 +383,18 @@ def _write_card(
     card.version += 1
     card.question = content[QUESTION_KEY]
     card.answer = content[ANSWER_KEY]
+    card.detail = card_detail(content)
     card.updated_at = sqlalchemy.func.now()
     card.change_seq = changes.next_change_seq()
-    _add_card_version(db, card=card, question=card.question, answer=card.answer, origin=origin, instruction=instruction)
+    _add_card_version(
+        db,
+        card=card,
+        question=card.question,
+        answer=card.answer,
+        detail=card.detail,
+        origin=origin,
+        instruction=instruction,
+    )
     db.flush()
     return card.version
 
@@ -391,6 +413,7 @@ def _add_card_version(
     card: models.Card,
     question: str,
     answer: str,
+    detail: str,
     origin: models.VersionOrigin,
     instruction: str | None,
     created_at: datetime.datetime | None = None,
@@ -402,6 +425,7 @@ def _add_card_version(
         version=card.version,
         question=question,
         answer=answer,
+        detail=detail,
         origin=origin.value,
         instruction=instruction,
         change_seq=changes.next_change_seq(),

@@ -1,4 +1,5 @@
-"""Card rows shared by the API and the worker: ownership, retiring cards, the user's card preferences, done briefs.
+"""Card rows shared by the API and the worker: ownership, a card's stored detail, retiring cards, the user's card
+preferences, done briefs.
 
 Every function that writes expects the caller to hold `changes.lock_user_writes` for the user.
 """
@@ -7,6 +8,7 @@ from __future__ import annotations
 
 import datetime
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 import sqlalchemy
@@ -19,6 +21,9 @@ QUIZ_LIFETIME = datetime.timedelta(days=7)
 QUIZ_BRIEF_WINDOW = datetime.timedelta(days=7)
 # The `news_quiz` job payload key naming the week (the phone's local Sunday, "YYYY-MM-DD") it was asked for.
 WEEK_START_KEY = "week_start"
+# A card's detail lines are stored as one text, joined by this.
+DETAIL_SEPARATOR = "\n"
+MAX_DETAIL_LINES = 3
 
 
 @dataclass(frozen=True)
@@ -35,6 +40,18 @@ def owned_live_card(db: sqlalchemy.orm.Session, *, user_id: int, card_id: uuid.U
     if card is None or card.user_id != user_id or card.deleted_at is not None:
         return None
     return card
+
+
+def detail_lines(lines: Sequence[str]) -> list[str]:
+    """A card's detail lines cleaned as a writer gave them: a newline inside a line becomes a space, blank lines go,
+    and only the first `MAX_DETAIL_LINES` are kept."""
+    cleaned = (" ".join(line.split()) for line in lines)
+    return [line for line in cleaned if line][:MAX_DETAIL_LINES]
+
+
+def joined_detail(lines: Sequence[str]) -> str:
+    """A card's detail lines as stored on the card: cleaned (`detail_lines`) and joined by newlines."""
+    return DETAIL_SEPARATOR.join(detail_lines(lines))
 
 
 def retire_cards(db: sqlalchemy.orm.Session, *criteria: sqlalchemy.ColumnElement[bool]) -> None:

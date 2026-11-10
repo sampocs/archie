@@ -3,7 +3,7 @@ import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import * as Network from "expo-network";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Linking, Pressable, StyleSheet, View } from "react-native";
+import { Linking, Pressable, View } from "react-native";
 
 import { MAKE_CARDS_MESSAGE } from "@/ask/cardSets";
 import { openChat } from "@/ask/openChat";
@@ -25,27 +25,25 @@ import { ItemActions } from "@/item/ItemActions";
 import { ItemBadgeLine } from "@/item/ItemBadgeLine";
 import { ItemHeader, REACTION_LABELS } from "@/item/ItemHeader";
 import { ItemMenu } from "@/item/ItemMenu";
-import { timestampUrl } from "@/item/timestampLink";
+import { SectionTitle, SummarySections } from "@/item/SummarySections";
 import { useLibraryData } from "@/library/useLibraryData";
 import { NoteSources } from "@/notes/NoteSources";
 import { OriginalNoteSheet } from "@/notes/OriginalNoteSheet";
 import { setPendingRefreshToast } from "@/notes/pendingToast";
 import { noteDone, todayRefresher } from "@/notes/refresher";
-import { InlineMarkdown, Markdown } from "@/ui/Markdown";
+import { Markdown } from "@/ui/Markdown";
 import { asDomain } from "@/topics/domains";
-import { splitFacts } from "@/summary/figures";
 import { requestSync } from "@/sync/useSync";
 import { Button } from "@/theme/components/Button";
 import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
-import { fontFamily } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
 import { haptic } from "@/ui/haptics";
 import { primerMarkdown, wordCount } from "@/library/primer";
 import { CHAT_KIND, kindLabel } from "@/ui/sourceLabels";
-import { parseSummary, SummaryContent } from "@/ui/summaryContent";
+import { parseSummary } from "@/ui/summaryContent";
 import { Toast } from "@/ui/Toast";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -370,91 +368,6 @@ function EmailLinks({ url, onOpenEmail }: { url: string; onOpenEmail: () => void
         </Pressable>
       )}
     </View>
-  );
-}
-
-function SectionTitle({ children }: { children: string }) {
-  return (
-    <Text variant="kicker" tone="ink2">
-      {children}
-    </Text>
-  );
-}
-
-function TimestampChip({ timestamp, source }: { timestamp: string | null; source: SourceRow }) {
-  const theme = useTheme();
-  if (!timestamp) return null;
-
-  return (
-    <Pressable
-      testID="timestamp"
-      hitSlop={8}
-      onPress={() => {
-        haptic("light");
-        void Linking.openURL(timestampUrl(source, timestamp));
-      }}
-      style={{
-        backgroundColor: theme.colors.press,
-        borderRadius: theme.radii.chipSmall,
-        paddingHorizontal: theme.spacing.sm,
-        paddingVertical: theme.spacing.xs,
-      }}
-    >
-      <Text variant="monoLabel" tone="ink2">
-        {timestamp}
-      </Text>
-    </Pressable>
-  );
-}
-
-function SummarySections({ summary, source }: { summary: SummaryContent; source: SourceRow }) {
-  const theme = useTheme();
-
-  return (
-    <>
-      <View style={{ gap: theme.spacing.sm }}>
-        <InlineMarkdown testID="source-gist" text={summary.gist} />
-      </View>
-
-      {summary.key_ideas.length > 0 ? (
-        <View style={{ gap: theme.spacing.md }}>
-          <SectionTitle>Key ideas</SectionTitle>
-          {summary.key_ideas.map((item, index) => (
-            <View key={index} style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start" }}>
-              <Text variant="readingBody">{index + 1}.</Text>
-              <InlineMarkdown text={item.idea} style={{ flex: 1 }} />
-              <TimestampChip timestamp={item.timestamp} source={source} />
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      {summary.numbers.length > 0 ? (
-        <View style={{ gap: theme.spacing.sm }}>
-          <SectionTitle>Rough numbers</SectionTitle>
-          <Card testID="rough-numbers" style={{ paddingVertical: 0 }}>
-            {summary.numbers.map((item, index) => (
-              <View
-                key={index}
-                style={[
-                  { flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start", paddingVertical: theme.spacing.md },
-                  index > 0 ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.line } : null,
-                ]}
-              >
-                <Text style={{ flex: 1 }}>
-                  {splitFacts(item.fact).map((segment, segmentIndex) => (
-                    <Text key={segmentIndex} style={segment.figure ? { fontFamily: fontFamily.mono } : null}>
-                      {segment.text}
-                    </Text>
-                  ))}
-                </Text>
-                <TimestampChip timestamp={item.timestamp} source={source} />
-              </View>
-            ))}
-          </Card>
-        </View>
-      ) : null}
-    </>
   );
 }
 

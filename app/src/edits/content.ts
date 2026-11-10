@@ -1,3 +1,5 @@
+import { detailLines } from "@/review/detail";
+
 import type { EditTargetKind } from "./types";
 
 export type SummaryShape = {
@@ -6,7 +8,8 @@ export type SummaryShape = {
   numbers: { timestamp: string | null; fact: string }[];
 };
 export type MarkdownShape = { markdown: string };
-export type CardShape = { question: string; answer: string };
+/** `detail` is the lines joined by "\n", "" when none. */
+export type CardShape = { question: string; answer: string; detail: string };
 export type EditContent = SummaryShape | MarkdownShape | CardShape;
 
 /** A proposal's or version's content in its kind's shape; anything else (an older or newer shape) is null. */
@@ -15,7 +18,7 @@ export function parseContent(kind: EditTargetKind, value: unknown): EditContent 
   const record = value as Record<string, unknown>;
   if (kind === "card") {
     return typeof record.question === "string" && typeof record.answer === "string"
-      ? { question: record.question, answer: record.answer }
+      ? { question: record.question, answer: record.answer, detail: typeof record.detail === "string" ? record.detail : "" }
       : null;
   }
   if (kind !== "summary") return typeof record.markdown === "string" ? { markdown: record.markdown } : null;
@@ -34,12 +37,13 @@ export function parseContent(kind: EditTargetKind, value: unknown): EditContent 
   };
 }
 
-/** The content as the lines the diff compares: a summary by section, markdown by line, a card as Q and A. */
+/** The content as the lines the diff compares: a summary by section, markdown by line, a card as Q, A and its detail lines. */
 export function editLines(kind: EditTargetKind, content: EditContent | null): string[] {
   if (content === null) return [];
   if (kind === "card") {
     const card = content as CardShape;
-    return [`Question: ${card.question}`, `Answer: ${card.answer}`];
+    const detail = detailLines(card.detail);
+    return [`Question: ${card.question}`, `Answer: ${card.answer}`, ...(detail.length > 0 ? ["Detail:", ...detail] : [])];
   }
   if (kind !== "summary") {
     return (content as MarkdownShape).markdown

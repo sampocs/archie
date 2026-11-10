@@ -5,9 +5,16 @@ from __future__ import annotations
 import uuid
 
 from archie_api.ask import card_routes, card_set_tools, context
-from archie_db import models
+from archie_db import card_rows, models
 
-CARD = {"kind": "concept", "question": "What is a JWT?", "answer": "A signed token that carries its claims."}
+CARD = {
+    "kind": "concept",
+    "question": "What is a JWT?",
+    "answer": "A signed token with claims",
+    "detail": ["The server checks the signature, not a session"],
+}
+# A card as stored before cards had detail.
+OLD_CARD = {"kind": "concept", "question": "What is a JWT?", "answer": "A signed token with claims"}
 
 
 def _propose(**changes: object) -> card_set_tools.ToolOutcome:
@@ -22,6 +29,14 @@ def test_a_valid_card_set_is_a_proposal_and_a_bad_one_an_error_the_model_can_fix
     assert valid.proposal is not None and "is_error" not in valid.result
     assert valid.proposal.card_set.title == "JWTs"
     assert card_set_tools.cards_of(valid.proposal.card_set) == [CARD]
+
+    # Detail lines are cleaned as stored: a line's own newline becomes a space and a blank line goes.
+    messy = _propose(cards=[{**CARD, "detail": [" The server checks\nthe signature ", "  ", "No session"]}])
+    assert messy.proposal is not None
+    assert card_set_tools.cards_of(messy.proposal.card_set)[0]["detail"] == [
+        "The server checks the signature",
+        "No session",
+    ]
 
     invalid = {
         "cards": _propose(cards=[CARD] * (card_set_tools.MAX_CARDS + 1)),
@@ -107,6 +122,23 @@ def test_the_gist_is_the_first_prose_paragraph_cut_at_a_word() -> None:
     assert card_routes.gist_of("# Only a heading", title="JWTs") == "JWTs"
 
 
+def test_a_stored_set_from_before_detail_reads_its_cards_with_none() -> None:
+    """A set stored before cards had detail parses, each card with an empty detail; a newer one keeps its lines."""
+    card_set = models.CardSetProposal(title="JWTs", cheat_sheet="", cards=[OLD_CARD, CARD], status="proposed")
+
+    [old, new] = card_set_tools.stored_cards(card_set)
+
+    assert (old.question, old.answer, old.detail) == (OLD_CARD["question"], OLD_CARD["answer"], [])
+    assert new.detail == CARD["detail"]
+
+
+def test_detail_lines_keep_only_the_first_three_cleaned_lines() -> None:
+    """A fourth and fifth line are dropped, after blank lines are cleaned away."""
+    lines = ["one", "", "two\nwrapped", "three", "four", "five"]
+
+    assert card_rows.detail_lines(lines) == ["one", "two wrapped", "three"]
+
+
 def test_the_history_line_carries_an_open_set_and_only_names_a_replaced_one() -> None:
     """The model can rebuild an open, saved or discarded set with one change; a replaced one is just named."""
     card_set = models.CardSetProposal(
@@ -115,19 +147,21 @@ def test_the_history_line_carries_an_open_set_and_only_names_a_replaced_one() ->
 
     assert context.card_set_note(card_set) == (
         "[cards proposed: JWTs — the owner saved it]\n<cheat_sheet>\n# JWTs\n</cheat_sheet>\n"
-        "1. (concept) Q: What is a JWT?\n   A: A signed token that carries its claims."
+        "1. (concept) Q: What is a JWT?\n   A: A signed token with claims\n"
+        "   - The server checks the signature, not a session"
     )
     card_set.status = models.CardSetStatus.REPLACED.value
     assert context.card_set_note(card_set) == "[cards proposed: JWTs — replaced by a later proposal]"
 
 
 def test_the_history_line_of_a_notes_set_has_no_cheat_sheet() -> None:
-    """A note's set has an empty cheat sheet, so its line goes straight from the status to the cards."""
-    card_set = models.CardSetProposal(title="Staking", cheat_sheet="", cards=[CARD], status="proposed")
+    """A note's set has an empty cheat sheet, so its line goes straight from the status to the cards; a card without
+    detail ends at its answer."""
+    card_set = models.CardSetProposal(title="Staking", cheat_sheet="", cards=[OLD_CARD], status="proposed")
 
     assert context.card_set_note(card_set) == (
         "[cards proposed: Staking — waiting for the owner to save it]\n"
-        "1. (concept) Q: What is a JWT?\n   A: A signed token that carries its claims."
+        "1. (concept) Q: What is a JWT?\n   A: A signed token with claims"
     )
 
 

@@ -71,7 +71,7 @@ Every user-owned table has a `user_id`. The names below describe each table's jo
   - source↔topic links, allowing more than one domain per source
   - source↔source links
 - **cards:**
-  - question and answer, and its version, with `card_versions` once a card has changed (an Ask edit, a care rewrite, a restore)
+  - question, a short graded answer and detail lines (shown after answering, never graded), and its version, with `card_versions` once a card has changed (an Ask edit, a care rewrite, a restore)
   - its origin: a source, a topic primer or a brief (quiz cards), and the source position (timestamp or section)
   - FSRS state: stability, difficulty, due date, reps, lapses, written by the phone
   - `expires_at` (quiz cards); there is no suspended flag, Drop soft-deletes the card

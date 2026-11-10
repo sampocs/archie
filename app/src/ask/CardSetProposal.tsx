@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
@@ -19,6 +19,7 @@ import {
   cardSetBlock,
   hasCheatSheet,
   keptIndices,
+  opensByGoingBack,
   pageLabel,
   saveLabel,
   savedToast,
@@ -52,6 +53,7 @@ const CARD_SET_GONE = "This card set is gone";
 export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive, updating, onToast }: CardSetProposalProps) {
   const theme = useTheme();
   const router = useRouter();
+  const { fromNote } = useLocalSearchParams<{ fromNote?: string }>();
   const { sessionKey } = useSession();
   // The stored row wins once the phone has it: it carries what Save or Discard did.
   const cardSet = useCardSetRow(streamed.id) ?? streamed;
@@ -114,7 +116,11 @@ export function CardSetProposal({ cardSet: streamed, ready, online, replacedLive
             <Pressable
               testID="card-set-open"
               hitSlop={8}
-              onPress={() => router.push({ pathname: "/source/[id]", params: { id: itemId } })}
+              onPress={() =>
+                opensByGoingBack(fromNote, itemId)
+                  ? router.back()
+                  : router.push({ pathname: "/source/[id]", params: { id: itemId } })
+              }
             >
               <Text variant="secondary" tone="ink2" style={{ textDecorationLine: "underline", fontFamily: fontFamily.semibold }}>
                 Open

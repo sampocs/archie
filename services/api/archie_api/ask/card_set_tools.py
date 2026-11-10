@@ -174,23 +174,32 @@ def run(*, tool_use_id: str, tool_input: object, note_title: str | None) -> Tool
         if note_title is not None and isinstance(tool_input, dict)
         else tool_input
     )
+    if note_title is not None and _has_foundation_card(tool_input):
+        return _error_outcome(
+            tool_use_id=tool_use_id,
+            text="cards: a note's cards must not be foundation; use concept, mechanism or number",
+        )
     try:
         card_set = CardSetIn.model_validate(for_note, context={FOR_A_NOTE: note_title is not None})
     except pydantic.ValidationError as error:
-        return ToolOutcome(
-            result={
-                "type": "tool_result",
-                "tool_use_id": tool_use_id,
-                "is_error": True,
-                "content": edit_tools.error_text(error),
-            }
-        )
+        return _error_outcome(tool_use_id=tool_use_id, text=edit_tools.error_text(error))
 
     proposal = Proposal(id=uuid.uuid4(), card_set=card_set, created_at=datetime.datetime.now(tz=datetime.UTC))
     payload = {"proposal_id": str(proposal.id), "status": PROPOSED}
     return ToolOutcome(
         result={"type": "tool_result", "tool_use_id": tool_use_id, "content": json.dumps(payload)}, proposal=proposal
     )
+
+
+def _error_outcome(*, tool_use_id: str, text: str) -> ToolOutcome:
+    return ToolOutcome(result={"type": "tool_result", "tool_use_id": tool_use_id, "is_error": True, "content": text})
+
+
+def _has_foundation_card(tool_input: object) -> bool:
+    cards = tool_input.get("cards") if isinstance(tool_input, dict) else None
+    if not isinstance(cards, list):
+        return False
+    return any(isinstance(card, dict) and card.get("kind") == models.CardKind.FOUNDATION for card in cards)
 
 
 def save_proposals(

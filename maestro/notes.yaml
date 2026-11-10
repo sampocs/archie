@@ -1,7 +1,7 @@
 appId: com.sampocs.archie
 ---
-# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. The user may Ask, so Done makes
-# the cards in a chat: one Sonnet answer, a few cents.
+# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Spends nothing on models: the chat
+# with its card set is seeded by the script.
 - tapOn:
     id: "tab-today"
 # The refresher arrives with the next sync, which can take a few seconds.
@@ -31,21 +31,25 @@ appId: com.sampocs.archie
     end: "50%, 90%"
 - assertNotVisible:
     id: "original-note-sheet"
-- assertVisible: "Done, make cards"
-- tapOn:
+# Done on a note is asserted, not tapped: it would open a chat that asks a model for the cards.
+- assertVisible:
     id: "note-done"
-# Done opens a chat about the note that asks for its cards at once; Ask proposes them without a cheat sheet.
+    text: "Done, make cards"
+# The seeded chat about the note shows its card set without a cheat sheet; Save puts the cards on the note.
+- tapOn:
+    id: "tab-ask"
 - extendedWaitUntil:
     visible:
-      id: "chat-about"
-    timeout: 5000
-- assertVisible: "Make cards"
+      id: "ask-row-.*"
+    timeout: 30000
+- tapOn:
+    id: "ask-row-.*"
 - scrollUntilVisible:
     element:
       id: "card-set-save"
     direction: DOWN
     centerElement: true
-    timeout: 90000
+    timeout: 15000
 - assertNotVisible:
     id: "card-set-cheat-sheet"
 - tapOn:
@@ -54,7 +58,7 @@ appId: com.sampocs.archie
     visible: "Added to review"
     timeout: 10000
 - assertVisible: ".*Saved · \\d+ cards? in review.*"
-# Open goes back to the note, now refreshed (no Done) and holding the kept cards.
+# Open goes to the note, which holds the kept cards.
 - tapOn:
     id: "card-set-open"
 - extendedWaitUntil:
@@ -62,5 +66,3 @@ appId: com.sampocs.archie
       id: "item-title"
       text: "Liquid Staking"
     timeout: 15000
-- assertNotVisible:
-    id: "note-done"

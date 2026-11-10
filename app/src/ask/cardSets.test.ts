@@ -5,6 +5,7 @@ import {
   cardSetValues,
   hasCheatSheet,
   keptIndices,
+  opensByGoingBack,
   pageLabel,
   saveLabel,
   savedToast,
@@ -171,5 +172,13 @@ describe("stored rows", () => {
 
   it("skips a row whose status this phone doesn't know", () => {
     expect(viewOfCardSetRow({ id: pulled.id, ...cardSetValues({ ...pulled, status: "archived" }) })).toBeNull();
+  });
+});
+
+describe("opensByGoingBack", () => {
+  it("goes back only when the chat was opened from that item's page", () => {
+    expect(opensByGoingBack("n1", "n1")).toBe(true);
+    expect(opensByGoingBack("n1", "n2")).toBe(false);
+    expect(opensByGoingBack(undefined, "n1")).toBe(false);
   });
 });

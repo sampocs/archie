@@ -51,6 +51,18 @@ def test_a_chat_needs_a_cheat_sheet_but_a_notes_set_is_titled_after_the_note_wit
     assert no_cards.proposal is None and no_cards.result["content"].startswith("Invalid input: cards:")
 
 
+def test_a_notes_set_may_not_have_foundation_cards_but_a_chats_may() -> None:
+    """Foundation cards are background a primer covers; a note has its write-up, so the model must correct them."""
+    tool_input = {"title": "Staking", "cheat_sheet": "# Sheet", "cards": [{**CARD, "kind": "foundation"}]}
+
+    for_note = card_set_tools.run(tool_use_id="t1", tool_input=tool_input, note_title="Staking")
+    assert for_note.proposal is None and for_note.result["is_error"]
+    assert "foundation" in for_note.result["content"]
+
+    in_chat = card_set_tools.run(tool_use_id="t1", tool_input=tool_input, note_title=None)
+    assert in_chat.proposal is not None
+
+
 def test_the_cards_event_is_the_row_as_pulled_before_it_has_a_position() -> None:
     """The event names the answer it will be saved on and has every pulled field, open and unpositioned."""
     outcome = _propose()

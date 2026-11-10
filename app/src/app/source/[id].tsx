@@ -136,7 +136,7 @@ export default function SourceScreen() {
     // In a chat the owner shapes the cards with Ask, which asks for them at once; otherwise the worker writes them and
     // a toast says when they land.
     if (done.inChat) {
-      openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }, MAKE_CARDS_MESSAGE);
+      openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }, MAKE_CARDS_MESSAGE, true);
       return;
     }
     setPendingRefreshToast({ sourceId: source.id, title: source.title ?? "your note" });

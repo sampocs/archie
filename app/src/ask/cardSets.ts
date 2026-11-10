@@ -23,6 +23,11 @@ export type CardSetView = {
 /** One card per page, or every card in a numbered list; the phone remembers the owner's choice. */
 export type CardSetMode = "pager" | "list";
 
+/** Whether a saved set's Open should go back: the chat was opened from that same item's page, which is still below it. */
+export function opensByGoingBack(fromNote: string | undefined, itemId: string): boolean {
+  return fromNote === itemId;
+}
+
 /** What "Make cards" under an answer sends: the same as typing it, so Ask makes the set with the whole chat in view. */
 export const MAKE_CARDS_MESSAGE = "Make cards";
 

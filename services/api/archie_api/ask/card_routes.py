@@ -8,6 +8,7 @@ through the queue or the analyze/primer pipeline. Its cards are the kept ones: a
 keeps an identical live card (and its review progress), adds the new ones, and retires the rest that were never
 reviewed; a reviewed card is never retired, so the owner's review progress survives a reworded or dropped card.
 A note's set follows the same card rules on the note itself: no chat item is made and nothing is written but cards.
+Only cards saved from that chat can be retired there: the worker's cards and ones saved from another chat stay.
 """
 
 from __future__ import annotations
@@ -222,8 +223,11 @@ def _transcript_lines(db: orm.Session, *, conversation_id: uuid.UUID) -> list[Tr
 
 
 def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSetProposal, kept: list[int]) -> None:
-    """Make the item's live cards the kept ones: identical ones stay as they are, new ones are added, and unkept ones
-    are retired unless reviewed (a reviewed card is never retired, so its FSRS progress survives)."""
+    """Make the chat's cards on the item the kept ones: identical ones stay as they are, new ones are added, and unkept
+    ones are retired unless reviewed (a reviewed card is never retired, so its FSRS progress survives).
+
+    Only cards saved from this proposal's chat are retired; on a note the worker's cards and other chats' cards stay.
+    Identical cards are matched against every live card on the item, so nothing is duplicated."""
     kept_cards = [proposal.cards[index] for index in sorted(kept)]
     wanted = {(card["question"], card["answer"]) for card in kept_cards}
     live = db.scalars(
@@ -231,10 +235,17 @@ def _keep_cards(db: orm.Session, *, item: models.Source, proposal: models.CardSe
     ).all()
     have = {(card.question, card.answer) for card in live}
 
+    chat_messages = sqlalchemy.select(models.Message.id).where(
+        models.Message.conversation_id == proposal.conversation_id
+    )
+    chat_message_ids = set(db.scalars(chat_messages).all())
     retired = [
         card.id
         for card in live
-        if (card.question, card.answer) not in wanted and card.reps == 0 and card.last_review_at is None
+        if card.message_id in chat_message_ids
+        and (card.question, card.answer) not in wanted
+        and card.reps == 0
+        and card.last_review_at is None
     ]
     if retired:
         card_rows.retire_cards(db, models.Card.id.in_(retired))

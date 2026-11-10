@@ -1,5 +1,7 @@
 """`note_cards`: 3-5 review cards from a refreshed note's write-up, written when the owner taps Done on it.
 
+Only when the phone doesn't make them in a chat: with Ask available, Done opens a chat that proposes the cards instead.
+
 It runs only for a live note that is refreshed, still has cards on, and has a current summary. Writing the new cards
 retires the note's previous ones, so a retry never doubles them. A write-up replaced during the model call is skipped,
 re-checked under the lock (the edit that replaced it refreshes the note again). There is no failure hook: a note

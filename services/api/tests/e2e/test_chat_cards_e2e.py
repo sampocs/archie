@@ -589,6 +589,38 @@ def test_saving_a_notes_set_again_keeps_reviewed_cards_and_turns_cards_on(
     assert (note["id"], note["cards_off"]) == (note_id, False)
 
 
+def test_saving_in_one_note_chat_leaves_the_worker_cards_and_other_chats_cards_live(
+    live_stack: LiveStack, owner: httpx.Client
+) -> None:
+    """A note chat's Save retires only never-reviewed cards saved from that chat, not the worker's or another chat's."""
+    note_id = _seed_note(owner)
+    user_id = int(owner.get("/me").json()["user_id"])
+    with _db(live_stack) as db:
+        changes.lock_user_writes(db, user_id)
+        db.add(
+            models.Card(
+                id=uuid.uuid4(),
+                user_id=user_id,
+                source_id=uuid.UUID(note_id),
+                kind=models.CardKind.CONCEPT.value,
+                question="A worker question?",
+                answer="A worker answer.",
+                change_seq=changes.next_change_seq(),
+            )
+        )
+        db.commit()
+    first = _seed(owner, title=NOTE_TITLE, cheat_sheet="", about_note_id=note_id)
+    _save(owner, first["id"], [0, 1, 2])
+    added = {"kind": "number", "question": "How much stETH does 1 ETH get?", "answer": "One stETH."}
+    second = _seed(owner, title=NOTE_TITLE, cheat_sheet="", cards=[added], about_note_id=note_id)
+    assert second["conversation_id"] != first["conversation_id"]
+
+    assert _save(owner, second["id"], [0]).status_code == 200
+
+    live = {card["question"] for card in _rows(owner)["cards"] if card["deleted_at"] is None}
+    assert live == {"A worker question?", added["question"], *(card["question"] for card in CARDS)}
+
+
 def test_a_notes_set_refusals(live_stack: LiveStack, owner: httpx.Client) -> None:
     """An empty cheat sheet is refused outside a note's chat; a seed about another kind of item is 404; and Save once
     the note is deleted is 404 and leaves the set open."""

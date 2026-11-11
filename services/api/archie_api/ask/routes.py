@@ -17,7 +17,7 @@ import fastapi
 import fastapi.responses
 import pydantic
 import sqlalchemy
-from archie_db import changes, models
+from archie_db import changes, chat_names, models
 from archie_shared import config
 from sqlalchemy import orm
 
@@ -175,7 +175,7 @@ def _conversation(
     conversation = models.Conversation(
         id=conversation_id,
         user_id=user.id,
-        title=question[: models.CONVERSATION_TITLE_LENGTH],
+        title=chat_names.creation_title(question),
         change_seq=changes.next_change_seq(),
     )
     if about is not None:

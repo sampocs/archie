@@ -31,7 +31,8 @@ def touch(
     | models.Collection
     | models.CollectionItem
     | models.Take
-    | models.NewsletterSender,
+    | models.NewsletterSender
+    | models.Conversation,
 ) -> None:
     """Mark a changed row so phones pull it again. Call only after `lock_user_writes` in the same transaction."""
     row.updated_at = sqlalchemy.func.now()

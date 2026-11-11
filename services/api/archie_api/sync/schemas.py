@@ -53,6 +53,7 @@ class ActionType(StrEnum):
     UPDATE_TAKE = "update_take"
     RESTORE_TAKE_VERSION = "restore_take_version"
     RETRY_TAKE_CLEANUP = "retry_take_cleanup"
+    RENAME_CONVERSATION = "rename_conversation"
     DELETE_CONVERSATION = "delete_conversation"
     # Notes
     REFRESH_NOTE = "refresh_note"

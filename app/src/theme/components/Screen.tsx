@@ -68,7 +68,9 @@ export function Screen({
       {nav ? (
         <View style={[styles.header, { paddingHorizontal: theme.spacing.gutterText, gap: theme.spacing.md }]}>
           <Pressable testID="screen-back" onPress={onBack} hitSlop={12} style={styles.navSide}>
-            <Text tone="ink2">‹ {nav.backLabel}</Text>
+            <Text tone="ink2" numberOfLines={1}>
+              ‹ {nav.backLabel}
+            </Text>
           </Pressable>
           <Text testID="screen-nav-title" variant="headline" numberOfLines={1} style={styles.navTitle}>
             {nav.title}
@@ -133,8 +135,9 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   titleGroup: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
   // Equal sides keep the nav title centred; the title shrinks and ellipsizes between them.
-  navSide: { flexBasis: 64, flexGrow: 0, flexShrink: 0 },
+  // Equal sides keep the title centered; a long back label ellipsizes on one line instead of wrapping.
+  navSide: { flex: 1, minWidth: 0 },
   navRight: { alignItems: "flex-end" },
-  navTitle: { flex: 1, textAlign: "center" },
+  navTitle: { flexShrink: 1, maxWidth: "60%", textAlign: "center" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
 });

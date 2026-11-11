@@ -141,6 +141,32 @@ def test_history_keeps_finished_pairs_only_and_the_last_twenty_messages() -> Non
     assert history[0] == {"role": "user", "content": "q3"} and history[-1] == {"role": "assistant", "content": "a12"}
 
 
+def test_history_keeps_a_failed_answer_that_proposed_something() -> None:
+    """A failed answer that proposed cards stays, with its question and notes; empty, it reads as cut off. A failed
+    answer that proposed nothing still drops with its question."""
+    note = "[cards proposed: JWTs — waiting for the owner to save it]"
+    failed = models.MessageStatus.FAILED
+    rows = [
+        context.HistoryMessage(role=models.MessageRole.USER, text="q0", status=models.MessageStatus.COMPLETE),
+        context.HistoryMessage(role=models.MessageRole.ASSISTANT, text="", status=failed),
+        context.HistoryMessage(role=models.MessageRole.USER, text="q1", status=models.MessageStatus.COMPLETE),
+        context.HistoryMessage(
+            role=models.MessageRole.ASSISTANT, text="Here are cards", status=failed, notes=(note,), proposed=True
+        ),
+        context.HistoryMessage(role=models.MessageRole.USER, text="q2", status=models.MessageStatus.COMPLETE),
+        context.HistoryMessage(
+            role=models.MessageRole.ASSISTANT, text=" ", status=failed, notes=(note,), proposed=True
+        ),
+    ]
+
+    assert context.history_messages(rows) == [
+        {"role": "user", "content": "q1"},
+        {"role": "assistant", "content": f"Here are cards\n\n{note}"},
+        {"role": "user", "content": "q2"},
+        {"role": "assistant", "content": f"(This answer was cut off.)\n\n{note}"},
+    ]
+
+
 def test_only_a_paragraph_with_no_citation_at_all_is_dropped_before_a_tool_call() -> None:
     """Citations cut a cited paragraph into uncited fragments; those stay, while an uncited paragraph is dropped."""
     fragments = [

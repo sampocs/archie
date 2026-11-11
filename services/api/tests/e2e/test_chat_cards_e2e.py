@@ -236,8 +236,8 @@ def test_make_cards_proposes_one_card_set_streamed_as_the_row_the_phone_pulls(
 def test_a_new_card_set_replaces_the_open_one_and_the_model_sees_both(
     live_stack: LiveStack, owner: httpx.Client
 ) -> None:
-    """A second seed in the chat leaves only the newer set open; history names the replaced one and lists the open
-    one's cards, so "change card 2" can build on it."""
+    """A second seed in the chat leaves only the newer set open; history lists both sets' cards, so "change card 2"
+    can build on the open one and "bring back the first set" can copy the replaced one (without its cheat sheet)."""
     first = _seed(owner)
     second = _seed(owner, conversation_id=first["conversation_id"], cards=CARDS[:2])
 
@@ -247,7 +247,8 @@ def test_a_new_card_set_replaces_the_open_one_and_the_model_sees_both(
     with _db(live_stack) as db:
         turns = context.history(db, conversation_id=uuid.UUID(first["conversation_id"]))
     answers = [turn["content"] for turn in turns if turn["role"] == "assistant"]
-    assert answers[1].endswith(f"[cards proposed: {TITLE} — replaced by a later proposal]")
+    assert f"[cards proposed: {TITLE} — replaced by a later proposal]" in answers[1]
+    assert CARDS[2]["question"] in answers[1] and "<cheat_sheet>" not in answers[1]
     assert f"[cards proposed: {TITLE} — waiting for the owner to save it]" in answers[2]
     assert "2. (mechanism) Q: How is a JWT checked?" in answers[2] and CARDS[2]["question"] not in answers[2]
 

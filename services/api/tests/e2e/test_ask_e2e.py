@@ -337,6 +337,56 @@ def test_an_answer_out_of_rounds_is_stored_as_failed(
     assert _llm_steps(live_stack) == ["ask"]
 
 
+def test_the_first_complete_answer_queues_naming_the_chat_once(
+    live_stack: LiveStack, request: pytest.FixtureRequest
+) -> None:
+    """One `name_chat` job carrying the title the chat was created with; a second answer queues no other."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    source_id = _seed_source(live_stack, user_id=_user_id(authed))
+    conversation_id = str(uuid.uuid4())
+
+    with _replay(request, "ask_library"):
+        _ask(authed, conversation_id, about={"kind": "source", "id": source_id})
+    with _replay(request, "ask_library"):
+        events = _ask(authed, conversation_id, text="And what happens to those reserves later?")
+
+    assert events[-1][0] == "done"
+    [job] = _name_chat_jobs(live_stack)
+    assert job.payload == {"conversation_id": conversation_id, "expected_title": QUESTION[:60]}
+    assert job.status == models.JobStatus.QUEUED.value
+
+
+def test_a_failed_first_answer_leaves_naming_to_the_first_complete_one(
+    live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A failed answer queues nothing; the next, complete answer queues the name with the first question's title."""
+    max_rounds = answer.MAX_ROUNDS
+    monkeypatch.setattr(answer, "MAX_ROUNDS", 1)
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    source_id = _seed_source(live_stack, user_id=_user_id(authed))
+    conversation_id = str(uuid.uuid4())
+
+    with _replay(request, "ask_library"):
+        failed = _ask(authed, conversation_id, about={"kind": "source", "id": source_id})
+    assert failed[-1][0] == "error"
+    assert _name_chat_jobs(live_stack) == []
+
+    monkeypatch.setattr(answer, "MAX_ROUNDS", max_rounds)
+    with _replay(request, "ask_library"):
+        _ask(authed, conversation_id, text="Try that again, please.")
+
+    [job] = _name_chat_jobs(live_stack)
+    assert job.payload == {"conversation_id": conversation_id, "expected_title": QUESTION[:60]}
+
+
+def _name_chat_jobs(live_stack: LiveStack) -> list[models.Job]:
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        jobs = list(db.scalars(sqlalchemy.select(models.Job).where(models.Job.kind == models.JobKind.NAME_CHAT.value)))
+    engine.dispose()
+    return jobs
+
+
 def test_a_database_error_mid_answer_ends_with_error_and_keeps_the_answer(
     live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -1,5 +1,5 @@
 """Prompts, output schemas and user messages for the `analyze`, `primer`, `file_topic`, `clean_text`, `update_brief`,
-`clean_take`, `take_cards`, `write_note`, `note_cards`, `url_title`, `write_book` and `book_cards` steps.
+`clean_take`, `take_cards`, `write_note`, `note_cards`, `url_title`, `write_book`, `book_cards` and `name_chat` steps.
 
 Bump the matching version whenever a prompt or the schema changes in a way that alters output: it is stored
 on every artifact, so old versions stay attributable. A brief is rewritten on every newsletter and keeps no
@@ -852,3 +852,35 @@ def book_cards_message(
     if thoughts:
         message += f"\n\n<thoughts>\n{thoughts.replace('</thoughts>', '</ thoughts>')}\n</thoughts>"
     return f"{message}\n\n<refresher>\n{summary_text(write_up)}\n</refresher>"
+
+
+# Enough of the first answer to tell what the chat is about; names come from its opening, not its details.
+MAX_NAME_CHAT_ANSWER_CHARACTERS = 4000
+
+NAME_CHAT_SYSTEM = """You name chats for a personal learning app. The user asked a question, often about one saved \
+item, and got an answer. Name the chat so the user can find it again in a list of chats.
+
+Rules:
+- 2 to 6 words, at most 60 characters, sentence case. Plain text: no quotes, no emoji, no trailing period.
+- Name the subject, not the action: "Perps vs options", "Convex vault mechanics", "How the Fed creates money". Never \
+name what the user did, such as "Make cards", "Question about derivatives" or "Chat about the Fed".
+- When the question is only a request (make cards, summarize, explain this), take the subject from the item, the card \
+sets and the answer.
+- Don't repeat the item's title word for word when a shorter name says what the chat covered."""
+
+NAME_CHAT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"name": {"type": "string"}},
+    "required": ["name"],
+    "additionalProperties": False,
+}
+
+
+def name_chat_message(*, question: str, about_title: str | None, card_set_titles: Sequence[str], answer: str) -> str:
+    """The first question, the item the chat is about, the card sets the answer proposed, then the answer's opening."""
+    card_sets = "\n".join(f"- {title}" for title in card_set_titles) or "- (none)"
+    opening = answer[:MAX_NAME_CHAT_ANSWER_CHARACTERS].replace("</answer>", "</ answer>")
+    return (
+        f"First question: {question}\nAbout: {about_title or '(no item; a general chat)'}\n"
+        f"Card sets proposed:\n{card_sets}\n\n<answer>\n{opening}\n</answer>"
+    )

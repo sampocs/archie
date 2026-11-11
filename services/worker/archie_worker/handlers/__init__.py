@@ -17,6 +17,7 @@ from archie_worker.handlers import (
     fetch_content,
     fetch_title,
     file_topic,
+    name_chat,
     news_quiz,
     note_cards,
     primer,
@@ -96,4 +97,6 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.WRITE_BOOK: HandlerSpec(run=write_book.handle, on_final_failure=mark_source_failed),
     # No failure hook: a book without cards still reads fine.
     models.JobKind.BOOK_CARDS: HandlerSpec(run=book_cards.handle),
+    # When it gives up a chat about an item is named after the item; a general chat keeps its first question.
+    models.JobKind.NAME_CHAT: HandlerSpec(run=name_chat.handle, on_final_failure=name_chat.name_from_fallback),
 }

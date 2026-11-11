@@ -186,6 +186,7 @@ class JobKind(StrEnum):
     EMBED = "embed"
     WRITE_BOOK = "write_book"
     BOOK_CARDS = "book_cards"
+    NAME_CHAT = "name_chat"
 
 
 class TopicOrigin(StrEnum):
@@ -341,7 +342,7 @@ def new_ingest_token() -> str:
 SYNCED_ARTIFACT_KINDS = frozenset({ArtifactKind.SUMMARY, ArtifactKind.PRIMER})
 
 EMBEDDING_DIMENSIONS = 1536
-# A chat's title is its first question, cut to this many characters.
+# A chat's title (its first question until it is named) is at most this many characters.
 CONVERSATION_TITLE_LENGTH = 60
 CHUNK_OWNER_CHECK = "num_nonnulls(source_id, topic_primer_id, take_id) = 1"
 CONVERSATION_ABOUT_CHECK = "num_nonnulls(about_source_id, about_topic_primer_id, about_take_id) <= 1"
@@ -795,7 +796,8 @@ class Chunk(Base):
 class Conversation(Base):
     """A saved Ask chat. The id is made on the phone.
 
-    The title is the first question, cut to `CONVERSATION_TITLE_LENGTH` characters.
+    The title starts as the first question, cut to `CONVERSATION_TITLE_LENGTH` characters; `name_chat` names it after
+    the first complete answer, and the owner can rename it.
 
     At most one `about_*` id is set: the item the chat was started from with Ask about this.
     """

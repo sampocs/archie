@@ -8,7 +8,7 @@ from types import FrameType
 from archie_db import session
 from archie_shared import config, logging
 
-from archie_worker import backfill_embed, loop
+from archie_worker import backfill_chat_names, backfill_embed, loop
 
 _logger = logging.get_logger(logging.LoggerName.WORKER)
 
@@ -16,10 +16,14 @@ _logger = logging.get_logger(logging.LoggerName.WORKER)
 def main() -> None:
     """Run the job loop until SIGTERM or Ctrl-C, finishing the job in hand first.
 
-    `archie-worker backfill-embed` queues search passages for existing items instead.
+    `archie-worker backfill-embed` queues search passages for existing items instead, and
+    `archie-worker backfill-chat-names` queues a name for every existing chat.
     """
     if sys.argv[1:] == ["backfill-embed"]:
         backfill_embed.main()
+        return
+    if sys.argv[1:] == ["backfill-chat-names"]:
+        backfill_chat_names.main()
         return
 
     logging.configure()

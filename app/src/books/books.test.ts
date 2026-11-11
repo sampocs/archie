@@ -3,6 +3,7 @@ import { ClientError, NetworkError } from "@/api/client";
 import {
   bookMatchLine,
   goodreadsSlugTitle,
+  isBookModeText,
   isBookQuery,
   isGoodreadsBookUrl,
   LOOKUP_NOT_FOUND_MESSAGE,
@@ -11,6 +12,17 @@ import {
   parseBookMatch,
   sharedBookFallback,
 } from "./books";
+
+describe("isBookModeText", () => {
+  it.each([
+    ["the spy and the traitor", true],
+    ["https://www.goodreads.com/book/show/41817486-the-spy-and-the-traitor", true],
+    ["https://example.com/a", false],
+    ["", false],
+  ])("%p → %p", (text, expected) => {
+    expect(isBookModeText(text)).toBe(expected);
+  });
+});
 
 describe("isBookQuery", () => {
   it.each([

@@ -63,6 +63,8 @@ class _RetrySourcePayload(pydantic.BaseModel):
 def add_source(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
     """Add a source, or fold it into the user's existing source for the same page.
 
+    A book is never that existing source: a link to its page must not put a reaction or note on it.
+
     Returns the rejection reason, or None when applied. The caller holds `changes.lock_user_writes`.
     """
     try:
@@ -81,6 +83,7 @@ def add_source(db: orm.Session, *, user: models.User, payload: dict[str, object]
             models.Source.user_id == user.id,
             models.Source.normalized_url == normalized_url,
             models.Source.deleted_at.is_(None),
+            models.Source.kind != models.SourceKind.BOOK.value,
         )
         .order_by(models.Source.created_at, models.Source.change_seq)
         .limit(1)

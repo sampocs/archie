@@ -23,6 +23,11 @@ export function isBookQuery(text: string): boolean {
   return text.trim() !== "" && !isHttpUrl(text);
 }
 
+/** What the + sheet treats as a book to look up: a title, or a Goodreads book link (which `/books/lookup` also reads). */
+export function isBookModeText(text: string): boolean {
+  return isBookQuery(text) || isGoodreadsBookUrl(text);
+}
+
 /** A shared Goodreads book page (goodreads.com/book/show/…): the share sheet adds it as a book. */
 export function isGoodreadsBookUrl(url: string): boolean {
   return GOODREADS_BOOK.test(url.trim());

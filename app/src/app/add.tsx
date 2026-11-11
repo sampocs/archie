@@ -8,7 +8,7 @@ import { useSession } from "@/auth/session";
 import { lookupBook } from "@/books/api";
 import {
   DEFAULT_BOOK_CHOICE,
-  isBookQuery,
+  isBookModeText,
   LOOKUP_OFFLINE_MESSAGE,
   lookupErrorMessage,
   type BookChoice,
@@ -52,8 +52,9 @@ export default function AddScreen() {
   const latestText = useRef("");
   const [lookup, setLookup] = useState<BookLookup>({ name: "idle" });
   const [bookChoice, setBookChoice] = useState<BookChoice>(DEFAULT_BOOK_CHOICE);
-  // Text that isn't an http(s) link is a book's title: the link options step aside for Find book.
-  const bookMode = isBookQuery(url);
+  // Text that isn't an http(s) link is a book's title, and a Goodreads book link is a book too: the link options
+  // step aside for Find book.
+  const bookMode = isBookModeText(url);
   const [choice, setChoice] = useState<CaptureChoice>(EMPTY_CHOICE);
   const collections = useCollectionsData().map(({ id, name }) => ({ id, name }));
   const [lastUsedId, setLastUsedId] = useState<string | null>(null);

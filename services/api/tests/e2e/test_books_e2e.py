@@ -185,6 +185,24 @@ def test_adding_a_book_again_otherwise_changes_nothing(live_stack: LiveStack, au
     assert _job_kinds(live_stack) == [models.JobKind.PRIMER.value, models.JobKind.WRITE_BOOK.value]
 
 
+def test_a_link_to_a_books_page_never_merges_into_the_book(authed: httpx.Client) -> None:
+    """add_source with the book's URL makes its own source; the book keeps its state, reaction and note."""
+    book_id, link_id = str(uuid.uuid4()), str(uuid.uuid4())
+    _push(authed, _add_book(book_id, state="reading"))
+    link = _action(
+        "add_source",
+        {"id": link_id, "url": GOODREADS_URL, "intent": "finished", "reaction": "easy", "note": THOUGHTS},
+    )
+    [result] = _push(authed, link)
+
+    rows = {row["id"]: row for row in _pull(authed)["sources"]}
+    book = rows[book_id]
+    assert (book["state"], book["reaction"], book["note"]) == ("reading", None, None)
+    assert result["result"] == "applied"
+    assert rows[link_id]["merged_into_id"] is None
+    assert rows[link_id]["kind"] != "book"
+
+
 # --- finishing ---
 
 

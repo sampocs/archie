@@ -269,6 +269,7 @@ export default function SourceScreen() {
             <ItemMenu
               source={source}
               cardCount={cards.length}
+              primerWords={primerWords}
               summaryVersions={summaryVersions}
               primerVersions={primerVersions}
               onOpenVersions={setVersionsOf}

@@ -33,6 +33,15 @@ describe("makeCardsAction", () => {
     expect(makeCardsAction(sourceRow(ready), 0)?.kind).toBe("cards_on");
   });
 
+  it("is hidden on a reading book: the server only flips the flag there", () => {
+    expect(makeCardsAction(sourceRow({ ...ready, kind: "book", state: "reading" }), 0)).toBeNull();
+    expect(makeCardsAction(sourceRow({ ...ready, kind: "book", state: "reading", cardsOff: 1 }), 0)).toBeNull();
+  });
+
+  it("turns cards on for a finished book with none", () => {
+    expect(makeCardsAction(sourceRow({ ...ready, kind: "book" }), 0)?.kind).toBe("cards_on");
+  });
+
   it("never goes deeper on a note: hidden while its cards are on, even in the inbox with none", () => {
     expect(makeCardsAction(sourceRow({ ...ready, kind: "note", state: "inbox" }), 0)).toBeNull();
   });

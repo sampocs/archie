@@ -132,9 +132,10 @@ Consumes chunk 1's contract as written here. Depends on: none (built against thi
 
 ## Follow-ups (2026-11-10)
 
-- **Only the tick flips Keep.** In the pager (`CardFace`) and See all (`ListRow`) the Keep checkbox is the only
-  pressable for Keep: a 44-point target around the 14-point tick (`hitSlop`), with a light selection haptic. The rest
-  of the row or card isn't pressable, so tapping or scrolling over a card never changes what is kept.
+- **The whole card flips Keep.** In the pager (`CardFace`) and See all (`ListRow`) the whole card or row is one
+  `Tappable` (react-native-gesture-handler's Pressable) with checkbox semantics (`Keep card N`) and a light selection
+  haptic. A scroll that starts over a card is cancelled by the native gesture arbitration and never changes what is
+  kept (superseding the earlier tick-only rule, which React Native's core Pressable made necessary).
 - **The next message carries the ticks.** The chat screen holds every set's ticks by set id (a live set keeps them
   when its stored row lands). When the owner sends any message (typed, Make cards, Try again) while the chat's stored
   set is `proposed` with at least one card unticked, the body carries `card_set_choice: {proposal_id, kept}`

@@ -7,10 +7,10 @@ import { useTheme } from "@/theme/useTheme";
 import { relativeTime, rowPreview } from "./sections";
 import { parseSegments, type ConversationRow, type MessageRow } from "./types";
 
-type ChatRowProps = { conversation: ConversationRow; lastAnswer: MessageRow | null; now: Date };
+type ChatRowProps = { conversation: ConversationRow; lastAnswer: MessageRow | null; now: Date; onLongPress?: () => void };
 
 /** A saved chat: its title, the last answer's first line, and when it last moved. */
-export function ChatRow({ conversation, lastAnswer, now }: ChatRowProps) {
+export function ChatRow({ conversation, lastAnswer, now, onLongPress }: ChatRowProps) {
   const theme = useTheme();
   const router = useRouter();
   const preview = rowPreview(parseSegments(lastAnswer?.segments ?? null));
@@ -19,6 +19,7 @@ export function ChatRow({ conversation, lastAnswer, now }: ChatRowProps) {
     <Pressable
       testID={`ask-row-${conversation.id}`}
       onPress={() => router.push({ pathname: "/ask/[id]", params: { id: conversation.id } })}
+      onLongPress={onLongPress}
       style={{
         flexDirection: "row",
         gap: theme.spacing.md,

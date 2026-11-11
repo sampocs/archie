@@ -1,4 +1,5 @@
-"""Saved Ask chats through the real API: the phone pulls conversations and messages, and deletes a chat with a push.
+"""Saved Ask chats through the real API: the phone pulls conversations and messages, and renames or deletes a chat
+with a push.
 
 Chats are written by the server (the ask route, Task 6); these tests seed them directly. Deleting a chat keeps the
 cards made from it.
@@ -157,6 +158,59 @@ def test_deleting_an_unknown_or_someone_elses_chat_is_rejected(live_stack: LiveS
         "conversation not found",
         "payload is malformed",
     ]
+
+
+def test_renaming_a_chat_trims_the_name_cuts_it_to_60_and_moves_the_chat(live_stack: LiveStack) -> None:
+    """The renamed chat comes back on the next pull with the trimmed name; a long one is cut to 60 characters."""
+    authed = live_stack.authed(live_stack.sign_in())
+    conversation_id, _ = _seed_chat(live_stack, user_id=_user_id(authed))
+    position = authed.get("/sync/pull", params={"since": 0}).json()["position"]
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        before = db.get_one(models.Conversation, conversation_id)
+        updated_before, seq_before = before.updated_at, before.change_seq
+
+    [result] = _push(authed, _action("rename_conversation", {"id": str(conversation_id), "title": "  Fed plumbing  "}))
+
+    assert (result["result"], result["reason"]) == ("applied", None)
+    [conversation] = _rows(authed, since=position)["conversations"]
+    assert conversation["title"] == "Fed plumbing"
+    with sqlalchemy.orm.Session(engine) as db:
+        after = db.get_one(models.Conversation, conversation_id)
+        # A rename is pulled (new change_seq) but is not activity: the chat keeps its last-activity time.
+        assert (after.updated_at, after.change_seq > seq_before) == (updated_before, True)
+
+    long_name = "Reserves " * 10
+    _push(authed, _action("rename_conversation", {"id": str(conversation_id), "title": long_name}))
+    [conversation] = _rows(authed)["conversations"]
+    assert conversation["title"] == long_name.strip()[:60]
+
+
+def test_renaming_a_chat_refuses_a_blank_name_and_chats_that_arent_the_users(live_stack: LiveStack) -> None:
+    """A blank name is malformed; another user's, an unknown and a deleted chat are not found; nothing changes."""
+    owner = live_stack.authed(live_stack.sign_in(apple_sub="owner"))
+    stranger = live_stack.authed(live_stack.sign_in(apple_sub="stranger"))
+    conversation_id, _ = _seed_chat(live_stack, user_id=_user_id(owner))
+    deleted_id, _ = _seed_chat(live_stack, user_id=_user_id(owner))
+    _push(owner, _action("delete_conversation", {"id": str(deleted_id)}))
+
+    owner_results = _push(
+        owner,
+        _action("rename_conversation", {"id": str(conversation_id), "title": "   "}),
+        _action("rename_conversation", {"id": str(conversation_id)}),
+        _action("rename_conversation", {"id": str(deleted_id), "title": "Gone"}),
+    )
+    [stranger_result] = _push(stranger, _action("rename_conversation", {"id": str(conversation_id), "title": "Mine"}))
+
+    assert [result["reason"] for result in [*owner_results, stranger_result]] == [
+        "payload is malformed",
+        "payload is malformed",
+        "conversation not found",
+        "conversation not found",
+    ]
+    assert {conversation["title"] for conversation in _rows(owner)["conversations"]} == {
+        "How does the Fed create money?"
+    }
 
 
 def test_me_says_whether_the_user_is_whitelisted(live_stack: LiveStack) -> None:

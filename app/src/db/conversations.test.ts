@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { createDbSyncStore } from "@/sync/transport";
 
-import { deleteConversation } from "./actions";
+import { deleteConversation, renameConversation } from "./actions";
 import type { AppDb } from "./client";
 import * as schema from "./schema";
 import { makeTestDb } from "./testDb";
@@ -88,6 +88,45 @@ describe("chats on the phone", () => {
     const store = createDbSyncStore(db);
     await store.applyPage(page({ conversations: [conversation()] }, 3) as never);
     deleteConversation(db, "chat1");
+    const entry = db.select().from(schema.outbox).get()!;
+
+    await store.rejectAction(entry.id, "conversation not found");
+
+    expect(await store.getPosition()).toBe(0);
+  });
+
+  it("renameConversation shows the trimmed, 60-character title at once and queues rename_conversation", async () => {
+    const db = makeTestDb();
+    const store = createDbSyncStore(db);
+    await store.applyPage(page({ conversations: [conversation()] }, 3) as never);
+
+    renameConversation(db, "chat1", `  ${"x".repeat(80)}  `);
+
+    expect(chat(db)?.title).toBe("x".repeat(60));
+    expect(chat(db)?.updatedAt).toBe("2026-11-06T10:00:00Z");
+    const [entry] = db.select().from(schema.outbox).all();
+    expect([entry.type, JSON.parse(entry.payload)]).toEqual([
+      "rename_conversation",
+      { id: "chat1", title: "x".repeat(60) },
+    ]);
+  });
+
+  it("renameConversation with a blank title changes and queues nothing", async () => {
+    const db = makeTestDb();
+    const store = createDbSyncStore(db);
+    await store.applyPage(page({ conversations: [conversation()] }, 3) as never);
+
+    renameConversation(db, "chat1", "   ");
+
+    expect(chat(db)?.title).toBe("How does the Fed create money?");
+    expect(db.select().from(schema.outbox).all()).toEqual([]);
+  });
+
+  it("a rejected rename_conversation rewinds so the next pull restores the server's title", async () => {
+    const db = makeTestDb();
+    const store = createDbSyncStore(db);
+    await store.applyPage(page({ conversations: [conversation()] }, 3) as never);
+    renameConversation(db, "chat1", "Mine");
     const entry = db.select().from(schema.outbox).get()!;
 
     await store.rejectAction(entry.id, "conversation not found");

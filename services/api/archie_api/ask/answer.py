@@ -32,7 +32,7 @@ import httpx
 import sqlalchemy
 import sqlalchemy.exc
 import sqlalchemy.orm
-from archie_db import changes, models, search
+from archie_db import changes, chat_names, models, search
 from archie_llm import embeddings, llm
 from archie_shared import logging
 
@@ -456,7 +456,10 @@ def _query_embedding(engine: sqlalchemy.Engine, *, request: AnswerRequest, query
 
 
 def _save(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress, failed: bool) -> uuid.UUID:
-    """Store the answer and give the question, the answer and the chat new positions, so the phone pulls them."""
+    """Store the answer and give the question, the answer and the chat new positions, so the phone pulls them.
+
+    The chat's first complete answer also queues `name_chat`.
+    """
     # The answer ended (or broke) mid-paragraph: its finished blocks still get the paragraph's label.
     blocks = [*progress.blocks, *(_Block(segment=segment) for segment in progress.paragraphs.finish())]
     segments = [block.segment for block in blocks if not block.dropped]
@@ -499,6 +502,10 @@ def _save(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progr
         )
         question = db.get_one(models.Message, request.user_message_id)
         question.change_seq = changes.next_change_seq()
+        if not failed:
+            chat_names.enqueue_if_first_complete_answer(
+                db, conversation_id=request.conversation_id, user_id=request.user_id
+            )
         conversation_actions.touch_conversation(db.get_one(models.Conversation, request.conversation_id))
         db.commit()
     return message_id

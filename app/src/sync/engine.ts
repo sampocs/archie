@@ -284,7 +284,7 @@ export interface SyncStore {
   // topics, and a rejected create_collection / add_collection_item deletes its optimistic rows; a rejected save_take /
   // restore_take_version deletes its optimistic version (and a new take left with none) and rewinds. Any other rejected
   // topic or topic-primer action, finish_brief, a card action, a rejected update_collection / update_collection_item,
-  // update_take / retry_take_cleanup, a rejected delete_conversation, and the source actions in transport's
+  // update_take / retry_take_cleanup, a rejected delete_conversation / rename_conversation, and the source actions in transport's
   // REWOUND_SOURCE_ACTIONS, rewind the position so the next pull restores the server copy. No take or chat action
   // touches a source.
   rejectAction(id: string, reason: string): Promise<void>;

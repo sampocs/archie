@@ -69,6 +69,8 @@ GRADE_MODELS = ModelPair(primary=HAIKU)
 URL_TITLE_MODELS = ModelPair(primary=HAIKU)
 CARE_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 NEWS_QUIZ_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
+# No fallback: when Haiku gives no usable name, the chat gets the fallback name instead.
+NAME_CHAT_MODELS = ModelPair(primary=HAIKU)
 
 # Writing quality matters for a cleaned-up take; its cards are short and checked against the owner's own text.
 CLEAN_TAKE_MODELS = ModelPair(primary=SONNET, fallback=OPUS)

@@ -25,13 +25,19 @@ def next_change_seq() -> sqlalchemy.ColumnElement[int]:
     return sqlalchemy.func.nextval(models.CHANGE_SEQ_NAME)
 
 
+def bump(row: models.Conversation) -> None:
+    """Mark a changed row for pull without counting as activity. Call only after `lock_user_writes`."""
+    row.change_seq = next_change_seq()
+
+
 def touch(
     row: models.Source
     | models.Topic
     | models.Collection
     | models.CollectionItem
     | models.Take
-    | models.NewsletterSender,
+    | models.NewsletterSender
+    | models.Conversation,
 ) -> None:
     """Mark a changed row so phones pull it again. Call only after `lock_user_writes` in the same transaction."""
     row.updated_at = sqlalchemy.func.now()

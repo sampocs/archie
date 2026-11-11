@@ -256,10 +256,8 @@ function CardFace({ card, index, kept, onToggle }: { card: ProposedCard; index: 
   const theme = useTheme();
   return (
     <Tappable
-      testID={`card-set-keep-${index}`}
-      accessibilityRole="checkbox"
-      accessibilityLabel={`Keep card ${index + 1}`}
-      accessibilityState={{ checked: kept }}
+      // Not one accessible element: that would hide the card's text from VoiceOver. The tick carries the checkbox.
+      accessible={false}
       onPress={onToggle}
     >
       <View
@@ -275,7 +273,7 @@ function CardFace({ card, index, kept, onToggle }: { card: ProposedCard; index: 
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text variant="monoLabel" tone="ink3">{`Card ${index + 1}`}</Text>
           <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}>
-            <Tick kept={kept} />
+            <Tick index={index} kept={kept} />
             <Text variant="secondary" style={{ fontFamily: fontFamily.semibold, color: kept ? theme.signals.gotIt : theme.colors.ink3 }}>
               Keep
             </Text>
@@ -301,15 +299,13 @@ function ListRow({ card, index, kept, onToggle }: { card: ProposedCard; index: n
   const theme = useTheme();
   return (
     <Tappable
-      testID={`card-set-keep-${index}`}
-      accessibilityRole="checkbox"
-      accessibilityLabel={`Keep card ${index + 1}`}
-      accessibilityState={{ checked: kept }}
+      // Not one accessible element: that would hide the card's text from VoiceOver. The tick carries the checkbox.
+      accessible={false}
       onPress={onToggle}
       style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start" }}
     >
       <View style={{ paddingTop: 2 }}>
-        <Tick kept={kept} />
+        <Tick index={index} kept={kept} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="secondary" tone={kept ? "ink" : "ink3"}>
@@ -327,11 +323,16 @@ function ListRow({ card, index, kept, onToggle }: { card: ProposedCard; index: n
   );
 }
 
-/** The small Keep tick; the card or row around it is the control. */
-function Tick({ kept }: { kept: boolean }) {
+/** The small Keep tick: what VoiceOver and Maestro see as the checkbox; a tap on it lands on the card around it. */
+function Tick({ index, kept }: { index: number; kept: boolean }) {
   const theme = useTheme();
   return (
     <View
+      testID={`card-set-keep-${index}`}
+      accessible
+      accessibilityRole="checkbox"
+      accessibilityLabel={`Keep card ${index + 1}`}
+      accessibilityState={{ checked: kept }}
       style={{
         width: 14,
         height: 14,

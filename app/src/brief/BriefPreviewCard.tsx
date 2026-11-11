@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 
 import { Card } from "@/theme/components/Card";
 import { Text } from "@/theme/components/Text";
@@ -42,11 +42,10 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
           ))}
           {lines.more ? <Bullet text={lines.more} muted /> : null}
         </View>
-        <Pressable testID="today-brief-open" onPress={open} hitSlop={8}>
-          <Text variant="body" style={{ fontFamily: fontFamily.semibold, fontSize: 14 }}>
-            Read the brief ›
-          </Text>
-        </Pressable>
+        {/* The whole card opens the brief; a second press target inside it could fire twice. */}
+        <Text testID="today-brief-open" variant="body" style={{ fontFamily: fontFamily.semibold, fontSize: 14 }}>
+          Read the brief ›
+        </Text>
       </Card>
     </Tappable>
   );

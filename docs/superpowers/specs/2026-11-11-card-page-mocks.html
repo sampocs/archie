@@ -1,0 +1,146 @@
+<title>Archie Card Page</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* A row of numbered phone mocks (one column on a phone); the phones use the app's light tokens. */
+:root {
+  --page: #E9E6DE; --pageInk: #1C1B18; --pageInk2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --green: #3F7262; --partly: #A97F22; --missed: #B04A3C;
+  --add: #E3EFE8; --del: #F5E3DF;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace; --serif: "Newsreader", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --pageInk: #F1EFE9; --pageInk2: #A9A59B; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --pageInk: #F1EFE9; --pageInk2: #A9A59B; color-scheme: dark }
+body { background: var(--page); color: var(--pageInk); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+header { max-width: 1280px; margin: 0 auto 26px; display: grid; gap: 6px; }
+.n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pageInk2); }
+h1 { font-size: 28px; letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--pageInk2); max-width: 72ch; line-height: 1.5; font-size: 15px; }
+.row { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px 26px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; min-width: 0; }
+figcaption b { font-size: 15px; }
+figcaption span { color: var(--pageInk2); font-size: 13.5px; line-height: 1.45; }
+.phone { width: 100%; max-width: 300px; aspect-ratio: 300 / 640; background: var(--bg); color: var(--ink); border-radius: 38px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-size: 13px; }
+.screen { position: absolute; inset: 0; padding: 38px 14px 84px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.screen.chat { padding-bottom: 130px; }
+.nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; font-size: 13px; color: var(--ink2); }
+.nav b { color: var(--ink); font-size: 14px; }
+.nav .r { text-align: right; letter-spacing: .1em; }
+.big { font-size: 26px; font-weight: 700; letter-spacing: -.03em; }
+.search { background: var(--press); border-radius: 12px; padding: 9px 11px; color: var(--ink); }
+.lab { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.li { display: grid; gap: 3px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.li:last-child { border-bottom: 0; }
+.li b { font-weight: 600; font-size: 12.5px; line-height: 1.35; }
+.li span { color: var(--ink3); font-size: 11px; }
+.li.hi { background: var(--press); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: grid; gap: 8px; }
+.kick { display: flex; justify-content: space-between; font: 500 9.5px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.q { font: 600 16.5px/1.3 var(--serif); }
+.rule { border-top: 1.5px dashed var(--line); }
+.a { font-weight: 600; font-size: 13px; }
+.d { margin: 0; padding-left: 14px; color: var(--ink2); font-size: 11.5px; line-height: 1.45; }
+.meta { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { font: 500 10px var(--mono); background: var(--press); color: var(--ink2); border-radius: 6px; padding: 3px 7px; }
+.pill.ed { color: var(--green); background: color-mix(in srgb, var(--green) 12%, transparent); }
+.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.secondary { background: var(--press); border-radius: 12px; padding: 9px; text-align: center; font-weight: 600; font-size: 12.5px; }
+.src { display: flex; justify-content: space-between; color: var(--ink2); font-size: 12px; padding: 0 2px; }
+.bubble { align-self: flex-end; background: var(--chrome); color: var(--onChrome); border-radius: 14px 14px 4px 14px; padding: 8px 10px; max-width: 82%; font-size: 12px; line-height: 1.4; }
+.ans { color: var(--ink2); font-size: 12px; line-height: 1.45; }
+.edit { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 11px; display: grid; gap: 7px; font-size: 11.5px; }
+.edit .t { font-weight: 600; font-size: 12px; }
+.del { background: var(--del); text-decoration: line-through; color: var(--ink2); border-radius: 4px; padding: 0 2px; }
+.add { background: var(--add); border-radius: 4px; padding: 0 2px; }
+.acts { display: flex; gap: 8px; }
+.acts .p { flex: 1; background: var(--chrome); color: var(--onChrome); border-radius: 10px; padding: 7px; text-align: center; font-weight: 600; }
+.acts .s { flex: 1; background: var(--press); border-radius: 10px; padding: 7px; text-align: center; font-weight: 600; }
+.composer { position: absolute; left: 0; right: 0; bottom: 72px; padding: 8px 14px; background: var(--bg); border-top: 1px solid var(--line); display: flex; gap: 8px; align-items: center; }
+.composer div { flex: 1; background: var(--press); border-radius: 12px; padding: 9px 11px; color: var(--ink3); font-size: 12px; }
+.composer i { width: 26px; height: 26px; border-radius: 50%; background: var(--ink3); flex: none; }
+.toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: 132px; background: var(--chrome); color: var(--onChrome); border-radius: 999px; padding: 6px 12px; font-size: 11px; white-space: nowrap; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; border-top: 1px solid var(--line); background: var(--bg);
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 9px; font-size: 9.5px; color: var(--ink3); text-align: center; }
+.tabbar .on { color: var(--ink); font-weight: 600; }
+.dot { width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 6px; border: 1.6px solid currentColor; }
+.on .dot { background: currentColor; }
+</style>
+<header>
+  <span class="n">ARCHIE · REVIEW</span>
+  <h1>A card's own page, with editing by chat</h1>
+  <p>Tap a card anywhere in Review (search, Items, Missed) and it opens as a record: question, answer and detail, where it came from and when it's next due. Practice is a button. A chat box at the bottom changes the card without leaving Review. The cards are invented examples.</p>
+</header>
+<div class="row">
+
+<figure><div class="phone"><div class="screen">
+  <div class="big">Review</div>
+  <div class="search">basis</div>
+  <span class="lab">2 cards</span>
+  <div class="list">
+    <div class="li hi"><b>How does a basis trade make money?</b><span>Derivatives · Due Thu</span></div>
+    <div class="li"><b>Why does a futures basis shrink toward expiry?</b><span>Futures primer · Due in 12 days</span></div>
+  </div>
+  <div class="tabbar"><div><div class="dot"></div>Today</div><div class="on"><div class="dot"></div>Review</div><div><div class="dot"></div>Library</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Settings</div></div>
+</div></div>
+<figcaption><span class="n">1 · SEARCH</span><b>Tapping a result opens the card</b><span>Today a tap starts a one-card practice. Now it opens the card's page, and Practice moves there. Rows in Items and Missed open the page the same way.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen chat">
+  <div class="nav"><span>‹ Review</span><b>Card</b><span class="r">•••</span></div>
+  <div class="card">
+    <div class="kick"><span>Mechanism</span><span>Card 3 of 10</span></div>
+    <div class="q">How does a basis trade make money?</div>
+    <div class="rule"></div>
+    <div class="a">Buy spot, short the future, profit as prices converge</div>
+    <ul class="d"><li>The position is delta neutral, so price direction matters little.</li><li>Works when the future trades above spot (contango).</li></ul>
+  </div>
+  <div class="meta"><span class="pill">Due Thu</span><span class="pill">Reviewed 3×</span><span class="pill">Last: Got it</span></div>
+  <div class="src"><span>From Derivatives</span><span>›</span></div>
+  <div class="btns"><div class="secondary">Practice</div><div class="secondary">Remove</div></div>
+  <div class="composer"><div>Ask to change this card…</div><i></i></div>
+  <div class="tabbar"><div><div class="dot"></div>Today</div><div class="on"><div class="dot"></div>Review</div><div><div class="dot"></div>Library</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Settings</div></div>
+</div></div>
+<figcaption><span class="n">2 · THE CARD'S PAGE</span><b>The card as a record, answer showing</b><span>Question, answer and detail; when it's due and how it's gone; where it came from (tap to open the note). Practice and Remove are buttons. ••• holds Versions once it's been edited.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen chat">
+  <div class="nav"><span>‹ Review</span><b>Card</b><span class="r">•••</span></div>
+  <div class="card" style="gap:6px">
+    <div class="kick"><span>Mechanism</span><span>Due Thu</span></div>
+    <div class="q" style="font-size:14px">How does a basis trade make money?</div>
+  </div>
+  <div class="bubble">Mention the funding rate too, that's how it works on perps</div>
+  <div class="ans">I'll add the perp version: you earn funding instead of convergence.</div>
+  <div class="edit">
+    <span class="t">Edit card</span>
+    <div><span class="lab">Answer</span><br>Buy spot, short the <span class="del">future</span><span class="add">future or perp</span>, profit as prices converge<span class="add"> or from funding</span></div>
+    <div><span class="lab">Detail</span><br>• The position is delta neutral, so price direction matters little.<br><span class="add">• On a perp, shorts collect funding when it is positive.</span></div>
+    <div class="acts"><span class="p">Apply</span><span class="s">Discard</span></div>
+  </div>
+  <div class="composer"><div>Ask to change this card…</div><i></i></div>
+  <div class="tabbar"><div><div class="dot"></div>Today</div><div class="on"><div class="dot"></div>Review</div><div><div class="dot"></div>Library</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Settings</div></div>
+</div></div>
+<figcaption><span class="n">3 · ASKING FOR A CHANGE</span><b>The chat runs under the card</b><span>The card shrinks to its question while you chat. Ask proposes the edit with the same Apply / Discard card as chats today; nothing changes until Apply.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen chat">
+  <div class="nav"><span>‹ Review</span><b>Card</b><span class="r">•••</span></div>
+  <div class="card">
+    <div class="kick"><span>Mechanism</span><span>Card 3 of 10</span></div>
+    <div class="q">How does a basis trade make money?</div>
+    <div class="rule"></div>
+    <div class="a">Buy spot, short the future or perp, profit as prices converge or from funding</div>
+    <ul class="d"><li>The position is delta neutral, so price direction matters little.</li><li>Works when the future trades above spot (contango).</li><li>On a perp, shorts collect funding when it is positive.</li></ul>
+  </div>
+  <div class="meta"><span class="pill">Due Thu</span><span class="pill ed">Edited</span></div>
+  <div class="bubble">Mention the funding rate too, that's how it works on perps</div>
+  <div class="ans">Applied. The answer now covers perps and funding.</div>
+  <div class="toast">Card updated</div>
+  <div class="composer"><div>Ask to change this card…</div><i></i></div>
+  <div class="tabbar"><div><div class="dot"></div>Today</div><div class="on"><div class="dot"></div>Review</div><div><div class="dot"></div>Library</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Settings</div></div>
+</div></div>
+<figcaption><span class="n">4 · AFTER APPLY</span><b>The card updates in place</b><span>Its due date and history stay; it's marked Edited and the old wording is under ••• → Versions. The chat is also kept in the Ask list (named automatically), so you can find it later.</span></figcaption></figure>
+
+</div>

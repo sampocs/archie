@@ -24,6 +24,15 @@ export function dueSummary(data: ReviewData, now: Date, limit: number | null): {
   return { count: plan.today.length, waiting: plan.waiting.length };
 }
 
+/**
+ * Cards the cap holds back, for the Keep going row, but only once today's set is finished: while today still has
+ * cards, a `more` session of the lower-ranked waiting ones would spend today's budget and push the most overdue out.
+ */
+export function moreWaiting(data: ReviewData, now: Date, limit: number | null): number {
+  const due = dueSummary(data, now, limit);
+  return due.count === 0 ? due.waiting : 0;
+}
+
 /** The ahead session's length, and when its window ends. */
 export function aheadSummary(data: ReviewData, now: Date): { count: number; by: Date } {
   return {

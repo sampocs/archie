@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 import { type ReviewData } from "@/review/eligibility";
 import { doneSummaryLine, elapsedMinutes } from "@/review/sessionFlow";
-import { aheadSummary, dueSummary, minutesFor, nextReview } from "@/review/summary";
+import { aheadSummary, minutesFor, moreWaiting, nextReview } from "@/review/summary";
 import { gradedCount, type Tally } from "@/review/tally";
 import { KeepGoing } from "@/review/ui/KeepGoing";
 import { Button } from "@/theme/components/Button";
@@ -27,7 +27,7 @@ export function DoneView({ tally, startedAt, data, dailyLimit }: DoneViewProps) 
     finishedAt,
   );
   const ahead = aheadSummary(data, finishedAt);
-  const waiting = dueSummary(data, finishedAt, dailyLimit).waiting;
+  const waiting = moreWaiting(data, finishedAt, dailyLimit);
   // A Keep going session takes up to a day's limit of the waiting cards.
   const moreMinutes = minutesFor(Math.min(waiting, dailyLimit ?? waiting));
 

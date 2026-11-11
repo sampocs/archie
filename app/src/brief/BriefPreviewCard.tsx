@@ -7,6 +7,7 @@ import { fontFamily } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 import { CardHeader } from "@/today/CardHeader";
 import { haptic } from "@/ui/haptics";
+import { Tappable } from "@/ui/Tappable";
 
 import { briefReadingMinutes, previewLines, storiesInOrder, storyCountLabel, type TodayBrief } from "./brief";
 
@@ -32,7 +33,7 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
   }
 
   return (
-    <Pressable testID="today-brief" onPress={open}>
+    <Tappable testID="today-brief" onPress={open}>
       <Card style={{ gap: 9 }}>
         <CardHeader label="Your brief" detail={meta} testID="today-brief-detail" />
         <View style={{ gap: theme.spacing.xs }}>
@@ -47,7 +48,7 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
           </Text>
         </Pressable>
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

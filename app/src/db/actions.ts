@@ -907,7 +907,7 @@ export function renameConversation(db: AppDb, conversationId: string, title: str
 
   db.transaction((tx) => {
     tx.update(schema.conversations)
-      .set({ title: cleaned, updatedAt: new Date().toISOString() })
+      .set({ title: cleaned })
       .where(eq(schema.conversations.id, conversationId))
       .run();
     enqueue(tx, "rename_conversation", { id: conversationId, title: cleaned });

@@ -1,6 +1,7 @@
 """`POST /ask/conversations/{id}/messages`: ask a question in a chat and stream the answer as server-sent events.
 
-The first question creates the chat (its title is the question, cut to 60 characters; `about` ties it to an item).
+The first question creates the chat (titled after the question, cut to 60 characters, until `name_chat` names it;
+`about` ties it to an item).
 A question sent while a card set is open with some cards unticked carries those Keep ticks (`card_set_choice`): they
 are stored on the question and the model reads them as a line before it. The question is stored before the stream
 starts. Only whitelisted users may ask: answers spend the owner's keys.

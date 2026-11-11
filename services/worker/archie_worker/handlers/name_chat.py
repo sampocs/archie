@@ -2,7 +2,8 @@
 
 A chat is created titled after its first question; this job replaces that title with a short name for the subject.
 Both the name and the fallback (`name_from_fallback`, when the job fails for good) are written only while the chat
-still has the title the job was queued with, so a name the owner gave first wins.
+still has the title the job was queued with, so a name the owner gave first wins. A name is not activity: it gets a new
+change position so phones pull it, but the chat's `updated_at` stays the time of its last question or answer.
 """
 
 from __future__ import annotations
@@ -146,7 +147,7 @@ def _rename_if_unchanged(conversation: models.Conversation, *, expected_title: s
         return
 
     conversation.title = title
-    changes.touch(conversation)
+    changes.bump(conversation)
 
 
 def _about_title(db: sqlalchemy.orm.Session, *, conversation: models.Conversation) -> str | None:

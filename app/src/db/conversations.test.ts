@@ -103,7 +103,7 @@ describe("chats on the phone", () => {
     renameConversation(db, "chat1", `  ${"x".repeat(80)}  `);
 
     expect(chat(db)?.title).toBe("x".repeat(60));
-    expect(chat(db)?.updatedAt).not.toBe("2026-11-06T10:00:00Z");
+    expect(chat(db)?.updatedAt).toBe("2026-11-06T10:00:00Z");
     const [entry] = db.select().from(schema.outbox).all();
     expect([entry.type, JSON.parse(entry.payload)]).toEqual([
       "rename_conversation",

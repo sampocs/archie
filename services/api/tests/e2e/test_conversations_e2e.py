@@ -165,12 +165,20 @@ def test_renaming_a_chat_trims_the_name_cuts_it_to_60_and_moves_the_chat(live_st
     authed = live_stack.authed(live_stack.sign_in())
     conversation_id, _ = _seed_chat(live_stack, user_id=_user_id(authed))
     position = authed.get("/sync/pull", params={"since": 0}).json()["position"]
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        before = db.get_one(models.Conversation, conversation_id)
+        updated_before, seq_before = before.updated_at, before.change_seq
 
     [result] = _push(authed, _action("rename_conversation", {"id": str(conversation_id), "title": "  Fed plumbing  "}))
 
     assert (result["result"], result["reason"]) == ("applied", None)
     [conversation] = _rows(authed, since=position)["conversations"]
     assert conversation["title"] == "Fed plumbing"
+    with sqlalchemy.orm.Session(engine) as db:
+        after = db.get_one(models.Conversation, conversation_id)
+        # A rename is pulled (new change_seq) but is not activity: the chat keeps its last-activity time.
+        assert (after.updated_at, after.change_seq > seq_before) == (updated_before, True)
 
     long_name = "Reserves " * 10
     _push(authed, _action("rename_conversation", {"id": str(conversation_id), "title": long_name}))

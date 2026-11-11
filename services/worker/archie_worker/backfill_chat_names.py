@@ -1,7 +1,8 @@
 """`archie-worker backfill-chat-names`: queue `name_chat` for every live chat with a complete answer, run once.
 
 Chats from before automatic names are titled after their first question. Each job writes only while the chat still
-has that title, so a chat the owner renamed keeps its name; running it twice only names chats again.
+has that title, so a chat the owner renamed keeps its name; running it twice is harmless: a chat already named
+is skipped before any model call.
 """
 
 from __future__ import annotations

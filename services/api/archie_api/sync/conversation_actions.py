@@ -51,7 +51,10 @@ def delete_conversation(db: orm.Session, *, user: models.User, payload: dict[str
 
 
 def rename_conversation(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
-    """Give a chat the owner's name: trimmed, cut to `CONVERSATION_TITLE_LENGTH`; a blank name is malformed."""
+    """Give a chat the owner's name: trimmed, cut to `CONVERSATION_TITLE_LENGTH`; a blank name is malformed.
+
+    Renaming is not activity, so `updated_at` (the chat's last question or answer) stays; only `change_seq` moves.
+    """
     parsed = rows.parse(_RenameConversationPayload, payload)
     if parsed is None or not parsed.title.strip():
         return rows.MALFORMED
@@ -60,5 +63,5 @@ def rename_conversation(db: orm.Session, *, user: models.User, payload: dict[str
         return NO_CONVERSATION
 
     conversation.title = parsed.title.strip()[: models.CONVERSATION_TITLE_LENGTH]
-    touch_conversation(conversation)
+    changes.bump(conversation)
     return None

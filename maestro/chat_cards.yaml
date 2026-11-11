@@ -33,6 +33,9 @@ appId: com.sampocs.archie
 - eraseText: 200
 - inputText: "Session tokens"
 - tapOn: "Rename"
+- extendedWaitUntil:
+    visible: "Session tokens"
+    timeout: 10000
 - scrollUntilVisible:
     element:
       id: "card-set-save"

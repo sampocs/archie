@@ -70,13 +70,15 @@ def test_haiku_names_the_chat_after_its_subject(engine: sqlalchemy.Engine, repla
     """A "Make cards" chat gets a short subject name, a new change position, and one Haiku call recorded as the step."""
     user_id = _add_user(engine)
     conversation_id = _add_chat(engine, user_id=user_id, about_title=ITEM_TITLE, card_set=True)
-    seq_before = _conversation(engine, conversation_id).change_seq
+    before = _conversation(engine, conversation_id)
+    seq_before = before.change_seq
 
     with replay("name_chat_derivatives"):
         loop.run_one(engine, handlers=handlers.HANDLERS)
 
     conversation = _conversation(engine, conversation_id)
     assert (conversation.title, conversation.change_seq > seq_before) == ("Perps vs options", True)
+    assert conversation.updated_at == before.updated_at
     [call] = _llm_calls(engine)
     assert (call.step, call.model) == (models.JobKind.NAME_CHAT.value, llm.HAIKU)
     assert _only_job(engine).status == models.JobStatus.DONE.value
@@ -115,12 +117,14 @@ def test_a_chat_about_an_item_falls_back_to_the_items_title(
     """With no key to pay for Haiku the job fails at once; " · cards" marks a first answer that proposed a card set."""
     user_id = _add_user(engine, is_whitelisted=False)
     conversation_id = _add_chat(engine, user_id=user_id, about_title=ITEM_TITLE, card_set=card_set)
-    seq_before = _conversation(engine, conversation_id).change_seq
+    before = _conversation(engine, conversation_id)
+    seq_before = before.change_seq
 
     loop.run_one(engine, handlers=handlers.HANDLERS)
 
     conversation = _conversation(engine, conversation_id)
     assert (conversation.title, conversation.change_seq > seq_before) == (expected, True)
+    assert conversation.updated_at == before.updated_at
     assert _only_job(engine).status == models.JobStatus.FAILED.value
     assert _llm_calls(engine) == []
 

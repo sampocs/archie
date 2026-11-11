@@ -36,7 +36,7 @@ from the list is swipe-only.
 - **Delete** from the long-press menu asks first, with the same confirm the chat's ••• menu uses (`confirmDeleteChat`).
 - **Inside a chat:** the ••• menu gets **Rename** above Delete chat; it opens the same prompt.
 - A rename shows at once (local write) and syncs as a new push action `rename_conversation {id, title}`. The server
-  trims, refuses a blank title (malformed), cuts to 60, stores it and touches the chat. Renaming another user's or a
+  trims, refuses a blank title (malformed), cuts to 60, stores it and gives the chat a new change position (its `updated_at`, the last activity, is unchanged). Renaming another user's or a
   deleted chat is refused like `delete_conversation`.
 
 ## Design

@@ -40,8 +40,8 @@ EDIT_RULES = """Editing the owner's things:
 card, but only when the owner asks for a change. Use propose_summary_edit, propose_text_edit or propose_card_edit. \
 Nothing changes until the owner taps Apply, so never say the edit is done.
 - Find the id first: the about item below names its ids, search results end with [kind id] tags, the \
-<app_record> blocks list the items earlier answers cited, and find_cards finds cards. You don't need to search the library for an edit when you \
-already have the id.
+<app_record> blocks list the items earlier answers cited, and find_cards finds cards. You don't need to search \
+the library for an edit when you already have the id.
 - Read the current content with read_item first and change only what the owner asked for; copy everything else \
 exactly, timestamps included. If read_item shows a pending edit, build on it: your new proposal replaces it.
 - When an edit removes or changes a fact that one of the item's cards asks about, find that item's cards and \

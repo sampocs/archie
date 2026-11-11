@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 from archie_api.books import lookup
 
@@ -40,6 +42,28 @@ def test_one_author_as_an_object_and_no_og_url_or_image() -> None:
     match = lookup.parse_goodreads_page(page=page, fallback_url=FALLBACK_URL)
 
     assert (match.title, match.author, match.cover_url, match.url) == ("Range", "David Epstein", None, FALLBACK_URL)
+
+
+def test_title_and_authors_are_capped_to_what_add_book_accepts() -> None:
+    """Many long author names keep whole names while they fit; a single endless name is cut at the limit."""
+    names = [f"Author Number {index} " + "Longname" * 5 for index in range(30)]
+    book = json.dumps(
+        {"@type": "Book", "name": "Word " * 200, "author": [{"name": name} for name in names]},
+    )
+    page = f'<script type="application/ld+json">{book}</script>'
+
+    match = lookup.parse_goodreads_page(page=page, fallback_url=FALLBACK_URL)
+
+    assert len(match.title) <= lookup.MAX_TITLE_LENGTH
+    assert match.author is not None
+    assert len(match.author) <= lookup.MAX_AUTHOR_LENGTH
+    assert match.author.split(", ") == names[: len(match.author.split(", "))]
+
+    endless = json.dumps({"@type": "Book", "name": "X", "author": {"name": "A" * 1000}})
+    cut = lookup.parse_goodreads_page(
+        page=f'<script type="application/ld+json">{endless}</script>', fallback_url=FALLBACK_URL
+    )
+    assert cut.author == "A" * lookup.MAX_AUTHOR_LENGTH
 
 
 def test_a_page_without_a_book_block_has_no_book() -> None:

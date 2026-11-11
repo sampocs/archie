@@ -23,7 +23,7 @@ export function colorDomain(source: { kind: string; domain: string | null }): st
 /** Who a source came from: a newsletter's sender, a book's author, otherwise the link's site. */
 export function sourceByline(source: BylineSource): string {
   if (source.kind === "newsletter") return source.sender ?? "Newsletter";
-  if (source.kind === BOOK_KIND && source.author) return source.author;
+  if (source.kind === BOOK_KIND) return source.author || kindLabel(BOOK_KIND);
   if (source.kind === "note") return "Bear";
   if (source.kind === CHAT_KIND) return "Ask";
   if (!URL.canParse(source.url)) return source.url;

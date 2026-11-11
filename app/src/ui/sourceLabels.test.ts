@@ -18,10 +18,11 @@ describe("sourceByline", () => {
     expect(sourceByline({ kind: "newsletter", url: "https://x.test/a", sender: null })).toBe("Newsletter");
   });
 
-  it("uses a book's author, and its link's site when the author is unknown", () => {
+  it("uses a book's author, and its kind label when the author is unknown", () => {
     const book = { kind: "book", url: "https://www.goodreads.com/book/show/1-x", sender: null };
     expect(sourceByline({ ...book, author: "Daniel Kahneman" })).toBe("Daniel Kahneman");
-    expect(sourceByline({ ...book, author: null })).toBe("goodreads.com");
+    expect(sourceByline({ ...book, author: null })).toBe("Book");
+    expect(sourceByline({ kind: "book", url: "book:atomic-habits", sender: null, author: null })).toBe("Book");
   });
 
   it("uses the hostname without www for other kinds, and the raw url when it does not parse", () => {

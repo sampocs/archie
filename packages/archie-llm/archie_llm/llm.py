@@ -41,8 +41,9 @@ REQUEST_TIMEOUT_SECONDS = 300
 # Statuses from this one up (including Anthropic's 529 "overloaded") are the service's fault: the fallback gets a turn.
 _FIRST_SERVER_ERROR_STATUS = 500
 
-# Stop reasons that mean the model did not deliver a usable answer, so the fallback model gets a turn.
-_UNUSABLE_STOP_REASONS = frozenset({"refusal", "max_tokens"})
+# Stop reasons that mean the model did not deliver a usable answer, so the fallback model gets a turn. A paused
+# server-tool turn (`pause_turn`) holds only partial text.
+_UNUSABLE_STOP_REASONS = frozenset({"refusal", "max_tokens", "pause_turn"})
 
 _TOKENS_PER_PRICE_UNIT = Decimal(1_000_000)
 
@@ -136,7 +137,7 @@ class Completion:
 
 
 class ModelOutputError(Exception):
-    """Every model tried stopped on a refusal or the output cap, so there is no usable answer."""
+    """Every model tried stopped on a refusal, the output cap or a paused turn, so there is no usable answer."""
 
 
 def cost_usd(*, model: str, input_tokens: int, output_tokens: int) -> Decimal:
@@ -164,7 +165,7 @@ def complete(
     tools: Sequence[Mapping[str, Any]] | None = None,
     timeout_seconds: float = REQUEST_TIMEOUT_SECONDS,
 ) -> Completion:
-    """Ask `models.primary`, then `models.fallback` if it refused, ran out of tokens, or the service failed it.
+    """Ask `models.primary`, then `models.fallback` if it refused, ran out of tokens, paused or the service failed it.
 
     A service failure is a 5xx/529 answer or a connection error; a failure of the fallback is re-raised for the worker
     loop to retry, as is any other API error (a 4xx would fail the fallback the same way). Every answered call is

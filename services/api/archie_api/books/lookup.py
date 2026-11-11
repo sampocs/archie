@@ -17,6 +17,9 @@ import httpx
 from archie_shared import podcast_feed, urls
 
 REQUEST_TIMEOUT_SECONDS = 8
+# add_book's limits (archie_api.sync.book_actions), so a looked-up book can always be added.
+MAX_TITLE_LENGTH = 500
+MAX_AUTHOR_LENGTH = 300
 GOODREADS_HOST = "goodreads.com"
 GOODREADS_BOOK_PATH = "/book/show/"
 OPEN_LIBRARY_URL = "https://openlibrary.org"
@@ -102,7 +105,7 @@ def parse_goodreads_page(*, page: str, fallback_url: str) -> BookMatch:
 
     image = book.get("image")
     return BookMatch(
-        title=book["name"].strip(),
+        title=_truncate_words(book["name"].strip(), limit=MAX_TITLE_LENGTH),
         author=_author_names(book.get("author")),
         year=None,
         cover_url=image if isinstance(image, str) and image else None,
@@ -131,8 +134,8 @@ def _open_library_match(body: Any) -> BookMatch:
     year = doc.get("first_publish_year")
     cover_id = doc.get("cover_i")
     return BookMatch(
-        title=doc["title"],
-        author=", ".join(authors) or None,
+        title=_truncate_words(doc["title"], limit=MAX_TITLE_LENGTH),
+        author=_join_authors(authors),
         year=year if isinstance(year, int) else None,
         cover_url=OPEN_LIBRARY_COVER_URL.format(cover_id=cover_id) if cover_id else None,
         url=f"{OPEN_LIBRARY_URL}{doc['key']}",
@@ -145,7 +148,30 @@ def _author_names(author: Any) -> str | None:
     names = [
         entry["name"].strip() for entry in entries if isinstance(entry, dict) and isinstance(entry.get("name"), str)
     ]
-    return ", ".join(name for name in names if name) or None
+    return _join_authors([name for name in names if name])
+
+
+def _join_authors(names: list[str]) -> str | None:
+    """The names joined with ", ", keeping whole names while they fit `MAX_AUTHOR_LENGTH`; a too-long first is cut."""
+    if not names:
+        return None
+
+    joined = names[0]
+    for name in names[1:]:
+        if len(joined) + len(", ") + len(name) > MAX_AUTHOR_LENGTH:
+            break
+        joined = f"{joined}, {name}"
+    return _truncate_words(joined, limit=MAX_AUTHOR_LENGTH)
+
+
+def _truncate_words(text: str, *, limit: int) -> str:
+    """`text` cut to `limit` characters at a word boundary, or at `limit` when its first word is that long."""
+    if len(text) <= limit:
+        return text
+
+    cut = text[:limit]
+    boundary = cut.rfind(" ")
+    return (cut[:boundary] if boundary > 0 else cut).rstrip()
 
 
 class _BookPageParser(html.parser.HTMLParser):

@@ -37,7 +37,7 @@ CARD_SET_CHOICE_KEY = "card_set_choice"
 # Marks a failed answer that wrote no text (but proposed something) so its turn isn't empty: the API rejects one.
 CUT_OFF_ANSWER = "(This answer was cut off.)"
 # Stands in for a complete answer that wrote no text (it only proposed something): the API rejects an empty turn.
-NO_TEXT_ANSWER = "(I proposed changes; the app's record follows.)"
+NO_TEXT_ANSWER = "(Proposed with the tools.)"
 APP_RECORD_TAG = "app_record"
 
 

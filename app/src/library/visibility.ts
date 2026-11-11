@@ -1,8 +1,17 @@
-import { CHAT_KIND } from "@/ui/sourceLabels";
+import { CHAT_KIND, READING_STATE } from "@/ui/sourceLabels";
 
 import type { LibrarySource } from "./join";
 
-export type StatusTag = "Queued" | "Done" | "Unread" | "Read" | "Briefed" | "Primer" | "Processing" | "Failed";
+export type StatusTag =
+  | "Queued"
+  | "Reading"
+  | "Done"
+  | "Unread"
+  | "Read"
+  | "Briefed"
+  | "Primer"
+  | "Processing"
+  | "Failed";
 
 export function isSnoozed(item: { snoozedUntil: string | null }, now: Date): boolean {
   return item.snoozedUntil !== null && new Date(item.snoozedUntil) > now;
@@ -16,6 +25,7 @@ export function statusTag(source: { kind: string; state: string; processing: str
   // A chat item is what the owner just worked through in Ask, so it is never unread.
   if (source.kind === CHAT_KIND) return "Read";
   if (source.state === "queued") return "Queued";
+  if (source.state === READING_STATE) return "Reading";
   if (source.state === "consumed") return "Done";
   if (source.state === "briefed") return "Briefed";
   return source.readAt ? "Read" : "Unread";

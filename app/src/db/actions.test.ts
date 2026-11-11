@@ -3,6 +3,7 @@ import { drizzle } from "drizzle-orm/better-sqlite3";
 import { eq } from "drizzle-orm";
 
 import {
+  addBook,
   addSource,
   addTopic,
   chooseTopics,
@@ -49,7 +50,7 @@ function createTables(outboxCheck: string): string {
       primer_snoozed_until text, cards_off integer DEFAULT 0 NOT NULL, favorited_at text, published_at text, confirm_url text,
       note_markdown text, note_edited_at text, refreshed_at text, refreshed_from_queue integer DEFAULT 0 NOT NULL,
       refresh_skipped_at text,
-      sender_address text, sender_pending integer DEFAULT 0 NOT NULL, chat_conversation_id text
+      sender_address text, sender_pending integer DEFAULT 0 NOT NULL, chat_conversation_id text, author text
     );
     CREATE TABLE outbox (
       id text PRIMARY KEY NOT NULL, type text NOT NULL, payload text NOT NULL, created_at text NOT NULL,
@@ -241,6 +242,23 @@ describe("finishSource", () => {
     expect(sourceById(db, "s1")).toMatchObject({ state: "consumed", processing: "processing", processingError: null });
   });
 
+  it("finishes a reading book with only its thoughts, writing its refresher and keeping its queued primer", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "book", state: "reading", processing: "ready", primerQueuePosition: -1 });
+
+    finishSource(db, { sourceId: "s1", reaction: null, note: "the anchoring chapter" });
+
+    expect(sourceById(db, "s1")).toMatchObject({
+      state: "consumed",
+      note: "the anchoring chapter",
+      processing: "processing",
+      primerQueuePosition: -1,
+    });
+    expect(outboxEntries(db)).toEqual([
+      { type: "finish_source", payload: { id: "s1", note: "the anchoring chapter" } },
+    ]);
+  });
+
   it("leaves a newsletter that is still processing alone, since its queued analysis makes the cards", () => {
     const db = makeTestDb();
     seedSource(db, { kind: "newsletter", state: "queued", processing: "processing", processingError: "old" });
@@ -248,6 +266,77 @@ describe("finishSource", () => {
     finishSource(db, { sourceId: "s1", reaction: null, note: null });
 
     expect(sourceById(db, "s1")).toMatchObject({ state: "consumed", processing: "processing", processingError: "old" });
+  });
+});
+
+describe("addBook", () => {
+  const book = {
+    url: "https://openlibrary.org/works/OL1W",
+    title: "The Spy and the Traitor",
+    author: "Ben Macintyre",
+    imageUrl: "https://covers.openlibrary.org/b/id/1-L.jpg",
+  };
+
+  it("adds a reading book with its primer at the top of the queue and no note on the wire", () => {
+    const db = makeTestDb();
+    seedSource(db, { id: "queued", state: "queued", queuePosition: -3 });
+
+    const id = addBook(db, { ...book, state: "reading", note: "ignored while reading" });
+
+    expect(sourceById(db, id)).toMatchObject({
+      kind: "book",
+      state: "reading",
+      title: "The Spy and the Traitor",
+      author: "Ben Macintyre",
+      imageUrl: "https://covers.openlibrary.org/b/id/1-L.jpg",
+      queuePosition: null,
+      primerQueuePosition: -4,
+      note: null,
+      processing: "processing",
+    });
+    expect(outboxEntries(db)).toEqual([
+      {
+        type: "add_book",
+        payload: {
+          id,
+          url: "https://openlibrary.org/works/OL1W",
+          title: "The Spy and the Traitor",
+          author: "Ben Macintyre",
+          image_url: "https://covers.openlibrary.org/b/id/1-L.jpg",
+          state: "reading",
+        },
+      },
+    ]);
+  });
+
+  it("adds a finished book as consumed with its trimmed thoughts, and nothing queued", () => {
+    const db = makeTestDb();
+
+    const id = addBook(db, { ...book, author: null, imageUrl: null, state: "finished", note: "  System 1 vs 2  " });
+
+    expect(sourceById(db, id)).toMatchObject({ state: "consumed", note: "System 1 vs 2", primerQueuePosition: null });
+    expect(outboxEntries(db)).toEqual([
+      {
+        type: "add_book",
+        payload: {
+          id,
+          url: "https://openlibrary.org/works/OL1W",
+          title: "The Spy and the Traitor",
+          author: null,
+          image_url: null,
+          state: "finished",
+          note: "System 1 vs 2",
+        },
+      },
+    ]);
+  });
+
+  it("leaves blank thoughts off a finished book's payload", () => {
+    const db = makeTestDb();
+
+    addBook(db, { ...book, state: "finished", note: "   " });
+
+    expect(outboxEntries(db)[0].payload).not.toHaveProperty("note");
   });
 });
 

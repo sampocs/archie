@@ -1,7 +1,7 @@
 import { EMPTY_CHOICE } from "@/capture/types";
 
-import { sharedCollectionItemFromParams, sharedSourceFromParams, type ShareParams } from "./deepLink";
-import { shareDeepLink } from "./submit";
+import { sharedBookFromParams, sharedCollectionItemFromParams, sharedSourceFromParams, type ShareParams } from "./deepLink";
+import { shareBookDeepLink, shareDeepLink } from "./submit";
 
 // What the route receives: the extension's native side splits on "&" and "=", and expo-router decodes each value once.
 function routeParams(link: string): ShareParams {
@@ -88,5 +88,41 @@ describe("sharedCollectionItemFromParams", () => {
 
   it("leaves sharedSourceFromParams null for a collection share", () => {
     expect(sharedSourceFromParams({ url: "https://a.com", intent: "collection", collection: "c" })).toBeNull();
+  });
+});
+
+describe("sharedBookFromParams", () => {
+  const match = {
+    title: "Thinking, Fast & Slow = 100%",
+    author: null,
+    year: null,
+    coverUrl: null,
+    url: "https://www.goodreads.com/book/show/1-x?a=1&b=2",
+  };
+
+  it("restores a finished book's url, title and thoughts exactly as the share sheet had them", () => {
+    const params = routeParams(shareBookDeepLink({ match, choice: { state: "finished", note: "a & b ~ c" } }));
+
+    expect(sharedBookFromParams(params)).toEqual({
+      url: "https://www.goodreads.com/book/show/1-x?a=1&b=2",
+      title: "Thinking, Fast & Slow = 100%",
+      state: "finished",
+      note: "a & b ~ c",
+    });
+  });
+
+  it("drops thoughts on a reading book", () => {
+    const params = routeParams(shareBookDeepLink({ match, choice: { state: "reading", note: "" } }));
+
+    expect(sharedBookFromParams({ ...params, note: "stray" })).toMatchObject({ state: "reading", note: null });
+  });
+
+  it("is null without book=1, a title, or a known state, so a link share is never read as a book", () => {
+    const params = routeParams(shareBookDeepLink({ match, choice: { state: "reading", note: "" } }));
+
+    expect(sharedBookFromParams({ ...params, book: undefined })).toBeNull();
+    expect(sharedBookFromParams({ ...params, title: undefined })).toBeNull();
+    expect(sharedBookFromParams({ ...params, state: "want_to_read" })).toBeNull();
+    expect(sharedBookFromParams(routeParams(shareDeepLink({ url: "https://a.com", choice: { ...EMPTY_CHOICE, intent: "queue" } })))).toBeNull();
   });
 });

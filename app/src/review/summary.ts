@@ -1,8 +1,9 @@
 import { WEEKDAYS } from "@/today/todayLabels";
+import { shortDate } from "@/ui/sourceLabels";
 
 import { AHEAD_DAYS, SECONDS_PER_CARD } from "./constants";
 import { effectiveDue, isDue } from "./due";
-import { isReviewable, type ReviewData } from "./eligibility";
+import { isAvailable, isReviewable, type ReviewData } from "./eligibility";
 import { cardsWord } from "./labels";
 import { buildSession } from "./session";
 import type { CardRow } from "./types";
@@ -31,7 +32,7 @@ export function aheadSummary(data: ReviewData, now: Date): { count: number; by: 
 
 /** When cards next come due (the earliest not-due card) and how many come due by the end of that day. */
 export function nextReview(data: ReviewData, now: Date): { at: Date; count: number } | null {
-  const waiting = data.cards.filter((card) => isReviewable(card, data) && !isDue(card, now)).map(effectiveDue);
+  const waiting = data.cards.filter((card) => isReviewable(card, data, now) && !isDue(card, now)).map(effectiveDue);
   if (waiting.length === 0) return null;
 
   const at = new Date(Math.min(...waiting));
@@ -61,9 +62,12 @@ export function shortWeekday(day: Date): string {
   return WEEKDAYS[day.getDay()];
 }
 
-/** The due wording on an item page's card row. */
+/** The due wording on an item page's card row; a card that starts later says when ("Starts Nov 24"). */
 export function cardDueLabel(card: CardRow, data: ReviewData, now: Date): string {
-  if (!isReviewable(card, data)) return "After you finish";
+  if (card.availableAt !== null && !isAvailable(card, now) && isReviewable(card, data, new Date(card.availableAt))) {
+    return `Starts ${shortDate(card.availableAt)}`;
+  }
+  if (!isReviewable(card, data, now)) return "After you finish";
 
   const due = new Date(effectiveDue(card));
   const days = daysFrom(now, due);

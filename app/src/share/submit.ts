@@ -1,6 +1,7 @@
 import { randomUUID } from "expo-crypto";
 
 import { apiFetch, NetworkError, UnauthorizedError } from "@/api/client";
+import type { BookChoice, BookMatch } from "@/books/books";
 import type { CaptureChoice, CollectionPick } from "@/capture/types";
 import type { OutboxEntry, PushResult } from "@/sync/engine";
 
@@ -39,6 +40,26 @@ export function buildShareAction(input: ShareInput): OutboxEntry {
       ...(choice.note ? { note: choice.note } : {}),
       ...(choice.queuePrimer ? { queue_primer: true } : {}),
       ...(keepCapture ? { capture: { title: truncateTitle(capture.title), text: capture.text } } : {}),
+    },
+  };
+}
+
+/** A shared book: the same wire shape as `addBook` in db/actions.ts (thoughts only with Finished, and trimmed). */
+export function buildAddBookAction(input: { match: BookMatch; choice: BookChoice }): OutboxEntry {
+  const { match, choice } = input;
+  const note = choice.state === "finished" ? choice.note.trim() : "";
+
+  return {
+    id: randomUUID(),
+    type: "add_book",
+    payload: {
+      id: randomUUID(),
+      url: match.url,
+      title: truncateTitle(match.title),
+      author: match.author,
+      image_url: match.coverUrl,
+      state: choice.state,
+      ...(note ? { note } : {}),
     },
   };
 }
@@ -106,6 +127,19 @@ export function shareDeepLink(input: { url: string; choice: CaptureChoice }): st
   if (choice.reaction) params.push(`reaction=${choice.reaction}`);
   if (choice.note) params.push(`note=${encodeShareParam(choice.note)}`);
   if (choice.queuePrimer) params.push("queue_primer=1");
+  return `share?${params.join("&")}`;
+}
+
+/**
+ * A book's fallback path (`archie://share?book=1&…`) when the extension can't reach the backend: the book's URL, title,
+ * state and thoughts only (no author or cover). The route must run `decodeShareParam` on `url`, `title` and `note`.
+ */
+export function shareBookDeepLink(input: { match: BookMatch; choice: BookChoice }): string {
+  const { match, choice } = input;
+  const params = ["book=1", `url=${encodeShareParam(match.url)}`, `title=${encodeShareParam(match.title)}`];
+  params.push(`state=${choice.state}`);
+  const note = choice.state === "finished" ? choice.note.trim() : "";
+  if (note) params.push(`note=${encodeShareParam(note)}`);
   return `share?${params.join("&")}`;
 }
 

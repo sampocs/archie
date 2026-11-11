@@ -8,7 +8,7 @@ import { ArtworkTile } from "@/ui/ArtworkTile";
 import { Kicker } from "@/ui/Kicker";
 import { monogramFor } from "@/ui/monogram";
 import { ProcessingLine } from "@/ui/ProcessingLine";
-import { colorDomain, datedByline, kindLabel } from "@/ui/sourceLabels";
+import { BOOK_KIND, colorDomain, datedByline, kindLabel } from "@/ui/sourceLabels";
 import { useNow } from "@/ui/useNow";
 
 type SourceRow = typeof schema.sources.$inferSelect;
@@ -38,7 +38,7 @@ function Chip({ testID, label, onPress }: { testID: string; label: string; onPre
   );
 }
 
-/** Cover, kicker, dated by-line and the reaction/topic chips. */
+/** Cover (a book's as a portrait), kicker, dated by-line and the reaction/topic chips. */
 export function ItemHeader({
   source,
   topicName,
@@ -61,8 +61,9 @@ export function ItemHeader({
           imageUrl={source.imageUrl}
           domain={colorDomain(source)}
           monogram={monogramFor(source)}
-          size={92}
+          size={source.kind === BOOK_KIND ? 120 : 92}
           circle={source.kind === "x"}
+          portrait={source.kind === BOOK_KIND}
         />
         <View style={{ flex: 1, gap: theme.spacing.xs }}>
           <Kicker domain={colorDomain(source)} label={kicker?.label} suffix={kicker ? kicker.suffix : kindLabel(source.kind)} />

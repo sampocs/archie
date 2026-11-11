@@ -33,7 +33,7 @@ export function CardsSection({ of }: { of: CardsOf }) {
   );
   if (cards.length === 0) return null;
 
-  const anyReviewable = cards.some((card) => isReviewable(card, data));
+  const anyReviewable = cards.some((card) => isReviewable(card, data, now));
 
   return (
     <>
@@ -54,7 +54,7 @@ export function CardsSection({ of }: { of: CardsOf }) {
       }
     >
       {cards.map((card, index) => {
-        const reviewable = isReviewable(card, data);
+        const reviewable = isReviewable(card, data, now);
         const due = cardDueLabel(card, data, now);
 
         return (

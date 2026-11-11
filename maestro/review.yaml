@@ -31,7 +31,7 @@ appId: com.sampocs.archie
 - tapOn:
     id: "add-url"
 - inputText: "https://paulgraham.com/greatwork.html"
-- tapOn: "Paste a link to save it."
+- tapOn: "Paste a link, or type a book's title."
 # Finished: the source is consumed at once, so its cards are reviewable as soon as analyze writes them.
 - tapOn:
     id: "intent-finished"

@@ -46,6 +46,8 @@ export type PulledSource = {
   sender_pending?: boolean;
   // Absent when pulling from a server older than chat cards.
   chat_conversation_id?: string | null;
+  // Absent when pulling from a server older than books.
+  author?: string | null;
 };
 export type PulledNewsletterSender = {
   id: string;
@@ -96,6 +98,8 @@ export type PulledCard = {
   message_id?: string | null;
   // Absent when pulling from a server older than chat edits.
   version?: number;
+  // Absent when pulling from a server older than books.
+  available_at?: string | null;
 };
 export type PulledTopic = {
   id: string;

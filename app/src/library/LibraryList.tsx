@@ -64,6 +64,7 @@ type RowActions = { openSnooze: (target: SnoozeTarget, id: string) => void; open
 const FILTER_LABELS: Record<LibraryFilter, string> = {
   all: "All",
   queued: "Queued",
+  reading: "Reading",
   done: "Done",
   inbox: "Inbox",
   primers: "Primers",

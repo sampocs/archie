@@ -1,4 +1,14 @@
-import { colorDomain, datedByline, itemBadge, kindLabel, longDate, sourceByline, sourceMeta } from "./sourceLabels";
+import {
+  bookBadge,
+  colorDomain,
+  datedByline,
+  itemBadge,
+  kindLabel,
+  longDate,
+  shortDate,
+  sourceByline,
+  sourceMeta,
+} from "./sourceLabels";
 
 describe("sourceByline", () => {
   it("uses a newsletter's sender, or 'Newsletter' without one", () => {
@@ -6,6 +16,12 @@ describe("sourceByline", () => {
       "Ben <ben@x.test>",
     );
     expect(sourceByline({ kind: "newsletter", url: "https://x.test/a", sender: null })).toBe("Newsletter");
+  });
+
+  it("uses a book's author, and its link's site when the author is unknown", () => {
+    const book = { kind: "book", url: "https://www.goodreads.com/book/show/1-x", sender: null };
+    expect(sourceByline({ ...book, author: "Daniel Kahneman" })).toBe("Daniel Kahneman");
+    expect(sourceByline({ ...book, author: null })).toBe("goodreads.com");
   });
 
   it("uses the hostname without www for other kinds, and the raw url when it does not parse", () => {
@@ -21,12 +37,13 @@ describe("sourceByline", () => {
 
 describe("kindLabel and sourceMeta", () => {
   it("labels each kind, defaulting to Link", () => {
-    expect(["podcast", "youtube", "article", "x", "newsletter", "other"].map(kindLabel)).toEqual([
+    expect(["podcast", "youtube", "article", "x", "newsletter", "book", "other"].map(kindLabel)).toEqual([
       "Podcast",
       "YouTube",
       "Article",
       "X post",
       "Newsletter",
+      "Book",
       "Link",
     ]);
   });
@@ -49,6 +66,12 @@ describe("datedByline", () => {
     );
   });
 
+  it("gives a book its author and kind, or the kind alone without an author", () => {
+    const book = { kind: "book", url: "https://openlibrary.org/works/OL1W", sender: null, createdAt: now.toISOString() };
+    expect(datedByline({ ...book, author: "Ben Macintyre" }, now)).toBe("Ben Macintyre · Book");
+    expect(datedByline({ ...book, author: null }, now)).toBe("Book");
+  });
+
   it("says when anything else was added: the weekday within six days, else the date", () => {
     const pod = { kind: "podcast", url: "https://open.spotify.com/episode/1", sender: null };
     expect(datedByline({ ...pod, createdAt: new Date(2026, 10, 2, 8).toISOString() }, now)).toBe(
@@ -65,6 +88,7 @@ describe("itemBadge", () => {
     ["inbox", "Inbox"],
     ["briefed", "Inbox"],
     ["queued", "Queued"],
+    ["reading", "Reading"],
     ["consumed", "Done"],
   ])("%s → %s", (state, badge) => {
     expect(itemBadge(state)).toBe(badge);
@@ -111,5 +135,21 @@ describe("chat items", () => {
     expect(colorDomain({ kind: "chat", domain: null })).toBe("AI");
     expect(colorDomain({ kind: "article", domain: "History" })).toBe("History");
     expect(colorDomain({ kind: "article", domain: null })).toBeNull();
+  });
+});
+
+describe("shortDate", () => {
+  it("formats a local date as month and day", () => {
+    expect(shortDate(new Date(2026, 10, 10, 23).toISOString())).toBe("Nov 10");
+  });
+});
+
+describe("bookBadge", () => {
+  const added = new Date(2026, 10, 10, 9).toISOString();
+  const finished = new Date(2026, 11, 2, 9).toISOString();
+
+  it("dates a reading book from when it was added, and a finished one from when it was finished", () => {
+    expect(bookBadge({ state: "reading", createdAt: added }, finished)).toBe("Reading · since Nov 10");
+    expect(bookBadge({ state: "consumed", createdAt: added }, finished)).toBe("Finished Dec 2");
   });
 });

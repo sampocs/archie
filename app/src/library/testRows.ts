@@ -40,6 +40,7 @@ export const sourceRow = (overrides: Partial<LibrarySource>): LibrarySource => (
   senderAddress: null,
   senderPending: false,
   chatConversationId: null,
+  author: null,
   topic: null,
   summary: null,
   primerCreatedAt: null,

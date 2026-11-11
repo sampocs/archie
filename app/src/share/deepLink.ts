@@ -1,3 +1,4 @@
+import { BOOK_STATES, type BookState } from "@/books/books";
 import type { CollectionPick, Intent, Reaction } from "@/capture/types";
 
 import { decodeShareParam } from "./submit";
@@ -13,6 +14,9 @@ export type ShareParams = {
   queue_primer?: string;
   collection?: string;
   collection_name?: string;
+  book?: string;
+  title?: string;
+  state?: string;
 };
 
 export type SharedSource = {
@@ -37,6 +41,25 @@ export function sharedSourceFromParams(params: ShareParams): SharedSource | null
     reaction: isFinished && reaction && REACTIONS.includes(reaction) ? (reaction as Reaction) : null,
     note: isFinished && note ? decodeShareParam(note) : null,
     queuePrimer: !isFinished && queuePrimer === "1",
+  };
+}
+
+export type SharedBook = { url: string; title: string; state: BookState; note: string | null };
+
+/**
+ * A book shared while the backend was unreachable (`book=1`, built by `shareBookDeepLink`): `url`, `title` and `note`
+ * arrive encoded. Returns null when anything required is missing.
+ */
+export function sharedBookFromParams(params: ShareParams): SharedBook | null {
+  const { book, url, title, state, note } = params;
+  if (book !== "1" || !url || !title || !state || !(BOOK_STATES as readonly string[]).includes(state)) return null;
+
+  return {
+    url: decodeShareParam(url),
+    title: decodeShareParam(title),
+    state: state as BookState,
+    // Thoughts belong to a finished book only.
+    note: state === "finished" && note ? decodeShareParam(note) : null,
   };
 }
 

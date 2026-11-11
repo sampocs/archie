@@ -52,6 +52,8 @@ export const sources = sqliteTable("sources", {
   senderPending: integer("sender_pending", { mode: "boolean" }).notNull().default(false),
   // A chat item (kind chat): the Ask chat it was saved from; null for other kinds, and once that chat is deleted.
   chatConversationId: text("chat_conversation_id"),
+  // A book's author(s) as one display string; null for other kinds and when the lookup found none.
+  author: text("author"),
 });
 
 export const artifacts = sqliteTable("artifacts", {
@@ -102,6 +104,8 @@ export const cards = sqliteTable("cards", {
   messageId: text("message_id"),
   // The current version; card_versions holds the history once the card has changed.
   version: integer("version").notNull().default(1),
+  // Not reviewable before this (an imported book's cards are released over a few weeks); null = at once.
+  availableAt: text("available_at"),
 });
 
 export const topics = sqliteTable("topics", {

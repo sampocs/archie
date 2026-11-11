@@ -33,7 +33,7 @@ appId: com.sampocs.archie
     id: "add-url"
 - inputText: "https://paulgraham.com/hwh.html"
 # The keyboard hides Save; tapping the screen's hint text dismisses it.
-- tapOn: "Paste a link to save it."
+- tapOn: "Paste a link, or type a book's title."
 - tapOn:
     id: "intent-queue"
 - tapOn:

@@ -206,6 +206,6 @@ function briefTask({ briefs, sources, now }: TodayInputs): BriefTask | null {
 // Cards not due yet that come due before tomorrow ends.
 function dueByTomorrow(data: ReviewData, now: Date): number {
   const dayAfterTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 2).getTime();
-  return data.cards.filter((card) => isReviewable(card, data) && !isDue(card, now) && effectiveDue(card) < dayAfterTomorrow)
+  return data.cards.filter((card) => isReviewable(card, data, now) && !isDue(card, now) && effectiveDue(card) < dayAfterTomorrow)
     .length;
 }

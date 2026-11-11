@@ -5,6 +5,21 @@ const primerCard = cardRow({ id: "f1", sourceId: null, topicPrimerId: "p1", kind
 const takeCard = cardRow({ id: "tc1", sourceId: null, takeId: "k1", kind: "take" });
 
 describe("isReviewable", () => {
+  it("a card that starts later waits until its start, then joins at once (an imported book's)", () => {
+    const data = reviewData([]);
+    const later = cardRow({ availableAt: dayAt(3) });
+
+    expect(isReviewable(later, data, NOW)).toBe(false);
+    expect(isReviewable(later, data, new Date(dayAt(3)))).toBe(true);
+    expect(isReviewable(cardRow({ availableAt: dayAt(-1) }), data, NOW)).toBe(true);
+    expect(isReviewable(cardRow({ availableAt: null }), data, NOW)).toBe(true);
+  });
+
+  it("a started card of an unfinished source still waits for the source", () => {
+    const data = reviewData([], { sources: [sourceRow({ id: "s1", kind: "book", state: "reading" })] });
+    expect(isReviewable(cardRow({ availableAt: dayAt(-1) }), data, NOW)).toBe(false);
+  });
+
   it.each([
     ["queued", "inbox", false],
     ["consumed", "consumed", true],

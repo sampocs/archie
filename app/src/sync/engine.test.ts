@@ -757,6 +757,19 @@ describe("database SyncStore", () => {
     expect(sourceRow(db)).toMatchObject({ senderAddress: null, senderPending: false });
   });
 
+  it("stores a pulled book's author, and a missing one as null", async () => {
+    const { db, store } = makeDbStore();
+    await store.applyPage({
+      rows: { sources: [pulledSource({ kind: "book", author: "Ben Macintyre" })], artifacts: [], cards: [] },
+      position: 1,
+      more: false,
+    });
+    expect(sourceRow(db)).toMatchObject({ kind: "book", author: "Ben Macintyre" });
+
+    await store.applyPage({ rows: { sources: [pulledSource({})], artifacts: [], cards: [] }, position: 2, more: false });
+    expect(sourceRow(db)?.author).toBeNull();
+  });
+
   it("stores pulled newsletter senders, updates one on a later pull, and reads a missing table as none", async () => {
     const { db, store } = makeDbStore();
     const sender = (overrides: Record<string, unknown>) => ({
@@ -1359,6 +1372,18 @@ describe("database SyncStore: cards and review actions", () => {
     });
     // A server older than M6 sends no FSRS fields: the card is new.
     expect(card("legacy")).toMatchObject({ sourceId: "s1", briefId: null, fsrsState: "new", stability: null, reps: 0, lapses: 0 });
+  });
+
+  it("stores a pulled card's available_at, and a missing one as null", async () => {
+    const { db, store } = makeDbStore();
+
+    await store.applyPage(
+      cardPage([pulledCard({ id: "later", available_at: "2026-11-24T00:00:00Z" }), pulledCard({ id: "now" })]),
+    );
+
+    const card = (id: string) => db.select().from(schema.cards).where(eq(schema.cards.id, id)).get();
+    expect(card("later")?.availableAt).toBe("2026-11-24T00:00:00Z");
+    expect(card("now")?.availableAt).toBeNull();
   });
 
   it("keeps a card's local schedule while its review_card is unsent", async () => {

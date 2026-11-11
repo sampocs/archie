@@ -1,11 +1,11 @@
-import { CHAT_KIND } from "@/ui/sourceLabels";
+import { CHAT_KIND, READING_STATE } from "@/ui/sourceLabels";
 
 import { isLiveTopic, type LibraryData, type LibrarySource, type TopicPrimerRow, type TopicRow } from "./join";
 import { isSnoozed } from "./visibility";
 
-export type LibraryFilter = "all" | "queued" | "done" | "inbox" | "primers";
+export type LibraryFilter = "all" | "queued" | "reading" | "done" | "inbox" | "primers";
 
-export const LIBRARY_FILTERS: LibraryFilter[] = ["all", "queued", "done", "inbox", "primers"];
+export const LIBRARY_FILTERS: LibraryFilter[] = ["all", "queued", "reading", "done", "inbox", "primers"];
 
 export type LibraryEntry =
   | { kind: "source"; source: LibrarySource }
@@ -39,8 +39,9 @@ export function entrySnoozedUntil(entry: LibraryEntry): string | null {
 
 /**
  * The entries a filter shows, snoozed ones included (Decision 12); topic primers of removed or merged topics never
- * show. Queued lists queued primers too; Primers lists every source with a primer, plus topic primers. Chat items
- * (whose cheat sheet is stored as a primer) show only under All.
+ * show. Queued lists queued primers too; Reading lists the books being read (Done has the finished ones); Primers
+ * lists every source with a primer, plus topic primers. Chat items (whose cheat sheet is stored as a primer) show only
+ * under All.
  */
 export function filterEntries(data: LibraryData, filter: LibraryFilter): LibraryEntry[] {
   const sources = (keep: (source: LibrarySource) => boolean): LibraryEntry[] =>
@@ -52,6 +53,7 @@ export function filterEntries(data: LibraryData, filter: LibraryFilter): Library
       .map((source) => ({ kind: "queuedPrimer", source }));
     return [...sources((source) => source.state === "queued"), ...queuedPrimers];
   }
+  if (filter === "reading") return sources((source) => source.state === READING_STATE);
   if (filter === "done") return sources((source) => source.state === "consumed");
   // Notes wait in Today's refresher, not the inbox; a chat item is never waiting to be read.
   if (filter === "inbox") {
@@ -76,6 +78,7 @@ export function filterCounts(data: LibraryData, now: Date): Record<LibraryFilter
   return {
     all: visible("all"),
     queued: visible("queued"),
+    reading: visible("reading"),
     done: visible("done"),
     inbox: visible("inbox"),
     primers: visible("primers"),

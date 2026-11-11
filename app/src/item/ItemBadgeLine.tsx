@@ -6,10 +6,11 @@ import { useTheme } from "@/theme/useTheme";
 import { itemBadge } from "@/ui/sourceLabels";
 
 type SourceRow = typeof schema.sources.$inferSelect;
-type ItemBadgeLineProps = { source: SourceRow; onAddToQueue: () => void };
+// `label` replaces the badge's wording, e.g. a book's "Reading · since Nov 10".
+type ItemBadgeLineProps = { source: SourceRow; label?: string; onAddToQueue?: () => void };
 
 /** One line under the title saying where the item is; an inbox item also gets "Add to queue". */
-export function ItemBadgeLine({ source, onAddToQueue }: ItemBadgeLineProps) {
+export function ItemBadgeLine({ source, label, onAddToQueue }: ItemBadgeLineProps) {
   const theme = useTheme();
   const badge = itemBadge(source.state);
 
@@ -25,7 +26,7 @@ export function ItemBadgeLine({ source, onAddToQueue }: ItemBadgeLineProps) {
         }}
       >
         <Text testID="item-badge" variant="monoLabel" tone="ink2">
-          {badge}
+          {label ?? badge}
         </Text>
       </View>
       {/* A briefed newsletter was already in a brief, so only a fresh inbox item is promised the next one. */}
@@ -36,7 +37,7 @@ export function ItemBadgeLine({ source, onAddToQueue }: ItemBadgeLineProps) {
       ) : (
         <View style={{ flex: 1 }} />
       )}
-      {badge === "Inbox" ? (
+      {badge === "Inbox" && onAddToQueue ? (
         <Pressable testID="item-add-to-queue" onPress={onAddToQueue} hitSlop={8}>
           <Text variant="secondary" style={{ textDecorationLine: "underline" }}>
             Add to queue

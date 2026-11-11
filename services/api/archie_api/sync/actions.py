@@ -8,6 +8,7 @@ from archie_db import changes, models
 from sqlalchemy import exc, orm
 
 from archie_api.sync import (
+    book_actions,
     brief_actions,
     capture,
     collection_actions,
@@ -37,6 +38,7 @@ class ActionHandler(Protocol):
 # Each action type's handler; later work registers its types here.
 HANDLERS: dict[schemas.ActionType, ActionHandler] = {
     schemas.ActionType.ADD_SOURCE: capture.add_source,
+    schemas.ActionType.ADD_BOOK: book_actions.add_book,
     schemas.ActionType.RETRY_SOURCE: capture.retry_source,
     schemas.ActionType.FINISH_SOURCE: source_actions.finish_source,
     schemas.ActionType.QUEUE_PRIMER: source_actions.queue_primer,
@@ -127,7 +129,8 @@ def _apply_action(db: orm.Session, *, user: models.User, action: schemas.ActionI
         if db.get(models.AppliedAction, action.id) is not None:
             return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason=_ACTION_ID_USED)
 
-        reason = "source id already exists" if action.type == schemas.ActionType.ADD_SOURCE else "id already exists"
+        adds_source = action.type in (schemas.ActionType.ADD_SOURCE, schemas.ActionType.ADD_BOOK)
+        reason = "source id already exists" if adds_source else "id already exists"
         _record(db, user=user, action=action, result=models.ActionResult.REJECTED, reason=reason)
         return schemas.ActionOut(id=action.id, result=models.ActionResult.REJECTED, reason=reason)
 

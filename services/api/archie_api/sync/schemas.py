@@ -17,6 +17,7 @@ class ActionType(StrEnum):
     """The actions a phone can push."""
 
     ADD_SOURCE = "add_source"
+    ADD_BOOK = "add_book"
     RETRY_SOURCE = "retry_source"
     FINISH_SOURCE = "finish_source"
     QUEUE_PRIMER = "queue_primer"
@@ -129,6 +130,7 @@ class SourceOut(pydantic.BaseModel):
     sender_address: str | None
     sender_pending: bool
     chat_conversation_id: uuid.UUID | None
+    author: str | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None
@@ -179,6 +181,8 @@ class CardOut(pydantic.BaseModel):
     reps: int
     lapses: int
     expires_at: datetime.datetime | None
+    # Not reviewable before this; null for every card but the books bootstrap's.
+    available_at: datetime.datetime | None
     created_at: datetime.datetime
     deleted_at: datetime.datetime | None
     change_seq: int

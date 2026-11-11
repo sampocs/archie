@@ -58,6 +58,7 @@ SOURCE_KEYS_ADDED_BY_NOTES = {
 }
 SOURCE_KEYS_ADDED_BY_SENDER_ALLOWLIST = {"sender_address", "sender_pending"}
 SOURCE_KEYS_ADDED_BY_CHAT_CARDS = {"chat_conversation_id"}
+SOURCE_KEYS_ADDED_BY_BOOKS = {"author"}
 
 
 def _add_source(url: str, *, intent: str = "queue") -> dict[str, Any]:
@@ -141,6 +142,7 @@ def test_a_pulled_source_carries_the_library_columns_and_hides_the_episode_guid(
         | SOURCE_KEYS_ADDED_BY_NOTES
         | SOURCE_KEYS_ADDED_BY_SENDER_ALLOWLIST
         | SOURCE_KEYS_ADDED_BY_CHAT_CARDS
+        | SOURCE_KEYS_ADDED_BY_BOOKS
     )
 
 

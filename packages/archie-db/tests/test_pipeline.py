@@ -191,6 +191,61 @@ def test_steps_to_retry_skips_cleaning_a_cleaned_newsletter_without_a_summary(
     assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.ANALYZE]
 
 
+def test_required_artifacts_for_a_book_follow_its_state() -> None:
+    """A book being read needs its primer, a finished one its refresher; other kinds ignore the state."""
+    book = models.SourceKind.BOOK
+    reading, consumed = models.SourceState.READING, models.SourceState.CONSUMED
+
+    assert pipeline.required_artifacts(kind=book, state=reading) == (models.ArtifactKind.PRIMER,)
+    assert pipeline.required_artifacts(kind=book, state=consumed) == (models.ArtifactKind.SUMMARY,)
+    assert pipeline.required_artifacts(kind=models.SourceKind.ARTICLE, state=consumed) == (
+        models.ArtifactKind.SUMMARY,
+        models.ArtifactKind.PRIMER,
+    )
+    assert pipeline.required_artifacts(kind=models.SourceKind.NOTE, state=models.SourceState.INBOX) == (
+        models.ArtifactKind.SUMMARY,
+    )
+
+
+def test_a_reading_book_is_ready_on_its_primer_and_a_finished_one_only_on_its_refresher(
+    db: sqlalchemy.orm.Session, source: models.Source
+) -> None:
+    """Finishing the book makes the primer no longer enough: it waits for the summary."""
+    source.kind = models.SourceKind.BOOK.value
+    source.state = models.SourceState.READING.value
+    pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
+    _write(db, source, kind=models.ArtifactKind.PRIMER, content={})
+    db.flush()
+    pipeline.finish_step(db, source=source)
+    assert source.processing == models.ProcessingStatus.READY
+
+    source.state = models.SourceState.CONSUMED.value
+    pipeline.set_processing(db, source=source, status=models.ProcessingStatus.PROCESSING)
+    pipeline.finish_step(db, source=source)
+    assert source.processing == models.ProcessingStatus.PROCESSING
+
+    _write(db, source, kind=models.ArtifactKind.SUMMARY, content={})
+    db.flush()
+    pipeline.finish_step(db, source=source)
+    assert source.processing == models.ProcessingStatus.READY
+
+
+def test_steps_to_retry_for_a_book_never_fetches(db: sqlalchemy.orm.Session, source: models.Source) -> None:
+    """A book has no text: reading retries its primer, finished its refresher, whatever artifacts exist."""
+    source.kind = models.SourceKind.BOOK.value
+    source.state = models.SourceState.READING.value
+    db.flush()
+    assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.PRIMER]
+
+    source.state = models.SourceState.CONSUMED.value
+    db.flush()
+    assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.WRITE_BOOK]
+
+    _write(db, source, kind=models.ArtifactKind.TEXT, content={"text": "refresher"})
+    db.flush()
+    assert pipeline.steps_to_retry(db, source_id=source.id) == [models.JobKind.WRITE_BOOK]
+
+
 def test_set_processing_keeps_the_error_for_unsupported(db: sqlalchemy.orm.Session, source: models.Source) -> None:
     """UNSUPPORTED explains itself like FAILED does; PROCESSING clears it."""
     pipeline.set_processing(db, source=source, status=models.ProcessingStatus.UNSUPPORTED, error="x")

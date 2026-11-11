@@ -1,0 +1,46 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - openlibrary.org
+      user-agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML,
+        like Gecko)
+    method: GET
+    uri: https://openlibrary.org/search.json?q=qzxv+wplkj+nonexistent+book&limit=1&fields=key%2Ctitle%2Cauthor_name%2Cfirst_publish_year%2Ccover_i
+  response:
+    body:
+      string: '{"numFound":0,"start":0,"numFoundExact":true,"num_found":0,"documentation_url":"https://openlibrary.org/dev/docs/api/search","q":"qzxv
+        wplkj nonexistent book","offset":null,"docs":[]}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '183'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 03:42:39 GMT
+      referrer-policy:
+      - no-referrer-when-downgrade
+      server:
+      - nginx/1.30.6
+      server-timing:
+      - total;dur=182.4, solr;dur=156.0;desc="1 call"
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-served-by:
+      - FastAPI
+    status:
+      code: 200
+      message: OK
+version: 1

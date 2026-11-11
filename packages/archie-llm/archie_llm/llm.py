@@ -9,7 +9,7 @@ Shared by the worker and the API.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal
 from typing import Any
@@ -76,6 +76,12 @@ NOTE_CARDS_MODELS = ModelPair(primary=HAIKU, fallback=SONNET)
 
 # A note's write-up is the whole reading experience of an imported note, so it gets the writing-quality tier.
 NOTE_WRITE_UP_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
+# Choosing a whole book's few core ideas is judgment work, so its cards get the writing-quality tier too.
+BOOK_CARDS_MODELS = ModelPair(primary=SONNET, fallback=OPUS)
+
+# Anthropic's web search server tool for worker calls that research a book; Ask keeps its own (fewer searches, direct
+# callers only, so its answers can cite them).
+WEB_SEARCH_TOOL: dict[str, Any] = {"type": "web_search_20260209", "name": "web_search", "max_uses": 5}
 
 # For short, latency-sensitive calls where reasoning would only add delay.
 THINKING_DISABLED: dict[str, str] = {"type": "disabled"}
@@ -155,6 +161,7 @@ def complete(
     max_tokens: int,
     json_schema: dict[str, Any] | None = None,
     thinking: Mapping[str, Any] | None = None,
+    tools: Sequence[Mapping[str, Any]] | None = None,
     timeout_seconds: float = REQUEST_TIMEOUT_SECONDS,
 ) -> Completion:
     """Ask `models.primary`, then `models.fallback` if it refused, ran out of tokens, or the service failed it.
@@ -164,7 +171,9 @@ def complete(
     recorded.
 
     `models.fallback` is optional: a pair without one tries only the primary. `thinking` holds extended-thinking
-    options (e.g. `THINKING_DISABLED`), passed to `messages.create` only when given. `timeout_seconds` is the
+    options (e.g. `THINKING_DISABLED`), passed to `messages.create` only when given. `tools` are server tools (e.g.
+    `WEB_SEARCH_TOOL`) the API runs itself, so one request still gives one answer; with tools the answer is the text
+    after the last tool block, since the model may write a line before it searches. `timeout_seconds` is the
     Anthropic client timeout, `REQUEST_TIMEOUT_SECONDS` by default.
     """
     # No SDK retries: the worker loop owns retrying, so a failed call is not silently billed twice.
@@ -176,6 +185,7 @@ def complete(
     # `models` is the ModelPair parameter here, shadowing the `archie_db.models` module inside this function.
     attempts = [model for model in (models.primary, models.fallback) if model is not None]
     thinking_options: dict[str, Any] = {"thinking": dict(thinking)} if thinking else {}
+    tool_options: dict[str, Any] = {"tools": [dict(tool) for tool in tools]} if tools else {}
     for attempt, model in enumerate(attempts):
         try:
             response = client.messages.create(
@@ -185,6 +195,7 @@ def complete(
                 messages=[{"role": "user", "content": user_message}],
                 **output_options,
                 **thinking_options,
+                **tool_options,
             )
         except (anthropic.APIStatusError, anthropic.APIConnectionError) as error:
             if not _is_service_failure(error) or attempt == len(attempts) - 1:
@@ -196,7 +207,8 @@ def complete(
         record_call(engine, context=context, model=model, response=response)
 
         if response.stop_reason not in _UNUSABLE_STOP_REASONS:
-            return Completion(model=model, text=_text_of(response))
+            text = _final_text_of(response) if tools else _text_of(response)
+            return Completion(model=model, text=text)
 
         _logger.warning("%s stopped on %s for %s", model, response.stop_reason, context.step)
 
@@ -284,3 +296,13 @@ def _is_service_failure(error: anthropic.APIStatusError | anthropic.APIConnectio
 
 def _text_of(response: anthropic.types.Message) -> str:
     return "".join(block.text for block in response.content if block.type == "text")
+
+
+def _final_text_of(response: anthropic.types.Message) -> str:
+    """The text blocks after the response's last other block (a search, its results, a thinking block)."""
+    final_blocks: list[str] = []
+    for block in reversed(response.content):
+        if block.type != "text":
+            break
+        final_blocks.append(block.text)
+    return "".join(reversed(final_blocks))

@@ -15,6 +15,7 @@ from archie_api import deps, test_routes
 from archie_api.ask import card_routes as ask_card_routes
 from archie_api.ask import routes as ask_routes
 from archie_api.auth import routes as auth_routes
+from archie_api.books import routes as books_routes
 from archie_api.edits import routes as edits_routes
 from archie_api.ingest import routes as ingest_routes
 from archie_api.notes import routes as notes_routes
@@ -44,6 +45,7 @@ def create_app() -> fastapi.FastAPI:
     app.include_router(ingest_routes.router)
     app.include_router(sources_routes.router)
     app.include_router(notes_routes.router)
+    app.include_router(books_routes.router)
     app.include_router(review_routes.router)
     app.include_router(topics_routes.router)
     app.include_router(search_routes.router)

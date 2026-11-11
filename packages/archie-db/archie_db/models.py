@@ -47,6 +47,8 @@ class SourceKind(StrEnum):
     NOTE = "note"
     # Saved from an Ask chat's card set: a cheat sheet (the primer), the transcript (the text) and its cards.
     CHAT = "chat"
+    # A book the owner is reading or has read: looked up on Goodreads or Open Library, never fetched.
+    BOOK = "book"
 
 
 class CollectionItemKind(StrEnum):
@@ -152,6 +154,8 @@ class SourceState(StrEnum):
     CONSUMED = "consumed"
     PROCESSING = "processing"
     FAILED = "failed"
+    # Books only: started and not finished yet. Never in the queue; finishing moves it to `consumed`.
+    READING = "reading"
 
 
 class SourceIntent(StrEnum):
@@ -180,6 +184,8 @@ class JobKind(StrEnum):
     WRITE_NOTE = "write_note"
     NOTE_CARDS = "note_cards"
     EMBED = "embed"
+    WRITE_BOOK = "write_book"
+    BOOK_CARDS = "book_cards"
 
 
 class TopicOrigin(StrEnum):
@@ -444,6 +450,8 @@ class Source(Base):
     bear_id: Mapped[str | None] = mapped_column(sqlalchemy.String(64))
     # The note as the owner wrote it in Bear (markdown); synced, so "See original note" works offline.
     note_markdown: Mapped[str | None] = mapped_column(sqlalchemy.Text)
+    # Books only: the author(s) as one display string.
+    author: Mapped[str | None] = mapped_column(sqlalchemy.String(300))
     # Server only: Bear's tags, hints for the write-up and filing.
     note_tags: Mapped[list[str] | None] = mapped_column(postgresql.ARRAY(sqlalchemy.Text))
     # When the note was last edited in Bear; orders the refresher and shows as "last edited".
@@ -963,6 +971,8 @@ class Card(Base):
     lapses: Mapped[int] = mapped_column(sqlalchemy.Integer, server_default="0")
     # Quiz cards only: after this they are no longer offered.
     expires_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
+    # Not reviewable before this; null means at once. Only the books bootstrap sets it, to release cards over weeks.
+    available_at: Mapped[datetime.datetime | None] = mapped_column(TIMESTAMP)
     # The current version; `card_versions` holds the history once the card has been changed at least once.
     version: Mapped[int] = mapped_column(sqlalchemy.Integer, default=1, server_default="1")
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())

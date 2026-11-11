@@ -19,8 +19,9 @@ appId: com.sampocs.archie
 - eraseText: 200
 - inputText: "Token talk"
 - tapOn: "Rename"
+# The row reads as one element (title, preview and time), so match the title inside it.
 - extendedWaitUntil:
-    visible: "Token talk"
+    visible: ".*Token talk.*"
     timeout: 10000
 - tapOn:
     id: "ask-row-.*"
@@ -34,7 +35,9 @@ appId: com.sampocs.archie
 - inputText: "Session tokens"
 - tapOn: "Rename"
 - extendedWaitUntil:
-    visible: "Session tokens"
+    visible:
+      id: "screen-nav-title"
+      text: "Session tokens"
     timeout: 10000
 - scrollUntilVisible:
     element:

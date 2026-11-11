@@ -5,10 +5,19 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { GroupedList } from "@/ui/GroupedList";
 
-type KeepGoingProps = { aheadCount: number; aheadBy: Date; onAhead: () => void; onTopic: () => void };
+type KeepGoingProps = {
+  // Due cards the daily cap held back, and how long a session of the next batch takes.
+  waiting: number;
+  moreMinutes: number;
+  onMore: () => void;
+  aheadCount: number;
+  aheadBy: Date;
+  onAhead: () => void;
+  onTopic: () => void;
+};
 
 /** Extra-practice options shown once the due cards are done. */
-export function KeepGoing({ aheadCount, aheadBy, onAhead, onTopic }: KeepGoingProps) {
+export function KeepGoing({ waiting, moreMinutes, onMore, aheadCount, aheadBy, onAhead, onTopic }: KeepGoingProps) {
   const theme = useTheme();
   const rowStyle = {
     flexDirection: "row",
@@ -19,6 +28,12 @@ export function KeepGoing({ aheadCount, aheadBy, onAhead, onTopic }: KeepGoingPr
 
   return (
     <GroupedList title="Keep going">
+      {waiting > 0 ? (
+        <Pressable testID="keep-going-more" accessibilityRole="button" onPress={onMore} style={rowStyle}>
+          <Text>{`${waiting} more waiting`}</Text>
+          <Text variant="secondary" tone="ink3">{`about ${moreMinutes} min ›`}</Text>
+        </Pressable>
+      ) : null}
       {aheadCount > 0 ? (
         <Pressable testID="keep-going-ahead" accessibilityRole="button" onPress={onAhead} style={rowStyle}>
           <Text>Review ahead</Text>

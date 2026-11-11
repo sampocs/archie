@@ -4,11 +4,12 @@ import {
   dayWord,
   dueSummary,
   minutesFor,
+  moreWaiting,
   nextDueLine,
   nextReview,
   shortWeekday,
 } from "./summary";
-import { cardRow, dayAt, NOW, reviewCard, reviewData, takeRow } from "./testCards";
+import { cardRow, dayAt, NOW, reviewCard, reviewData, reviewRow, takeRow } from "./testCards";
 
 describe("minutesFor", () => {
   it.each([
@@ -30,11 +31,34 @@ describe("dueSummary and aheadSummary", () => {
   ]);
 
   it("counts due cards", () => {
-    expect(dueSummary(data, NOW)).toEqual({ count: 2 });
+    expect(dueSummary(data, NOW, null)).toEqual({ count: 2, waiting: 0 });
   });
 
   it("counts cards due within the ahead window", () => {
     expect(aheadSummary(data, NOW)).toEqual({ count: 1, by: new Date(dayAt(3)) });
+  });
+});
+
+describe("moreWaiting", () => {
+  const overdue = (id: string) => reviewCard({ id, dueAt: dayAt(-1) });
+
+  it("is 0 while today's capped set still has cards, even with more waiting", () => {
+    const data = reviewData([overdue("a"), overdue("b"), overdue("c")]);
+
+    expect(dueSummary(data, NOW, 2)).toEqual({ count: 2, waiting: 1 });
+    expect(moreWaiting(data, NOW, 2)).toBe(0);
+  });
+
+  it("is the waiting count once today's set is finished", () => {
+    const done = reviewCard({ id: "done", dueAt: dayAt(3) });
+    const reviews = [reviewRow({ id: "r1", cardId: "done", reviewedAt: dayAt(0, 9) })];
+    const data = reviewData([done, overdue("a"), overdue("b")], { reviews });
+
+    expect(moreWaiting(data, NOW, 1)).toBe(2);
+  });
+
+  it("is 0 with no cap", () => {
+    expect(moreWaiting(reviewData([overdue("a")]), NOW, null)).toBe(0);
   });
 });
 

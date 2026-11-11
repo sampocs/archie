@@ -6,11 +6,12 @@
 import { parseBriefContent, storiesInOrder, todayBrief, type BriefRow, type TodayBrief } from "@/brief/brief";
 import type { LibrarySource } from "@/library/join";
 import { DAILY_NOTES, refresherQueue, todayRefresher, type TodayRefresher } from "@/notes/refresher";
+import { dailyPlan, reviewedDueToday } from "@/review/dailyCap";
 import { isReviewable, type ReviewData, type ReviewLogRow } from "@/review/eligibility";
 import { cardsWord } from "@/review/labels";
 import { quizOffer } from "@/review/newsQuiz";
 import { effectiveDue, isDue } from "@/review/due";
-import { daysFrom, dueSummary, minutesFor, nextReview, shortWeekday } from "@/review/summary";
+import { daysFrom, minutesFor, nextReview, shortWeekday } from "@/review/summary";
 import { MONTHS, sameLocalDay } from "@/today/todayLabels";
 
 export const TASK_KINDS = ["review", "notes", "quiz", "brief"] as const;
@@ -24,11 +25,12 @@ const GOT_IT = "got_it";
 // Past this many days out, the next review is named by its date rather than its weekday.
 const WEEKDAY_WINDOW_DAYS = 6;
 
+// `due` is today's capped set; `waiting` the due cards the daily cap holds back.
 export type ReviewTask =
-  | { status: typeof PENDING; due: number; minutes: number }
+  | { status: typeof PENDING; due: number; minutes: number; waiting: number }
   | { status: typeof IN_PROGRESS; due: number; minutes: number; reviewed: number; total: number }
   // `next` is "5 tomorrow" / "5 on Thu": when cards next come due; null when none wait.
-  | { status: typeof DONE; reviewed: number; next: string | null };
+  | { status: typeof DONE; reviewed: number; next: string | null; waiting: number };
 
 export type NotesTask =
   | { status: typeof PENDING | typeof IN_PROGRESS; refresher: Extract<TodayRefresher, { kind: "pick" }> }
@@ -58,6 +60,8 @@ export type TodayInputs = {
   reviews: ReviewLogRow[];
   sources: LibrarySource[];
   briefs: BriefRow[];
+  // Cards per day; null for no cap.
+  dailyLimit: number | null;
   now: Date;
 };
 
@@ -92,7 +96,9 @@ export function dayDoneChips(tasks: TodayTasks): string[] {
 
 /** "Back tomorrow: 5 cards, 2 notes and a new brief." from what tomorrow already holds. */
 export function backTomorrow(inputs: TodayInputs, tasks: TodayTasks): string {
-  const cards = dueByTomorrow(inputs.reviewData, inputs.now);
+  // Cards the cap held back today lead tomorrow's set, which the cap limits too.
+  const waiting = dailyPlan(inputs.reviewData, inputs.dailyLimit, inputs.now).waiting.length;
+  const cards = Math.min(waiting + dueByTomorrow(inputs.reviewData, inputs.now), inputs.dailyLimit ?? Infinity);
   const notes = Math.min(refresherQueue(inputs.sources).length, DAILY_NOTES);
 
   // A brief comes most days for someone who read one today; there's no way to know tomorrow's for sure.
@@ -116,29 +122,22 @@ export function joinNaturally(parts: string[]): string {
 }
 
 /**
- * Today's review set is the cards reviewed today that were due plus the cards due now; with none reviewed yet it is
- * waiting, with some reviewed and some left it is under way, and with none left it is done.
+ * Today's review set is the cards reviewed today that were due plus today's capped set of due cards; with none
+ * reviewed yet it is waiting, with some reviewed and some left it is under way, and with none left it is done, even
+ * when the cap left cards waiting.
  */
-function reviewTask({ reviewData, reviews, now }: TodayInputs): ReviewTask | null {
-  const due = dueSummary(reviewData, now).count;
+function reviewTask({ reviewData, reviews, dailyLimit, now }: TodayInputs): ReviewTask | null {
+  const plan = dailyPlan(reviewData, dailyLimit, now);
+  const due = plan.today.length;
+  const waiting = plan.waiting.length;
   const reviewed = reviewedDueToday(reviewData, reviews, now);
   const minutes = minutesFor(due);
 
-  if (reviewed === 0) return due > 0 ? { status: PENDING, due, minutes } : null;
+  if (reviewed === 0) return due > 0 ? { status: PENDING, due, minutes, waiting } : null;
   if (due > 0) return { status: IN_PROGRESS, due, minutes, reviewed, total: reviewed + due };
 
   const next = nextReview(reviewData, now);
-  return { status: DONE, reviewed, next: next ? `${next.count} ${nextDayWord(next.at, now)}` : null };
-}
-
-// Distinct cards, so a re-graded answer ("I actually knew it") or a missed card seen twice counts once; quiz answers
-// belong to the quiz.
-function reviewedDueToday(reviewData: ReviewData, reviews: ReviewLogRow[], now: Date): number {
-  const quizCards = new Set(reviewData.cards.filter((card) => card.kind === QUIZ_KIND).map((card) => card.id));
-  const cardIds = reviews
-    .filter((review) => review.wasDue === 1 && sameLocalDay(review.reviewedAt, now) && !quizCards.has(review.cardId))
-    .map((review) => review.cardId);
-  return new Set(cardIds).size;
+  return { status: DONE, reviewed, next: next ? `${next.count} ${nextDayWord(next.at, now)}` : null, waiting };
 }
 
 // "later today", "tomorrow", "on Thu" within a week, else "on Nov 14".

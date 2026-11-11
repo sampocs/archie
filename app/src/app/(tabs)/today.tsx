@@ -14,6 +14,7 @@ import { useLibraryData } from "@/library/useLibraryData";
 import { cardsWord } from "@/review/labels";
 import { weekStartFor } from "@/review/newsQuiz";
 import { ReviewStartCard } from "@/review/ui/ReviewStartCard";
+import { useDailyLimit } from "@/review/useDailyLimit";
 import { useReviewData } from "@/review/useReviewData";
 import { requestSync } from "@/sync/useSync";
 import { Screen } from "@/theme/components/Screen";
@@ -49,6 +50,7 @@ export default function TodayScreen() {
   const now = useNow();
   const data = useLibraryData();
   const reviewData = useReviewData();
+  const dailyLimit = useDailyLimit();
   // On a Sunday, ask the server for the week's news quiz once per run; it is only asked for when online.
   useFocusEffect(
     useCallback(() => {
@@ -67,7 +69,7 @@ export default function TodayScreen() {
   // Up next is the combined queue: queued sources and queued primers.
   const queued = upNext(data.sources, now);
   const upNextItems = queued.slice(0, UP_NEXT_COUNT);
-  const view = useTodayTasks(data.sources, reviewData, now);
+  const view = useTodayTasks(data.sources, reviewData, dailyLimit, now);
   const celebration = useTodayCelebration(view.tasks, localDate(now));
   const { tasks } = celebration;
   const reduceMotion = useReducedMotion();
@@ -111,15 +113,22 @@ export default function TodayScreen() {
     const review = tasks.review;
     if (review === null) return null;
     if (review.status === "done") {
+      // With cards the daily cap held back, the row offers them; otherwise it says when cards next come due.
+      const waiting = review.waiting > 0;
+      const nextLine = review.next ? `next ${review.next}` : null;
       return slot(
         "review-done",
         "review",
         <DoneRow
           testID="today-review-done"
           title={`${cardsWord(review.reviewed)} reviewed`}
-          detail={review.next ? `next ${review.next}` : null}
-          link="More ›"
-          onPress={() => router.push("/(tabs)/review")}
+          detail={waiting ? `${review.waiting} more waiting` : nextLine}
+          link={waiting ? "Keep going ›" : "More ›"}
+          onPress={() =>
+            waiting
+              ? router.push({ pathname: "/review/session", params: { mode: "more" } })
+              : router.push("/(tabs)/review")
+          }
           celebrate={celebration.isFresh("review")}
         />,
       );
@@ -132,6 +141,7 @@ export default function TodayScreen() {
         count={review.due}
         headerDetail={review.status === "pending" ? `about ${review.minutes} min` : `${review.reviewed} of ${review.total} done`}
         progress={review.status === "inProgress" ? { reviewed: review.reviewed, total: review.total } : undefined}
+        waiting={review.status === "pending" ? review.waiting : 0}
         onPress={() => router.push({ pathname: "/review/session", params: { mode: "due" } })}
       />,
     );

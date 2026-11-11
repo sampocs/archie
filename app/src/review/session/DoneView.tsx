@@ -4,7 +4,7 @@ import { View } from "react-native";
 
 import { type ReviewData } from "@/review/eligibility";
 import { doneSummaryLine, elapsedMinutes } from "@/review/sessionFlow";
-import { aheadSummary, nextReview } from "@/review/summary";
+import { aheadSummary, minutesFor, moreWaiting, nextReview } from "@/review/summary";
 import { gradedCount, type Tally } from "@/review/tally";
 import { KeepGoing } from "@/review/ui/KeepGoing";
 import { Button } from "@/theme/components/Button";
@@ -12,10 +12,10 @@ import { Card } from "@/theme/components/Card";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 
-type DoneViewProps = { tally: Tally; startedAt: Date; data: ReviewData };
+type DoneViewProps = { tally: Tally; startedAt: Date; data: ReviewData; dailyLimit: number | null };
 
 /** The end of a session (mock 03): how it went, then more practice or back to Today. */
-export function DoneView({ tally, startedAt, data }: DoneViewProps) {
+export function DoneView({ tally, startedAt, data, dailyLimit }: DoneViewProps) {
   const theme = useTheme();
   const router = useRouter();
   // Fixed when the view first shows, so the minutes don't tick up while it stays open.
@@ -27,6 +27,9 @@ export function DoneView({ tally, startedAt, data }: DoneViewProps) {
     finishedAt,
   );
   const ahead = aheadSummary(data, finishedAt);
+  const waiting = moreWaiting(data, finishedAt, dailyLimit);
+  // A Keep going session takes up to a day's limit of the waiting cards.
+  const moreMinutes = minutesFor(Math.min(waiting, dailyLimit ?? waiting));
 
   const rows = [
     { key: "got_it", label: "Got it", count: tally.gotIt, color: theme.signals.gotIt },
@@ -56,6 +59,9 @@ export function DoneView({ tally, startedAt, data }: DoneViewProps) {
         ))}
       </View>
       <KeepGoing
+        waiting={waiting}
+        moreMinutes={moreMinutes}
+        onMore={() => router.replace({ pathname: "/review/session", params: { mode: "more" } })}
         aheadCount={ahead.count}
         aheadBy={ahead.by}
         onAhead={() => router.replace({ pathname: "/review/session", params: { mode: "ahead" } })}

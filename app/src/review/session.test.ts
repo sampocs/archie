@@ -1,6 +1,6 @@
 import { effectiveDue, isDue } from "./due";
 import { buildSession, orderCards } from "./session";
-import { cardRow, dayAt, NOW, reviewCard, reviewData, sourceRow, takeRow } from "./testCards";
+import { cardRow, dayAt, NOW, reviewCard, reviewData, reviewRow, sourceRow, takeRow } from "./testCards";
 import type { CardRow } from "./types";
 
 const ids = (cards: { card: CardRow }[]): string[] => cards.map(({ card }) => card.id);
@@ -61,7 +61,7 @@ describe("buildSession", () => {
   });
 
   it("due mode: new and overdue reviewable cards, in order", () => {
-    const session = buildSession(data, "due", null, NOW);
+    const session = buildSession(data, "due", null, NOW, null);
     // other-source is new since Nov 1, so it has waited longest among the concepts.
     expect(ids(session)).toEqual(["primer-foundation", "other-source", "fresh", "overdue"]);
     expect(session.every(({ wasDue }) => wasDue)).toBe(true);
@@ -71,39 +71,39 @@ describe("buildSession", () => {
     const waiting = cardRow({ id: "waiting", availableAt: dayAt(2) });
     const withWaiting = { ...data, cards: [...data.cards, waiting] };
 
-    expect(ids(buildSession(withWaiting, "due", null, NOW))).not.toContain("waiting");
-    expect(ids(buildSession(withWaiting, "ahead", null, NOW))).not.toContain("waiting");
-    expect(ids(buildSession(withWaiting, "source", "s1", NOW))).not.toContain("waiting");
-    expect(ids(buildSession(withWaiting, "due", null, new Date(dayAt(2))))).toContain("waiting");
+    expect(ids(buildSession(withWaiting, "due", null, NOW, null))).not.toContain("waiting");
+    expect(ids(buildSession(withWaiting, "ahead", null, NOW, null))).not.toContain("waiting");
+    expect(ids(buildSession(withWaiting, "source", "s1", NOW, null))).not.toContain("waiting");
+    expect(ids(buildSession(withWaiting, "due", null, new Date(dayAt(2)), null))).toContain("waiting");
   });
 
   it("ahead mode: only cards due within 3 days and not due now, none of them due", () => {
-    const session = buildSession(data, "ahead", null, NOW);
+    const session = buildSession(data, "ahead", null, NOW, null);
     expect(session).toEqual([{ card: inTwoDays, wasDue: false }]);
   });
 
   it("topic mode: the topic's source cards and topic-primer foundation cards", () => {
-    const session = buildSession(data, "topic", "t1", NOW);
+    const session = buildSession(data, "topic", "t1", NOW, null);
     expect(ids(session)).toEqual(["primer-foundation", "foundation", "fresh", "overdue", "in-two-days", "in-four-days"]);
     expect(session.find(({ card }) => card.id === "foundation")?.wasDue).toBe(false);
     expect(session.find(({ card }) => card.id === "overdue")?.wasDue).toBe(true);
-    expect(buildSession(data, "topic", null, NOW)).toEqual([]);
+    expect(buildSession(data, "topic", null, NOW, null)).toEqual([]);
   });
 
   it("source mode: the source's cards, foundation cards included", () => {
-    expect(ids(buildSession(data, "source", "s1", NOW))).toEqual([
+    expect(ids(buildSession(data, "source", "s1", NOW, null))).toEqual([
       "foundation",
       "fresh",
       "overdue",
       "in-two-days",
       "in-four-days",
     ]);
-    expect(buildSession(data, "source", null, NOW)).toEqual([]);
+    expect(buildSession(data, "source", null, NOW, null)).toEqual([]);
   });
 
   it("card mode: the one card, or none when it isn't reviewable", () => {
-    expect(buildSession(data, "card", "in-four-days", NOW)).toEqual([{ card: inFourDays, wasDue: false }]);
-    expect(buildSession(data, "card", "not-reviewable", NOW)).toEqual([]);
+    expect(buildSession(data, "card", "in-four-days", NOW, null)).toEqual([{ card: inFourDays, wasDue: false }]);
+    expect(buildSession(data, "card", "not-reviewable", NOW, null)).toEqual([]);
   });
 
   describe("take cards", () => {
@@ -126,14 +126,19 @@ describe("buildSession", () => {
     );
 
     it("take mode: only that take's reviewable cards", () => {
-      expect(ids(buildSession(takeData, "take", "k1", NOW))).toEqual(["take-new", "take-later"]);
-      expect(buildSession(takeData, "take", "k3", NOW)).toEqual([]);
-      expect(buildSession(takeData, "take", null, NOW)).toEqual([]);
+      expect(ids(buildSession(takeData, "take", "k1", NOW, null))).toEqual(["take-new", "take-later"]);
+      expect(buildSession(takeData, "take", "k3", NOW, null)).toEqual([]);
+      expect(buildSession(takeData, "take", null, NOW, null)).toEqual([]);
     });
 
     it("due mode: take cards sort with concepts, after foundations and before numbers", () => {
       // The foundation isn't due; the two new take cards waited longer than the overdue concept.
-      expect(ids(buildSession(takeData, "due", null, NOW))).toEqual(["other-take", "take-new", "overdue", "number"]);
+      expect(ids(buildSession(takeData, "due", null, NOW, null))).toEqual([
+        "other-take",
+        "take-new",
+        "overdue",
+        "number",
+      ]);
     });
   });
 
@@ -148,8 +153,40 @@ describe("buildSession", () => {
       overdue,
     ]);
 
-    const session = buildSession(quizData, "quiz", null, NOW);
+    const session = buildSession(quizData, "quiz", null, NOW, null);
     expect(ids(session)).toEqual(["earlier", "later"]);
     expect(session.every(({ wasDue }) => wasDue)).toBe(true);
+  });
+
+  describe("with a daily cap", () => {
+    // c00 is the most overdue.
+    const backlog = Array.from({ length: 25 }, (_, index) =>
+      reviewCard({ id: `c${String(index).padStart(2, "0")}`, dueAt: dayAt(-30 + index) }),
+    );
+    const capped = reviewData(backlog);
+    const sorted = (session: { card: CardRow }[]): string[] => ids(session).sort();
+    const cardIds = (cards: CardRow[]): string[] => cards.map((card) => card.id).sort();
+
+    it("due mode: only today's capped set, the most overdue cards", () => {
+      expect(sorted(buildSession(capped, "due", null, NOW, 10))).toEqual(cardIds(backlog.slice(0, 10)));
+    });
+
+    it("more mode: the next batch of waiting cards, all due", () => {
+      const more = buildSession(capped, "more", null, NOW, 10);
+
+      expect(sorted(more)).toEqual(cardIds(backlog.slice(10, 20)));
+      expect(more.every(({ wasDue }) => wasDue)).toBe(true);
+    });
+
+    it("more mode: after the cap is reviewed, the next batch starts at the most overdue left", () => {
+      const reviews = backlog.slice(0, 10).map(({ id }) => reviewRow({ id: `review-${id}`, cardId: id }));
+      const left = backlog.slice(10);
+      const afterFirst = reviewData([...backlog.slice(0, 10).map((card) => ({ ...card, dueAt: dayAt(5) })), ...left], {
+        reviews,
+      });
+
+      expect(buildSession(afterFirst, "due", null, NOW, 10)).toEqual([]);
+      expect(sorted(buildSession(afterFirst, "more", null, NOW, 10))).toEqual(cardIds(left.slice(0, 10)));
+    });
   });
 });

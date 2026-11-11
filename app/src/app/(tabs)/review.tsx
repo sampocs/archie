@@ -26,6 +26,7 @@ import {
 import { CaughtUpCard } from "@/review/ui/CaughtUpCard";
 import { ReviewStartCard } from "@/review/ui/ReviewStartCard";
 import { useBrowseMode } from "@/review/useBrowseMode";
+import { useDailyLimit } from "@/review/useDailyLimit";
 import { useReviewData } from "@/review/useReviewData";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
@@ -44,13 +45,14 @@ export default function ReviewScreen() {
   const router = useRouter();
   const now = useNow();
   const data = useReviewData();
+  const dailyLimit = useDailyLimit();
   const params = useLocalSearchParams<{ browse?: string; at?: string }>();
   const [mode, setMode] = useBrowseMode();
   const [query, setQuery] = useState("");
   const cards = useMemo(() => browsableCards(data), [data]);
   // Derived from the whole log and card set, so they're recomputed only when the data or the clock changes, not on
   // every keystroke in the search box.
-  const due = useMemo(() => dueSummary(data, now), [data, now]);
+  const due = useMemo(() => dueSummary(data, now, dailyLimit), [data, now, dailyLimit]);
   const streak = useMemo(() => reviewStreak(data.reviews, now), [data, now]);
   const next = useMemo(() => nextReview(data, now), [data, now]);
   const aheadCount = useMemo(() => aheadSummary(data, now).count, [data, now]);
@@ -82,8 +84,10 @@ export default function ReviewScreen() {
           cardCount={cards.length}
           next={next}
           aheadCount={aheadCount}
+          waiting={due.waiting}
           now={now}
           onAhead={() => startSession({ mode: "ahead" })}
+          onMore={() => startSession({ mode: "more" })}
           onShuffle={() => startSession({ mode: "shuffle" })}
         />
       )}

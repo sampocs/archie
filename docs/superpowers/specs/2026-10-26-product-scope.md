@@ -93,6 +93,7 @@ The ＋ in the Library header opens the add sheet: the same Finished / Queue flo
 - **When cards join reviews**: a source's cards join once it's consumed. Foundation cards come from primers and topic primers and join once the primer is opened. A source with none shows "No cards for this".
 - **Take cards**: a take's cards (2–4, in my own wording) join reviews as soon as they are written, shown as "Your take", and are rewritten when I save a new version.
 - **Order within a session**: foundation cards from primers first, then mechanisms, then rough numbers. Trivia is avoided.
+- **Cards per day** (default 20; 10–50 in steps of 5, or Off, in Settings → Review) caps a day's due session so a big day (a finished book, several podcasts) doesn't turn into a skipped one. Nothing is rescheduled: due cards past the cap stay due and lead the next day's session, picked most overdue first with 5 slots kept for new cards. Today's review counts as done once today's set is; the rest are a "Keep going" tap away, and reminders count at most the cap.
 - **Keep going past today**: once the due cards are done, I can review ahead or practice a topic or source.
 - **Works offline**: reviews, reading and capture all work without signal, for example on a plane, and sync when I'm back online.
 

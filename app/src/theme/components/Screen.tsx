@@ -134,10 +134,10 @@ export function Screen({
 const styles = StyleSheet.create({
   root: { flex: 1 },
   titleGroup: { flexDirection: "row", alignItems: "center", gap: 8, flexShrink: 1 },
-  // Equal sides keep the nav title centred; the title shrinks and ellipsizes between them.
-  // Equal sides keep the title centered; a long back label ellipsizes on one line instead of wrapping.
+  // Equal sides keep the nav title centred. The title takes at most half the bar, so a back label like
+  // "‹ Derivatives" still fits beside a long title; anything longer ellipsizes on one line rather than wrapping.
   navSide: { flex: 1, minWidth: 0 },
   navRight: { alignItems: "flex-end" },
-  navTitle: { flexShrink: 1, maxWidth: "60%", textAlign: "center" },
+  navTitle: { flexShrink: 1, maxWidth: "50%", textAlign: "center" },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 12 },
 });

@@ -10,8 +10,29 @@ appId: com.sampocs.archie
     visible:
       id: "ask-row-.*"
     timeout: 30000
+# Long-press the row: Rename opens the system prompt (current title filled in); the new name shows on the row.
+- longPressOn:
+    id: "ask-row-.*"
+- tapOn:
+    id: "ask-menu-rename"
+- assertVisible: "Rename chat"
+- eraseText: 200
+- inputText: "Token talk"
+- tapOn: "Rename"
+- extendedWaitUntil:
+    visible: "Token talk"
+    timeout: 10000
 - tapOn:
     id: "ask-row-.*"
+# Inside the chat, ••• → Rename works the same way.
+- tapOn:
+    id: "chat-more"
+- tapOn:
+    id: "chat-menu-rename"
+- assertVisible: "Rename chat"
+- eraseText: 200
+- inputText: "Session tokens"
+- tapOn: "Rename"
 - scrollUntilVisible:
     element:
       id: "card-set-save"

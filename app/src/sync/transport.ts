@@ -61,7 +61,7 @@ const COLLECTION_ACTIONS = new Set(["update_collection", "update_collection_item
 const TAKE_ACTIONS = new Set(["update_take", "retry_take_cleanup"]);
 
 // Actions whose payload id is an Ask chat: a rejection re-pulls the server's copy and touches no source.
-const CONVERSATION_ACTIONS = new Set(["delete_conversation"]);
+const CONVERSATION_ACTIONS = new Set(["delete_conversation", "rename_conversation"]);
 
 // Sender actions carry a source_id or sender_id, not an id: a rejection re-pulls the server's copy of whatever the
 // optimistic edit changed (pending sources, the sender's status) and touches no source's syncError.

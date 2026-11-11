@@ -57,6 +57,7 @@ export type ActionType =
   | "restore_take_version"
   | "retry_take_cleanup"
   | "delete_conversation"
+  | "rename_conversation"
   | "set_sender_status";
 // What the owner decides about a newsletter sender.
 export type SenderStatus = "allowed" | "blocked";
@@ -893,6 +894,23 @@ export function deleteTake(db: AppDb, takeId: string): void {
       .where(and(eq(schema.cards.takeId, takeId), isNull(schema.cards.deletedAt)))
       .run();
     enqueue(tx, "update_take", { id: takeId, deleted: true });
+  });
+}
+
+export const MAX_CHAT_TITLE_LENGTH = 60;
+
+/** Renames a saved chat; a blank title does nothing, and a long one is cut as the server cuts it. */
+export function renameConversation(db: AppDb, conversationId: string, title: string): void {
+  // By code point, so an emoji is never cut in half.
+  const cleaned = Array.from(title.trim()).slice(0, MAX_CHAT_TITLE_LENGTH).join("");
+  if (!cleaned) return;
+
+  db.transaction((tx) => {
+    tx.update(schema.conversations)
+      .set({ title: cleaned, updatedAt: new Date().toISOString() })
+      .where(eq(schema.conversations.id, conversationId))
+      .run();
+    enqueue(tx, "rename_conversation", { id: conversationId, title: cleaned });
   });
 }
 

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { eq } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import { Alert, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 
 import { aboutTitleOf } from "@/ask/aboutTitle";
 import { AnswerView } from "@/ask/AnswerView";
@@ -22,6 +22,7 @@ import {
   type CardSetView,
 } from "@/ask/cardSets";
 import { backLabelOf } from "@/ask/chatChrome";
+import { confirmDeleteChat, promptChatName } from "@/ask/chatPrompts";
 import { Composer } from "@/ask/Composer";
 import { ItemSheet } from "@/ask/ItemSheet";
 import { groupSections, liveView, STILL_ANSWERING, unansweredState } from "@/ask/sections";
@@ -30,7 +31,7 @@ import { useAskAvailable } from "@/ask/useAskAvailable";
 import { useCardSetTicks, useChatItemId, useConversationCardSets } from "@/ask/useCardSets";
 import { useChat } from "@/ask/useChats";
 import { useChatSession } from "@/ask/useChatSession";
-import { deleteConversation } from "@/db/actions";
+import { deleteConversation, renameConversation } from "@/db/actions";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { EditProposalCard } from "@/edits/EditProposalCard";
@@ -289,7 +290,20 @@ export default function ChatScreen() {
         onClose={() => setMenuOpen(false)}
         items={[
           {
+            testID: "chat-menu-rename",
+            label: "Rename",
+            onPress: () =>
+              promptChatName({
+                currentTitle: conversation?.title ?? "",
+                onSubmit: (title) => {
+                  renameConversation(db, params.id, title);
+                  requestSync();
+                },
+              }),
+          },
+          {
             testID: "chat-menu-delete",
+            startsGroup: true,
             label: "Delete chat",
             destructive: true,
             onPress: () =>
@@ -306,14 +320,6 @@ export default function ChatScreen() {
       {toast ? <Toast message={toast} onHide={hideToast} /> : null}
     </View>
   );
-}
-
-/** Asks before deleting, saying that what was saved from the chat outlives it. */
-function confirmDeleteChat(onConfirm: () => void): void {
-  Alert.alert("Delete this chat?", "Cards and Library items you saved from it stay.", [
-    { text: "Cancel", style: "cancel" },
-    { text: "Delete", style: "destructive", onPress: onConfirm },
-  ]);
 }
 
 /** Try again on a stored failed answer: send its question again, with the globe as it was. */

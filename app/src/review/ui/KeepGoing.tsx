@@ -1,4 +1,4 @@
-import { Pressable } from "react-native";
+import { Tappable } from "@/ui/Tappable";
 
 import { shortWeekday } from "@/review/summary";
 import { Text } from "@/theme/components/Text";
@@ -29,20 +29,20 @@ export function KeepGoing({ waiting, moreMinutes, onMore, aheadCount, aheadBy, o
   return (
     <GroupedList title="Keep going">
       {waiting > 0 ? (
-        <Pressable testID="keep-going-more" accessibilityRole="button" onPress={onMore} style={rowStyle}>
+        <Tappable testID="keep-going-more" accessibilityRole="button" onPress={onMore} style={rowStyle}>
           <Text>{`${waiting} more waiting`}</Text>
           <Text variant="secondary" tone="ink3">{`about ${moreMinutes} min ›`}</Text>
-        </Pressable>
+        </Tappable>
       ) : null}
       {aheadCount > 0 ? (
-        <Pressable testID="keep-going-ahead" accessibilityRole="button" onPress={onAhead} style={rowStyle}>
+        <Tappable testID="keep-going-ahead" accessibilityRole="button" onPress={onAhead} style={rowStyle}>
           <Text>Review ahead</Text>
           <Text variant="secondary" tone="ink3">{`${aheadCount} due by ${shortWeekday(aheadBy)}`}</Text>
-        </Pressable>
+        </Tappable>
       ) : null}
-      <Pressable testID="keep-going-topic" accessibilityRole="button" onPress={onTopic} style={rowStyle}>
+      <Tappable testID="keep-going-topic" accessibilityRole="button" onPress={onTopic} style={rowStyle}>
         <Text>Practice a topic ›</Text>
-      </Pressable>
+      </Tappable>
     </GroupedList>
   );
 }

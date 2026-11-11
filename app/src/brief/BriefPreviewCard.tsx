@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 
 import { Card } from "@/theme/components/Card";
 import { Text } from "@/theme/components/Text";
@@ -7,6 +7,7 @@ import { fontFamily } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 import { CardHeader } from "@/today/CardHeader";
 import { haptic } from "@/ui/haptics";
+import { Tappable } from "@/ui/Tappable";
 
 import { briefReadingMinutes, previewLines, storiesInOrder, storyCountLabel, type TodayBrief } from "./brief";
 
@@ -32,7 +33,7 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
   }
 
   return (
-    <Pressable testID="today-brief" onPress={open}>
+    <Tappable testID="today-brief" onPress={open}>
       <Card style={{ gap: 9 }}>
         <CardHeader label="Your brief" detail={meta} testID="today-brief-detail" />
         <View style={{ gap: theme.spacing.xs }}>
@@ -41,13 +42,12 @@ export function BriefPreviewCard({ state }: { state: NonNullable<TodayBrief> }) 
           ))}
           {lines.more ? <Bullet text={lines.more} muted /> : null}
         </View>
-        <Pressable testID="today-brief-open" onPress={open} hitSlop={8}>
-          <Text variant="body" style={{ fontFamily: fontFamily.semibold, fontSize: 14 }}>
-            Read the brief ›
-          </Text>
-        </Pressable>
+        {/* The whole card opens the brief; a second press target inside it could fire twice. */}
+        <Text testID="today-brief-open" variant="body" style={{ fontFamily: fontFamily.semibold, fontSize: 14 }}>
+          Read the brief ›
+        </Text>
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

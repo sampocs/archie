@@ -24,8 +24,10 @@ MAX_ATTEMPTS: dict[models.JobKind, int] = {
     # One sequential worker would let analyze run on the raw text while a retried clean_text waits its turn; a single
     # attempt means cleaning either happens before analyze or is skipped.
     models.JobKind.CLEAN_TEXT: 1,
-    # A write-up is a long Sonnet call; one retry (on the fallback model) is enough.
+    # A write-up is a long Sonnet call; one retry (on the fallback model) is enough. A book's refresher and cards too.
     models.JobKind.WRITE_NOTE: 2,
+    models.JobKind.WRITE_BOOK: 2,
+    models.JobKind.BOOK_CARDS: 2,
 }
 
 # True in the content of a `text` artifact `clean_text` wrote (the text before cleaning stays an older version).
@@ -132,11 +134,15 @@ def set_processing(
     source.change_seq = changes.next_change_seq()
 
 
-def required_artifacts(kind: models.SourceKind) -> tuple[models.ArtifactKind, ...]:
-    """The outputs a source of `kind` needs to be READY.
+def required_artifacts(*, kind: models.SourceKind, state: models.SourceState) -> tuple[models.ArtifactKind, ...]:
+    """The outputs a source of `kind` in `state` needs to be READY.
 
-    Newsletters and notes are summary-only, the rest also get a primer.
+    Newsletters and notes are summary-only, the rest also get a primer. A book needs its primer while it is being read
+    and its refresher (the summary) once finished.
     """
+    if kind == models.SourceKind.BOOK:
+        is_reading = state == models.SourceState.READING
+        return (models.ArtifactKind.PRIMER,) if is_reading else (models.ArtifactKind.SUMMARY,)
     if kind in (models.SourceKind.NEWSLETTER, models.SourceKind.NOTE):
         return (models.ArtifactKind.SUMMARY,)
     return (models.ArtifactKind.SUMMARY, models.ArtifactKind.PRIMER)
@@ -146,7 +152,8 @@ def steps_after_text(kind: models.SourceKind) -> list[models.JobKind]:
     """The jobs that follow a source's text, in order.
 
     Newsletters have their boilerplate cleaned out and are then analyzed (a primer only on request); the rest are
-    analyzed and get a primer; a note's text is written up.
+    analyzed and get a primer; a note's text is written up. Books have no fetched text, so this never applies to them
+    (`steps_to_retry` plans a book's steps itself).
     """
     if kind == models.SourceKind.NOTE:
         return [models.JobKind.WRITE_NOTE]
@@ -165,7 +172,7 @@ def finish_step(db: sqlalchemy.orm.Session, *, source: models.Source) -> None:
     A newsletter in the inbox that becomes READY is one the brief now covers, so the user's brief is queued for a
     rewrite, after the settings' debounce delay so a burst of arrivals shares one.
     """
-    required = required_artifacts(models.SourceKind(source.kind))
+    required = required_artifacts(kind=models.SourceKind(source.kind), state=models.SourceState(source.state))
     if any(current_artifact(db, source_id=source.id, kind=kind) is None for kind in required):
         return
     if _has_queued_primer_job(db, source_id=source.id):
@@ -195,12 +202,18 @@ def steps_to_retry(db: sqlalchemy.orm.Session, *, source_id: uuid.UUID) -> list[
     Cleaning is done once the current text is a cleaned one, so a retry skips it; when it is not done, every later
     step runs too, since it changes their input. When everything exists the user asked to redo it, so all of the
     kind's generation steps run again.
+
+    A book has no fetched text: one being read gets its primer written (again), a finished one its refresher.
     """
+    source = db.get_one(models.Source, source_id)
+    if source.kind == models.SourceKind.BOOK:
+        is_reading = source.state == models.SourceState.READING
+        return [models.JobKind.PRIMER] if is_reading else [models.JobKind.WRITE_BOOK]
+
     text = current_artifact(db, source_id=source_id, kind=models.ArtifactKind.TEXT)
     if text is None:
         return [models.JobKind.FETCH_CONTENT]
 
-    source = db.get_one(models.Source, source_id)
     is_cleaned = text.content.get(CLEANED_KEY) is True
     steps = [
         step

@@ -1,0 +1,47 @@
+interactions:
+- request:
+    body: ''
+    headers:
+      accept:
+      - '*/*'
+      accept-encoding:
+      - gzip, deflate
+      connection:
+      - keep-alive
+      host:
+      - openlibrary.org
+      user-agent:
+      - Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML,
+        like Gecko)
+    method: GET
+    uri: https://openlibrary.org/search.json?q=thinking+fast+and+slow&limit=1&fields=key%2Ctitle%2Cauthor_name%2Cfirst_publish_year%2Ccover_i
+  response:
+    body:
+      string: '{"numFound":96,"start":0,"numFoundExact":true,"num_found":96,"documentation_url":"https://openlibrary.org/dev/docs/api/search","q":"thinking
+        fast and slow","offset":null,"docs":[{"author_name":["Daniel Kahneman"],"cover_i":13290711,"first_publish_year":2011,"key":"/works/OL15992072W","title":"Thinking,
+        Fast and Slow"}]}'
+    headers:
+      connection:
+      - keep-alive
+      content-length:
+      - '321'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 03:42:38 GMT
+      referrer-policy:
+      - no-referrer-when-downgrade
+      server:
+      - nginx/1.30.6
+      server-timing:
+      - total;dur=1099.9, solr;dur=1089.1;desc="1 call"
+      transfer-encoding:
+      - chunked
+      vary:
+      - Origin
+      x-served-by:
+      - FastAPI
+    status:
+      code: 200
+      message: OK
+version: 1

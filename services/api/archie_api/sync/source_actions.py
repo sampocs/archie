@@ -13,16 +13,20 @@ import sqlalchemy
 from archie_db import changes, models, pipeline, source_rows
 from sqlalchemy import orm
 
-from archie_api.sync import capture, rows
+from archie_api.sync import book_actions, capture, rows
 
 _NOT_QUEUED = "source is not queued"
 _NOT_IN_INBOX = "source is not in the inbox"
 _NOT_NEWSLETTER = "source is not a newsletter"
-# Notes go through the refresher and chat items are saved from Ask; neither enters the queue.
+# Notes go through the refresher, chat items are saved from Ask and books are read outside the app; none enters the
+# queue. A book's primer does: it is an ordinary queue entry (see `_queue_entry_reason`).
 _NOT_QUEUEABLE: dict[str, str] = {
     models.SourceKind.NOTE: "notes are refreshed, not queued",
     models.SourceKind.CHAT: "chat items are not queued",
+    models.SourceKind.BOOK: "books are not queued",
 }
+_NOT_READING = "book is not being read"
+_BOOK_REACTION = "a book takes no reaction"
 _NOT_READY = "source is not ready"
 _NO_PRIMER = "topic primer not found"
 _PRIMER_NOT_QUEUED = "primer is not queued"
@@ -94,7 +98,8 @@ class _QueuePositionPayload(_SourcePayload):
 def finish_source(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
     """Mark a queued source consumed, with the optional reaction and note, and queue its primer when asked.
 
-    A newsletter is analyzed again once consumed, which now gives it cards.
+    A newsletter is analyzed again once consumed, which now gives it cards. A book being read is finished instead: the
+    note is the owner's thoughts on it, a reaction is refused, and its refresher is written.
     """
     parsed = rows.parse(_FinishPayload, payload)
     if parsed is None:
@@ -102,6 +107,8 @@ def finish_source(db: orm.Session, *, user: models.User, payload: dict[str, obje
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
+    if source.kind == models.SourceKind.BOOK:
+        return _finish_book(db, source=source, payload=parsed)
     if source.kind in _NOT_QUEUEABLE:
         return _NOT_QUEUEABLE[source.kind]
     if source.state != models.SourceState.QUEUED:
@@ -126,6 +133,25 @@ def finish_source(db: orm.Session, *, user: models.User, payload: dict[str, obje
     return None
 
 
+def _finish_book(db: orm.Session, *, source: models.Source, payload: _FinishPayload) -> str | None:
+    if source.state != models.SourceState.READING:
+        return _NOT_READING
+    if payload.reaction is not None:
+        return _BOOK_REACTION
+
+    book_actions.finish_book(db, source=source, note=payload.note)
+    if payload.queue_primer:
+        rows.queue_primer(db, source=source)
+    return None
+
+
+def _queue_entry_reason(source: models.Source, *, primer_entry: bool) -> str | None:
+    """Why the source (or, with `primer_entry`, its primer) can't be a queue entry; a book's primer can."""
+    if primer_entry and source.kind == models.SourceKind.BOOK:
+        return None
+    return _NOT_QUEUEABLE.get(source.kind)
+
+
 def _needs_reanalysis(db: orm.Session, *, source: models.Source) -> bool:
     has_text = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT) is not None
     return has_text and not rows.has_pending_job(db, source=source, kind=models.JobKind.ANALYZE)
@@ -139,8 +165,9 @@ def queue_primer(db: orm.Session, *, user: models.User, payload: dict[str, objec
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind in _NOT_QUEUEABLE:
-        return _NOT_QUEUEABLE[source.kind]
+    reason = _queue_entry_reason(source, primer_entry=True)
+    if reason is not None:
+        return reason
 
     if parsed.queued:
         rows.queue_primer(db, source=source)
@@ -218,8 +245,9 @@ def snooze(db: orm.Session, *, user: models.User, payload: dict[str, object]) ->
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind in _NOT_QUEUEABLE:
-        return _NOT_QUEUEABLE[source.kind]
+    reason = _queue_entry_reason(source, primer_entry=parsed.target == SnoozeTarget.SOURCE_PRIMER)
+    if reason is not None:
+        return reason
 
     if parsed.target == SnoozeTarget.SOURCE_PRIMER:
         if parsed.until is not None and source.primer_queue_position is not None:
@@ -342,8 +370,9 @@ def set_queue_position(db: orm.Session, *, user: models.User, payload: dict[str,
     source = rows.owned_source(db, user=user, source_id=parsed.id)
     if source is None:
         return rows.NO_SOURCE
-    if source.kind in _NOT_QUEUEABLE:
-        return _NOT_QUEUEABLE[source.kind]
+    reason = _queue_entry_reason(source, primer_entry=parsed.target == QueueTarget.SOURCE_PRIMER)
+    if reason is not None:
+        return reason
 
     if parsed.target == QueueTarget.SOURCE_PRIMER:
         if source.primer_queue_position is None:

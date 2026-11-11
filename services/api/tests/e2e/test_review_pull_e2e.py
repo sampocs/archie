@@ -61,6 +61,7 @@ def test_a_pull_sends_cards_of_every_origin_with_their_schedule(live_stack: Live
         "reps": 3,
         "lapses": 1,
         "expires_at": None,
+        "available_at": None,
         "deleted_at": None,
     }
 

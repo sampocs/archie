@@ -26,6 +26,8 @@ An answer that doesn't use the accepted answer's words but shows the idea, by it
 
 Numbers: right if within roughly the precision of the accepted answer (about 5% unless the card says "roughly"/"about", then about 15%). A wrong order of magnitude is missed.
 
+Lists: when the question asks for a number of items ("Name three…"), naming that many correct items from the accepted answer is got_it, in any order; fewer correct items is partly.
+
 `missing`: for partly and missed, ONE short sentence (under 20 words) saying what the answer lacked or got wrong, addressed to the learner without quoting the whole accepted answer. Empty string for got_it.
 
 `confident`: false only if you genuinely cannot tell whether the answer matches the idea (ambiguous wording, answer might be right under another reading, or the accepted answer itself is unclear). Otherwise true. Do not mark a clear miss or a clear match as not confident.

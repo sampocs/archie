@@ -1,0 +1,173 @@
+interactions:
+- request:
+    body: "{\"max_tokens\":6000,\"messages\":[{\"role\":\"user\",\"content\":\"Book:
+      Thinking, Fast and Slow\\nAuthor: Daniel Kahneman\\n\\n<thoughts>\\nAnchoring
+      stuck with me most, and how confident System 1 feels even when it is wrong.\\n</thoughts>\\n\\n<refresher>\\nKahneman
+      describes two modes of thought: fast, intuitive System 1 and slow, effortful
+      System 2.\\n\\nKey ideas:\\n- **Two systems.** System 1 is automatic; System
+      2 is deliberate and lazy.\\n- **Anchoring.** An arbitrary number shifts later
+      estimates toward it.\\n- **Loss aversion.** Losses weigh about twice as much
+      as equal gains.\\n- **WYSIATI.** System 1 builds a story only from the evidence
+      at hand.\\n- **Availability.** What comes to mind easily feels more common.\\n-
+      **Planning fallacy.** Plans ignore base rates and run over.\\n\\nNumbers:\\n-
+      Losses feel roughly twice as strong as gains of the same size.\\n</refresher>\"}],\"model\":\"claude-sonnet-5-5\",\"output_config\":{\"format\":{\"type\":\"json_schema\",\"schema\":{\"type\":\"object\",\"properties\":{\"book_kind\":{\"type\":\"string\",\"enum\":[\"how_to\",\"idea\",\"textbook\"]},\"cards\":{\"type\":\"array\",\"items\":{\"type\":\"object\",\"properties\":{\"kind\":{\"type\":\"string\",\"enum\":[\"concept\",\"mechanism\",\"number\"]},\"question\":{\"type\":\"string\"},\"answer\":{\"type\":\"string\"},\"detail\":{\"type\":\"array\",\"items\":{\"type\":\"string\"}}},\"required\":[\"kind\",\"question\",\"answer\",\"detail\"],\"additionalProperties\":false}}},\"required\":[\"book_kind\",\"cards\"],\"additionalProperties\":false}}},\"system\":\"You
+      write review cards for a book the user read, so they remember what it teaches.
+      You get the user's notes or thoughts on the book (if any) and a refresher of
+      it.\\n\\nFirst decide what kind of book it is, in book_kind; that sets how many
+      cards it gets, however long the book or the notes are:\\n- how_to: a how-to
+      or beginner's guide (to a game, a tool, a process): 4-6 cards.\\n- idea: an
+      idea book (one argument or field, told through stories and studies): 6-10 cards.\\n-
+      textbook: a dense textbook or reference covering many separate systems or ideas:
+      10-15 cards.\\nStay inside the range: choose the ideas that matter most. Order
+      the cards from most to least important.\\n\\nWhat to card: one card per core
+      idea, never one per fact: its key concepts, how its mechanisms work (\\\"why
+      does X cause Y\\\"), and a few rough numbers worth knowing. What the user's
+      thoughts or notes dwell on is a strong candidate and comes first; fill with
+      the book's own main ideas. Prefer a contrast between two things (\\\"declarative
+      vs imperative\\\") over a card that asks to recite a list. When recognizing
+      the items of a list is itself worth remembering, ask for some of them (\\\"Name
+      three\u2026\\\") and give the whole list as the answer. Never card a chapter-by-chapter
+      walk-through, an anecdote (who did what, when, where), a name or date that only
+      matters inside the book, or a single study's details: a study gets a card only
+      when it is the evidence for one of the book's core ideas, and then the card
+      asks what it showed. A number card is a lasting figure about the subject, never
+      a detail of one person's story or one experiment.\\n\\nEach card is of kind
+      concept, mechanism or number, worded from the refresher. Never mention the notes,
+      the thoughts, the refresher or the user in a card.\\n\\nEach card has a question,
+      an answer and a detail:\\n- question: ONE focused question with ONE thing to
+      recall. Never join two asks with \\\"and\\\" (\\\"What does X give you, and
+      what can you lose?\\\" is two cards, or pick one). Ask only what has a short
+      answer.\\n- answer: the one thing to recall, in as few words as carry it: a
+      phrase, not a sentence. Aim for 2-8 words, never more than 15. The learner is
+      graded only on this, so it is what someone who knows the material would say
+      off the top of their head. When two things are both essential, name both briefly
+      (\\\"Supply and demand\\\"). A number card's answer is the rough figure with
+      its unit.\\n- detail: 0-3 short bullet lines, each under 12 words. Shown after
+      the learner answers, never graded. Each line must help explain the answer (the
+      why or how behind it, or a contrast that makes it click); a further fact about
+      the subject, however true, is not a reason for a line. No padding and no redundancy:
+      never a line that restates the answer, is implied by it or repeats another line;
+      that is trivia from this one source (who said it, when, a passing example or
+      anecdote) rather than a lasting fact about the subject; or that is a side remark
+      that doesn't help recall. So a plain fact or a number usually needs none and
+      most whys need one; use two or three only when the explanation really has that
+      many steps (A happens, so B, so C) or named parts (the three phases of a cycle).
+      When in doubt, use fewer.\"}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '4666'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: '{"model":"claude-sonnet-5-5","id":"msg_011CgvSnEdWZLhHd1ej8XBLJ","type":"message","role":"assistant","content":[{"type":"text","text":"{\"book_kind\":\"idea\",\"cards\":[{\"kind\":\"concept\",\"question\":\"What
+        is the anchoring effect?\",\"answer\":\"An arbitrary number pulls later estimates
+        toward it\",\"detail\":[\"Even irrelevant numbers influence judgment, because
+        System 1 treats them as a starting point.\"]},{\"kind\":\"mechanism\",\"question\":\"Why
+        does System 1 feel confident even when it is wrong?\",\"answer\":\"It builds
+        a coherent story from only available evidence\",\"detail\":[\"This is WYSIATI:
+        What You See Is All There Is.\",\"Confidence reflects the story''s coherence,
+        not the quality or completeness of the evidence.\"]},{\"kind\":\"concept\",\"question\":\"What
+        is WYSIATI?\",\"answer\":\"System 1 judges only from evidence at hand\",\"detail\":[\"Missing
+        information is ignored rather than noticed, so the story feels complete.\"]},{\"kind\":\"concept\",\"question\":\"How
+        do System 1 and System 2 differ?\",\"answer\":\"Fast and automatic versus
+        slow and effortful\",\"detail\":[\"System 2 is lazy, so it often accepts System
+        1''s answers without checking.\"]},{\"kind\":\"number\",\"question\":\"Roughly
+        how much more strongly do losses weigh than equal gains?\",\"answer\":\"About
+        twice as much\",\"detail\":[]},{\"kind\":\"mechanism\",\"question\":\"Why
+        does availability distort judgments of how common something is?\",\"answer\":\"Easily
+        recalled examples feel more frequent\",\"detail\":[\"Vivid or recent events
+        come to mind fast, so System 1 treats them as common.\"]},{\"kind\":\"concept\",\"question\":\"What
+        is the planning fallacy?\",\"answer\":\"Plans ignore base rates and run over\",\"detail\":[\"Forecasts
+        rest on the best-case plan rather than on how similar projects actually went.\"]}]}"}],"container":null,"stop_reason":"end_turn","stop_sequence":null,"stop_details":null,"usage":{"input_tokens":1783,"cache_creation_input_tokens":0,"cache_read_input_tokens":0,"cache_creation":{"ephemeral_5m_input_tokens":0,"ephemeral_1h_input_tokens":0},"output_tokens":560,"output_tokens_details":{"thinking_tokens":0},"service_tier":"standard","inference_geo":"global","speed":"standard"},"diagnostics":null}'
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9999000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-11T03:39:27Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '1999000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-11T03:39:31Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-11T03:39:26Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11998000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-11T03:39:27Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a58a451299167d03-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '2244'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 03:39:31 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=4708
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-45b7faa739d168be696c3e60f7edc956-15dec38d0b8fff96-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

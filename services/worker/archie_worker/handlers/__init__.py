@@ -9,6 +9,7 @@ from archie_db import changes, models, pipeline
 from archie_worker.handlers import (
     _text,
     analyze,
+    book_cards,
     clean_take,
     clean_text,
     embed,
@@ -23,6 +24,7 @@ from archie_worker.handlers import (
     topic_primer,
     transcribe,
     update_brief,
+    write_book,
     write_note,
 )
 from archie_worker.loop import HandlerSpec
@@ -90,4 +92,8 @@ HANDLERS: dict[models.JobKind, HandlerSpec] = {
     models.JobKind.EMBED: HandlerSpec(run=embed.handle),
     # A note's write-up is its whole reading view, so a final failure shows on the note with Try again.
     models.JobKind.WRITE_NOTE: HandlerSpec(run=write_note.handle, on_final_failure=mark_source_failed),
+    # A finished book's refresher is its reading view, so a final failure shows on the book with Try again.
+    models.JobKind.WRITE_BOOK: HandlerSpec(run=write_book.handle, on_final_failure=mark_source_failed),
+    # No failure hook: a book without cards still reads fine.
+    models.JobKind.BOOK_CARDS: HandlerSpec(run=book_cards.handle),
 }

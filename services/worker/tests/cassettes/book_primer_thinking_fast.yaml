@@ -1,0 +1,205 @@
+interactions:
+- request:
+    body: "{\"max_tokens\":6000,\"messages\":[{\"role\":\"user\",\"content\":\"Today:
+      2026-11-11\\nBook: Thinking, Fast and Slow\\nAuthor: Daniel Kahneman\"}],\"model\":\"claude-sonnet-5-5\",\"system\":\"You
+      write book primers for a personal learning app: a spoiler-free primer for someone
+      about to start a book, so they get more out of reading it. You get the book's
+      title, its author and the date today.\\n\\nCover who the author is and why they
+      wrote the book; the background the book assumes (the field, the era, the key
+      terms); and the questions the book sets out to answer. Never reveal its conclusions,
+      its twists or how a narrative ends: the reader is about to find those out. Search
+      the web when the book is not well known to you. A 4-6 minute read (roughly 700-1100
+      words), in markdown with short sections and a title. Write only the primer:
+      no preamble before it and no note about your searches.\\n\\nVoice: a great teacher
+      who respects the reader's time. Warm and direct; talk to \\\"you\\\".\\n- Open
+      with the core idea in one or two plain sentences: what it is and why it matters.\\n-
+      Match depth to the idea. A simple point gets one or two crisp sentences. Only
+      an idea with a real mechanism gets a plain everyday analogy to make it click,
+      then the specifics.\\n- Tell something as a story only when there genuinely
+      is one (real people, a rise and fall, a turning point). Never invent drama,
+      scenes or suspense.\\n- Define jargon in plain words the first time it appears.
+      Prefer concrete examples and rough numbers (\\\"~1 GW\\\", not \\\"1.07 GW\\\").\\n-
+      Short sentences and no padding: every sentence carries information. Friendliness
+      comes from the phrasing, not from extra sentences.\\n- Never open with throat-clearing
+      (\\\"Okay so here's the thing\\\", \\\"So,\\\", \\\"Here's the deal\\\", \\\"Let's
+      dive in\\\", \\\"Picture this\\\", \\\"In this episode\u2026\\\") and never
+      close with a pep-talk recap.\\nFor example, not \\\"In this fascinating conversation,
+      we take a journey through how central banks think about rates\\\", but \\\"Central
+      banks raise rates to cool spending: borrowing gets pricier, so people and companies
+      buy less.\\\"\",\"tools\":[{\"type\":\"web_search_20260209\",\"name\":\"web_search\",\"max_uses\":5}]}"
+    headers:
+      accept:
+      - application/json
+      accept-encoding:
+      - gzip, deflate
+      anthropic-version:
+      - '2026-10-21'
+      connection:
+      - keep-alive
+      content-length:
+      - '2151'
+      content-type:
+      - application/json
+      host:
+      - api.anthropic.com
+      user-agent:
+      - Anthropic/Python 2.4.0
+      x-stainless-arch:
+      - arm64
+      x-stainless-async:
+      - 'false'
+      x-stainless-lang:
+      - python
+      x-stainless-os:
+      - MacOS
+      x-stainless-package-version:
+      - 2.4.0
+      x-stainless-read-timeout:
+      - '300'
+      x-stainless-retry-count:
+      - '0'
+      x-stainless-runtime:
+      - CPython
+      x-stainless-runtime-version:
+      - 3.13.3
+      x-stainless-timeout:
+      - NOT_GIVEN
+    method: POST
+    uri: https://api.anthropic.com/v1/messages
+  response:
+    body:
+      string: "{\"model\":\"claude-sonnet-5-5\",\"id\":\"msg_011CgvSox98QfZyqY3Sc8zuP\",\"type\":\"message\",\"role\":\"assistant\",\"content\":[{\"type\":\"thinking\",\"thinking\":\"\",\"signature\":\"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\"},{\"type\":\"text\",\"text\":\"#
+        Thinking, Fast and Slow: A Primer\\n\\n**The core idea:** Your mind makes
+        snap judgments all day, and they are often good. They also go wrong in predictable
+        ways. Daniel Kahneman spent a career mapping when each happens, and this book
+        is his tour of that map.\\n\\n## The author and why he wrote it\\n\\nKahneman
+        (1934\u20132024) was a psychologist, not an economist. He spent his childhood
+        in Paris under Nazi occupation and later moved to Palestine, then Israel.
+        As a young army psychologist, he helped design a way to screen officer candidates.
+        That work gave him an early lesson in how confident judgments about people
+        can fail to match reality.\\n\\nHis central partnership was with Amos Tversky,
+        a fellow psychologist at the Hebrew University of Jerusalem. From the late
+        1960s they ran small, clever experiments on how people estimate, guess and
+        decide. Their work reshaped economics. Kahneman won the 2002 Nobel Memorial
+        Prize in Economic Sciences. Tversky died in 1996, and the prize isn't given
+        posthumously. Kahneman said the prize was shared with him in spirit.\\n\\nBy
+        his own account, he wrote the book (published 2011) to give people better
+        vocabulary. He wanted readers to be able to spot errors in judgment, in themselves
+        and in others, the way a doctor can name a symptom. He pictured colleagues
+        discussing a decision around the office water cooler with sharper language.\\n\\n##
+        The background the book assumes\\n\\nYou don't need any psychology or math.
+        These ideas will help.\\n\\n**The \\\"rational agent\\\" model.** For much
+        of the 20th century, standard economics treated people as consistent calculators.
+        They weigh costs and benefits, know what they want, and choose accordingly.
+        Kahneman's work grew out of doubting that picture. He calls the idealized
+        person in it an \\\"Econ\\\" and the real one a \\\"Human.\\\"\\n\\n**Heuristics
+        and biases.** A *heuristic* is a mental shortcut: a quick rule of thumb that
+        swaps a hard question for an easier one. A *bias* is a systematic error, one
+        that leans the same direction again and again instead of scattering randomly.
+        Tversky and Kahneman's 1974 paper \\\"Judgment under Uncertainty: Heuristics
+        and Biases\\\" launched this research program. The book is its popular culmination.\\n\\n**Probability
+        and base rates.** Several chapters involve estimating likelihoods. A *base
+        rate* is how common something is overall. For example, what fraction of all
+        new restaurants fail? Keep the term in mind. It comes up often.\\n\\n**Prospect
+        theory.** This is Kahneman and Tversky's 1979 theory of how people choose
+        when outcomes are uncertain and money (or something else valuable) is at stake.
+        It was meant as a more realistic alternative to the standard economic model.
+        You'll meet it in the book's middle, with the details explained there.\\n\\n**Experiments
+        you can try.** The book is built on simple puzzles and thought experiments.
+        Kahneman wants you to answer them honestly before reading on, so your own
+        reactions become the evidence. Don't skip them.\\n\\n## The questions the
+        book asks\\n\\nKahneman organizes the book around two ways of thinking, which
+        he labels System 1 and System 2. He frames them as characters in a story about
+        the mind, not as literal parts of the brain. The first is fast and automatic.
+        The second is slow and effortful. Everything else builds on how they relate.
+        The book's questions include:\\n\\n- **Where do intuitions come from?** Why
+        does a judgment feel right before you can say why? When does that feeling
+        reflect real expertise, and when does it only reflect confidence?\\n- **Why
+        do intelligent people make the same mistakes?** What is the mind doing when
+        it answers a different, easier question than the one you were asked?\\n- **How
+        do we judge what is likely?** Why are we poor intuitive statisticians, and
+        what does that cost us in everyday forecasts?\\n- **Why are we so sure of
+        ourselves?** What makes the past look more predictable than it was, and what
+        does that do to our confidence in expertise?\\n- **How do people choose when
+        something is at stake?** Where does the rational-agent picture fall short,
+        and what replaces it?\\n- **What does it mean to have a good life?** Kahneman
+        separates the self that *lives* through experiences from the self that *remembers*
+        and tells the story. He asks which one we serve when we make decisions.\\n\\n##
+        How the book is built\\n\\nIt's long, about 500 pages in 38 short chapters,
+        grouped into five parts. Each chapter usually takes one idea, shows a demonstration,
+        and moves on. You can read it in bursts, and the chapters stand reasonably
+        well alone. Parts 1 and 2 lay the foundation. The later parts apply it to
+        confidence, economic choices and well-being.\\n\\nThe writing is plain and
+        often self-deprecating. Kahneman often tells you where his own judgment failed.
+        He writes \\\"we\\\" more than \\\"you.\\\"\\n\\n## Reading it in 2026\\n\\nThe
+        book is over a decade old, and the field has moved since. Psychology went
+        through a \\\"replication crisis\\\" in the 2010s, in which many well-known
+        findings failed when other labs repeated them. Some studies Kahneman cited,
+        especially on *priming* (the idea that subtle cues can nudge later behavior),
+        have held up poorly. He acknowledged this publicly. The book's core framework
+        and its work on judgment and risky choice are generally on firmer ground,
+        but treat individual studies with some caution.\\n\\n## How to get the most
+        from it\\n\\n1. **Answer the puzzles before you read the explanations.** Your
+        first reaction is the data.\\n2. **Notice the question beneath the question.**
+        Ask what you are really being asked in each example.\\n3. **Watch your own
+        decisions for a week.** Pay attention to hunches, estimates and forecasts,
+        and see which chapter they remind you of.\\n4. **Don't expect a fix.** Kahneman
+        is modest about how far knowing about these patterns helps you avoid them.
+        Part of the book is about what can help, and he is frank about its limits.\"}],\"container\":null,\"stop_reason\":\"end_turn\",\"stop_sequence\":null,\"stop_details\":null,\"usage\":{\"input_tokens\":6608,\"cache_creation_input_tokens\":0,\"cache_read_input_tokens\":0,\"cache_creation\":{\"ephemeral_5m_input_tokens\":0,\"ephemeral_1h_input_tokens\":0},\"output_tokens\":2741,\"output_tokens_details\":{\"thinking_tokens\":855},\"service_tier\":\"standard\",\"inference_geo\":\"global\",\"speed\":\"standard\"},\"diagnostics\":null}"
+    headers:
+      anthropic-ratelimit-input-tokens-limit:
+      - '10000000'
+      anthropic-ratelimit-input-tokens-remaining:
+      - '9997000'
+      anthropic-ratelimit-input-tokens-reset:
+      - '2026-11-11T03:39:57Z'
+      anthropic-ratelimit-output-tokens-limit:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-remaining:
+      - '2000000'
+      anthropic-ratelimit-output-tokens-reset:
+      - '2026-11-11T03:40:21Z'
+      anthropic-ratelimit-requests-limit:
+      - '13000'
+      anthropic-ratelimit-requests-remaining:
+      - '12999'
+      anthropic-ratelimit-requests-reset:
+      - '2026-11-11T03:39:49Z'
+      anthropic-ratelimit-tokens-limit:
+      - '12000000'
+      anthropic-ratelimit-tokens-remaining:
+      - '11997000'
+      anthropic-ratelimit-tokens-reset:
+      - '2026-11-11T03:39:57Z'
+      cf-cache-status:
+      - DYNAMIC
+      cf-ray:
+      - a58a45a3ecf90ffa-ORD
+      connection:
+      - keep-alive
+      content-length:
+      - '10511'
+      content-security-policy:
+      - default-src 'none'; frame-ancestors 'none'
+      content-type:
+      - application/json
+      date:
+      - Wed, 11 Nov 2026 03:40:21 GMT
+      server:
+      - cloudflare
+      server-timing:
+      - x-originResponse;dur=31277
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      traceresponse:
+      - 00-ddce4703b3ea9dbb99247a82d0a548cf-8b25335f4677c085-01
+      transfer-encoding:
+      - chunked
+      vary:
+      - Accept-Encoding
+      x-robots-tag:
+      - none
+    status:
+      code: 200
+      message: OK
+version: 1

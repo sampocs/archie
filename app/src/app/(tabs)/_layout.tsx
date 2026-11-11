@@ -15,12 +15,12 @@ type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const TAB_BAR_HEIGHT = 49;
 
-// Today sits in the middle, with every tab the same size; the app still opens on it (see app/index.tsx).
+// Today is home, so it sits first as iOS apps put home, with Review beside it; the app opens on it (see app/index.tsx).
 // The selected tab shows the filled icon and a heavier label, as iOS does; sizes stay put so nothing shifts.
 const TABS: { name: string; title: string; icon: IconName; selectedIcon: IconName }[] = [
-  { name: "library", title: "Library", icon: "library-outline", selectedIcon: "library" },
-  { name: "review", title: "Review", icon: "refresh-circle-outline", selectedIcon: "refresh-circle" },
   { name: "today", title: "Today", icon: "sunny-outline", selectedIcon: "sunny" },
+  { name: "review", title: "Review", icon: "refresh-circle-outline", selectedIcon: "refresh-circle" },
+  { name: "library", title: "Library", icon: "library-outline", selectedIcon: "library" },
   { name: "ask", title: "Ask", icon: "chatbubble-outline", selectedIcon: "chatbubble" },
   { name: "settings", title: "Settings", icon: "settings-outline", selectedIcon: "settings" },
 ];

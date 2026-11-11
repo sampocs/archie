@@ -37,14 +37,16 @@ export function RefresherCard({ state, onOpen, onSkip }: RefresherCardProps) {
         </View>
         <Text tone="ink3">›</Text>
       </Pressable>
-      {state.nextUp.length > 0 ? (
-        <Text variant="secondary" tone="ink3">{`Next up: ${state.nextUp.join(", ")}`}</Text>
-      ) : null}
-      <Pressable testID="refresher-skip" onPress={() => onSkip(note.id)} hitSlop={8} style={{ alignSelf: "flex-end" }}>
-        <Text variant="secondary" tone="ink2">
-          Skip
+      <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md }}>
+        <Text variant="secondary" tone="ink3" numberOfLines={1} style={{ flex: 1 }}>
+          {state.nextUp.length > 0 ? `Next up: ${state.nextUp.join(", ")}` : ""}
         </Text>
-      </Pressable>
+        <Pressable testID="refresher-skip" onPress={() => onSkip(note.id)} hitSlop={8}>
+          <Text variant="secondary" tone="ink2">
+            Skip
+          </Text>
+        </Pressable>
+      </View>
     </Card>
   );
 }

@@ -208,11 +208,14 @@ def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:
         if not is_pair or not (finished or answer.proposed):
             continue
 
-        blank = not answer.text.strip()
-        texts = [CUT_OFF_ANSWER if answer.status == models.MessageStatus.FAILED else ""] if blank else [answer.text]
+        # A complete answer that only proposed something reads as its notes alone.
+        if answer.text.strip():
+            lead = [answer.text]
+        else:
+            lead = [CUT_OFF_ANSWER] if answer.status == models.MessageStatus.FAILED else []
         turns += [
             {"role": "user", "content": question.text},
-            {"role": "assistant", "content": "\n\n".join([*[text for text in texts if text], *answer.notes])},
+            {"role": "assistant", "content": "\n\n".join([*lead, *answer.notes])},
         ]
     return turns[-HISTORY_MESSAGES:]
 

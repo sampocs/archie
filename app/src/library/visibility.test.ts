@@ -22,6 +22,9 @@ describe("statusTag", () => {
     [{ kind: "note", state: "consumed", processing: "ready", readAt: null }, "Done"],
     [{ kind: "chat", state: "inbox", processing: "ready", readAt: null }, "Read"],
     [{ kind: "chat", state: "inbox", processing: "processing", readAt: null }, "Processing"],
+    [{ kind: "book", state: "reading", processing: "ready", readAt: null }, "Reading"],
+    [{ kind: "book", state: "reading", processing: "processing", readAt: null }, "Processing"],
+    [{ kind: "book", state: "consumed", processing: "ready", readAt: null }, "Done"],
   ] as const)("%p → %s", (row, expected) => {
     expect(statusTag(row)).toBe(expected);
   });
@@ -83,5 +86,11 @@ describe("upNext", () => {
       "source-woke",
       "source-primer-asleep",
     ]);
+  });
+
+  it("has a reading book's queued primer but never the book", () => {
+    const sources = [source({ id: "book", kind: "book", state: "reading", queuePosition: -3, primerQueuePosition: -2 })];
+
+    expect(upNext(sources, NOW).map((entry) => entry.key)).toEqual(["primer-book"]);
   });
 });

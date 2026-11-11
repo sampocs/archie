@@ -42,6 +42,14 @@ ANSWER_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+WEB_SEARCH_SYSTEM_PROMPT = "Search the web once to confirm the answer, then give it in the schema."
+BOOK_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"author": {"type": "string"}, "year": {"type": "integer"}},
+    "required": ["author", "year"],
+    "additionalProperties": False,
+}
+
 Cassette = Callable[[str], AbstractContextManager[Any]]
 
 
@@ -272,6 +280,46 @@ def test_schema_call_sends_the_schema_and_returns_json(
     [kwargs] = sent
     assert kwargs["output_config"] == {"format": {"type": "json_schema", "schema": ANSWER_SCHEMA}}
     assert "answer" in json.loads(completion.text)
+
+
+@pytest.mark.postgres
+def test_a_web_search_call_with_a_schema_answers_in_one_request_with_only_the_final_json(
+    engine: sqlalchemy.Engine, context: llm.CallContext, cassette: Cassette, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The API takes the search tool with structured output; the answer is the JSON after the searches, and is costed.
+
+    This recording is what `write_book` relies on to research and answer in one call.
+    """
+    sent: list[dict[str, Any]] = []
+    real_create = anthropic.resources.messages.Messages.create
+
+    def spy_create(self: Any, **kwargs: Any) -> Any:
+        sent.append(kwargs)
+        return real_create(self, **kwargs)
+
+    monkeypatch.setattr(anthropic.resources.messages.Messages, "create", spy_create)
+
+    with cassette("llm_web_search_schema"):
+        completion = llm.complete(
+            engine,
+            api_key=os.environ[config.ANTHROPIC_API_KEY_ENV],
+            context=context,
+            models=llm.ModelPair(llm.SONNET),
+            system=WEB_SEARCH_SYSTEM_PROMPT,
+            user_message="Who wrote the book Thinking, Fast and Slow, and in what year was it first published?",
+            max_tokens=4000,
+            json_schema=BOOK_SCHEMA,
+            tools=[llm.WEB_SEARCH_TOOL],
+        )
+
+    [kwargs] = sent
+    assert kwargs["tools"] == [llm.WEB_SEARCH_TOOL]
+    assert json.loads(completion.text) == {"author": "Daniel Kahneman", "year": 2011}
+
+    [call] = _calls(engine)
+    token_cost = llm.cost_usd(model=llm.SONNET, input_tokens=call.input_tokens, output_tokens=call.output_tokens)
+    assert call.cost_usd > token_cost
+    assert (call.cost_usd - token_cost) % llm.WEB_SEARCH_USD == 0
 
 
 @pytest.mark.postgres

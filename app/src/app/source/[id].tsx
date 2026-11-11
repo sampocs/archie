@@ -13,6 +13,7 @@ import { readLater, refreshNote, returnToInbox, setFavorite } from "@/db/actions
 import * as schema from "@/db/schema";
 import { useTargetVersions } from "@/edits/useTargetVersions";
 import { VersionsSheet } from "@/edits/VersionsSheet";
+import { BookBody } from "@/item/BookBody";
 import { CardsSection } from "@/item/CardsSection";
 import { ChatItemBody } from "@/item/ChatItemBody";
 import { confirmExplanation, confirmPrompt } from "@/library/confirmations";
@@ -42,7 +43,7 @@ import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
 import { haptic } from "@/ui/haptics";
 import { primerMarkdown, wordCount } from "@/library/primer";
-import { CHAT_KIND, kindLabel } from "@/ui/sourceLabels";
+import { BOOK_KIND, CHAT_KIND, kindLabel } from "@/ui/sourceLabels";
 import { parseSummary } from "@/ui/summaryContent";
 import { Toast } from "@/ui/Toast";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -107,6 +108,7 @@ export default function SourceScreen() {
   const isConfirmation = source.confirmUrl !== null;
   const isNote = source.kind === "note";
   const isChat = source.kind === CHAT_KIND;
+  const isBook = source.kind === BOOK_KIND;
   const isPendingSender = source.senderPending && !isConfirmation;
   // Both kinds of notice page are bare: no star, menu, badges, actions, summary, note or cards.
   const isNotice = isConfirmation || isPendingSender;
@@ -194,7 +196,10 @@ export default function SourceScreen() {
                   ? { label: "Notes", suffix: source.domain ? asDomain(source.domain) : undefined }
                   : isChat
                     ? { label: kindLabel(CHAT_KIND) }
-                    : undefined
+                    : isBook
+                      ? // A book's kicker is its domain once it's filed; its kind is in the byline.
+                        { label: source.domain ? asDomain(source.domain) : kindLabel(BOOK_KIND) }
+                      : undefined
           }
         />
         <Text testID="item-title" variant="articleTitle">
@@ -206,6 +211,14 @@ export default function SourceScreen() {
           <SenderPrompt source={source} onBlocked={router.back} />
         ) : isChat ? (
           <ChatItemBody source={source} primer={primer} />
+        ) : isBook ? (
+          <BookBody
+            source={source}
+            summary={summaryContent}
+            primerWords={primerWords}
+            onFinish={() => setFinishOpen(true)}
+            onOpenNotes={() => setOriginalOpen(true)}
+          />
         ) : isNote ? (
           <>
             {summaryContent ? (
@@ -237,7 +250,8 @@ export default function SourceScreen() {
         {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
         {isNotice ? null : (
           <>
-            {isNote || isChat ? null : <NoteSection reaction={source.reaction} note={source.note} />}
+            {/* A book shows its thoughts itself, above its background and notes. */}
+            {isNote || isChat || isBook ? null : <NoteSection reaction={source.reaction} note={source.note} />}
             <CardsSection of={{ kind: "source", id: source.id }} />
           </>
         )}
@@ -247,6 +261,7 @@ export default function SourceScreen() {
               <FinishSheet
                 sourceId={source.id}
                 primerWords={primerWords}
+                book={isBook ? { title: source.title ?? kindLabel(BOOK_KIND) } : undefined}
                 visible={finishOpen}
                 onClose={() => setFinishOpen(false)}
               />
@@ -254,6 +269,7 @@ export default function SourceScreen() {
             <ItemMenu
               source={source}
               cardCount={cards.length}
+              primerWords={primerWords}
               summaryVersions={summaryVersions}
               primerVersions={primerVersions}
               onOpenVersions={setVersionsOf}
@@ -268,10 +284,12 @@ export default function SourceScreen() {
             />
           </>
         )}
-        {isNote && source.noteMarkdown ? (
+        {(isNote || isBook) && source.noteMarkdown ? (
           <OriginalNoteSheet
             markdown={source.noteMarkdown}
-            editedAt={source.noteEditedAt ?? source.createdAt}
+            // A book's notes were imported once, not from Bear.
+            editedAt={isBook ? null : (source.noteEditedAt ?? source.createdAt)}
+            title={isBook ? "Your notes" : undefined}
             visible={originalOpen}
             onClose={() => setOriginalOpen(false)}
           />

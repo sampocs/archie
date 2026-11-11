@@ -81,10 +81,38 @@ describe("filterEntries", () => {
   });
 });
 
+describe("filterEntries with books", () => {
+  const books: LibraryData = {
+    ...data,
+    sources: [
+      sourceRow({ id: "reading", kind: "book", state: "reading", primerQueuePosition: -9 }),
+      sourceRow({ id: "reading-snoozed", kind: "book", state: "reading", snoozedUntil: FUTURE }),
+      sourceRow({ id: "finished", kind: "book", state: "consumed" }),
+      sourceRow({ id: "queued", state: "queued" }),
+    ],
+    topicPrimers: [],
+  };
+  const bookKeys = (filter: LibraryFilter): string[] => filterEntries(books, filter).map(entryKey).sort();
+
+  it("Reading lists the books being read; Done has the finished one; All has every book", () => {
+    expect(bookKeys("reading")).toEqual(["source-reading", "source-reading-snoozed"]);
+    expect(bookKeys("done")).toEqual(["source-finished"]);
+    expect(bookKeys("all")).toEqual(["source-finished", "source-queued", "source-reading", "source-reading-snoozed"]);
+  });
+
+  it("Queued has a reading book's queued primer but never the book itself", () => {
+    expect(bookKeys("queued")).toEqual(["queued-primer-reading", "source-queued"]);
+  });
+
+  it("counts Reading without its snoozed books", () => {
+    expect(filterCounts(books, NOW).reading).toBe(1);
+  });
+});
+
 describe("filterCounts", () => {
   it("leaves snoozed entries out", () => {
     // Queued: 3 awake sources + 2 awake primers (the snoozed source and the snoozed primer are left out).
-    expect(filterCounts(data, NOW)).toEqual({ all: 12, queued: 5, done: 4, inbox: 2, primers: 3 });
+    expect(filterCounts(data, NOW)).toEqual({ all: 12, queued: 5, reading: 0, done: 4, inbox: 2, primers: 3 });
   });
 });
 

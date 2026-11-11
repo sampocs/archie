@@ -12,24 +12,32 @@ export type ArtworkTileProps = {
   monogram: string;
   size: number;
   circle?: boolean;
+  /** A 2:3 book cover: `size` is the height, and the width is two thirds of it. */
+  portrait?: boolean;
   unread?: boolean;
   testID?: string;
 };
 
 const DOT_SIZE = 8;
 
-/** Square (or round) artwork; a domain-colored monogram stands in when there is no image or it fails to load. */
-export function ArtworkTile({ imageUrl, domain, monogram, size, circle, unread, testID }: ArtworkTileProps) {
+/**
+ * Square (or round, or a portrait book cover) artwork; a domain-colored monogram stands in when there is no image or
+ * it fails to load.
+ */
+export function ArtworkTile({ imageUrl, domain, monogram, size, circle, portrait, unread, testID }: ArtworkTileProps) {
   const theme = useTheme();
   const [failed, setFailed] = useState(false);
   const showImage = imageUrl !== null && !failed;
 
   useEffect(() => setFailed(false), [imageUrl]);
 
-  const shape = { width: size, height: size, borderRadius: circle ? size / 2 : Math.round(size * 0.22) };
+  const width = portrait ? Math.round((size * 2) / 3) : size;
+  // A cover keeps the small radius of a printed book; other tiles round like app icons.
+  const borderRadius = circle ? size / 2 : portrait ? Math.round(size * 0.06) : Math.round(size * 0.22);
+  const shape = { width, height: size, borderRadius };
 
   return (
-    <View testID={testID} style={{ width: size, height: size }}>
+    <View testID={testID} style={{ width, height: size }}>
       {showImage ? (
         <Image
           source={{ uri: imageUrl }}
@@ -44,7 +52,7 @@ export function ArtworkTile({ imageUrl, domain, monogram, size, circle, unread, 
             { backgroundColor: theme.domains[asDomain(domain)], alignItems: "center", justifyContent: "center" },
           ]}
         >
-          <Text variant="headline" style={{ color: theme.colors.onDomain, fontSize: size * 0.42 }}>
+          <Text variant="headline" style={{ color: theme.colors.onDomain, fontSize: width * 0.42 }}>
             {monogram}
           </Text>
         </View>

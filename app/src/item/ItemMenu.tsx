@@ -9,16 +9,17 @@ import { requestSync } from "@/sync/useSync";
 import { haptic } from "@/ui/haptics";
 import { MenuSheet, type MenuItem } from "@/ui/MenuSheet";
 import { SnoozeSheet } from "@/ui/SnoozeSheet";
-import { CHAT_KIND } from "@/ui/sourceLabels";
 import { TopicChooserSheet } from "@/ui/TopicChooserSheet";
 
 import { makeCardsAction } from "./cardsMenu";
 import { EpisodesSheet } from "./EpisodesSheet";
+import { queueEntries } from "./menuVisibility";
 
 type SourceRow = typeof schema.sources.$inferSelect;
 type ItemMenuProps = {
   source: SourceRow;
   cardCount: number;
+  primerWords: number | null;
   summaryVersions: number;
   primerVersions: number;
   onOpenVersions: (kind: "summary" | "primer") => void;
@@ -34,6 +35,7 @@ type Panel = "topic" | "snooze" | "episodes" | null;
 export function ItemMenu({
   source,
   cardCount,
+  primerWords,
   summaryVersions,
   primerVersions,
   onOpenVersions,
@@ -44,8 +46,7 @@ export function ItemMenu({
   const [panel, setPanel] = useState<Panel>(null);
   const inInbox = source.state === "inbox" || source.state === "briefed";
   const isRead = source.readAt !== null;
-  // A note is read in Today's refresher and a chat item is a reference, so neither is queued or snoozed.
-  const queueable = source.kind !== "note" && source.kind !== CHAT_KIND;
+  const queue = queueEntries(source, primerWords);
   const primerQueued = source.primerQueuePosition !== null;
   const makeCards = makeCardsAction(source, cardCount);
 
@@ -55,7 +56,7 @@ export function ItemMenu({
       label: "Ask about this",
       onPress: () => openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }),
     },
-    ...(!queueable
+    ...(!queue.snooze
       ? []
       : [{ testID: "menu-snooze", label: "Remind me later…", startsGroup: true, onPress: () => setPanel("snooze") }]),
     ...(source.kind === "newsletter" && inInbox
@@ -70,7 +71,7 @@ export function ItemMenu({
           },
         ]
       : []),
-    ...(!queueable
+    ...(!queue.queuePrimer
       ? []
       : [
           {

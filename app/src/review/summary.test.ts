@@ -90,6 +90,9 @@ describe("cardDueLabel", () => {
     ["a card due in 6 days", reviewCard({ dueAt: dayAt(6, 23) }), "Due Wed"],
     ["a card due in 7 days", reviewCard({ dueAt: dayAt(7, 1) }), "Due in 7 days"],
     ["a card not yet reviewable", cardRow({ sourceId: "s9" }), "After you finish"],
+    ["a card that starts later", cardRow({ availableAt: dayAt(19) }), "Starts Nov 24"],
+    ["a card that started", cardRow({ availableAt: dayAt(-1) }), "Due today"],
+    ["a card that starts later of an unfinished source", cardRow({ sourceId: "s9", availableAt: dayAt(19) }), "After you finish"],
     ["a new take card, reviewable at once", cardRow({ sourceId: null, takeId: "k1", kind: "take" }), "Due today"],
   ])("%s → %p", (_, card, label) => {
     expect(cardDueLabel(card, data, NOW)).toBe(label);

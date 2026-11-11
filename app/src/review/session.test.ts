@@ -67,6 +67,16 @@ describe("buildSession", () => {
     expect(session.every(({ wasDue }) => wasDue)).toBe(true);
   });
 
+  it("leaves a card that starts later out of every session until its start", () => {
+    const waiting = cardRow({ id: "waiting", availableAt: dayAt(2) });
+    const withWaiting = { ...data, cards: [...data.cards, waiting] };
+
+    expect(ids(buildSession(withWaiting, "due", null, NOW))).not.toContain("waiting");
+    expect(ids(buildSession(withWaiting, "ahead", null, NOW))).not.toContain("waiting");
+    expect(ids(buildSession(withWaiting, "source", "s1", NOW))).not.toContain("waiting");
+    expect(ids(buildSession(withWaiting, "due", null, new Date(dayAt(2))))).toContain("waiting");
+  });
+
   it("ahead mode: only cards due within 3 days and not due now, none of them due", () => {
     const session = buildSession(data, "ahead", null, NOW);
     expect(session).toEqual([{ card: inTwoDays, wasDue: false }]);

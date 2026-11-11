@@ -14,11 +14,13 @@ export type PlannedReminder = { at: Date; count: number; body: string };
  */
 export function reminderPlan(data: ReviewData, settings: ReviewSettings, now: Date): PlannedReminder[] {
   if (!settings.reminderEnabled) return [];
-  const reviewable = data.cards.filter((card) => isReviewable(card, data));
+  // Counted at each reminder's own time, so a card that starts later is in the reminders from its start on.
+  const countAt = (at: Date): number =>
+    data.cards.filter((card) => isReviewable(card, data, at) && effectiveDue(card) <= at.getTime()).length;
 
   return Array.from({ length: REMINDER_DAYS }, (_, offset) => reminderTime(now, offset, settings.reminderMinutes))
     .filter((at) => at.getTime() > now.getTime())
-    .map((at) => ({ at, count: reviewable.filter((card) => effectiveDue(card) <= at.getTime()).length }))
+    .map((at) => ({ at, count: countAt(at) }))
     .filter((reminder) => reminder.count > 0)
     .map(({ at, count }) => ({ at, count, body: `${cardsWord(count)} · about ${minutesFor(count)} min` }));
 }

@@ -34,7 +34,7 @@ appId: com.sampocs.archie
 # Not add_link's article: that one is saved by a non-owner first, and re-sharing it merges into its failed row.
 - inputText: "https://paulgraham.com/ds.html"
 # The reaction row pushes Save under the keyboard; tapping the screen's hint text dismisses it.
-- tapOn: "Paste a link to save it."
+- tapOn: "Paste a link, or type a book's title."
 - tapOn:
     id: "intent-finished"
 - tapOn:

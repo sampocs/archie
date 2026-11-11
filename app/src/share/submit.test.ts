@@ -1,10 +1,12 @@
 import { EMPTY_CHOICE } from "@/capture/types";
 
 import {
+  buildAddBookAction,
   buildCollectionShareActions,
   buildShareAction,
   decodeShareParam,
   encodeShareParam,
+  shareBookDeepLink,
   shareDeepLink,
   submitShare,
 } from "./submit";
@@ -62,6 +64,48 @@ describe("buildShareAction", () => {
 
     expect((payload as { capture: { title: string } }).capture.title).toBe(Array.from(title).slice(0, 500).join(""));
     expect((payload as { capture: { title: string } }).capture.title).not.toMatch(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+  });
+});
+
+describe("buildAddBookAction", () => {
+  const match = {
+    title: "Thinking, Fast and Slow",
+    author: "Daniel Kahneman",
+    year: 2011,
+    coverUrl: "https://images.gr-assets.com/books/1.jpg",
+    url: "https://www.goodreads.com/book/show/11468377-thinking-fast-and-slow",
+  };
+
+  it("builds add_book with the match and the trimmed thoughts of a finished book", () => {
+    const action = buildAddBookAction({ match, choice: { state: "finished", note: "  System 1 vs 2  " } });
+
+    expect(action.type).toBe("add_book");
+    expect(action.id).not.toBe((action.payload as { id: string }).id);
+    expect(action.payload).toEqual({
+      id: expect.any(String),
+      url: "https://www.goodreads.com/book/show/11468377-thinking-fast-and-slow",
+      title: "Thinking, Fast and Slow",
+      author: "Daniel Kahneman",
+      image_url: "https://images.gr-assets.com/books/1.jpg",
+      state: "finished",
+      note: "System 1 vs 2",
+    });
+  });
+
+  it("sends no thoughts for a reading book, and nulls for an unknown author and cover", () => {
+    const { payload } = buildAddBookAction({
+      match: { ...match, author: null, coverUrl: null },
+      choice: { state: "reading", note: "typed before switching back" },
+    });
+
+    expect(payload).toEqual({
+      id: expect.any(String),
+      url: match.url,
+      title: match.title,
+      author: null,
+      image_url: null,
+      state: "reading",
+    });
   });
 });
 
@@ -241,5 +285,19 @@ describe("shareDeepLink for a collection", () => {
 describe("encodeShareParam", () => {
   it.each(["plain", "https://x.com/a?b=c&d=%20e#f", "~tilde~ and 100%", "emoji \u{1F600} é"])("round-trips %s", (value) => {
     expect(decodeShareParam(encodeShareParam(value))).toBe(value);
+  });
+});
+
+describe("shareBookDeepLink", () => {
+  const match = { title: "A & B = C", author: null, year: null, coverUrl: null, url: "https://goodreads.com/book/show/1-a" };
+
+  it("carries book=1, the url, title and state, and thoughts only for a finished book", () => {
+    expect(shareBookDeepLink({ match, choice: { state: "finished", note: "100% this" } })).toBe(
+      `share?book=1&url=${encodeShareParam(match.url)}&title=${encodeShareParam("A & B = C")}&state=finished` +
+        `&note=${encodeShareParam("100% this")}`,
+    );
+    expect(shareBookDeepLink({ match, choice: { state: "reading", note: "dropped" } })).toBe(
+      `share?book=1&url=${encodeShareParam(match.url)}&title=${encodeShareParam("A & B = C")}&state=reading`,
+    );
   });
 });

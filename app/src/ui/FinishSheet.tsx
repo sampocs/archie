@@ -15,8 +15,15 @@ import { useTheme } from "@/theme/useTheme";
 import { BottomSheet } from "./BottomSheet";
 import { haptic } from "./haptics";
 
-// `primerWords` gives the queued primer's reading time; null while the primer is still being written.
-type FinishSheetProps = { sourceId: string; primerWords: number | null; visible: boolean; onClose: () => void };
+// `primerWords` gives the queued primer's reading time; null while the primer is still being written. `book` turns the
+// sheet into a book's "Finished it": thoughts only.
+type FinishSheetProps = {
+  sourceId: string;
+  primerWords: number | null;
+  book?: { title: string };
+  visible: boolean;
+  onClose: () => void;
+};
 
 const VERDICTS: { reaction: Reaction; label: string; signal: Signal }[] = [
   { reaction: "easy", label: "Easy", signal: "gotIt" },
@@ -26,9 +33,10 @@ const VERDICTS: { reaction: Reaction; label: string; signal: Signal }[] = [
 
 /**
  * "How'd it go?": both the verdict and the note are optional, so Save alone marks the source done. "Parts lost me"
- * adds a "Queue the primer" row, ticked by default, so Save also queues the primer unless it's unticked.
+ * adds a "Queue the primer" row, ticked by default, so Save also queues the primer unless it's unticked. A book's
+ * variant ("Finished <title>") asks only what stuck, which steers its refresher and cards; Done finishes it.
  */
-export function FinishSheet({ sourceId, primerWords, visible, onClose }: FinishSheetProps) {
+export function FinishSheet({ sourceId, primerWords, book, visible, onClose }: FinishSheetProps) {
   const theme = useTheme();
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const [note, setNote] = useState("");
@@ -40,6 +48,26 @@ export function FinishSheet({ sourceId, primerWords, visible, onClose }: FinishS
     haptic("success");
     requestSync();
     onClose();
+  }
+
+  if (book) {
+    return (
+      <BottomSheet visible={visible} onClose={onClose} testID="finish-sheet">
+        <Text variant="headline">{`Finished ${book.title}`}</Text>
+        <TextField
+          testID="finish-note"
+          placeholder="What stuck with you?"
+          value={note}
+          onChangeText={setNote}
+          maxLength={2000}
+          multiline
+        />
+        <Text variant="secondary" tone="ink3">
+          Archie researches the book and writes a refresher and cards, focused on what you mention.
+        </Text>
+        <Button testID="finish-save" label="Done" onPress={save} />
+      </BottomSheet>
+    );
   }
 
   return (

@@ -25,6 +25,12 @@ describe("reminderPlan", () => {
     expect(plan.map(({ at }) => at)).toEqual([1, 2, 3, 4, 5, 6].map((days) => new Date(dayAt(days, 7, 15))));
   });
 
+  it("counts a card that starts later only in the reminders from its start on", () => {
+    const plan = reminderPlan(reviewData([cardRow({ availableAt: dayAt(2, 9) })]), DEFAULT_REVIEW_SETTINGS, NOW);
+
+    expect(plan.map(({ at }) => at)).toEqual([2, 3, 4, 5, 6].map(evening));
+  });
+
   it("counts every card due by then and leaves out unreviewable ones", () => {
     const cards = [
       ...Array.from({ length: 11 }, (_, index) => cardRow({ id: `new-${index}` })),

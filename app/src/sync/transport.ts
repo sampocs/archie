@@ -298,6 +298,7 @@ export function createDbSyncStore(
             senderAddress: source.sender_address ?? null,
             senderPending: source.sender_pending ?? false,
             chatConversationId: source.chat_conversation_id ?? null,
+            author: source.author ?? null,
           };
           tx.insert(schema.sources)
             .values({ id: source.id, ...values })
@@ -347,6 +348,7 @@ export function createDbSyncStore(
             conversationId: card.conversation_id ?? null,
             messageId: card.message_id ?? null,
             version: card.version ?? 1,
+            availableAt: card.available_at ?? null,
           };
           tx.insert(schema.cards)
             .values({ id: card.id, ...values })

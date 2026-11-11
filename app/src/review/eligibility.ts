@@ -44,10 +44,11 @@ export function cardOrigin(card: CardRow): CardOrigin {
 /**
  * A card joins reviews only once you've taken in what it came from: a source's cards once it is consumed, foundation
  * cards once their primer was opened, take cards, chat cards and a chat item's cards at once. Quiz cards are answered
- * only in the quiz.
+ * only in the quiz. A card with `availableAt` (an imported book's, released over a few weeks) also waits until then.
  */
-export function isReviewable(card: CardRow, data: ReviewData): boolean {
+export function isReviewable(card: CardRow, data: ReviewData, now: Date = new Date()): boolean {
   if (card.deletedAt !== null) return false;
+  if (!isAvailable(card, now)) return false;
   const origin = cardOrigin(card);
   switch (origin.kind) {
     case "source": {
@@ -75,6 +76,11 @@ export function isReviewable(card: CardRow, data: ReviewData): boolean {
     case "unknown":
       return false;
   }
+}
+
+/** Whether a card's start time has come: no `availableAt`, or one at or before `now`. */
+export function isAvailable(card: Pick<CardRow, "availableAt">, now: Date): boolean {
+  return card.availableAt === null || Date.parse(card.availableAt) <= now.getTime();
 }
 
 /** A quiz card that can still be answered: not answered yet and not expired. */

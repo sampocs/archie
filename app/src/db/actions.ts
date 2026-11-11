@@ -1,9 +1,11 @@
 import { randomUUID } from "expo-crypto";
 
+import type { BookState } from "@/books/books";
 import type { Intent, Reaction } from "@/capture/types";
 import { wireState, type FsrsFields, type GradedBy, type ReviewGrade } from "@/review/types";
 import { MAX_TAKE_BODY_LENGTH, MAX_TAKE_TITLE_LENGTH, saveMakesVersion, type TakeKind } from "@/takes/takes";
 import type { DomainName } from "@/topics/domains";
+import { BOOK_KIND, READING_STATE } from "@/ui/sourceLabels";
 
 import { and, eq, inArray, isNotNull, isNull, max, min, sql } from "drizzle-orm";
 import type { SQLiteUpdateSetSource } from "drizzle-orm/sqlite-core";
@@ -16,6 +18,7 @@ import * as schema from "./schema";
 
 export type ActionType =
   | "add_source"
+  | "add_book"
   | "retry_source"
   | "finish_source"
   | "set_read"
@@ -194,6 +197,63 @@ export async function addSource(
   return id;
 }
 
+/**
+ * A book from the + sheet or the share sheet. Reading queues its primer (the server writes it and puts it at the top
+ * of the queue; the book itself never is); Finished carries the owner's thoughts, which steer the refresher and cards.
+ * The server dedupes by URL, so adding a book already being read as Finished finishes that one.
+ */
+export function addBook(
+  db: AppDb,
+  input: {
+    url: string;
+    title: string;
+    author: string | null;
+    imageUrl: string | null;
+    state: BookState;
+    note?: string | null;
+  },
+): string {
+  const id = randomUUID();
+  const now = new Date().toISOString();
+  const reading = input.state === "reading";
+  // The server takes thoughts only with a finished book.
+  const note = reading ? null : input.note?.trim() || null;
+
+  db.transaction((tx) => {
+    tx.insert(schema.sources)
+      .values({
+        id,
+        url: input.url,
+        title: input.title,
+        author: input.author,
+        imageUrl: input.imageUrl,
+        kind: BOOK_KIND,
+        state: reading ? READING_STATE : "consumed",
+        // Unused for books; the server stores "finished" for both states.
+        intent: "finished",
+        note,
+        primerQueuePosition: reading ? topQueuePosition(tx) : null,
+        // The primer or the refresher starts writing as soon as the action lands.
+        processing: "processing",
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
+
+    enqueue(tx, "add_book", {
+      id,
+      url: input.url,
+      title: input.title,
+      author: input.author,
+      image_url: input.imageUrl,
+      state: input.state,
+      ...(note ? { note } : {}),
+    });
+  });
+
+  return id;
+}
+
 // Optimistically shows "Processing" while the retry action syncs; the server's pulled status replaces it.
 export async function retrySource(db: AppDb, sourceId: string): Promise<void> {
   db.transaction((tx) => {
@@ -212,8 +272,12 @@ export function finishSource(
   db.transaction((tx) => {
     const source = tx.select().from(schema.sources).where(eq(schema.sources.id, input.sourceId)).get();
     // A finished newsletter is analyzed again so it gets cards. The phone can't see the server's jobs, so it only
-    // shows that for a ready one; for one still processing the server decides and the next pull shows it.
-    const reanalyze = source?.kind === "newsletter" && source.processing === "ready" ? { processing: "processing", processingError: null } : {};
+    // shows that for a ready one; for one still processing the server decides and the next pull shows it. A finished
+    // book always gets its refresher written.
+    const reanalyze =
+      (source?.kind === "newsletter" && source.processing === "ready") || source?.kind === BOOK_KIND
+        ? { processing: "processing", processingError: null }
+        : {};
     updateSource(tx, input.sourceId, {
       state: "consumed",
       snoozedUntil: null,

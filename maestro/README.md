@@ -24,6 +24,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `newsletter_*.yaml` + `run_newsletter.sh` | Log in, deliver a newsletter through `/ingest/email`, Add to queue then Undo (toast), Make review cards from the ••• menu |
 | `brief.yaml` + `run_brief.sh` | Log in, deliver a news newsletter and an essay through `/ingest/email`, wait for the Today brief preview, open the brief, open a story's sources ("Covered by"), back, queue the essay, Done, the preview disappears (real keys, a few cents) |
 | `review.yaml` | Finish an article, its cards reach Today, review a typed answer (graded by Haiku, accepted answer shown), Next, Drop the rest to the Done screen with the Dropped tally (real keys, a few cents) |
+| `books.yaml` | Type a book's title in the Library ＋, Find book (live Open Library lookup), keep Reading, Add book; the book is under Library ▸ Reading, its page waits for the primer, and the primer is in Up next (spends a few cents: one book primer; `make maestro-books`) |
 | `sign_out.yaml` | Dev login, Settings tab, Sign out, back on the Apple sign-in screen |
 | `offline_*.yaml` + `run_offline.sh` | Add a link with the backend down ("1 change waiting"), restart it, the change syncs and the title arrives |
 | `share_sheet.yaml` | Safari → Share → Archie opens the share sheet, and a screenshot of it matches `screenshots/share_sheet.png` (text drawn, Cancel on screen) |
@@ -51,7 +52,8 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 10. `make maestro-ask` with the backend up (`make start-local`): runs `ask.yaml`, which waits for analyze and embeddings, then a Sonnet 5.5 answer, then taps Make cards and waits for the proposed card set. Needs the owner's keys in `.env` (`OPENAI_API_KEY` too, for embeddings); spends a few cents.
 11. `make maestro-edit` with the backend up (`make start-local`): runs `edit.yaml`, which waits for analyze and the primer, then a Sonnet 5.5 answer that proposes an edit; it taps Apply and Undo and opens Summary versions. Same `.env` needs as `maestro-ask`; spends a few cents.
 12. `make maestro-chat-cards` with the backend up (`make start-local`): runs `run_chat_cards.sh`, which seeds a chat holding a card-set proposal (`fixtures/chat_cards.json`) through `POST /test/card-sets` without a model, then `chat_cards.yaml` opens the chat, previews the cheat sheet, unticks a card, switches to See all, saves, opens the new Chat item and its original, and `review_browse.yaml` browses and practices those cards on the Review tab. Spends nothing on models (the save queues one embedding).
-13. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
+13. `make maestro-books` with the backend up (`make start-local`): runs `books.yaml`, which looks a title up on Open Library for real and waits up to 4 minutes for the book primer. Needs the owner's keys in `.env`; spends a few cents (one book primer).
+14. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
 
 These targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
 

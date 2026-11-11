@@ -22,7 +22,7 @@ appId: com.sampocs.archie
 # A path and a name no other flow uses: `make maestro` keeps one user's data across flows.
 - inputText: "https://example.com/collections-flow"
 # Dismiss the keyboard: it covers Save.
-- tapOn: "Paste a link to save it."
+- tapOn: "Paste a link, or type a book's title."
 - tapOn:
     id: "intent-collection"
 # No collections yet, so the dropdown reads "New collection…" and Save asks for the name.

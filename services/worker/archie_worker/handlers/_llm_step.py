@@ -8,6 +8,7 @@ write lock and write.
 from __future__ import annotations
 
 import uuid
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any
 
@@ -74,6 +75,7 @@ def call_model(
     system: str,
     max_tokens: int,
     json_schema: dict[str, Any] | None = None,
+    tools: Sequence[Mapping[str, Any]] | None = None,
 ) -> llm.Completion:
     """Make the model call on its own connection, so no transaction of `db` is open meanwhile."""
     engine = db.get_bind()
@@ -88,6 +90,7 @@ def call_model(
         user_message=run.user_message,
         max_tokens=max_tokens,
         json_schema=json_schema,
+        tools=tools,
     )
 
 

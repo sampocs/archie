@@ -1,0 +1,78 @@
+appId: com.sampocs.archie
+---
+# A book, end to end: type a title in the Library ＋, Find book (the live Open Library lookup), keep Reading, Add book;
+# the book is under Library ▸ Reading, its page waits for the spoiler-free primer, and the primer is in Up next.
+# Needs the owner's keys: the worker writes the book primer with Anthropic and web search (a few cents). Run it only
+# against `make start-local` with ANTHROPIC_API_KEY in .env (local backend only).
+- runFlow: login.yaml
+- openLink: archie://dev/login?whitelisted=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible: "Library"
+    timeout: 15000
+- tapOn:
+    id: "library-add"
+# The first tap right after login is sometimes swallowed while the screen settles.
+- runFlow:
+    when:
+      notVisible:
+        id: "add-url"
+    commands:
+      - tapOn:
+          id: "library-add"
+- extendedWaitUntil:
+    visible:
+      id: "add-url"
+    timeout: 5000
+- tapOn:
+    id: "add-url"
+- inputText: "the spy and the traitor"
+# The keyboard hides the button; tapping the screen's hint text dismisses it.
+- tapOn: "Paste a link, or type a book's title."
+# Text that isn't a link is a book: the link options step aside for Find book.
+- assertNotVisible:
+    id: "intent-queue"
+- tapOn:
+    id: "add-find-book"
+- extendedWaitUntil:
+    visible:
+      id: "book-match"
+    timeout: 20000
+- assertVisible: ".*Spy and the Traitor.*"
+- assertVisible: "Not it? Edit the title and search again."
+# Reading is the default.
+- assertVisible: "You'll get a spoiler-free primer now. Tap Finished it on the book when you're done."
+- tapOn:
+    id: "add-book"
+# Adding lands on Library; the book lives under the Reading filter.
+- extendedWaitUntil:
+    visible:
+      id: "filter-reading"
+    timeout: 5000
+- tapOn:
+    id: "filter-reading"
+- extendedWaitUntil:
+    visible: ".*Spy and the Traitor.*Book.*"
+    timeout: 10000
+- tapOn: ".*Spy and the Traitor.*Book.*"
+- assertVisible: "Reading · since .*"
+- assertVisible:
+    id: "book-finish"
+- assertVisible: "Cards come when you finish the book."
+# One wait only (Maestro shares the timeout across consecutive waits): the primer button shows its reading time once
+# the primer has synced.
+- extendedWaitUntil:
+    visible: "◆ Primer · .* min"
+    timeout: 240000
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "tab-today"
+# The book itself is never in Up next; its queued primer is, as its own row.
+- assertVisible: ".*Primer: .*Spy and the Traitor.*"

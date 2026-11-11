@@ -7,3 +7,13 @@ export function extractFirstUrl(text: string): string | null {
   if (!match) return null;
   return match[0].replace(TRAILING_PUNCTUATION, "");
 }
+
+/** True for text that is an http(s) URL on its own (surrounding whitespace allowed). */
+export function isHttpUrl(text: string): boolean {
+  try {
+    const protocol = new URL(text.trim()).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+}

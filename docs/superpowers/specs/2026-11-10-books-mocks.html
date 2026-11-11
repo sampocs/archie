@@ -1,0 +1,188 @@
+<title>Archie Books</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: a wall of numbered phone mocks (one column on a phone), each with a caption; phones use the app's light tokens. */
+:root {
+  --page: #E9E6DE; --pageInk: #1C1B18; --pageInk2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --history: #8E5468; --swe: #3D6690; --macro: #3F7262;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace; --serif: "Newsreader", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --pageInk: #F1EFE9; --pageInk2: #A9A59B; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --pageInk: #F1EFE9; --pageInk2: #A9A59B; color-scheme: dark }
+body { background: var(--page); color: var(--pageInk); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+header { max-width: 1280px; margin: 0 auto 26px; display: grid; gap: 6px; }
+.n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pageInk2); }
+h1 { font-size: 28px; letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--pageInk2); max-width: 72ch; line-height: 1.5; font-size: 15px; }
+.row { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px 26px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; min-width: 0; }
+figcaption b { font-size: 15px; }
+figcaption span { color: var(--pageInk2); font-size: 13.5px; line-height: 1.45; }
+.phone { width: 100%; max-width: 300px; aspect-ratio: 300 / 640; background: var(--bg); color: var(--ink); border-radius: 38px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-size: 13px; }
+.screen { position: absolute; inset: 0; padding: 38px 14px 84px; display: flex; flex-direction: column; gap: 11px; overflow: hidden; }
+.nav { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink2); }
+.nav b { color: var(--ink); font-size: 15px; }
+.big { font-size: 28px; font-weight: 700; letter-spacing: -.03em; }
+.field { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.field.typed { color: var(--ink); } .ph { color: var(--ink3); }
+.hint { color: var(--ink2); font-size: 12.5px; }
+.primary { background: var(--chrome); color: var(--onChrome); border-radius: 14px; padding: 11px; text-align: center; font-weight: 600; }
+.primary.off { opacity: .35; }
+.secondary { background: var(--press); border-radius: 14px; padding: 10px; text-align: center; font-weight: 600; }
+.or { display: flex; align-items: center; gap: 10px; color: var(--ink3); font: 500 10px var(--mono); }
+.or::before, .or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.take { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; display: flex; justify-content: space-between; font-weight: 600; }
+.match { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; grid-template-columns: 46px minmax(0,1fr); gap: 12px; align-items: center; }
+.cover { width: 46px; aspect-ratio: 2 / 3; border-radius: 4px; display: grid; place-items: end start; padding: 4px; box-sizing: border-box; color: #fff; font: 600 6.5px/1.1 var(--serif); box-shadow: inset -3px 0 0 rgba(0,0,0,.18); }
+.cover.lg { width: 64px; font-size: 8.5px; padding: 6px; }
+.spy { background: linear-gradient(160deg, #2C3A4A, #8E2F2A); }
+.tfs { background: linear-gradient(160deg, #E8E1C8, #C9B98C); color: #2A2620; }
+.t { font-weight: 600; font-size: 13.5px; line-height: 1.25; }
+.s { color: var(--ink3); font-size: 11.5px; }
+.link { font-size: 12px; color: var(--ink2); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--press); border-radius: 12px; padding: 3px; gap: 3px; }
+.seg div { text-align: center; padding: 8px; border-radius: 9px; font-weight: 600; color: var(--ink2); }
+.seg .on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.lab { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 58px; line-height: 1.45; }
+.box .mic { float: right; color: var(--ink3); }
+.kick { font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; }
+.title { font: 600 22px/1.15 var(--serif); letter-spacing: -.01em; }
+.badge { display: inline-flex; align-self: flex-start; gap: 6px; align-items: center; background: var(--press); border-radius: 999px; padding: 3px 9px; font-size: 11.5px; font-weight: 600; color: var(--ink2); }
+.badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--history); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 6px; }
+.card p { margin: 0; line-height: 1.45; color: var(--ink2); font-size: 12.5px; }
+.sec { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; margin-top: 2px; }
+.read { line-height: 1.5; font-size: 12.5px; margin: 0; }
+.idea b { font-weight: 600; }
+.chev { display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
+.chev span { color: var(--ink3); }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 4px 10px; font-size: 11.5px; color: var(--ink2); }
+.chip.on { background: var(--chrome); color: var(--onChrome); border-color: var(--chrome); }
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.li { display: grid; grid-template-columns: 30px minmax(0,1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.li:last-child { border-bottom: 0; }
+.li .cover { width: 30px; font-size: 0; padding: 0; }
+.pill { font-size: 10.5px; font-weight: 600; color: var(--history); background: color-mix(in srgb, var(--history) 12%, transparent); border-radius: 999px; padding: 2px 7px; }
+.dim { position: absolute; inset: 0; background: rgba(0,0,0,.3); }
+.sheet { position: absolute; left: 0; right: 0; bottom: 0; background: var(--bg); border-radius: 22px 22px 0 0; padding: 10px 16px 26px; display: grid; gap: 11px; box-shadow: 0 -10px 30px rgba(0,0,0,.18); }
+.grab { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 2px; }
+.share { position: absolute; left: 0; right: 0; bottom: 0; top: 70px; background: var(--bg); border-radius: 18px 18px 0 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 11px; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; border-top: 1px solid var(--line); background: var(--bg);
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 9px; font-size: 9.5px; color: var(--ink3); text-align: center; }
+.tabbar .on { color: var(--ink); font-weight: 600; }
+.dot { width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 6px; border: 1.6px solid currentColor; }
+.on .dot { background: currentColor; }
+.gr { background: #F4F1EA; position: absolute; inset: 0; padding: 40px 16px; color: #382110; font-family: var(--serif); }
+</style>
+<header>
+  <span class="n">ARCHIE · BOOKS</span>
+  <h1>Books: add, read, finish</h1>
+  <p>A book is one item for its whole life. You add it as Reading (it gets a spoiler-free primer and lives only in Library) or Finished (Archie researches it and writes a refresher plus cards). Finishing later turns the same item into a finished book. Example books are public titles, not your notes.</p>
+</header>
+<div class="row">
+
+<figure><div class="phone"><div class="screen">
+  <div class="nav"><b>Add</b><span>Cancel</span></div>
+  <span class="hint">Paste a link, or type a book's title.</span>
+  <div class="field typed">the spy and the traitor</div>
+  <div class="secondary">Paste</div>
+  <div class="primary">Find book</div>
+  <div class="or">OR</div>
+  <div class="take">✎ Write a take <span style="color:var(--ink3)">›</span></div>
+</div></div>
+<figcaption><span class="n">1 · + SHEET, TYPED TITLE</span><b>Text that isn't a link means a book</b><span>The link field takes any text. When it isn't a URL, Save becomes Find book and the link options (Finished / Queue it / collection) step aside.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <div class="nav"><b>Add</b><span>Cancel</span></div>
+  <div class="field typed">the spy and the traitor</div>
+  <div class="match"><div class="cover spy">The Spy and the Traitor</div>
+    <div><div class="t">The Spy and the Traitor</div><div class="s">Ben Macintyre · 2018</div></div></div>
+  <span class="link">Not it? Edit the title and search again.</span>
+  <div class="seg"><div class="on">Reading</div><div>Finished</div></div>
+  <span class="hint">You'll get a spoiler-free primer now. Tap Finished it on the book when you're done.</span>
+  <div class="primary">Add book</div>
+</div></div>
+<figcaption><span class="n">2 · + SHEET, MATCH FOUND</span><b>Confirm the book, then Reading or Finished</b><span>Archie looks the title up and shows its best match with the cover. Reading is the default.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen" style="padding:0">
+  <div class="gr"><div style="font-size:20px;font-weight:600">Thinking, Fast and Slow</div><div style="font-size:14px">Daniel Kahneman</div></div>
+  <div class="dim"></div>
+  <div class="share">
+    <div class="nav"><span>Cancel</span><b>Archie</b><span></span></div>
+    <div class="match"><div class="cover tfs">Thinking, Fast and Slow</div>
+      <div><div class="t">Thinking, Fast and Slow</div><div class="s">Daniel Kahneman · 2011 · Goodreads</div></div></div>
+    <div class="seg"><div>Reading</div><div class="on">Finished</div></div>
+    <span class="lab">What stuck with you? (optional)</span>
+    <div class="box">System 1 vs 2 was the big one. The anchoring chapter too. <span class="mic">🎙</span></div>
+    <div class="primary">Add book</div>
+  </div>
+</div></div>
+<figcaption><span class="n">3 · SHARE FROM GOODREADS</span><b>Same choice from the share sheet</b><span>A Goodreads book link is recognized as a book. Finished opens the optional thoughts box, typed or dictated; they steer the refresher and cards.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <div class="nav"><span>‹ Library</span><span>•••</span></div>
+  <div style="display:flex;gap:12px;align-items:flex-end">
+    <div class="cover lg spy">The Spy and the Traitor</div>
+    <div style="display:grid;gap:4px"><span class="kick" style="color:var(--history)">History</span><div class="title">The Spy and the Traitor</div><div class="s">Ben Macintyre · Book</div></div>
+  </div>
+  <span class="badge"><i></i>Reading · since Nov 10</span>
+  <div class="card"><div class="chev">Before you read <span>6 min ›</span></div>
+    <p>Who Gordievsky was, how the KGB and MI6 worked in the 1970s, and the Cold War stakes of 1983. No spoilers.</p></div>
+  <div class="primary">Finished it</div>
+  <span class="sec">Cards</span>
+  <span class="s">Cards come when you finish the book.</span>
+</div><div class="tabbar"><div class="on"><div class="dot"></div>Library</div><div><div class="dot"></div>Review</div><div><div class="dot"></div>Today</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Settings</div></div></div>
+<figcaption><span class="n">4 · BOOK PAGE, READING</span><b>The primer and one button</b><span>The page holds the primer and Finished it. It never shows on Today or in Up next.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <div class="nav"><span>‹ Library</span><span>•••</span></div>
+  <div style="display:flex;gap:12px;align-items:flex-end">
+    <div class="cover lg spy">The Spy and the Traitor</div>
+    <div style="display:grid;gap:4px"><span class="kick" style="color:var(--history)">History</span><div class="title">The Spy and the Traitor</div></div>
+  </div>
+  <div class="dim"></div>
+  <div class="sheet"><div class="grab"></div>
+    <b style="font-size:16px">Finished The Spy and the Traitor</b>
+    <span class="lab">What stuck with you? (optional)</span>
+    <div class="box"><span class="ph">A few thoughts, typed or dictated</span><span class="mic">🎙</span></div>
+    <span class="hint">Archie researches the book and writes a refresher and cards, focused on what you mention.</span>
+    <div class="primary">Done</div>
+  </div>
+</div></div>
+<figcaption><span class="n">5 · FINISHED IT</span><b>A couple of thoughts, then done</b><span>The same sheet the share extension shows. Sharing the Goodreads link again for a book you're reading opens this too, instead of adding a second copy.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <div class="nav"><span>‹ Library</span><span>•••</span></div>
+  <div style="display:flex;gap:12px;align-items:flex-end">
+    <div class="cover lg tfs">Thinking, Fast and Slow</div>
+    <div style="display:grid;gap:4px"><span class="kick" style="color:var(--macro)">Psychology</span><div class="title">Thinking, Fast and Slow</div><div class="s">Daniel Kahneman · Book · 7 min read</div></div>
+  </div>
+  <span class="badge"><i style="background:var(--macro)"></i>Finished Nov 10</span>
+  <p class="read">Kahneman splits thinking into a fast, intuitive System 1 and a slow, effortful System 2, and shows how System 1's shortcuts produce predictable errors.</p>
+  <span class="sec">Key ideas</span>
+  <p class="read idea"><b>Two systems.</b> System 1 answers instantly from patterns; System 2 checks it, but is lazy.</p>
+  <p class="read idea"><b>Anchoring.</b> Any number you see first pulls your estimate toward it.</p>
+  <div class="chev" style="font-size:12.5px">Background you might need <span>›</span></div>
+  <div class="chev" style="font-size:12.5px">Cards · 8 <span>›</span></div>
+</div></div>
+<figcaption><span class="n">6 · BOOK PAGE, FINISHED</span><b>The refresher, like any item</b><span>Gist, key ideas and numbers; your thoughts under "Your note"; the primer folds into "Background you might need"; cards join reviews now.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <div class="big">Library</div>
+  <div class="field"><span class="ph">Search</span></div>
+  <div class="chips"><span class="chip">All</span><span class="chip">Queued</span><span class="chip on">Reading</span><span class="chip">Done</span></div>
+  <div class="list">
+    <div class="li"><div class="cover spy"></div><div><div class="t">The Spy and the Traitor</div><div class="s">Book · History · since Nov 10</div></div><span class="pill">Reading</span></div>
+    <div class="li"><div class="cover" style="background:linear-gradient(160deg,#30473C,#7FA08C)"></div><div><div class="t">The Origin of Wealth</div><div class="s">Book · Macro · since Oct 2</div></div><span class="pill">Reading</span></div>
+  </div>
+</div><div class="tabbar"><div class="on"><div class="dot"></div>Library</div><div><div class="dot"></div>Review</div><div><div class="dot"></div>Today</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Settings</div></div></div>
+<figcaption><span class="n">7 · LIBRARY, READING FILTER</span><b>Where books in progress live</b><span>A Reading filter next to the existing ones, and a Reading pill on each row.</span></figcaption></figure>
+
+</div>

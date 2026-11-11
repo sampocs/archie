@@ -41,6 +41,7 @@ export const cardRow = (overrides: Partial<CardRow>): CardRow => ({
   conversationId: null,
   messageId: null,
   version: 1,
+  availableAt: null,
   ...overrides,
 });
 

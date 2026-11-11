@@ -128,7 +128,9 @@ def set_cards_off(db: orm.Session, *, user: models.User, payload: dict[str, obje
 
     A note is never analyzed: cards on for a refreshed note re-queues its `note_cards` job, and for an unrefreshed
     one only flips the flag (the refresher writes its cards when it is refreshed). Neither is a chat item: cards on
-    only flips the flag, since Save in the chat writes its cards (and turns them back on).
+    only flips the flag, since Save in the chat writes its cards (and turns them back on). Nor is a book (its text is
+    its own refresher): cards on for a finished book with a refresher re-queues `book_cards`, and otherwise only flips
+    the flag (finishing it writes its cards).
     """
     parsed = rows.parse(_CardsOffPayload, payload)
     if parsed is None:
@@ -148,6 +150,9 @@ def set_cards_off(db: orm.Session, *, user: models.User, payload: dict[str, obje
         return None
     if source.kind == models.SourceKind.CHAT:
         return None
+    if source.kind == models.SourceKind.BOOK:
+        _requeue_book_cards(db, source=source)
+        return None
 
     # Only a source with text can be analyzed again; one still fetching gets its cards when its analyze runs.
     has_text = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT) is not None
@@ -166,6 +171,14 @@ def _requeue_note_cards(db: orm.Session, *, source: models.Source) -> None:
         user_id=source.user_id,
         payload={pipeline.SOURCE_ID_KEY: str(source.id)},
     )
+
+
+def _requeue_book_cards(db: orm.Session, *, source: models.Source) -> None:
+    has_refresher = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.SUMMARY) is not None
+    is_finished = source.state == models.SourceState.CONSUMED
+    if not (is_finished and has_refresher) or rows.has_pending_job(db, source=source, kind=models.JobKind.BOOK_CARDS):
+        return
+    pipeline.enqueue_steps(db, source=source, steps=[models.JobKind.BOOK_CARDS])
 
 
 def request_news_quiz(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:

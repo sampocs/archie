@@ -53,7 +53,7 @@ export function buildSession(
       .map((card) => ({ card, wasDue: true }));
   }
 
-  const reviewable = data.cards.filter((card) => isReviewable(card, data));
+  const reviewable = data.cards.filter((card) => isReviewable(card, data, now));
   if (mode === "shuffle") return asSession(shufflePick(reviewable, SHUFFLE_COUNT, random), now);
   if (mode === "missed") return asSession(missedCards(data, now).map(({ card }) => card), now);
 

@@ -29,6 +29,7 @@ The core problem is **integration, not consumption**. Carl turns what I already 
 1. **Share sheet** from any app (Podcasts, Spotify, YouTube, Safari, Substack, X):
    - **Finished**: optional "how'd it go?" (Easy / Mostly followed / Parts lost me) plus an optional typed or voice note on what was confusing.
    - **Queue it**: optional "Queue the primer too" (e.g. a spoiler-free primer for a book).
+   - **Books** are added by title (the ＋ sheet) or by sharing a Goodreads book link, as **Reading** or **Finished**; see `2026-11-10-books-design.md`. A book is one item for its whole life and has no transcript: Archie looks the book up and writes from what the model knows.
 2. **Notes import**: years of existing notes become library items and go through the same processing.
 3. **Newsletter ingest** (for Pulse): newsletters arrive automatically, e.g. through a forwarding address.
 
@@ -70,6 +71,7 @@ Tab bar: **Library · Review · Today · Ask · Settings**, every tab the same s
 ### Library
 - A four-way control under the title, **All · Domains · Saved · Takes**; search and filters belong to All.
 - One list of everything: queued, in progress, consumed, inbox, and primers. Search bar on top. Filters for status, type, and domain/topic.
+- **Books**: a Reading filter sits between Queued and Done. Adding a book queues a spoiler-free primer in Up next. "Finished it" (with optional thoughts) moves the book to Done and writes a web-researched refresher plus cards from the thoughts. Some cards can start later (a card's availability date keeps it out of reviews until then). A one-off bootstrap import turned my three old book-notes docs into Finished books with hand-tuned cards. See `2026-11-10-books-design.md`.
 - **Item page**: gist, key ideas, numbers (timestamped), my reaction or notes, a primer section collapsed as "Background you might need," related items, the cards it produced, and an "Ask Carl about this" bar.
 - **Domains view**: the Domains segment, showing domains → topics, each with its items.
 - **Saved**: Favorites, a ★ on any library item (item page navbar, a gold ★ on its row), grouped by domain on Saved, each domain's favorites newest star first, swipe to unstar. **Collections**: just-for-fun scrapbooks saved from the add sheet's or share sheet's "Save to a collection" (a dropdown preselected to the last one used, ＋ New collection…), shown under Saved as tiles with a mosaic of the newest thumbnails and "N saved" (long-press to rename or delete). A collection page is a feed of posts (thumbnail, who posted it, where it's from, date saved, caption, note) that open the original; posts never appear in All, Domains, search, Today, Pulse, Ask or the pipeline. **Takes**: opinions and talking points written in the take editor (from the add sheet's "Write a take ›" or the Takes empty state), dictated with the keyboard mic, with an optional **Clean it up** (Archie turns it into a one-line thesis, main points and an answered objection, using only the owner's words; the raw text is kept and shown under "See what you said"). Every save that changes the body makes a dated version (Earlier versions, Restore this version). Library → Takes lists them by last update with All · Opinions · Talking points chips. Each take gets 2–4 review cards graded against the owner's wording, rewritten on each new version, reviewable at once and shown in Review as "Your take". Takes aren't filed, searchable or in Ask.
@@ -159,7 +161,7 @@ The goal is to know the water-cooler topics in about 2 minutes, without reading 
    - YouTube transcripts
    - Reading X posts and threads without the expensive official API
    - Newsletter ingest (forwarding address vs. Gmail access) and paywalled Substack content
-   - Books, which have no transcript (title knowledge, Kindle highlights, my notes?)
+   - ~~Books, which have no transcript~~ Resolved: a book is added by title or Goodreads link and written from what the model knows plus web research; see `2026-11-10-books-design.md`
    - Importing my existing notes (format and source TBD)
    - iOS share sheet: probably requires a native app (or Expo/React Native), because a web app can't easily appear in the iOS share sheet
    - Answer grading quality: Jev (or similar) on real answers to real cards

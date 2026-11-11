@@ -30,7 +30,7 @@ describe("dueSummary and aheadSummary", () => {
   ]);
 
   it("counts due cards", () => {
-    expect(dueSummary(data, NOW)).toEqual({ count: 2 });
+    expect(dueSummary(data, NOW, null)).toEqual({ count: 2, waiting: 0 });
   });
 
   it("counts cards due within the ahead window", () => {

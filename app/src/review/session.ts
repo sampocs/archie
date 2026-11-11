@@ -1,5 +1,6 @@
 import { missedCards, shufflePick } from "./browse";
 import { AHEAD_DAYS, SHUFFLE_COUNT } from "./constants";
+import { dailyPlan, moreCards } from "./dailyCap";
 import { effectiveDue, isDue } from "./due";
 import { cardTopicId, isOpenQuiz, isReviewable, type ReviewData } from "./eligibility";
 import type { CardRow } from "./types";
@@ -10,9 +11,20 @@ const ORDER_GROUP: Record<string, number> = { foundation: 0, concept: 1, mechani
 const LAST_GROUP = 3;
 const DAY_MS = 86_400_000;
 
-export type SessionMode = "due" | "ahead" | "topic" | "source" | "take" | "card" | "quiz" | "shuffle" | "missed";
+export type SessionMode =
+  | "due"
+  | "more"
+  | "ahead"
+  | "topic"
+  | "source"
+  | "take"
+  | "card"
+  | "quiz"
+  | "shuffle"
+  | "missed";
 export const SESSION_MODES: readonly SessionMode[] = [
   "due",
+  "more",
   "ahead",
   "topic",
   "source",
@@ -35,15 +47,17 @@ export function orderCards(cards: CardRow[]): CardRow[] {
 }
 
 /**
- * The cards a session shows, in order, each with whether it was due when the session began. Shuffle takes up to 10
- * random reviewable cards in random order (`random` is injectable for tests); missed takes the Missed list, worst
- * first. Like an ahead review, both record each card as due or not by its own due date.
+ * The cards a session shows, in order, each with whether it was due when the session began. Due shows today's capped
+ * set (`limit` cards a day, null for no cap); more shows the next batch of due cards the cap left waiting. Shuffle
+ * takes up to 10 random reviewable cards in random order (`random` is injectable for tests); missed takes the Missed
+ * list, worst first. Like an ahead review, both record each card as due or not by its own due date.
  */
 export function buildSession(
   data: ReviewData,
   mode: SessionMode,
   id: string | null,
   now: Date,
+  limit: number | null,
   random: () => number = Math.random,
 ): SessionCard[] {
   if (mode === "quiz") {
@@ -53,6 +67,9 @@ export function buildSession(
       .map((card) => ({ card, wasDue: true }));
   }
 
+  if (mode === "due") return asSession(orderCards(dailyPlan(data, limit, now).today), now);
+  if (mode === "more") return asSession(orderCards(moreCards(data, limit, now)), now);
+
   const reviewable = data.cards.filter((card) => isReviewable(card, data, now));
   if (mode === "shuffle") return asSession(shufflePick(reviewable, SHUFFLE_COUNT, random), now);
   if (mode === "missed") return asSession(missedCards(data, now).map(({ card }) => card), now);
@@ -60,8 +77,6 @@ export function buildSession(
   const aheadLimit = now.getTime() + AHEAD_DAYS * DAY_MS;
   const chosen = reviewable.filter((card) => {
     switch (mode) {
-      case "due":
-        return isDue(card, now);
       case "ahead":
         return !isDue(card, now) && effectiveDue(card) <= aheadLimit;
       case "topic":

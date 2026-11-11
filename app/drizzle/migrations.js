@@ -21,6 +21,7 @@ import m0016 from './0016_notes.sql';
 import m0017 from './0017_chat_cards.sql';
 import m0018 from './0018_card_detail.sql';
 import m0019 from './0019_books.sql';
+import m0020 from './0020_daily_limit.sql';
 
   export default {
     journal,
@@ -44,7 +45,8 @@ m0015,
 m0016,
 m0017,
 m0018,
-m0019
+m0019,
+m0020
     }
   }
   

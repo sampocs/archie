@@ -164,7 +164,7 @@ describe("missedCards and missedTag", () => {
   });
 
   it("missed session: the same cards in the same order, each due by its own date", () => {
-    const session = buildSession(data, "missed", null, NOW);
+    const session = buildSession(data, "missed", null, NOW, null);
     expect(session.map(({ card }) => card.id)).toEqual(["twice", "once-recent", "half", "once-older", "partly"]);
     expect(session.every(({ wasDue }) => !wasDue)).toBe(true);
   });
@@ -228,7 +228,7 @@ describe("shufflePick and shuffle sessions", () => {
       cardRow({ id: "quiz", sourceId: null, briefId: "b1", kind: "quiz", expiresAt: dayAt(3) }),
     ]);
 
-    const session = buildSession(data, "shuffle", null, NOW, () => 0.999);
+    const session = buildSession(data, "shuffle", null, NOW, null, () => 0.999);
     const ids = session.map(({ card }) => card.id);
     expect(ids).toHaveLength(10);
     expect(new Set(ids).size).toBe(10);
@@ -239,7 +239,8 @@ describe("shufflePick and shuffle sessions", () => {
   });
 
   it("shuffle session: empty with nothing reviewable", () => {
-    expect(buildSession(reviewData([cardRow({ id: "unfinished", sourceId: "s9" })]), "shuffle", null, NOW)).toEqual([]);
+    const data = reviewData([cardRow({ id: "unfinished", sourceId: "s9" })]);
+    expect(buildSession(data, "shuffle", null, NOW, null)).toEqual([]);
   });
 });
 

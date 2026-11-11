@@ -2,6 +2,7 @@ import { WEEKDAYS } from "@/today/todayLabels";
 import { shortDate } from "@/ui/sourceLabels";
 
 import { AHEAD_DAYS, SECONDS_PER_CARD } from "./constants";
+import { dailyPlan } from "./dailyCap";
 import { effectiveDue, isDue } from "./due";
 import { isAvailable, isReviewable, type ReviewData } from "./eligibility";
 import { cardsWord } from "./labels";
@@ -17,15 +18,16 @@ export function minutesFor(count: number): number {
   return Math.max(1, Math.ceil((count * SECONDS_PER_CARD) / 60));
 }
 
-/** The due session's length. */
-export function dueSummary(data: ReviewData, now: Date): { count: number } {
-  return { count: buildSession(data, "due", null, now).length };
+/** The due session's length (today's capped set), and how many due cards the cap leaves waiting. */
+export function dueSummary(data: ReviewData, now: Date, limit: number | null): { count: number; waiting: number } {
+  const plan = dailyPlan(data, limit, now);
+  return { count: plan.today.length, waiting: plan.waiting.length };
 }
 
 /** The ahead session's length, and when its window ends. */
 export function aheadSummary(data: ReviewData, now: Date): { count: number; by: Date } {
   return {
-    count: buildSession(data, "ahead", null, now).length,
+    count: buildSession(data, "ahead", null, now, null).length,
     by: new Date(now.getTime() + AHEAD_DAYS * DAY_MS),
   };
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `review_settings` ADD `daily_limit` integer;

@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "@/auth/session";
 import { dropCard } from "@/db/actions";
 import { db } from "@/db/client";
+import { getReviewSettings } from "@/db/reviewSettings";
 import * as schema from "@/db/schema";
 import type { ReviewData } from "@/review/eligibility";
 import { scheduleReminders } from "@/review/reminderScheduler";
@@ -35,8 +36,8 @@ import { Toast } from "@/ui/Toast";
 const PROGRESS_BAR_HEIGHT = 3;
 
 /**
- * A review session. `mode`: due | ahead | topic | source | take | card | quiz | shuffle | missed (unknown → due); `id`:
- * the topic, source, take or card.
+ * A review session. `mode`: due | more | ahead | topic | source | take | card | quiz | shuffle | missed (unknown → due);
+ * `id`: the topic, source, take or card.
  */
 export default function ReviewSessionScreen() {
   const theme = useTheme();
@@ -50,8 +51,9 @@ export default function ReviewSessionScreen() {
   // The card list is fixed when the session opens, from one synchronous read: the live queries arrive one table at a
   // time, and a list built from a half-loaded snapshot (cards without their sources) would come out empty.
   const [startedAt] = useState(() => new Date());
+  const [dailyLimit] = useState(() => getReviewSettings(db).dailyLimit);
   const [session] = useState(() =>
-    buildSession(readReviewData(db), sessionModeOf(params.mode), params.id ?? null, startedAt),
+    buildSession(readReviewData(db), sessionModeOf(params.mode), params.id ?? null, startedAt, dailyLimit),
   );
   const ids = useMemo(() => session.map(({ card }) => card.id), [session]);
 
@@ -171,7 +173,7 @@ export default function ReviewSessionScreen() {
         {ids.length === 0 ? (
           <Empty onBack={router.back} />
         ) : done ? (
-          <DoneView tally={tally} startedAt={startedAt} data={data} />
+          <DoneView tally={tally} startedAt={startedAt} data={data} dailyLimit={dailyLimit} />
         ) : card && current ? (
           <CardStep
             key={card.id}

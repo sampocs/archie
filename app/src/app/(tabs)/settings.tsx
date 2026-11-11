@@ -13,7 +13,7 @@ import { useTheme } from "@/theme/useTheme";
 import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
 
-/** The Settings tab: the newsletter address, the review reminder, removed topics and sign-out. */
+/** The Settings tab: the newsletter address, review settings, removed topics and sign-out. */
 export default function SettingsScreen() {
   const router = useRouter();
   const signOut = useSignOut();
@@ -38,7 +38,7 @@ export default function SettingsScreen() {
       <GroupedList title="REVIEW">
         <SettingsRow
           testID="review-settings-link"
-          label="Review reminder"
+          label="Review"
           trailing="›"
           onPress={() => router.push("/settings/review")}
         />

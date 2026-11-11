@@ -192,6 +192,8 @@ export const reviewSettings = sqliteTable("review_settings", {
   reminderEnabled: integer("reminder_enabled").notNull(),
   // Minutes after local midnight.
   reminderMinutes: integer("reminder_minutes").notNull(),
+  // Cards per day; 0 is Off. NULL (a row saved before the cap existed) reads as the default.
+  dailyLimit: integer("daily_limit"),
 });
 
 // Newsletter senders the owner has decided on; only the server makes the rows (Allow / Block on a source), the phone

@@ -19,10 +19,19 @@ type ReviewStartCardProps = {
   headerDetail?: string;
   // Today's progress once some of today's cards are reviewed: "N cards left" and a bar of reviewed / total.
   progress?: { reviewed: number; total: number };
+  // Today's due cards the daily cap holds back, named under the minutes before any review; 0 shows nothing.
+  waiting?: number;
 };
 
 /** The green block that opens a due-cards session. */
-export function ReviewStartCard({ count, onPress, testID = "review-start", headerDetail, progress }: ReviewStartCardProps) {
+export function ReviewStartCard({
+  count,
+  onPress,
+  testID = "review-start",
+  headerDetail,
+  progress,
+  waiting = 0,
+}: ReviewStartCardProps) {
   const theme = useTheme();
   const minutes = minutesFor(count);
 
@@ -48,6 +57,11 @@ export function ReviewStartCard({ count, onPress, testID = "review-start", heade
       <Text variant="monoLabel" style={{ color: ON_GREEN_SOFT }}>
         {`about ${minutes} ${minutes === 1 ? "minute" : "minutes"}`}
       </Text>
+      {waiting > 0 ? (
+        <Text testID={`${testID}-waiting`} variant="monoLabel" style={{ color: ON_GREEN_SOFT }}>
+          {`${waiting} more wait for tomorrow`}
+        </Text>
+      ) : null}
       {progress ? (
         <View
           testID={`${testID}-progress`}

@@ -58,8 +58,16 @@ const quizCard = (overrides: Partial<CardRow>): CardRow =>
   cardRow({ sourceId: null, briefId: "b0", kind: "quiz", expiresAt: dayAt(2), ...overrides });
 
 function inputs(overrides: Partial<Omit<TodayInputs, "reviewData">> & { cards?: CardRow[] } = {}): TodayInputs {
-  const { cards = [], ...rest } = overrides;
-  return { reviewData: reviewData(cards), reviews: [], sources: [], briefs: [], now: NOW, ...rest };
+  const { cards = [], reviews = [], ...rest } = overrides;
+  return {
+    reviewData: reviewData(cards, { reviews }),
+    reviews,
+    sources: [],
+    briefs: [],
+    dailyLimit: null,
+    now: NOW,
+    ...rest,
+  };
 }
 
 describe("review task", () => {
@@ -70,7 +78,7 @@ describe("review task", () => {
   it("waits with the due count and minutes before any review today", () => {
     const cards = [dueCard("a"), dueCard("b"), dueCard("c"), dueCard("d")];
 
-    expect(todayTasks(inputs({ cards })).review).toEqual({ status: "pending", due: 4, minutes: 2 });
+    expect(todayTasks(inputs({ cards })).review).toEqual({ status: "pending", due: 4, minutes: 2, waiting: 0 });
   });
 
   it("is under way with today's set as reviewed plus still due", () => {
@@ -93,7 +101,9 @@ describe("review task", () => {
     const cards = [dueCard("left"), scheduled("ahead", 3), quizCard({ id: "q1", lastReviewAt: dayAt(0, 9) })];
     const reviews = [review({ cardId: "ahead", wasDue: 0 }), review({ cardId: "q1" })];
 
-    expect(todayTasks(inputs({ cards, reviews })).review).toEqual({ status: "pending", due: 1, minutes: 1 });
+    expect(todayTasks(inputs({ cards, reviews })).review).toEqual({
+      status: "pending", due: 1, minutes: 1, waiting: 0,
+    });
   });
 
   it("counts only reviews since local midnight", () => {
@@ -113,7 +123,9 @@ describe("review task", () => {
     const cards = [scheduled("r1", 1, 9), scheduled("r2", 1, 18), scheduled("later", 4)];
     const reviews = [review({ cardId: "r1" }), review({ cardId: "r2" })];
 
-    expect(todayTasks(inputs({ cards, reviews })).review).toEqual({ status: "done", reviewed: 2, next: "2 tomorrow" });
+    expect(todayTasks(inputs({ cards, reviews })).review).toEqual({
+      status: "done", reviewed: 2, next: "2 tomorrow", waiting: 0,
+    });
   });
 
   it.each([
@@ -129,7 +141,36 @@ describe("review task", () => {
   it("is done with no next when no card waits", () => {
     const reviews = [review({ cardId: "gone" })];
 
-    expect(todayTasks(inputs({ reviews })).review).toEqual({ status: "done", reviewed: 1, next: null });
+    expect(todayTasks(inputs({ reviews })).review).toEqual({ status: "done", reviewed: 1, next: null, waiting: 0 });
+  });
+
+  describe("with a daily cap", () => {
+    const manyDue = (count: number): CardRow[] => Array.from({ length: count }, (_, index) => dueCard(`d${index}`));
+
+    it("waits with only the capped set, naming the cards held back", () => {
+      expect(todayTasks(inputs({ cards: manyDue(34), dailyLimit: 20 })).review).toEqual({
+        status: "pending", due: 20, minutes: 7, waiting: 14,
+      });
+    });
+
+    it("is under way against what is left of the cap", () => {
+      const cards = [...manyDue(30), ...["r1", "r2", "r3"].map((id) => scheduled(id, 3))];
+      const reviews = ["r1", "r2", "r3"].map((cardId) => review({ cardId }));
+
+      expect(todayTasks(inputs({ cards, reviews, dailyLimit: 10 })).review).toMatchObject({
+        status: "inProgress", due: 7, reviewed: 3, total: 10,
+      });
+    });
+
+    it("is done once the cap is reviewed, with the rest waiting", () => {
+      const reviewedIds = Array.from({ length: 10 }, (_, index) => `r${index}`);
+      const cards = [...manyDue(4), ...reviewedIds.map((id) => scheduled(id, 3))];
+      const reviews = reviewedIds.map((cardId) => review({ cardId }));
+      const tasks = todayTasks(inputs({ cards, reviews, dailyLimit: 10 }));
+
+      expect(tasks.review).toMatchObject({ status: "done", reviewed: 10, waiting: 4 });
+      expect(tasks.dayDone).toBe(true);
+    });
   });
 });
 
@@ -274,6 +315,19 @@ describe("backTomorrow", () => {
     const today = inputs({ sources: [noteSource({ id: "q1" })] });
 
     expect(backTomorrow(today, todayTasks(today))).toBe("Back tomorrow: 1 note.");
+  });
+
+  it("counts today's held-back cards with tomorrow's, up to the cap", () => {
+    const reviewedIds = Array.from({ length: 10 }, (_, index) => `r${index}`);
+    const held = Array.from({ length: 6 }, (_, index) => dueCard(`held${index}`));
+    const tomorrow = Array.from({ length: 6 }, (_, index) => scheduled(`t${index}`, 1, 9));
+    const cards = [...held, ...tomorrow, ...reviewedIds.map((id) => scheduled(id, 5))];
+    const reviews = reviewedIds.map((cardId) => review({ cardId }));
+
+    const capped = inputs({ cards, reviews, dailyLimit: 10 });
+    expect(backTomorrow(capped, todayTasks(capped))).toBe("Back tomorrow: 10 cards.");
+    const few = inputs({ cards: cards.slice(4), reviews, dailyLimit: 10 });
+    expect(backTomorrow(few, todayTasks(few))).toBe("Back tomorrow: 8 cards.");
   });
 
   it("says just that when tomorrow holds nothing known", () => {

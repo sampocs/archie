@@ -1,0 +1,171 @@
+<title>Archie Daily Cap</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">
+<style>
+/* Layout: a row of numbered phone mocks (one column on a phone), each with a caption; phones use the app's light tokens. */
+:root {
+  --page: #E9E6DE; --pageInk: #1C1B18; --pageInk2: #5E5B54;
+  --bg: #F4F2EC; --surface: #FFFFFF; --ink: #0E0E0C; --ink2: #55534D; --ink3: #9A978F; --line: #E8E6DF; --press: #EFEDE6;
+  --chrome: #1C1B18; --onChrome: #FFFFFF; --green: #3F7262; --onGreenSoft: rgba(255,255,255,.72); --partly: #A97F22; --missed: #B04A3C;
+  --sans: "Geist", -apple-system, system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, monospace; --serif: "Newsreader", Georgia, serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #121110; --pageInk: #F1EFE9; --pageInk2: #A9A59B; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #121110; --pageInk: #F1EFE9; --pageInk2: #A9A59B; color-scheme: dark }
+body { background: var(--page); color: var(--pageInk); font-family: var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; }
+header { max-width: 1280px; margin: 0 auto 26px; display: grid; gap: 6px; }
+.n { font: 500 11px var(--mono); letter-spacing: .08em; color: var(--pageInk2); }
+h1 { font-size: 28px; letter-spacing: -.03em; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--pageInk2); max-width: 72ch; line-height: 1.5; font-size: 15px; }
+.row { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px 26px; }
+figure { margin: 0; display: grid; gap: 12px; align-content: start; }
+figcaption { display: grid; gap: 4px; min-width: 0; }
+figcaption b { font-size: 15px; }
+figcaption span { color: var(--pageInk2); font-size: 13.5px; line-height: 1.45; }
+.phone { width: 100%; max-width: 300px; aspect-ratio: 300 / 640; background: var(--bg); color: var(--ink); border-radius: 38px; border: 8px solid #0b0b0a;
+  position: relative; overflow: hidden; box-shadow: 0 18px 40px rgba(0,0,0,.18); font-size: 13px; }
+.screen { position: absolute; inset: 0; padding: 38px 14px 84px; display: flex; flex-direction: column; gap: 11px; overflow: hidden; }
+.nav { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--ink2); }
+.nav b { color: var(--ink); font-size: 15px; }
+.big { font-size: 28px; font-weight: 700; letter-spacing: -.03em; }
+.date { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.rev { background: var(--green); color: #fff; border-radius: 18px; padding: 14px; display: grid; gap: 4px; }
+.rev .hd { display: flex; justify-content: space-between; font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--onGreenSoft); }
+.rev .cnt { font: 600 22px/1.15 var(--serif); }
+.rev .ml { font: 500 10.5px var(--mono); color: var(--onGreenSoft); }
+.rev .extra { margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.22); font-size: 11.5px; color: var(--onGreenSoft); }
+.bar { height: 4px; border-radius: 2px; background: rgba(255,255,255,.28); margin-top: 6px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: #fff; border-radius: 2px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 6px; }
+.card .hd { display: flex; justify-content: space-between; font: 600 9.5px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ink3); }
+.card p { margin: 0; line-height: 1.45; color: var(--ink2); font-size: 12.5px; }
+.card .t { font: 600 16px/1.2 var(--serif); }
+.done { display: flex; gap: 8px; align-items: center; }
+.tick { width: 18px; height: 18px; border-radius: 50%; background: var(--green); color: #fff; font-size: 11px; display: grid; place-items: center; flex: none; }
+.primary { background: var(--chrome); color: var(--onChrome); border-radius: 14px; padding: 11px; text-align: center; font-weight: 600; }
+.secondary { background: var(--press); border-radius: 12px; padding: 9px; text-align: center; font-weight: 600; font-size: 12.5px; }
+.tally { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tally div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px; display: grid; gap: 2px; text-align: center; }
+.tally b { font-size: 18px; }
+.tally span { font-size: 10.5px; color: var(--ink3); }
+.lab { font: 500 10px var(--mono); letter-spacing: .07em; color: var(--ink3); text-transform: uppercase; }
+.list { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 11px 12px; border-bottom: 1px solid var(--line); }
+.li:last-child { border-bottom: 0; }
+.li .s { color: var(--ink3); font-size: 11.5px; text-align: right; }
+.li.hi { font-weight: 600; }
+.tag { font: 500 10px var(--mono); color: var(--green); background: color-mix(in srgb, var(--green) 12%, transparent); border-radius: 6px; padding: 2px 6px; }
+.new { color: var(--partly); background: color-mix(in srgb, var(--partly) 12%, transparent); }
+.mix { display: grid; gap: 6px; }
+.mixrow { display: grid; grid-template-columns: 82px minmax(0,1fr) 22px; gap: 8px; align-items: center; font-size: 11.5px; color: var(--ink2); }
+.mixrow .b { height: 8px; border-radius: 4px; background: var(--green); }
+.mixrow .b.n { background: var(--partly); }
+.mixrow .b.o { background: var(--missed); }
+.mixrow em { font-style: normal; text-align: right; font: 500 10.5px var(--mono); }
+.stepper { display: flex; align-items: center; gap: 10px; }
+.stepper span { width: 26px; height: 26px; border-radius: 8px; background: var(--press); display: grid; place-items: center; font-weight: 600; }
+.tabbar { position: absolute; left: 0; right: 0; bottom: 0; height: 72px; border-top: 1px solid var(--line); background: var(--bg);
+  display: grid; grid-template-columns: repeat(5, 1fr); padding-top: 9px; font-size: 9.5px; color: var(--ink3); text-align: center; }
+.tabbar .on { color: var(--ink); font-weight: 600; }
+.dot { width: 22px; height: 22px; margin: 0 auto 3px; border-radius: 6px; border: 1.6px solid currentColor; }
+.on .dot { background: currentColor; }
+</style>
+<header>
+  <span class="n">ARCHIE · REVIEW</span>
+  <h1>A daily cap of 20 cards</h1>
+  <p>Example day: you finished a textbook yesterday, so 34 cards are due. Today shows 20. The other 14 stay due and lead tomorrow's session, unless you choose to keep going. No due dates change; the cap only limits what a day shows.</p>
+</header>
+<div class="row">
+
+<figure><div class="phone"><div class="screen">
+  <span class="date">Wed, Nov 12</span>
+  <div class="big">Today</div>
+  <div class="rev">
+    <div class="hd"><span>Review</span><span>about 7 min</span></div>
+    <div class="cnt">20 cards</div>
+    <div class="ml">about 7 minutes</div>
+    <div class="extra">14 more wait for tomorrow</div>
+  </div>
+  <div class="card"><div class="hd"><span>Refresh a note</span><span>1 of 2</span></div><div class="t">Liquid staking</div><p>3 min read</p></div>
+  <div class="tabbar"><div class="on"><div class="dot"></div>Today</div><div><div class="dot"></div>Library</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Review</div><div><div class="dot"></div>You</div></div>
+</div></div>
+<figcaption><span class="n">1 · TODAY, OVER THE CAP</span><b>The card says 20, not 34</b><span>One quiet line under it says what's held back. The badge, the reminder ("20 cards to review") and the Review tab all use 20 too.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <div class="nav"><b>Today's 20</b><span>Close</span></div>
+  <span class="lab">What made the cut</span>
+  <div class="mix">
+    <div class="mixrow"><span>Overdue</span><div class="b o" style="width:30%"></div><em>4</em></div>
+    <div class="mixrow"><span>Due today</span><div class="b" style="width:85%"></div><em>11</em></div>
+    <div class="mixrow"><span>New</span><div class="b n" style="width:40%"></div><em>5</em></div>
+  </div>
+  <p style="margin:0;color:var(--ink2);font-size:12px;line-height:1.5">Cards most likely forgotten go first. 5 of the 20 slots are kept for new cards whenever new ones are waiting, so new material never stalls.</p>
+  <span class="lab">Held for tomorrow</span>
+  <div class="list">
+    <div class="li"><span>New, DDIA</span><span class="tag new">10</span></div>
+    <div class="li"><span>Due today</span><span class="tag">4</span></div>
+  </div>
+  <p style="margin:0;color:var(--ink3);font-size:11px">Not a screen in the app. This is how the 20 get picked.</p>
+</div></div>
+<figcaption><span class="n">2 · HOW THE 20 ARE PICKED</span><b>Overdue first, then due, then new</b><span>The ordering, shown for the example. In the app you just see 20 cards; nothing here needs a screen of its own.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <div class="nav"><span></span><span>Done</span></div>
+  <div class="big">Today's 20 done</div>
+  <div class="tally"><div><b style="color:var(--green)">14</b><span>Got it</span></div><div><b style="color:var(--partly)">4</b><span>Partly</span></div><div><b style="color:var(--missed)">2</b><span>Missed</span></div></div>
+  <span class="lab">Keep going</span>
+  <div class="list">
+    <div class="li hi"><span>14 more waiting</span><span class="s">about 5 min ›</span></div>
+    <div class="li"><span>Review ahead</span><span class="s">9 due by Sat</span></div>
+    <div class="li"><span>Practice a topic ›</span></div>
+  </div>
+  <p style="margin:0;color:var(--ink2);font-size:12px;line-height:1.5">If you stop here, the 14 lead tomorrow's session.</p>
+  <div class="primary" style="margin-top:auto">Done</div>
+</div></div>
+<figcaption><span class="n">3 · END OF SESSION</span><b>"14 more waiting" tops Keep going</b><span>It's the existing Keep going list with one new first row. Tapping it starts a session of the 14; they count as due reviews, scheduled normally.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <span class="date">Wed, Nov 12</span>
+  <div class="big">Today</div>
+  <div class="card">
+    <div class="hd"><span>Review</span><span>20 of 20</span></div>
+    <div class="done"><span class="tick">✓</span><b>Today's review is done</b></div>
+    <p>14 more are waiting. They'll lead tomorrow's session.</p>
+    <div class="secondary">Keep going · 14</div>
+  </div>
+  <div class="card"><div class="hd"><span>Refresh a note</span><span>1 of 2</span></div><div class="t">Liquid staking</div><p>3 min read</p></div>
+  <div class="tabbar"><div class="on"><div class="dot"></div>Today</div><div><div class="dot"></div>Library</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Review</div><div><div class="dot"></div>You</div></div>
+</div></div>
+<figcaption><span class="n">4 · TODAY, AFTER THE 20</span><b>Done counts as done</b><span>The review task ticks off and the streak counts the day. Keep going stays one tap away for the 14.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <span class="date">Thu, Nov 13</span>
+  <div class="big">Today</div>
+  <div class="rev">
+    <div class="hd"><span>Review</span><span>about 7 min</span></div>
+    <div class="cnt">20 cards</div>
+    <div class="ml">about 7 minutes</div>
+    <div class="extra">2 more wait for tomorrow</div>
+  </div>
+  <div class="list">
+    <div class="li"><span>Held from yesterday</span><span class="tag">14</span></div>
+    <div class="li"><span>Due today</span><span class="tag">8</span></div>
+    <div class="li"><span>Shown</span><span class="tag">20</span></div>
+  </div>
+  <p style="margin:0;color:var(--ink3);font-size:11px">The list is for this example only; the app shows just the card.</p>
+  <div class="tabbar"><div class="on"><div class="dot"></div>Today</div><div><div class="dot"></div>Library</div><div><div class="dot"></div>Ask</div><div><div class="dot"></div>Review</div><div><div class="dot"></div>You</div></div>
+</div></div>
+<figcaption><span class="n">5 · NEXT DAY</span><b>Yesterday's 14 come first</b><span>14 held + 8 newly due = 22, so 20 show and 2 carry on. By Friday the spike is gone.</span></figcaption></figure>
+
+<figure><div class="phone"><div class="screen">
+  <div class="nav"><span>‹ You</span><b>Review</b><span></span></div>
+  <div class="list">
+    <div class="li"><div style="display:grid;gap:2px"><span>Cards per day</span><span style="color:var(--ink3);font-size:11px">Extra cards wait for the next day</span></div>
+      <div class="stepper"><span>−</span><b>20</b><span>+</span></div></div>
+    <div class="li"><span>Reminder</span><span class="s">8:00 AM ›</span></div>
+  </div>
+  <p style="margin:0;color:var(--ink2);font-size:12px;line-height:1.5">Steps of 5, from 10 to 50, or Off for no limit.</p>
+</div></div>
+<figcaption><span class="n">6 · SETTING</span><b>Cards per day, default 20</b><span>Lives next to the reminder time in the You tab's Review settings.</span></figcaption></figure>
+
+</div>

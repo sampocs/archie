@@ -14,6 +14,8 @@ export type LiveAnswer = {
   searching: "library" | "web" | null;
   messageId: string | null;
   failed: boolean;
+  // The stream ended or broke after the server took the question: it finishes the answer on its own, so wait for the pull.
+  waiting: boolean;
   // Edits Ask proposed so far, and whether it is drafting one now.
   proposals: EditProposalWire[];
   editing: boolean;
@@ -38,6 +40,7 @@ export const EMPTY_LIVE: LiveAnswer = {
   searching: null,
   messageId: null,
   failed: false,
+  waiting: false,
   proposals: [],
   editing: false,
   cardSets: [],
@@ -128,15 +131,31 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
   }
 }
 
-/** A stream that ended without a `done` or `error` event (the connection closed mid-answer) has failed. */
+/**
+ * A stream that ended without a `done` or `error` event (the connection closed mid-answer) is waiting, not failed:
+ * the server finishes the answer after a hang-up and the next pull brings it.
+ */
 export function endOfStream(live: LiveAnswer): LiveAnswer {
   if (live.messageId !== null || live.failed) return live;
-  return { ...live, failed: true, ...IDLE };
+  return { ...live, waiting: true, ...IDLE };
+}
+
+/** How long an answer may stay unanswered (ms since its question) before it counts as failed. */
+export const ANSWER_WAIT_MS = 180_000;
+
+/**
+ * For a chat whose last row is the owner's question with no answer after it: "waiting" while it is under
+ * `ANSWER_WAIT_MS` old (the server may still be finishing it), "failed" after. Null for any other chat.
+ */
+export function unansweredState(messages: { role: string; createdAt: string }[], now: number): "waiting" | "failed" | null {
+  const last = messages.at(-1);
+  if (!last || last.role !== "user") return null;
+  return now - new Date(last.createdAt).getTime() < ANSWER_WAIT_MS ? "waiting" : "failed";
 }
 
 /**
  * True once the pulled rows can stand in for the overlay: they hold the question and either its answer, or (for a
- * failed stream) some assistant row after the question. The server commits the question before streaming, so the
+ * failed or waiting stream) some assistant row after the question. The server commits the question before streaming, so the
  * question alone is not enough.
  */
 export function handedOver(
@@ -145,9 +164,9 @@ export function handedOver(
 ): boolean {
   const questionIndex = messages.findIndex((message) => message.id === pending.userMessageId);
   if (questionIndex === -1) return false;
-  const { messageId, failed } = pending.live;
+  const { messageId, failed, waiting } = pending.live;
   if (messageId !== null && messages.some((message) => message.id === messageId)) return true;
-  return failed && messages.slice(questionIndex + 1).some((message) => message.role === "assistant");
+  return (failed || waiting) && messages.slice(questionIndex + 1).some((message) => message.role === "assistant");
 }
 
 /**
@@ -167,14 +186,17 @@ export function liveView(live: LiveAnswer): { sections: Section[]; streamingText
 }
 
 const THINKING = "Thinking";
+export const STILL_ANSWERING = "Still answering…";
 const SEARCHING_TEXT = { library: "Searching your library…", web: "Searching the web…" } as const;
 
 /**
  * The thinking row's label: what the running tool is doing, else "Thinking" until the first text streams; null once
- * text streams with no tool running, and once the answer ended either way.
+ * text streams with no tool running, and once the answer ended either way. "Still answering…" while waiting on the
+ * server after the connection dropped.
  */
 export function thinkingLabel(live: LiveAnswer, hasText: boolean): string | null {
   if (live.messageId !== null || live.failed) return null;
+  if (live.waiting) return STILL_ANSWERING;
   if (live.searching) return SEARCHING_TEXT[live.searching];
   if (live.editing) return "Drafting an edit…";
   if (live.draftingCards) return "Drafting cards…";

@@ -10,6 +10,7 @@ import {
   relativeTime,
   rowPreview,
   thinkingLabel,
+  unansweredState,
   type LiveAnswer,
 } from "./sections";
 
@@ -205,6 +206,11 @@ describe("thinkingLabel", () => {
     expect(thinkingLabel(live({ draftingCards: true }), true)).toBe("Drafting cards…");
   });
 
+  it("says Still answering… while waiting, whatever else is set", () => {
+    expect(thinkingLabel(live({ waiting: true }), false)).toBe("Still answering…");
+    expect(thinkingLabel(live({ waiting: true }), true)).toBe("Still answering…");
+  });
+
   it("hides once the answer is done or failed, whatever was running", () => {
     expect(thinkingLabel(live({ messageId: "m2" }), false)).toBeNull();
     expect(thinkingLabel(live({ failed: true, draftingCards: true }), false)).toBeNull();
@@ -232,9 +238,15 @@ describe("relativeTime and rowPreview", () => {
 });
 
 describe("endOfStream", () => {
-  it("fails an answer whose stream closed without done or error", () => {
+  it("makes an answer whose stream closed without done or error wait, not fail", () => {
     const live = { ...EMPTY_LIVE, searching: "web" as const };
-    expect(endOfStream(live)).toEqual({ ...EMPTY_LIVE, failed: true, searching: null });
+    expect(endOfStream(live)).toEqual({ ...EMPTY_LIVE, waiting: true, searching: null });
+  });
+
+  it("an error event still fails at once", () => {
+    const live = applyEvent(EMPTY_LIVE, { type: "error", message: "x" });
+    expect(live.failed).toBe(true);
+    expect(live.waiting).toBe(false);
   });
 
   it("leaves a finished or failed answer alone", () => {
@@ -264,8 +276,33 @@ describe("handedOver", () => {
     expect(handedOver(pending, [question, { id: "a9", role: "assistant" }])).toBe(true);
   });
 
+  it("is true for a waiting stream once a later assistant row exists, false before", () => {
+    const pending = { userMessageId: "q1", live: { ...EMPTY_LIVE, waiting: true } };
+    expect(handedOver(pending, [question, { id: "a9", role: "assistant" }])).toBe(true);
+    expect(handedOver(pending, [question])).toBe(false);
+  });
+
   it("is false for a failed stream with no assistant row after the question", () => {
     const pending = { userMessageId: "q1", live: { ...EMPTY_LIVE, failed: true } };
     expect(handedOver(pending, [{ id: "a0", role: "assistant" }, question])).toBe(false);
+  });
+});
+
+describe("unansweredState", () => {
+  const now = Date.parse("2026-11-11T12:00:00Z");
+  const ago = (ms: number) => new Date(now - ms).toISOString();
+  const answer = { role: "assistant", createdAt: ago(0) };
+
+  it("is waiting for a trailing question under 3 minutes old", () => {
+    expect(unansweredState([{ role: "user", createdAt: ago(179_000) }], now)).toBe("waiting");
+  });
+
+  it("is failed for a trailing question 3 minutes old or more", () => {
+    expect(unansweredState([{ role: "user", createdAt: ago(180_000) }], now)).toBe("failed");
+  });
+
+  it("is null once the question has an answer, and for an empty chat", () => {
+    expect(unansweredState([{ role: "user", createdAt: ago(1000) }, answer], now)).toBeNull();
+    expect(unansweredState([], now)).toBeNull();
   });
 });

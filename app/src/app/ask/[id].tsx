@@ -24,7 +24,7 @@ import {
 import { backLabelOf } from "@/ask/chatChrome";
 import { Composer } from "@/ask/Composer";
 import { ItemSheet } from "@/ask/ItemSheet";
-import { groupSections, liveView } from "@/ask/sections";
+import { groupSections, liveView, STILL_ANSWERING, unansweredState } from "@/ask/sections";
 import { parseSegments, type AboutKind } from "@/ask/types";
 import { useAskAvailable } from "@/ask/useAskAvailable";
 import { useCardSetTicks, useChatItemId, useConversationCardSets } from "@/ask/useCardSets";
@@ -43,6 +43,9 @@ import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
 import { MenuSheet } from "@/ui/MenuSheet";
 import { Toast } from "@/ui/Toast";
+
+// How often a chat waiting on an answer the server is still finishing asks for a sync.
+const ANSWER_POLL_MS = 5_000;
 
 type Params = { id: string; q?: string; web?: string; aboutKind?: AboutKind; aboutId?: string; aboutTitle?: string; fromNote?: string };
 
@@ -76,6 +79,19 @@ export default function ChatScreen() {
     [openStoredSet, ticksFor],
   );
   const { pending, send } = useChatSession({ conversationId: params.id, messages, about, cardSetChoice: choice });
+  // A question with no answer and no overlay (the app was relaunched, or the chat reopened): the server may still be
+  // finishing it. Poll for the answer while it is young, and re-read the clock so it turns failed after 3 minutes.
+  const [, setTick] = useState(0);
+  const unanswered = pending ? null : unansweredState(messages, Date.now());
+  useEffect(() => {
+    if (unanswered !== "waiting") return;
+    const poll = setInterval(() => {
+      requestSync();
+      setTick((tick) => tick + 1);
+    }, ANSWER_POLL_MS);
+    return () => clearInterval(poll);
+  }, [unanswered]);
+  const unansweredQuestion = unanswered ? messages.at(-1) : undefined;
   const proposals = useConversationProposals(params.id);
   // Targets with a proposal in the live answer: older still-proposed ones for them are superseded.
   const liveTargets = new Set((pending?.live.proposals ?? []).map((wire) => `${wire.target_kind}:${wire.target_id}`));
@@ -163,7 +179,7 @@ export default function ChatScreen() {
                 placeholder={openCardSet ? "Change something…" : "Ask a follow-up"}
                 disabled={!online}
                 disabledLabel="Ask needs a connection"
-                sendDisabled={pending !== null && !pending.live.failed}
+                sendDisabled={(pending !== null && !pending.live.failed) || unanswered === "waiting"}
                 onSend={send}
               />
             )}
@@ -215,6 +231,16 @@ export default function ChatScreen() {
               </AnswerView>
             ),
           )}
+          {unansweredQuestion ? (
+            <AnswerView
+              index={turns.length}
+              sections={[]}
+              thinking={unanswered === "waiting" ? STILL_ANSWERING : null}
+              sentAt={new Date(unansweredQuestion.createdAt).getTime()}
+              failed={unanswered === "failed"}
+              onRetry={() => send(unansweredQuestion.text, unansweredQuestion.webSearch === 1)}
+            />
+          ) : null}
           {pending ? (
             <>
               <UserBubble text={pending.text} index={turns.length} choice={pending.cardSetChoice} />

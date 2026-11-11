@@ -15,9 +15,11 @@ import asyncio
 import datetime
 import json
 import pathlib
+import threading
 import uuid
 from typing import Any
 
+import anyio
 import httpx
 import pytest
 import sqlalchemy
@@ -355,10 +357,11 @@ def test_a_database_error_mid_answer_ends_with_error_and_keeps_the_answer(
     assert statuses == {"user": "complete", "assistant": "failed"}
 
 
-def test_a_hang_up_mid_answer_stores_it_as_failed_and_records_the_round(
+def test_a_hang_up_mid_answer_finishes_it_and_stores_it_complete(
     live_stack: LiveStack, request: pytest.FixtureRequest
 ) -> None:
-    """The phone goes away after the first event: the answer is saved failed, the question moves, the spend is kept."""
+    """The phone goes away after the first event: the answer still runs to its end and is saved complete, the question
+    moves, and every round's spend is kept."""
     engine, answer_request, question_seq = _unfinished_answer_request(live_stack)
 
     with _replay(request, "ask_library"):
@@ -366,10 +369,16 @@ def test_a_hang_up_mid_answer_stores_it_as_failed_and_records_the_round(
         next(generator)
         generator.close()
 
-    _assert_hang_up_recorded(live_stack, engine=engine, answer_request=answer_request, question_seq=question_seq)
+    _assert_hang_up_recorded(
+        live_stack,
+        engine=engine,
+        answer_request=answer_request,
+        question_seq=question_seq,
+        status=models.MessageStatus.COMPLETE,
+    )
 
 
-def test_closing_the_async_stream_saves_the_failed_answer_at_once(
+def test_closing_the_async_stream_finishes_and_saves_the_answer_at_once(
     live_stack: LiveStack, request: pytest.FixtureRequest
 ) -> None:
     """Starlette closes the response body with `aclose()` on a hang-up; that must close `stream`, not leave it to GC."""
@@ -383,7 +392,73 @@ def test_closing_the_async_stream_saves_the_failed_answer_at_once(
     with _replay(request, "ask_library"):
         asyncio.run(hang_up_after_first_event())
 
-    _assert_hang_up_recorded(live_stack, engine=engine, answer_request=answer_request, question_seq=question_seq)
+    _assert_hang_up_recorded(
+        live_stack,
+        engine=engine,
+        answer_request=answer_request,
+        question_seq=question_seq,
+        status=models.MessageStatus.COMPLETE,
+    )
+
+
+def test_a_cancelled_async_stream_saves_the_answer_off_the_event_loop_thread(
+    live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Uvicorn hangs up by cancelling the response's task group, landing inside `stream_async`'s wait for the next
+    event; the shielded close must still finish and save the answer on a worker thread, never the event loop's."""
+    engine, answer_request, question_seq = _unfinished_answer_request(live_stack)
+    save_ran_on_main_thread: list[bool] = []
+    original_save = answer._save
+
+    def recording_save(*args: Any, **kwargs: Any) -> Any:
+        save_ran_on_main_thread.append(threading.current_thread() is threading.main_thread())
+        return original_save(*args, **kwargs)
+
+    monkeypatch.setattr(answer, "_save", recording_save)
+
+    async def cancel_while_waiting_for_the_next_event() -> None:
+        async with anyio.create_task_group() as task_group:
+            async for _ in answer.stream_async(engine, answer_request):
+                # The consumer goes back to waiting on the next event, which is where the cancel is delivered.
+                task_group.cancel_scope.cancel()
+
+    with _replay(request, "ask_library"):
+        asyncio.run(cancel_while_waiting_for_the_next_event())
+
+    _assert_hang_up_recorded(
+        live_stack,
+        engine=engine,
+        answer_request=answer_request,
+        question_seq=question_seq,
+        status=models.MessageStatus.COMPLETE,
+    )
+    assert save_ran_on_main_thread
+    assert not any(save_ran_on_main_thread)
+
+
+def test_a_hang_up_then_a_failure_stores_the_answer_failed(
+    live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """After the phone goes away the library search breaks: the answer is stored failed, and closing sends nothing."""
+
+    def broken_search(*args: object, **kwargs: object) -> list[search.ChunkHit]:
+        raise sqlalchemy.exc.OperationalError("SELECT", params=None, orig=Exception("connection lost"))
+
+    monkeypatch.setattr(search, "search_chunks", broken_search)
+    engine, answer_request, question_seq = _unfinished_answer_request(live_stack)
+
+    with _replay(request, "ask_library"):
+        generator = answer.stream(engine, answer_request)
+        next(generator)
+        generator.close()
+
+    _assert_hang_up_recorded(
+        live_stack,
+        engine=engine,
+        answer_request=answer_request,
+        question_seq=question_seq,
+        status=models.MessageStatus.FAILED,
+    )
 
 
 def _unfinished_answer_request(live_stack: LiveStack) -> tuple[sqlalchemy.Engine, answer.AnswerRequest, int]:
@@ -417,8 +492,18 @@ def _unfinished_answer_request(live_stack: LiveStack) -> tuple[sqlalchemy.Engine
 
 
 def _assert_hang_up_recorded(
-    live_stack: LiveStack, *, engine: sqlalchemy.Engine, answer_request: answer.AnswerRequest, question_seq: int
+    live_stack: LiveStack,
+    *,
+    engine: sqlalchemy.Engine,
+    answer_request: answer.AnswerRequest,
+    question_seq: int,
+    status: models.MessageStatus,
 ) -> None:
+    """The answer is stored with `status`, the question moved, and every round run was recorded.
+
+    A complete answer ran both recorded rounds and holds the recording's whole text; a failed one broke in the first
+    round's library search, so only that round was spent.
+    """
     with sqlalchemy.orm.Session(engine) as db:
         [answer_row] = db.scalars(
             sqlalchemy.select(models.Message).where(
@@ -426,10 +511,15 @@ def _assert_hang_up_recorded(
                 models.Message.role == models.MessageRole.ASSISTANT.value,
             )
         )
-        assert answer_row.status == models.MessageStatus.FAILED.value
+        assert answer_row.status == status.value
         assert db.get_one(models.Message, answer_request.user_message_id).change_seq > question_seq
+        answer_text = answer_row.text
     engine.dispose()
-    assert _llm_steps(live_stack) == ["ask"]
+    if status == models.MessageStatus.COMPLETE:
+        assert answer_text.startswith("According") and answer_text.endswith("other tools the Fed uses.")
+        assert _llm_steps(live_stack) == ["ask", "ask"]
+    else:
+        assert _llm_steps(live_stack) == ["ask"]
 
 
 def test_refusals_happen_before_any_model_call(live_stack: LiveStack) -> None:

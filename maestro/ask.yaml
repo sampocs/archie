@@ -65,10 +65,11 @@ appId: com.sampocs.archie
     timeout: 60000
 - tapOn:
     id: "answer-make-cards-.*"
-# It sends "Make cards" in the chat; Sonnet answers with a proposed cheat sheet and cards.
-- extendedWaitUntil:
-    visible:
+# It sends "Make cards" in the chat; Sonnet answers with a proposed cheat sheet and cards, which can land below the fold.
+- scrollUntilVisible:
+    element:
       id: "card-set-save"
+    direction: DOWN
     timeout: 120000
 - assertVisible: ".*Cheat sheet · .*"
 - tapOn:

@@ -11,6 +11,8 @@ from typing import Any
 
 from archie_llm import cards, voice
 
+from archie_api.ask import card_set_tools
+
 _ANSWER_RULES = """You are Archie's Ask, answering the owner's questions from their own library first. Archie is \
 their personal library of the articles, newsletters, podcasts and videos they saved, with Archie's summaries and \
 primers of them, topic primers, and the owner's own takes.
@@ -63,6 +65,10 @@ the owner asked for in this chat.
 - When the owner asks to change the proposal ("change card 2", "drop the last one", "add a card on X"), call \
 propose_cards again with the whole new set, copying everything they didn't ask to change. Your earlier proposals in \
 this chat are listed after your answers.
+- "More cards" or "add a card on X" adds to the open proposal: call propose_cards again with the whole proposal, \
+its cards first and the new ones after them, not a fresh set. Additions may take it past 7, up to \
+{card_set_tools.MAX_CARDS} cards in all.
+- To bring back cards from an earlier proposal that a later one replaced, copy them word for word from its listing.
 - A message may open with a line saying which cards of the open proposal the owner kept and dropped (their Keep \
 ticks). When you next call propose_cards, copy the kept cards word for word (so Save can match them) unless the owner \
 asks to change them, and don't bring back the dropped ones.

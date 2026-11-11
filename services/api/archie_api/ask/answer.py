@@ -7,9 +7,10 @@ The server runs up to `MAX_ROUNDS` model requests: `search_library` (run here, r
 call shows as `editing` when it starts, and each proposed edit as an `edit` event; a `propose_cards` call shows as
 `drafting_cards` when it starts, and each proposed card set as a `cards` event. Proposals are stored with the answer.
 Uncited paragraphs the model writes before a tool call (announcing its search) are streamed but not saved.
-The answer is stored when the stream ends — complete only if the model finished its turn (`end_turn` or a stop
+The answer is stored when the tool loop ends — complete only if the model finished its turn (`end_turn` or a stop
 sequence), else failed with whatever text arrived: a refusal, a cut-off (`max_tokens`), no answer within `MAX_ROUNDS`,
-an API or database error, or the phone hanging up mid-answer. Every model round, finished or not, is recorded in
+or an API or database error. If the phone hangs up mid-answer, the loop still runs to its end with nothing more sent,
+and the answer is stored the same way, for the phone's next pull. Every model round, finished or not, is recorded in
 `llm_calls` (step `ask`). No database transaction is open while the model works.
 """
 
@@ -25,6 +26,7 @@ from enum import StrEnum
 from typing import Any
 
 import anthropic
+import anyio
 import anyio.to_thread
 import httpx
 import sqlalchemy
@@ -148,17 +150,24 @@ class AnswerIncompleteError(Exception):
 
 
 def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, None, None]:
-    """The answer's events as SSE text, ending with `done` or `error`; the answer is saved either way."""
+    """The answer's events as SSE text, ending with `done` or `error`; the answer is saved either way.
+
+    Closing it (the phone hung up) runs the rest of the answer before it returns, so the answer is saved as it ended.
+    """
     progress = _Progress()
+    hung_up = False
     try:
-        # Closing `_run` explicitly on hang-up records its round before `_save` runs below.
         with contextlib.closing(_run(engine, request=request, progress=progress)) as events:
             for event in events:
-                yield event.sse()
-    except GeneratorExit:
-        # The phone hung up: keep what arrived so the chat shows "Didn't finish" rather than nothing.
-        _save(engine, request=request, progress=progress, failed=True)
-        raise
+                # Nothing can be sent after a hang-up (yielding after GeneratorExit raises RuntimeError), but the
+                # answer still finishes so the owner finds it on the next pull.
+                if hung_up:
+                    continue
+                try:
+                    yield event.sse()
+                except GeneratorExit:
+                    _logger.info("Phone hung up; finishing answer for conversation %s", request.conversation_id)
+                    hung_up = True
     except (
         anthropic.APIError,
         AnswerRefusedError,
@@ -170,18 +179,21 @@ def stream(engine: sqlalchemy.Engine, request: AnswerRequest) -> Generator[str, 
         # library search or a cost record failed; keep the owner's partial answer and end the stream cleanly.
         _logger.warning("Answer failed for conversation %s: %r", request.conversation_id, error)
         _save(engine, request=request, progress=progress, failed=True)
-        yield Event(name=EventName.ERROR, data={"message": FAILED_MESSAGE}).sse()
+        if not hung_up:
+            yield Event(name=EventName.ERROR, data={"message": FAILED_MESSAGE}).sse()
         return
 
     message_id = _save(engine, request=request, progress=progress, failed=False)
-    yield Event(name=EventName.DONE, data={"message_id": str(message_id)}).sse()
+    if not hung_up:
+        yield Event(name=EventName.DONE, data={"message_id": str(message_id)}).sse()
 
 
 async def stream_async(engine: sqlalchemy.Engine, request: AnswerRequest) -> AsyncGenerator[str, None]:
     """`stream` for the event loop: each event is pulled on a worker thread, and closing this closes `stream`.
 
-    Starlette's own sync-iterator adapter never closes the generator, so a hang-up would save the unfinished answer
-    only at garbage collection, on the event loop's thread. Closing it here runs that save on a worker thread, now.
+    Starlette's own sync-iterator adapter never closes the generator, so a hang-up would finish and save the answer
+    only at garbage collection, on the event loop's thread. Closing it here runs the rest of the answer and its save on
+    a worker thread, now.
     """
     generator = stream(engine, request)
     done = object()
@@ -190,7 +202,9 @@ async def stream_async(engine: sqlalchemy.Engine, request: AnswerRequest) -> Asy
             assert isinstance(event, str)
             yield event
     finally:
-        await anyio.to_thread.run_sync(generator.close)
+        # Shielded: a hang-up may arrive as a cancellation, which would otherwise stop the close before it starts.
+        with anyio.CancelScope(shield=True):
+            await anyio.to_thread.run_sync(generator.close)
 
 
 def _run(engine: sqlalchemy.Engine, *, request: AnswerRequest, progress: _Progress) -> Generator[Event, None, None]:
@@ -257,8 +271,8 @@ def _round(
 ) -> Generator[Event, None, anthropic.types.Message]:
     """One model request streamed as events, its paragraph closed at the end; returns the finished message.
 
-    The round is recorded in `llm_calls` once, finished or not: a round cut off mid-stream (an API error, or the phone
-    hanging up) has still spent the tokens of the message so far.
+    The round is recorded in `llm_calls` once, finished or not: a round cut off mid-stream (an API error, or a stream
+    the SDK could not parse) has still spent the tokens of the message so far.
     """
     with client.messages.stream(
         model=llm.SONNET,

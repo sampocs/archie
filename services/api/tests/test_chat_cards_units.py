@@ -139,8 +139,9 @@ def test_detail_lines_keep_only_the_first_four_cleaned_lines() -> None:
     assert card_rows.detail_lines(lines) == ["one", "two wrapped", "three", "four"]
 
 
-def test_the_history_line_carries_an_open_set_and_only_names_a_replaced_one() -> None:
-    """The model can rebuild an open, saved or discarded set with one change; a replaced one is just named."""
+def test_the_history_line_carries_a_set_and_leaves_out_a_replaced_ones_cheat_sheet() -> None:
+    """The model can rebuild any set with one change or bring back a replaced one's cards; only a set still in play
+    shows its cheat sheet."""
     card_set = models.CardSetProposal(
         title="JWTs", cheat_sheet="# JWTs", cards=[CARD], status=models.CardSetStatus.SAVED.value
     )
@@ -151,7 +152,11 @@ def test_the_history_line_carries_an_open_set_and_only_names_a_replaced_one() ->
         "   - The server checks the signature, not a session"
     )
     card_set.status = models.CardSetStatus.REPLACED.value
-    assert context.card_set_note(card_set) == "[cards proposed: JWTs — replaced by a later proposal]"
+    assert context.card_set_note(card_set) == (
+        "[cards proposed: JWTs — replaced by a later proposal]\n"
+        "1. (concept) Q: What is a JWT?\n   A: A signed token with claims\n"
+        "   - The server checks the signature, not a session"
+    )
 
 
 def test_the_history_line_of_a_notes_set_has_no_cheat_sheet() -> None:

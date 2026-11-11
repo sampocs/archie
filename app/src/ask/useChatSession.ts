@@ -6,18 +6,30 @@ import { clearSession, useSession } from "@/auth/session";
 import { requestSync } from "@/sync/useSync";
 
 import type { CardSetChoice } from "./cardSets";
-import { applyEvent, EMPTY_LIVE, endOfStream, handedOver, type LiveAnswer, type PendingQuestion } from "./sections";
-import { streamAnswer } from "./stream";
+import {
+  ANSWER_WAIT_MS,
+  applyEvent,
+  EMPTY_LIVE,
+  endOfStream,
+  handedOver,
+  type LiveAnswer,
+  type PendingQuestion,
+} from "./sections";
+import { StreamCutError, streamAnswer } from "./stream";
 import type { AboutKind, MessageRow } from "./types";
 
 export type { PendingQuestion };
 
+const POLL_MS = 5_000;
+
 /**
- * Sending a question and showing its answer as it streams. Leaving the chat lets the stream run on: the server saves
- * the answer and the next pull brings it. The overlay stays until the pulled rows hold the question
- * and its answer (or, for a failed stream, a later assistant row), and the returned `pending` is already null on the
- * render where they land, so nothing flickers or shows twice. A question carries `cardSetChoice`, the open card set's
- * Keep ticks as they stand when it is sent.
+ * Sending a question and showing its answer as it streams. The server finishes and saves the answer even if the phone
+ * hangs up or the chat is left, and the next pull brings it. A stream that ends or breaks after the server took the
+ * question leaves the overlay waiting ("Still answering…"): it syncs every 5 s and turns failed after `ANSWER_WAIT_MS`
+ * with nothing pulled. A request that never opened, or an `error` event, fails at once. The overlay stays until the
+ * pulled rows hold the question and its answer (or, for a failed or waiting stream, a later assistant row), and the
+ * returned `pending` is already null on the render where they land, so nothing flickers or shows twice. A question
+ * carries `cardSetChoice`, the open card set's Keep ticks as they stand when it is sent.
  */
 export function useChatSession(input: {
   conversationId: string;
@@ -38,6 +50,27 @@ export function useChatSession(input: {
     };
   }, []);
 
+  // While waiting on the server, pull every few seconds; give up on the answer after ANSWER_WAIT_MS.
+  const waitingSince = overlay && overlay.live.waiting && !overlay.live.failed ? overlay.sentAt : null;
+  const userMessageId = overlay?.userMessageId;
+  useEffect(() => {
+    if (waitingSince === null) return;
+    const poll = setInterval(() => requestSync(), POLL_MS);
+    const giveUp = setTimeout(
+      () =>
+        setOverlay((current) =>
+          current && current.userMessageId === userMessageId
+            ? { ...current, live: { ...current.live, waiting: false, failed: true } }
+            : current,
+        ),
+      Math.max(0, waitingSince + ANSWER_WAIT_MS - Date.now()),
+    );
+    return () => {
+      clearInterval(poll);
+      clearTimeout(giveUp);
+    };
+  }, [waitingSince, userMessageId]);
+
   // Drop the overlay's state once the pulled rows have taken over (`pending` already hides it during that render).
   useEffect(() => {
     if (overlay && handedOver(overlay, input.messages)) setOverlay(null);
@@ -46,7 +79,7 @@ export function useChatSession(input: {
   const send = useCallback(
     (text: string, webSearch: boolean) => {
       const question = text.trim();
-      // A failed question may be sent again (Try again); one still answering may not.
+      // A failed question may be sent again (Try again); one still answering or waiting may not.
       if (!question || !sessionKey || (pending && !pending.live.failed)) return;
 
       const userMessageId = randomUUID();
@@ -76,6 +109,8 @@ export function useChatSession(input: {
         .then(() => update(endOfStream))
         .catch((error) => {
           if (error instanceof UnauthorizedError) void clearSession();
+          // A body that broke after the server answered 200 means it holds the question: wait for its answer.
+          if (error instanceof StreamCutError) return update(endOfStream);
           update((live) => ({ ...live, failed: true, searching: null, editing: false, draftingCards: false }));
         })
         .finally(() => requestSync());

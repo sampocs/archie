@@ -15,6 +15,9 @@ export type AskBody = {
 
 const EVENT_TYPES = new Set(["delta", "block", "searching", "done", "error", "editing", "edit", "drafting_cards", "cards"]);
 
+/** The body of an answer that was opened (the server answered 200) broke before it ended. */
+export class StreamCutError extends Error {}
+
 /** Server-sent events from text chunks that may split a frame anywhere. */
 export class SseParser {
   private buffer = "";
@@ -47,8 +50,9 @@ function parseFrame(frame: string): AskEvent | null {
 
 /**
  * Asks the question and calls `onEvent` for each event as it arrives. Expo's global fetch (`expo/fetch`) streams the
- * response body. Throws `UnauthorizedError`, `ClientError` (403/404/409/422) or `NetworkError` (offline, 5xx, a cut
- * connection); the caller treats a thrown stream as a failed answer.
+ * response body. Throws `UnauthorizedError`, `ClientError` (403/404/409/422) or `NetworkError` (offline, 5xx: the
+ * request never opened, so the answer failed), or `StreamCutError` once the server answered 200 and the body then broke:
+ * the server holds the question and finishes the answer anyway, so the caller waits for it instead of failing.
  */
 export async function streamAnswer(input: {
   conversationId: string;
@@ -87,7 +91,7 @@ export async function streamAnswer(input: {
       parser.push(decoder.decode(value, { stream: true })).forEach(input.onEvent);
     }
   } catch (error) {
-    throw new NetworkError(String(error));
+    throw new StreamCutError(String(error));
   }
   parser.push(`${decoder.decode()}\n\n`).forEach(input.onEvent);
 }

@@ -34,6 +34,8 @@ _CARD_SET_STATUS_NOTES: dict[models.CardSetStatus, str] = {
 _CITED_ITEM_KEYS = (("source", "source_id"), ("topic_primer", "topic_primer_id"), ("take", "take_id"))
 # A question's `segments` hold at most one segment, under this key: the Keep ticks it was sent with.
 CARD_SET_CHOICE_KEY = "card_set_choice"
+# Marks a failed answer that wrote no text (but proposed something) so its turn isn't empty: the API rejects one.
+CUT_OFF_ANSWER = "(This answer was cut off.)"
 
 
 @dataclass(frozen=True)
@@ -44,6 +46,8 @@ class HistoryMessage:
     text: str
     status: models.MessageStatus
     notes: tuple[str, ...] = ()
+    # It proposed an edit or a card set: kept in history even if it failed, so a follow-up can build on the proposal.
+    proposed: bool = False
 
 
 @dataclass(frozen=True)
@@ -73,7 +77,7 @@ def owner_zone(name: str | None) -> datetime.tzinfo:
 
 
 def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, Any]]:
-    """The conversation's earlier finished exchanges as Messages API turns, oldest first.
+    """Earlier exchanges that finished, or failed after proposing an edit or card set, as API turns, oldest first.
 
     A question sent with Keep ticks opens with the line saying which cards the owner kept and dropped, as its turn did.
     Each answer is followed by lines naming the items it cited, the edits it proposed and the card sets it proposed
@@ -108,6 +112,7 @@ def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, An
                 text=_stored_question(row, card_sets_by_id=card_sets_by_id),
                 status=models.MessageStatus(row.status),
                 notes=(*citation_notes(row.segments), *proposal_notes.get(row.id, [])),
+                proposed=row.id in proposal_notes,
             )
             for row in stored
         ]
@@ -133,15 +138,13 @@ def proposal_note(proposal: models.EditProposal) -> str:
 
 
 def card_set_note(card_set: models.CardSetProposal) -> str:
-    """A `[cards proposed: …]` line with what the owner did with it; an open, saved or discarded set also carries its
-    cheat sheet (a note's set has none) and numbered cards with their detail lines, so the model can re-propose it with
-    one change. A replaced one is only named.
+    """A `[cards proposed: …]` line with what the owner did with it, then its numbered cards with their detail lines, so
+    the model can re-propose it with one change or bring back a replaced set's cards word for word. An open, saved or
+    discarded set also carries its cheat sheet (a note's set has none); a replaced one's is left out, as no longer
+    in play.
     """
     status = models.CardSetStatus(card_set.status)
     note = f"[cards proposed: {card_set.title} — {_CARD_SET_STATUS_NOTES[status]}]"
-    if status == models.CardSetStatus.REPLACED:
-        return note
-
     cards = [
         "\n".join(
             [
@@ -152,7 +155,8 @@ def card_set_note(card_set: models.CardSetProposal) -> str:
         )
         for number, card in enumerate(card_set_tools.stored_cards(card_set), start=1)
     ]
-    cheat_sheet = ["<cheat_sheet>", card_set.cheat_sheet, "</cheat_sheet>"] if card_set.cheat_sheet else []
+    has_cheat_sheet = card_set.cheat_sheet and status != models.CardSetStatus.REPLACED
+    cheat_sheet = ["<cheat_sheet>", card_set.cheat_sheet, "</cheat_sheet>"] if has_cheat_sheet else []
     return "\n".join([note, *cheat_sheet, *cards])
 
 
@@ -191,18 +195,28 @@ def stored_choice(segments: list[dict[str, Any]] | None) -> CardSetChoice | None
 
 
 def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:
-    """Question-answer pairs whose answer finished, as plain text (no citations), the last `HISTORY_MESSAGES` of them.
+    """Question-answer pairs as plain text (no citations) with each answer's notes, the last `HISTORY_MESSAGES` of them.
 
-    A failed answer is dropped with its question, so the history always alternates and starts with a question.
+    A pair is kept when its answer finished, or when it failed after proposing an edit or a card set: the proposal is
+    still open in the chat, so the next question may build on it. A failed answer that proposed nothing is dropped
+    with its question, so the history always alternates and starts with a question.
     """
     turns: list[dict[str, Any]] = []
     for question, answer in zip(rows, rows[1:], strict=False):
         is_pair = question.role == models.MessageRole.USER and answer.role == models.MessageRole.ASSISTANT
-        if is_pair and answer.status == models.MessageStatus.COMPLETE and answer.text.strip():
-            turns += [
-                {"role": "user", "content": question.text},
-                {"role": "assistant", "content": "\n\n".join([answer.text, *answer.notes])},
-            ]
+        finished = answer.status == models.MessageStatus.COMPLETE and bool(answer.text.strip())
+        if not is_pair or not (finished or answer.proposed):
+            continue
+
+        # A complete answer that only proposed something reads as its notes alone.
+        if answer.text.strip():
+            lead = [answer.text]
+        else:
+            lead = [CUT_OFF_ANSWER] if answer.status == models.MessageStatus.FAILED else []
+        turns += [
+            {"role": "user", "content": question.text},
+            {"role": "assistant", "content": "\n\n".join([*lead, *answer.notes])},
+        ]
     return turns[-HISTORY_MESSAGES:]
 
 

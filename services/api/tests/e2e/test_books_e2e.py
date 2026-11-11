@@ -372,14 +372,15 @@ def test_re_importing_a_book_skips_it(live_stack: LiveStack, owner: httpx.Client
 
 
 _LATER = "2026-12-01T00:00:00Z"
-_FIVE = ["1", "2", "3", "4", "5"]
+# One line past `card_rows.MAX_DETAIL_LINES`.
+_SIX = ["1", "2", "3", "4", "5", "6"]
 
 
 @pytest.mark.parametrize(
     "change",
     [
         {"cards": [{"kind": "foundation", "question": "Q?", "answer": "A", "detail": [], "available_at": _LATER}]},
-        {"cards": [{"kind": "concept", "question": "Q?", "answer": "A", "detail": _FIVE, "available_at": _LATER}]},
+        {"cards": [{"kind": "concept", "question": "Q?", "answer": "A", "detail": _SIX, "available_at": _LATER}]},
         {"url": "ftp://example.com/book"},
     ],
 )

@@ -85,7 +85,7 @@ export const cards = sqliteTable("cards", {
   kind: text("kind").notNull(),
   question: text("question").notNull(),
   answer: text("answer").notNull(),
-  // 0-3 bullet lines shown after answering and never graded, joined by "\n"; "" when none.
+  // 0-5 bullet lines (usually 0-3) shown after answering and never graded, joined by "\n"; "" when none.
   detail: text("detail").notNull().default(""),
   createdAt: text("created_at").notNull(),
   deletedAt: text("deleted_at"),

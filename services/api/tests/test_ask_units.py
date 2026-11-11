@@ -120,61 +120,100 @@ def test_a_block_holding_a_blank_line_ends_its_paragraph_and_web_beats_backgroun
     ]
 
 
+def _history_message(
+    role: models.MessageRole,
+    text: str,
+    status: models.MessageStatus = models.MessageStatus.COMPLETE,
+    notes: tuple[str, ...] = (),
+    proposed: bool = False,
+) -> context.HistoryMessage:
+    return context.HistoryMessage(role=role, text=text, status=status, notes=notes, proposed=proposed)
+
+
 def test_history_keeps_finished_pairs_only_and_the_last_twenty_messages() -> None:
-    """A failed answer drops with its question; the history alternates user / assistant from the oldest kept pair."""
-
-    def message(
-        role: models.MessageRole, text: str, status: models.MessageStatus = models.MessageStatus.COMPLETE
-    ) -> context.HistoryMessage:
-        return context.HistoryMessage(role=role, text=text, status=status)
-
+    """A failed answer drops with its question; the history alternates user / assistant from the oldest kept pair,
+    and a trimmed-off answer's notes still open the question after it."""
+    note = "[cited: Index funds — source s1]"
     rows = [
-        message(models.MessageRole.USER, "q0"),
-        message(models.MessageRole.ASSISTANT, "a0", models.MessageStatus.FAILED),
+        _history_message(models.MessageRole.USER, "q0"),
+        _history_message(models.MessageRole.ASSISTANT, "a0", models.MessageStatus.FAILED),
     ]
     for index in range(1, 13):
-        rows += [message(models.MessageRole.USER, f"q{index}"), message(models.MessageRole.ASSISTANT, f"a{index}")]
+        notes = (note,) if index == 3 else ()
+        rows += [
+            _history_message(models.MessageRole.USER, f"q{index}"),
+            _history_message(models.MessageRole.ASSISTANT, f"a{index}", notes=notes),
+        ]
 
     history = context.history_messages(rows)
 
-    assert len(history) == context.HISTORY_MESSAGES
-    assert history[0] == {"role": "user", "content": "q3"} and history[-1] == {"role": "assistant", "content": "a12"}
+    assert len(history.turns) == context.HISTORY_MESSAGES
+    assert [turn["role"] for turn in history.turns] == ["user", "assistant"] * 10
+    assert history.turns[0] == {"role": "user", "content": "q3"}
+    assert history.turns[2]["content"] == f"<app_record>\n{note}\n</app_record>\n\nq4"
+    assert history.turns[-1] == {"role": "assistant", "content": "a12"}
+    assert history.trailing_notes == ()
+
+
+def test_history_puts_notes_in_the_next_question_and_never_in_an_answer() -> None:
+    """Each answer's notes open the question after it, joined by blank lines; the last answer's notes are the trailing
+    notes, which the new question carries with its Keep-ticks line after them."""
+    first = (
+        "[cited: Index funds — source s1]",
+        "[cards proposed: JWTs — waiting for the owner to save it]\n1. (concept)",
+    )
+    last = ("[edit proposed: Fix — summary s1 — the owner applied it]",)
+    rows = [
+        _history_message(models.MessageRole.USER, "q1"),
+        _history_message(models.MessageRole.ASSISTANT, "a1", notes=first, proposed=True),
+        _history_message(models.MessageRole.USER, "q2"),
+        _history_message(models.MessageRole.ASSISTANT, "a2", notes=last, proposed=True),
+    ]
+
+    history = context.history_messages(rows)
+
+    assert history.turns == [
+        {"role": "user", "content": "q1"},
+        {"role": "assistant", "content": "a1"},
+        {"role": "user", "content": f"<app_record>\n{first[0]}\n\n{first[1]}\n</app_record>\n\nq2"},
+        {"role": "assistant", "content": "a2"},
+    ]
+    assert history.trailing_notes == last
+    assert context.question_content("q3", choice_line="Kept 1.", notes=history.trailing_notes) == (
+        f"<app_record>\n{last[0]}\n</app_record>\n\nKept 1.\n\nq3"
+    )
+    assert context.question_content("q3", choice_line=None) == "q3"
 
 
 def test_history_keeps_a_failed_answer_that_proposed_something() -> None:
-    """A failed answer that proposed cards stays, with its question and notes; empty, it reads as cut off. A failed
-    answer that proposed nothing still drops with its question."""
+    """A failed answer that proposed cards stays, with its question; empty, it reads as cut off, and a complete blank
+    one gets a placeholder. A failed answer that proposed nothing still drops with its question."""
     note = "[cards proposed: JWTs — waiting for the owner to save it]"
     failed = models.MessageStatus.FAILED
+    user, assistant = models.MessageRole.USER, models.MessageRole.ASSISTANT
     rows = [
-        context.HistoryMessage(role=models.MessageRole.USER, text="q0", status=models.MessageStatus.COMPLETE),
-        context.HistoryMessage(role=models.MessageRole.ASSISTANT, text="", status=failed),
-        context.HistoryMessage(role=models.MessageRole.USER, text="q1", status=models.MessageStatus.COMPLETE),
-        context.HistoryMessage(
-            role=models.MessageRole.ASSISTANT, text="Here are cards", status=failed, notes=(note,), proposed=True
-        ),
-        context.HistoryMessage(role=models.MessageRole.USER, text="q2", status=models.MessageStatus.COMPLETE),
-        context.HistoryMessage(
-            role=models.MessageRole.ASSISTANT, text=" ", status=failed, notes=(note,), proposed=True
-        ),
-        context.HistoryMessage(role=models.MessageRole.USER, text="q3", status=models.MessageStatus.COMPLETE),
-        context.HistoryMessage(
-            role=models.MessageRole.ASSISTANT,
-            text="",
-            status=models.MessageStatus.COMPLETE,
-            notes=(note,),
-            proposed=True,
-        ),
+        _history_message(user, "q0"),
+        _history_message(assistant, "", failed),
+        _history_message(user, "q1"),
+        _history_message(assistant, "Here are cards", failed, notes=(note,), proposed=True),
+        _history_message(user, "q2"),
+        _history_message(assistant, " ", failed, notes=(note,), proposed=True),
+        _history_message(user, "q3"),
+        _history_message(assistant, "", notes=(note,), proposed=True),
     ]
+    record = f"<app_record>\n{note}\n</app_record>\n\n"
 
-    assert context.history_messages(rows) == [
+    history = context.history_messages(rows)
+
+    assert history.turns == [
         {"role": "user", "content": "q1"},
-        {"role": "assistant", "content": f"Here are cards\n\n{note}"},
-        {"role": "user", "content": "q2"},
-        {"role": "assistant", "content": f"(This answer was cut off.)\n\n{note}"},
-        {"role": "user", "content": "q3"},
-        {"role": "assistant", "content": note},
+        {"role": "assistant", "content": "Here are cards"},
+        {"role": "user", "content": f"{record}q2"},
+        {"role": "assistant", "content": context.CUT_OFF_ANSWER},
+        {"role": "user", "content": f"{record}q3"},
+        {"role": "assistant", "content": context.NO_TEXT_ANSWER},
     ]
+    assert history.trailing_notes == (note,)
 
 
 def test_only_a_paragraph_with_no_citation_at_all_is_dropped_before_a_tool_call() -> None:

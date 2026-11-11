@@ -80,7 +80,10 @@ def ask(
         raise fastapi.HTTPException(status_code=409, detail="message id already used")
     conversation = _conversation(db, user=user, conversation_id=conversation_id, question=question, about=body.about)
     choice = _card_set_choice(db, conversation=conversation, choice=body.card_set_choice)
-    turn_text = context.question_content(question, choice_line=choice.line if choice else None)
+    earlier = context.history(db, conversation_id=conversation.id)
+    turn_text = context.question_content(
+        question, choice_line=choice.line if choice else None, notes=earlier.trailing_notes
+    )
     day_zone = context.owner_zone(body.timezone)
     request = answer.AnswerRequest(
         user_id=user.id,
@@ -93,7 +96,7 @@ def ask(
             now=datetime.datetime.now(tz=day_zone),
         ),
         # Read before the question is added, so the history holds only earlier exchanges.
-        messages=[*context.history(db, conversation_id=conversation.id), {"role": "user", "content": turn_text}],
+        messages=[*earlier.turns, {"role": "user", "content": turn_text}],
         boost=context.boost(db, conversation=conversation),
         note_title=context.note_title(db, conversation=conversation),
         day_zone=day_zone,

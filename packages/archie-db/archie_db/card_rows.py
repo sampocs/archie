@@ -23,8 +23,8 @@ QUIZ_BRIEF_WINDOW = datetime.timedelta(days=7)
 WEEK_START_KEY = "week_start"
 # A card's detail lines are stored as one text, joined by this.
 DETAIL_SEPARATOR = "\n"
-# One more than the card rules ask writers for (0-3 lines): a fourth line only comes from a hand-tuned card.
-MAX_DETAIL_LINES = 4
+# The most the card rules let a writer give a card, when the owner asks for more detail (0-3 lines is the default).
+MAX_DETAIL_LINES = 5
 
 
 @dataclass(frozen=True)

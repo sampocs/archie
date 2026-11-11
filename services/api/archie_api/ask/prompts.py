@@ -64,7 +64,7 @@ open-recall cards (concept, mechanism or number) on what the note chose to cover
 the owner asked for in this chat.
 - When the owner asks to change the proposal ("change card 2", "drop the last one", "add a card on X"), call \
 propose_cards again with the whole new set, copying everything they didn't ask to change. Your earlier proposals in \
-this chat are listed after your answers.
+this chat are listed in the <app_record> block that opens the message after each answer.
 - "More cards" or "add a card on X" adds to the open proposal: call propose_cards again with the whole proposal, \
 its cards first and the new ones after them, not a fresh set. Additions may take it past 7, up to \
 {card_set_tools.MAX_CARDS} cards in all.
@@ -72,6 +72,9 @@ its cards first and the new ones after them, not a fresh set. Additions may take
 - A message may open with a line saying which cards of the open proposal the owner kept and dropped (their Keep \
 ticks). When you next call propose_cards, copy the kept cards word for word (so Save can match them) unless the owner \
 asks to change them, and don't bring back the dropped ones.
+- <app_record> blocks are written by the app, not by you, to show what is under earlier answers: the items they \
+cited, the edits and card sets proposed, and what the owner did with them. Never write one or copy its format.
+- Cards and edits change only by calling the propose tools. Never write a card set or card list as answer text.
 - Around the proposal, write one or two short sentences at most. Don't repeat the cards or the cheat sheet.
 
 {cards.CARD_RULES}"""

@@ -132,11 +132,11 @@ def test_a_stored_set_from_before_detail_reads_its_cards_with_none() -> None:
     assert new.detail == CARD["detail"]
 
 
-def test_detail_lines_keep_only_the_first_four_cleaned_lines() -> None:
-    """A fifth line is dropped, after blank lines are cleaned away: a hand-tuned card may carry a fourth."""
-    lines = ["one", "", "two\nwrapped", "three", "four", "five"]
+def test_detail_lines_keep_only_the_first_five_cleaned_lines() -> None:
+    """A fifth line survives and a sixth is dropped, after blank lines are cleaned away."""
+    lines = ["one", "", "two\nwrapped", "three", "four", "five", "six"]
 
-    assert card_rows.detail_lines(lines) == ["one", "two wrapped", "three", "four"]
+    assert card_rows.detail_lines(lines) == ["one", "two wrapped", "three", "four", "five"]
 
 
 def test_the_history_line_carries_a_set_and_leaves_out_a_replaced_ones_cheat_sheet() -> None:

@@ -36,6 +36,9 @@ _CITED_ITEM_KEYS = (("source", "source_id"), ("topic_primer", "topic_primer_id")
 CARD_SET_CHOICE_KEY = "card_set_choice"
 # Marks a failed answer that wrote no text (but proposed something) so its turn isn't empty: the API rejects one.
 CUT_OFF_ANSWER = "(This answer was cut off.)"
+# Stands in for a complete answer that wrote no text (it only proposed something): the API rejects an empty turn.
+NO_TEXT_ANSWER = "(I proposed changes; the app's record follows.)"
+APP_RECORD_TAG = "app_record"
 
 
 @dataclass(frozen=True)
@@ -48,6 +51,14 @@ class HistoryMessage:
     notes: tuple[str, ...] = ()
     # It proposed an edit or a card set: kept in history even if it failed, so a follow-up can build on the proposal.
     proposed: bool = False
+
+
+@dataclass(frozen=True)
+class History:
+    """Earlier turns for the model, and the notes under the last kept answer, which the new question carries."""
+
+    turns: list[dict[str, Any]]
+    trailing_notes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -76,12 +87,14 @@ def owner_zone(name: str | None) -> datetime.tzinfo:
         return datetime.UTC
 
 
-def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, Any]]:
+def history(db: orm.Session, *, conversation_id: uuid.UUID) -> History:
     """Earlier exchanges that finished, or failed after proposing an edit or card set, as API turns, oldest first.
 
     A question sent with Keep ticks opens with the line saying which cards the owner kept and dropped, as its turn did.
-    Each answer is followed by lines naming the items it cited, the edits it proposed and the card sets it proposed
-    (with what became of each), so a follow-up like "and fix that card too" or "change card 2" can find its target.
+    Each answer's notes (the items it cited, the edits and card sets it proposed, with what became of each) open the
+    next question's turn inside an `<app_record>` block, never the answer's own turn, so a follow-up like "and fix that
+    card too" or "change card 2" can find its target without the model seeing itself write the notes. The last
+    answer's notes come back as `trailing_notes`, for the question being asked now.
     """
     stored = db.scalars(
         sqlalchemy.select(models.Message)
@@ -160,9 +173,10 @@ def card_set_note(card_set: models.CardSetProposal) -> str:
     return "\n".join([note, *cheat_sheet, *cards])
 
 
-def question_content(text: str, *, choice_line: str | None) -> str:
-    """A question as the model reads it: the line about the owner's Keep ticks, if any, then the owner's words."""
-    return f"{choice_line}\n\n{text}" if choice_line else text
+def question_content(text: str, *, choice_line: str | None, notes: Sequence[str] = ()) -> str:
+    """A question as the model reads it: the app's record of the answer before it (`notes`), the line about the owner's
+    Keep ticks, if any, then the owner's words."""
+    return _with_app_record(f"{choice_line}\n\n{text}" if choice_line else text, notes=notes)
 
 
 def choice_line(*, kept: Sequence[int], card_set: models.CardSetProposal) -> str:
@@ -194,30 +208,34 @@ def stored_choice(segments: list[dict[str, Any]] | None) -> CardSetChoice | None
     )
 
 
-def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:
-    """Question-answer pairs as plain text (no citations) with each answer's notes, the last `HISTORY_MESSAGES` of them.
+def history_messages(rows: Sequence[HistoryMessage]) -> History:
+    """Question-answer pairs as plain text (no citations), the last `HISTORY_MESSAGES` turns of them.
 
     A pair is kept when its answer finished, or when it failed after proposing an edit or a card set: the proposal is
     still open in the chat, so the next question may build on it. A failed answer that proposed nothing is dropped
-    with its question, so the history always alternates and starts with a question.
+    with its question, so the history always alternates and starts with a question. An answer's notes go in an
+    `<app_record>` block at the start of the next kept question (even when that pair is trimmed off the front, so the
+    block travels with the question it belongs to); the last kept answer's notes are the `trailing_notes`.
     """
-    turns: list[dict[str, Any]] = []
+    pairs: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    notes_above: tuple[str, ...] = ()
     for question, answer in zip(rows, rows[1:], strict=False):
         is_pair = question.role == models.MessageRole.USER and answer.role == models.MessageRole.ASSISTANT
         finished = answer.status == models.MessageStatus.COMPLETE and bool(answer.text.strip())
         if not is_pair or not (finished or answer.proposed):
             continue
 
-        # A complete answer that only proposed something reads as its notes alone.
-        if answer.text.strip():
-            lead = [answer.text]
-        else:
-            lead = [CUT_OFF_ANSWER] if answer.status == models.MessageStatus.FAILED else []
-        turns += [
-            {"role": "user", "content": question.text},
-            {"role": "assistant", "content": "\n\n".join([*lead, *answer.notes])},
-        ]
-    return turns[-HISTORY_MESSAGES:]
+        # The answer's turn holds only its own words, so the model never sees itself write a note.
+        pairs.append(
+            (
+                {"role": "user", "content": _with_app_record(question.text, notes=notes_above)},
+                {"role": "assistant", "content": _answer_content(answer)},
+            )
+        )
+        notes_above = answer.notes
+
+    turns = [turn for pair in pairs for turn in pair]
+    return History(turns=turns[-HISTORY_MESSAGES:], trailing_notes=notes_above)
 
 
 def about_text(db: orm.Session, *, conversation: models.Conversation) -> str | None:
@@ -295,6 +313,21 @@ def _stored_question(row: models.Message, *, card_sets_by_id: dict[uuid.UUID, mo
     if choice is None or card_set is None:
         return row.text
     return question_content(row.text, choice_line=choice_line(kept=choice.kept, card_set=card_set))
+
+
+def _answer_content(answer: HistoryMessage) -> str:
+    """An answer's own text; a blank one reads as cut off (failed) or as a placeholder (it only proposed something)."""
+    if answer.text.strip():
+        return answer.text
+    return CUT_OFF_ANSWER if answer.status == models.MessageStatus.FAILED else NO_TEXT_ANSWER
+
+
+def _with_app_record(content: str, *, notes: Sequence[str]) -> str:
+    """`content` under a block of the notes the app wrote about the answer before it; unchanged without notes."""
+    if not notes:
+        return content
+    record = "\n\n".join(notes)
+    return f"<{APP_RECORD_TAG}>\n{record}\n</{APP_RECORD_TAG}>\n\n{content}"
 
 
 def _spoken_list(items: Sequence[str]) -> str:

@@ -245,12 +245,15 @@ def test_a_new_card_set_replaces_the_open_one_and_the_model_sees_both(
     assert statuses == {first["id"]: "replaced", second["id"]: "proposed"}
 
     with _db(live_stack) as db:
-        turns = context.history(db, conversation_id=uuid.UUID(first["conversation_id"]))
-    answers = [turn["content"] for turn in turns if turn["role"] == "assistant"]
-    assert f"[cards proposed: {TITLE} — replaced by a later proposal]" in answers[1]
-    assert CARDS[2]["question"] in answers[1] and "<cheat_sheet>" not in answers[1]
-    assert f"[cards proposed: {TITLE} — waiting for the owner to save it]" in answers[2]
-    assert "2. (mechanism) Q: How is a JWT checked?" in answers[2] and CARDS[2]["question"] not in answers[2]
+        earlier = context.history(db, conversation_id=uuid.UUID(first["conversation_id"]))
+    assert not any("[cards proposed" in turn["content"] for turn in earlier.turns if turn["role"] == "assistant")
+    records = [turn["content"] for turn in earlier.turns if turn["role"] == "user"]
+    replaced_note = f"[cards proposed: {TITLE} — replaced by a later proposal]"
+    assert replaced_note in records[2]
+    assert CARDS[2]["question"] in records[2] and "<cheat_sheet>" not in records[2]
+    open_note = "\n".join(earlier.trailing_notes)
+    assert f"[cards proposed: {TITLE} — waiting for the owner to save it]" in open_note
+    assert "2. (mechanism) Q: How is a JWT checked?" in open_note and CARDS[2]["question"] not in open_note
 
 
 @pytest.fixture
@@ -299,8 +302,9 @@ def test_keep_ticks_sent_with_a_question_reach_the_model_and_stay_in_its_history
     _ask(owner, conversation_id, text, card_set_choice={"proposal_id": proposal["id"], "kept": [2, 0]})
 
     line = f"The owner kept cards 1 and 3 of the proposed set and dropped 2 (“{CARDS[1]['question']}”)."
-    asked = {"role": "user", "content": f"{line}\n\n{text}"}
-    assert asked_turns[-1][-1] == asked
+    sent = asked_turns[-1][-1]
+    assert sent["content"].startswith("<app_record>\n[cards proposed: ")
+    assert sent["content"].endswith(f"</app_record>\n\n{line}\n\n{text}")
     choice = {"proposal_id": proposal["id"], "kept": [0, 2], "card_count": 3}
     assert _question_segments(owner, text) == [[{"card_set_choice": choice}]]
 
@@ -308,8 +312,8 @@ def test_keep_ticks_sent_with_a_question_reach_the_model_and_stay_in_its_history
     _add_answer(live_stack, user_id=user_id, conversation_id=conversation_id, text="Here is the shorter set.")
     _seed(owner, conversation_id=proposal["conversation_id"], cards=[CARDS[0], CARDS[2]])
     with _db(live_stack) as db:
-        turns = context.history(db, conversation_id=conversation_id)
-    assert asked in turns
+        turns = context.history(db, conversation_id=conversation_id).turns
+    asked = next(turn for turn in turns if turn["content"].endswith(f"{line}\n\n{text}"))
     assert turns[turns.index(asked) + 1] == {"role": "assistant", "content": "Here is the shorter set."}
 
 
@@ -340,7 +344,8 @@ def test_keep_ticks_that_dont_fit_the_open_set_are_ignored_and_the_question_stil
         text = f"Ignored ticks {number}"
         choice = {"proposal_id": proposal_id, "kept": kept}
         _ask(owner, uuid.UUID(conversation_id), text, card_set_choice=choice)
-        assert asked_turns[-1][-1] == {"role": "user", "content": text}, (proposal_id, kept)
+        # No Keep-ticks line: the question is the text, under only the app's record of the answer before it.
+        assert asked_turns[-1][-1]["content"].endswith(f"</app_record>\n\n{text}"), (proposal_id, kept)
         assert _question_segments(owner, text) == [None], (proposal_id, kept)
 
     _ask(owner, uuid.UUID(open_elsewhere["conversation_id"]), "None of these", card_set_choice={
@@ -350,7 +355,7 @@ def test_keep_ticks_that_dont_fit_the_open_set_are_ignored_and_the_question_stil
     line = (
         f"The owner kept none of the cards of the proposed set and dropped {dropped} and 3 (“{CARDS[2]['question']}”)."
     )
-    assert asked_turns[-1][-1] == {"role": "user", "content": f"{line}\n\nNone of these"}
+    assert asked_turns[-1][-1]["content"].endswith(f"</app_record>\n\n{line}\n\nNone of these")
 
 
 def test_keep_ticks_must_be_integers(owner: httpx.Client) -> None:

@@ -1,4 +1,4 @@
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
 
 import { cardsWord } from "@/review/labels";
 import { minutesFor } from "@/review/summary";
@@ -6,6 +6,7 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { CardHeader, ON_GREEN_SOFT } from "@/today/CardHeader";
 import { haptic } from "@/ui/haptics";
+import { Tappable } from "@/ui/Tappable";
 
 const BAR_HEIGHT = 4;
 // The bar's track: white at 28% over the green.
@@ -36,7 +37,7 @@ export function ReviewStartCard({
   const minutes = minutesFor(count);
 
   return (
-    <Pressable
+    <Tappable
       testID={testID}
       accessibilityRole="button"
       onPress={() => {
@@ -83,6 +84,6 @@ export function ReviewStartCard({
           />
         </View>
       ) : null}
-    </Pressable>
+    </Tappable>
   );
 }

@@ -82,6 +82,7 @@ HANDLERS: dict[schemas.ActionType, ActionHandler] = {
     schemas.ActionType.REFRESH_NOTE: note_actions.refresh_note,
     schemas.ActionType.SKIP_NOTE: note_actions.skip_note,
     # Ask
+    schemas.ActionType.RENAME_CONVERSATION: conversation_actions.rename_conversation,
     schemas.ActionType.DELETE_CONVERSATION: conversation_actions.delete_conversation,
     # Newsletter senders
     schemas.ActionType.SET_SENDER_STATUS: sender_actions.set_sender_status,

@@ -1,4 +1,4 @@
-import { Pressable } from "react-native";
+import { Tappable } from "@/ui/Tappable";
 
 import { shortWeekday } from "@/review/summary";
 import { Card } from "@/theme/components/Card";
@@ -13,7 +13,7 @@ type NewsQuizCardProps = { count: number; until: Date; onPress: () => void };
 export function NewsQuizCard({ count, until, onPress }: NewsQuizCardProps) {
   const theme = useTheme();
   return (
-    <Pressable testID="today-quiz" accessibilityRole="button" onPress={onPress}>
+    <Tappable testID="today-quiz" accessibilityRole="button" onPress={onPress}>
       <Card style={{ gap: theme.spacing.sm }}>
         <CardHeader
           label="News quiz"
@@ -24,6 +24,6 @@ export function NewsQuizCard({ count, until, onPress }: NewsQuizCardProps) {
           From your briefs
         </Text>
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }

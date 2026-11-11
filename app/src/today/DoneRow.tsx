@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Pressable, StyleSheet } from "react-native";
+import { StyleSheet } from "react-native";
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withSpring } from "react-native-reanimated";
 
 import { Card } from "@/theme/components/Card";
@@ -7,6 +7,7 @@ import { Text } from "@/theme/components/Text";
 import { fontFamily } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
+import { Tappable } from "@/ui/Tappable";
 
 // The row's check pops once the card above has mostly eased into the row.
 const ROW_POP_DELAY_MS = 250;
@@ -26,7 +27,7 @@ type DoneRowProps = {
 /** A finished Today task in one line: a green check, the bold title · its detail, and an optional link. */
 export function DoneRow({ title, detail, link, onPress, celebrate, testID }: DoneRowProps) {
   return (
-    <Pressable
+    <Tappable
       testID={testID}
       accessibilityRole={onPress ? "button" : undefined}
       disabled={!onPress}
@@ -49,7 +50,7 @@ export function DoneRow({ title, detail, link, onPress, celebrate, testID }: Don
           </Text>
         ) : null}
       </Card>
-    </Pressable>
+    </Tappable>
   );
 }
 

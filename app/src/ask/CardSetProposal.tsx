@@ -13,6 +13,7 @@ import { Text } from "@/theme/components/Text";
 import { fontFamily } from "@/theme/type";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
+import { Tappable } from "@/ui/Tappable";
 
 import { discardCardSet, saveCardSet } from "./api";
 import {
@@ -46,14 +47,12 @@ type CardSetProposalProps = {
 };
 
 const STRUCK = 0.45;
-// Grows the 14-point tick to a 44-point target, the only place Keep can be changed.
-const TICK_HIT_SLOP = 15;
 const CARD_SET_GONE = "This card set is gone";
 
 /**
  * A card set Ask proposed: the cheat-sheet line (none for a note's set), the cards one at a time (or all in a list) with a Keep tick each, and
- * one footer row with Save K / Update K and Discard. Only the tick itself flips Keep, so scrolling over a card never
- * does. Once it is decided it shrinks to how it ended.
+ * one footer row with Save K / Update K and Discard. Tapping anywhere on a card flips its Keep, and a scroll that
+ * starts over a card doesn't. Once it is decided it shrinks to how it ended.
  */
 export function CardSetProposal({
   cardSet: streamed,
@@ -252,50 +251,61 @@ function CheatSheetLine({ title, onPress }: { title: string; onPress: () => void
   );
 }
 
-/** One card of the pager: CARD n with its Keep tick, the question, then the answer under a dashed rule. */
+/** One card of the pager, tappable as a whole to flip Keep: CARD n with its tick, the question, then the answer under a dashed rule. */
 function CardFace({ card, index, kept, onToggle }: { card: ProposedCard; index: number; kept: boolean; onToggle: () => void }) {
   const theme = useTheme();
   return (
-    <View
-      testID="card-set-card"
-      style={{
-        borderWidth: 1,
-        borderColor: theme.colors.line,
-        borderRadius: theme.radii.chip,
-        padding: theme.spacing.md,
-        gap: theme.spacing.sm,
-      }}
+    <Tappable
+      // Not one accessible element: that would hide the card's text from VoiceOver. The tick carries the checkbox.
+      accessible={false}
+      onPress={onToggle}
     >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text variant="monoLabel" tone="ink3">{`Card ${index + 1}`}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}>
-          <KeepTick index={index} kept={kept} onToggle={onToggle} />
-          <Text variant="secondary" style={{ fontFamily: fontFamily.semibold, color: kept ? theme.signals.gotIt : theme.colors.ink3 }}>
-            Keep
+      <View
+        testID="card-set-card"
+        style={{
+          borderWidth: 1,
+          borderColor: theme.colors.line,
+          borderRadius: theme.radii.chip,
+          padding: theme.spacing.md,
+          gap: theme.spacing.sm,
+        }}
+      >
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text variant="monoLabel" tone="ink3">{`Card ${index + 1}`}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.xs }}>
+            <Tick index={index} kept={kept} />
+            <Text variant="secondary" style={{ fontFamily: fontFamily.semibold, color: kept ? theme.signals.gotIt : theme.colors.ink3 }}>
+              Keep
+            </Text>
+          </View>
+        </View>
+        <View style={{ gap: theme.spacing.sm, opacity: kept ? 1 : STRUCK }}>
+          <Text style={{ fontFamily: fontFamily.semibold, textDecorationLine: kept ? "none" : "line-through" }}>
+            {card.question}
           </Text>
+          <DashedRule />
+          <Text variant="secondary" tone="ink2">
+            {card.answer}
+          </Text>
+          <DetailBullets lines={card.detail} tone="ink3" />
         </View>
       </View>
-      <View style={{ gap: theme.spacing.sm, opacity: kept ? 1 : STRUCK }}>
-        <Text style={{ fontFamily: fontFamily.semibold, textDecorationLine: kept ? "none" : "line-through" }}>
-          {card.question}
-        </Text>
-        <DashedRule />
-        <Text variant="secondary" tone="ink2">
-          {card.answer}
-        </Text>
-        <DetailBullets lines={card.detail} tone="ink3" />
-      </View>
-    </View>
+    </Tappable>
   );
 }
 
-/** One numbered row of See all; only its tick flips Keep. */
+/** One numbered row of See all, tappable as a whole to flip Keep. */
 function ListRow({ card, index, kept, onToggle }: { card: ProposedCard; index: number; kept: boolean; onToggle: () => void }) {
   const theme = useTheme();
   return (
-    <View style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start" }}>
+    <Tappable
+      // Not one accessible element: that would hide the card's text from VoiceOver. The tick carries the checkbox.
+      accessible={false}
+      onPress={onToggle}
+      style={{ flexDirection: "row", gap: theme.spacing.sm, alignItems: "flex-start" }}
+    >
       <View style={{ paddingTop: 2 }}>
-        <KeepTick index={index} kept={kept} onToggle={onToggle} />
+        <Tick index={index} kept={kept} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text variant="secondary" tone={kept ? "ink" : "ink3"}>
@@ -309,30 +319,20 @@ function ListRow({ card, index, kept, onToggle }: { card: ProposedCard; index: n
         </Text>
         <DetailBullets lines={card.detail} tone="ink3" />
       </View>
-    </View>
+    </Tappable>
   );
 }
 
-/** A card's Keep checkbox: the only control that flips it, with a 44-point target around the small tick. */
-function KeepTick({ index, kept, onToggle }: { index: number; kept: boolean; onToggle: () => void }) {
-  return (
-    <Pressable
-      testID={`card-set-keep-${index}`}
-      accessibilityRole="checkbox"
-      accessibilityLabel={`Keep card ${index + 1}`}
-      accessibilityState={{ checked: kept }}
-      hitSlop={TICK_HIT_SLOP}
-      onPress={onToggle}
-    >
-      <Tick kept={kept} />
-    </Pressable>
-  );
-}
-
-function Tick({ kept }: { kept: boolean }) {
+/** The small Keep tick: what VoiceOver and Maestro see as the checkbox; a tap on it lands on the card around it. */
+function Tick({ index, kept }: { index: number; kept: boolean }) {
   const theme = useTheme();
   return (
     <View
+      testID={`card-set-keep-${index}`}
+      accessible
+      accessibilityRole="checkbox"
+      accessibilityLabel={`Keep card ${index + 1}`}
+      accessibilityState={{ checked: kept }}
       style={{
         width: 14,
         height: 14,

@@ -34,7 +34,7 @@ _CARD_SET_STATUS_NOTES: dict[models.CardSetStatus, str] = {
 _CITED_ITEM_KEYS = (("source", "source_id"), ("topic_primer", "topic_primer_id"), ("take", "take_id"))
 # A question's `segments` hold at most one segment, under this key: the Keep ticks it was sent with.
 CARD_SET_CHOICE_KEY = "card_set_choice"
-# The answer turn of a failed answer that proposed something but wrote no text: the API rejects an empty turn.
+# Marks a failed answer that wrote no text (but proposed something) so its turn isn't empty: the API rejects one.
 CUT_OFF_ANSWER = "(This answer was cut off.)"
 
 
@@ -77,7 +77,7 @@ def owner_zone(name: str | None) -> datetime.tzinfo:
 
 
 def history(db: orm.Session, *, conversation_id: uuid.UUID) -> list[dict[str, Any]]:
-    """The conversation's earlier finished exchanges as Messages API turns, oldest first.
+    """Earlier exchanges that finished, or failed after proposing an edit or card set, as API turns, oldest first.
 
     A question sent with Keep ticks opens with the line saying which cards the owner kept and dropped, as its turn did.
     Each answer is followed by lines naming the items it cited, the edits it proposed and the card sets it proposed
@@ -208,10 +208,11 @@ def history_messages(rows: Sequence[HistoryMessage]) -> list[dict[str, Any]]:
         if not is_pair or not (finished or answer.proposed):
             continue
 
-        text = answer.text if answer.text.strip() else CUT_OFF_ANSWER
+        blank = not answer.text.strip()
+        texts = [CUT_OFF_ANSWER if answer.status == models.MessageStatus.FAILED else ""] if blank else [answer.text]
         turns += [
             {"role": "user", "content": question.text},
-            {"role": "assistant", "content": "\n\n".join([text, *answer.notes])},
+            {"role": "assistant", "content": "\n\n".join([*[text for text in texts if text], *answer.notes])},
         ]
     return turns[-HISTORY_MESSAGES:]
 

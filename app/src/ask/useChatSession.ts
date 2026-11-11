@@ -27,9 +27,9 @@ const POLL_MS = 5_000;
  * hangs up or the chat is left, and the next pull brings it. A stream that ends or breaks after the server took the
  * question leaves the overlay waiting ("Still answering…"): it syncs every 5 s and turns failed after `ANSWER_WAIT_MS`
  * with nothing pulled. A request that never opened, or an `error` event, fails at once. The overlay stays until the
- * pulled rows hold the question and its answer (or, for a failed or waiting stream, a later assistant row), and the returned `pending` is already null on the
- * render where they land, so nothing flickers or shows twice. A question carries `cardSetChoice`, the open card set's
- * Keep ticks as they stand when it is sent.
+ * pulled rows hold the question and its answer (or, for a failed or waiting stream, a later assistant row), and the
+ * returned `pending` is already null on the render where they land, so nothing flickers or shows twice. A question
+ * carries `cardSetChoice`, the open card set's Keep ticks as they stand when it is sent.
  */
 export function useChatSession(input: {
   conversationId: string;

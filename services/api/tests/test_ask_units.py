@@ -157,6 +157,14 @@ def test_history_keeps_a_failed_answer_that_proposed_something() -> None:
         context.HistoryMessage(
             role=models.MessageRole.ASSISTANT, text=" ", status=failed, notes=(note,), proposed=True
         ),
+        context.HistoryMessage(role=models.MessageRole.USER, text="q3", status=models.MessageStatus.COMPLETE),
+        context.HistoryMessage(
+            role=models.MessageRole.ASSISTANT,
+            text="",
+            status=models.MessageStatus.COMPLETE,
+            notes=(note,),
+            proposed=True,
+        ),
     ]
 
     assert context.history_messages(rows) == [
@@ -164,6 +172,8 @@ def test_history_keeps_a_failed_answer_that_proposed_something() -> None:
         {"role": "assistant", "content": f"Here are cards\n\n{note}"},
         {"role": "user", "content": "q2"},
         {"role": "assistant", "content": f"(This answer was cut off.)\n\n{note}"},
+        {"role": "user", "content": "q3"},
+        {"role": "assistant", "content": note},
     ]
 
 

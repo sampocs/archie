@@ -47,6 +47,7 @@ export default function ReviewSettingsScreen() {
           <StepButton
             testID="daily-limit-down"
             label="−"
+            accessibilityLabel="Fewer cards per day"
             onPress={down ? () => change({ ...settings, dailyLimit: down.value }) : undefined}
           />
           <Text testID="daily-limit" style={{ minWidth: 28, textAlign: "center" }}>
@@ -55,6 +56,7 @@ export default function ReviewSettingsScreen() {
           <StepButton
             testID="daily-limit-up"
             label="+"
+            accessibilityLabel="More cards per day"
             onPress={up ? () => change({ ...settings, dailyLimit: up.value }) : undefined}
           />
         </View>
@@ -96,12 +98,23 @@ export default function ReviewSettingsScreen() {
 }
 
 // One side of the cards-per-day stepper; without `onPress` it is disabled and dimmed.
-function StepButton({ label, onPress, testID }: { label: string; onPress?: () => void; testID: string }) {
+function StepButton({
+  label,
+  accessibilityLabel,
+  onPress,
+  testID,
+}: {
+  label: string;
+  accessibilityLabel: string;
+  onPress?: () => void;
+  testID: string;
+}) {
   const theme = useTheme();
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ disabled: !onPress }}
       disabled={!onPress}
       onPress={onPress}

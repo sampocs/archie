@@ -15,9 +15,11 @@ import asyncio
 import datetime
 import json
 import pathlib
+import threading
 import uuid
 from typing import Any
 
+import anyio
 import httpx
 import pytest
 import sqlalchemy
@@ -397,6 +399,41 @@ def test_closing_the_async_stream_finishes_and_saves_the_answer_at_once(
         question_seq=question_seq,
         status=models.MessageStatus.COMPLETE,
     )
+
+
+def test_a_cancelled_async_stream_saves_the_answer_off_the_event_loop_thread(
+    live_stack: LiveStack, request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Uvicorn hangs up by cancelling the response's task group, landing inside `stream_async`'s wait for the next
+    event; the shielded close must still finish and save the answer on a worker thread, never the event loop's."""
+    engine, answer_request, question_seq = _unfinished_answer_request(live_stack)
+    save_ran_on_main_thread: list[bool] = []
+    original_save = answer._save
+
+    def recording_save(*args: Any, **kwargs: Any) -> Any:
+        save_ran_on_main_thread.append(threading.current_thread() is threading.main_thread())
+        return original_save(*args, **kwargs)
+
+    monkeypatch.setattr(answer, "_save", recording_save)
+
+    async def cancel_while_waiting_for_the_next_event() -> None:
+        async with anyio.create_task_group() as task_group:
+            async for _ in answer.stream_async(engine, answer_request):
+                # The consumer goes back to waiting on the next event, which is where the cancel is delivered.
+                task_group.cancel_scope.cancel()
+
+    with _replay(request, "ask_library"):
+        asyncio.run(cancel_while_waiting_for_the_next_event())
+
+    _assert_hang_up_recorded(
+        live_stack,
+        engine=engine,
+        answer_request=answer_request,
+        question_seq=question_seq,
+        status=models.MessageStatus.COMPLETE,
+    )
+    assert save_ran_on_main_thread
+    assert not any(save_ran_on_main_thread)
 
 
 def test_a_hang_up_then_a_failure_stores_the_answer_failed(

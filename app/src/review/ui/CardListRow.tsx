@@ -15,18 +15,18 @@ type CardListRowProps = {
   card: CardRow;
   // The grey line under the question, e.g. "Concept · Due today"; " · Edited" is added for an edited card.
   detail: string;
-  // A card that can't be reviewed yet ("After you finish") isn't pressable.
-  reviewable: boolean;
   index: number;
   // Row, Remove and Versions test ids are `${testIDPrefix}-row-${index}`, `-remove-` and `-versions-`.
   testIDPrefix: string;
   // Offers a Versions swipe action on an edited card.
   onVersions?: () => void;
   end?: ReactNode;
+  // The card page's back label (where the row lives, e.g. "Review"); "Back" when absent.
+  backLabel?: string;
 };
 
-/** One card in a list: its question and detail line; tap practices it alone, swipe to Remove (or see Versions). */
-export function CardListRow({ card, detail, reviewable, index, testIDPrefix, onVersions, end }: CardListRowProps) {
+/** One card in a list: its question and detail line; tap opens the card's page, swipe to Remove (or see Versions). */
+export function CardListRow({ card, detail, index, testIDPrefix, onVersions, end, backLabel }: CardListRowProps) {
   const theme = useTheme();
   const router = useRouter();
   const edited = card.version > 1;
@@ -60,8 +60,7 @@ export function CardListRow({ card, detail, reviewable, index, testIDPrefix, onV
     >
       <Pressable
         testID={`${testIDPrefix}-row-${index}`}
-        disabled={!reviewable}
-        onPress={() => router.push(`/review/session?mode=card&id=${card.id}`)}
+        onPress={() => router.push({ pathname: "/card/[id]", params: { id: card.id, from: backLabel } })}
         style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md, paddingVertical: theme.spacing.md }}
       >
         <View style={{ flex: 1, gap: theme.spacing.xs }}>

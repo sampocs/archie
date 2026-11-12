@@ -255,6 +255,8 @@ def about_text(db: orm.Session, *, conversation: models.Conversation) -> str | N
         body = (version.body or version.raw_body) if version is not None else ""
         kind_name = takes.KIND_NAMES[models.TakeKind(take.kind)]
         return f"The owner's own {kind_name}: {take.title} (take id {take.id})\n\n{body}"
+    if conversation.about_card_id is not None:
+        return _card_text(db, card_id=conversation.about_card_id)
     return None
 
 
@@ -267,6 +269,8 @@ def boost(db: orm.Session, *, conversation: models.Conversation) -> search.ItemR
     if conversation.about_topic_primer_id is not None:
         primer = _current_primer(db, primer_id=conversation.about_topic_primer_id)
         return search.ItemRef(kind=models.SearchItemKind.TOPIC_PRIMER, id=primer.id) if primer else None
+    if conversation.about_card_id is not None:
+        return _card_origin_boost(db, card_id=conversation.about_card_id)
     return None
 
 
@@ -276,6 +280,53 @@ def note_title(db: orm.Session, *, conversation: models.Conversation) -> str | N
         return None
     source = db.get_one(models.Source, conversation.about_source_id)
     return (source.title or source.url) if source.kind == models.SourceKind.NOTE else None
+
+
+def _card_origin_boost(db: orm.Session, *, card_id: uuid.UUID) -> search.ItemRef | None:
+    """The source, take or topic primer a card came from; None for any other origin or a dropped card."""
+    card = db.get(models.Card, card_id)
+    if card is None or card.deleted_at is not None:
+        return None
+    if card.source_id is not None:
+        return search.ItemRef(kind=models.SearchItemKind.SOURCE, id=card.source_id)
+    if card.take_id is not None:
+        return search.ItemRef(kind=models.SearchItemKind.TAKE, id=card.take_id)
+    if card.topic_primer_id is not None:
+        primer = _current_primer(db, primer_id=card.topic_primer_id)
+        return search.ItemRef(kind=models.SearchItemKind.TOPIC_PRIMER, id=primer.id) if primer else None
+    return None
+
+
+def _card_text(db: orm.Session, *, card_id: uuid.UUID) -> str | None:
+    """A review card's question, answer and detail lines, where it came from, and what the owner is here to do."""
+    card = db.get(models.Card, card_id)
+    if card is None:
+        return None
+    if card.deleted_at is not None:
+        return f"A review card (card id {card.id}) that the owner has since removed. Its question was: {card.question}"
+    lines = [f"A review card (card id {card.id})", f"Question: {card.question}", f"Answer: {card.answer}"]
+    lines += [f"- {line}" for line in card.detail.splitlines() if line.strip()]
+    origin = _card_origin_title(db, card=card)
+    if origin is not None:
+        lines.append(f"It came from: {origin}")
+    lines.append(
+        "The owner is here to change or understand this card. To change it, read it with read_item and then "
+        "propose_card_edit; you already have its id, so there is no need for find_cards."
+    )
+    return "\n".join(lines)
+
+
+def _card_origin_title(db: orm.Session, *, card: models.Card) -> str | None:
+    """The title of the source, take or topic a card came from; None when it has no such origin."""
+    if card.source_id is not None:
+        source = db.get_one(models.Source, card.source_id)
+        return source.title or source.url
+    if card.take_id is not None:
+        return db.get_one(models.Take, card.take_id).title
+    if card.topic_primer_id is not None:
+        primer = db.get_one(models.TopicPrimer, card.topic_primer_id)
+        return db.get_one(models.Topic, primer.topic_id).name
+    return None
 
 
 def _current_primer(db: orm.Session, *, primer_id: uuid.UUID) -> models.TopicPrimer | None:

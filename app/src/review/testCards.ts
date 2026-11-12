@@ -125,6 +125,7 @@ export const conversationRow = (overrides: Partial<ConversationRow>): Conversati
   aboutSourceId: null,
   aboutTopicPrimerId: null,
   aboutTakeId: null,
+  aboutCardId: null,
   createdAt: "2026-11-01T00:00:00Z",
   updatedAt: "2026-11-01T00:00:00Z",
   deletedAt: null,

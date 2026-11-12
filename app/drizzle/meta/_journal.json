@@ -148,6 +148,13 @@
       "when": 1794407156953,
       "tag": "0020_daily_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1794449399700,
+      "tag": "0021_chat_about_card",
+      "breakpoints": true
     }
   ]
 }

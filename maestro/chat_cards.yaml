@@ -114,3 +114,33 @@ appId: com.sampocs.archie
 - assertVisible: ".*You:.*"
 - assertVisible:
     id: "chat-item-continue"
+# A saved card opens as its own page from Review search: question, answer and detail, Practice, and the chat box.
+# Back out of the item and the chat to the tab bar first.
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "screen-back"
+- tapOn:
+    id: "tab-review"
+- tapOn:
+    id: "review-search"
+- inputText: "revoke"
+- tapOn:
+    id: "review-search-row-0"
+- extendedWaitUntil:
+    visible:
+      id: "card-page"
+    timeout: 10000
+- assertVisible: "Why is a JWT hard to revoke before it expires?"
+- assertVisible: "It isn't looked up; the signature is trusted."
+- assertVisible: "Only a denylist could cut it short."
+# Practice starts a one-card session; closing it comes back to the card's page.
+- tapOn:
+    id: "card-page-practice"
+- assertVisible:
+    id: "review-question"
+- tapOn:
+    id: "review-close"
+- assertVisible:
+    id: "card-page"
+- assertVisible: "Ask to change this card…"

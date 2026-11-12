@@ -186,6 +186,8 @@ export type PulledConversation = {
   about_source_id: string | null;
   about_topic_primer_id: string | null;
   about_take_id: string | null;
+  // Absent from a server older than chats about a card.
+  about_card_id?: string | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

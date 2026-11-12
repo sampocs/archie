@@ -35,7 +35,7 @@ router = fastapi.APIRouter(prefix="/ask", tags=["ask"])
 class AboutIn(pydantic.BaseModel):
     """The item a new chat is about."""
 
-    kind: models.SearchItemKind
+    kind: models.ConversationAboutKind
     id: uuid.UUID
 
 
@@ -191,11 +191,11 @@ def _conversation(
 
 def _set_about(db: orm.Session, *, user: models.User, conversation: models.Conversation, about: AboutIn) -> None:
     """Tie the new chat to the user's live item, or 404."""
-    if about.kind == models.SearchItemKind.SOURCE:
+    if about.kind == models.ConversationAboutKind.SOURCE:
         source = db.get(models.Source, about.id)
         live = source is not None and source.user_id == user.id and source.deleted_at is None
         conversation.about_source_id = about.id
-    elif about.kind == models.SearchItemKind.TOPIC_PRIMER:
+    elif about.kind == models.ConversationAboutKind.TOPIC_PRIMER:
         primer = db.get(models.TopicPrimer, about.id)
         topic = db.get(models.Topic, primer.topic_id) if primer is not None else None
         live = (
@@ -206,10 +206,14 @@ def _set_about(db: orm.Session, *, user: models.User, conversation: models.Conve
             and topic.merged_into_id is None
         )
         conversation.about_topic_primer_id = about.id
-    else:
+    elif about.kind == models.ConversationAboutKind.TAKE:
         take = db.get(models.Take, about.id)
         live = take is not None and take.user_id == user.id and take.deleted_at is None
         conversation.about_take_id = about.id
+    else:
+        card = db.get(models.Card, about.id)
+        live = card is not None and card.user_id == user.id and card.deleted_at is None
+        conversation.about_card_id = about.id
     if not live:
         raise fastapi.HTTPException(status_code=404, detail="about item not found")
     conversation.about_kind = about.kind.value

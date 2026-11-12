@@ -261,6 +261,15 @@ class SearchItemKind(StrEnum):
     TAKE = "take"
 
 
+class ConversationAboutKind(StrEnum):
+    """What a chat can be about: a `SearchItemKind` item, or a review card (which search never returns)."""
+
+    SOURCE = SearchItemKind.SOURCE.value
+    TOPIC_PRIMER = SearchItemKind.TOPIC_PRIMER.value
+    TAKE = SearchItemKind.TAKE.value
+    CARD = "card"
+
+
 class MessageRole(StrEnum):
     """Who wrote a chat message."""
 
@@ -345,7 +354,7 @@ EMBEDDING_DIMENSIONS = 1536
 # A chat's title (its first question until it is named) is at most this many characters.
 CONVERSATION_TITLE_LENGTH = 60
 CHUNK_OWNER_CHECK = "num_nonnulls(source_id, topic_primer_id, take_id) = 1"
-CONVERSATION_ABOUT_CHECK = "num_nonnulls(about_source_id, about_topic_primer_id, about_take_id) <= 1"
+CONVERSATION_ABOUT_CHECK = "num_nonnulls(about_source_id, about_topic_primer_id, about_take_id, about_card_id) <= 1"
 
 
 class User(Base):
@@ -811,7 +820,7 @@ class Conversation(Base):
     id: Mapped[uuid.UUID] = mapped_column(postgresql.UUID(as_uuid=True), primary_key=True)
     user_id: Mapped[int] = mapped_column(sqlalchemy.BigInteger, sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"))
     title: Mapped[str] = mapped_column(sqlalchemy.String(200))
-    # A `SearchItemKind` value naming which `about_*` id is set; null for a general chat.
+    # A `ConversationAboutKind` value naming which `about_*` id is set; null for a general chat.
     about_kind: Mapped[str | None] = mapped_column(sqlalchemy.String(16))
     about_source_id: Mapped[uuid.UUID | None] = mapped_column(
         postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("sources.id", ondelete="SET NULL")
@@ -821,6 +830,9 @@ class Conversation(Base):
     )
     about_take_id: Mapped[uuid.UUID | None] = mapped_column(
         postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("takes.id", ondelete="SET NULL")
+    )
+    about_card_id: Mapped[uuid.UUID | None] = mapped_column(
+        postgresql.UUID(as_uuid=True), sqlalchemy.ForeignKey("cards.id", ondelete="SET NULL")
     )
     created_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())
     updated_at: Mapped[datetime.datetime] = mapped_column(TIMESTAMP, server_default=sqlalchemy.func.now())

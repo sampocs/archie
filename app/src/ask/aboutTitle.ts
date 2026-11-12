@@ -7,7 +7,7 @@ import type { ConversationRow } from "./types";
 
 /**
  * The title of the item a chat is about, read from the phone's own tables: a source's title (or its url), a topic
- * primer's topic name, a take's title. Null when the chat is about nothing, or the item isn't on the phone.
+ * primer's topic name, a take's title, a card's question. Null when the chat is about nothing, or the item isn't on the phone.
  */
 export function aboutTitleOf(conversation: ConversationRow | null | undefined): string | null {
   if (!conversation) return null;
@@ -30,6 +30,11 @@ export function aboutTitleOf(conversation: ConversationRow | null | undefined): 
   if (conversation.aboutTakeId) {
     const take = db.select().from(schema.takes).where(eq(schema.takes.id, conversation.aboutTakeId)).get();
     return take?.title ?? null;
+  }
+
+  if (conversation.aboutCardId) {
+    const card = db.select().from(schema.cards).where(eq(schema.cards.id, conversation.aboutCardId)).get();
+    return card?.question ?? null;
   }
 
   return null;

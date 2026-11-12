@@ -331,6 +331,7 @@ class ConversationOut(pydantic.BaseModel):
     about_source_id: uuid.UUID | None
     about_topic_primer_id: uuid.UUID | None
     about_take_id: uuid.UUID | None
+    about_card_id: uuid.UUID | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
     deleted_at: datetime.datetime | None

@@ -252,7 +252,7 @@ export default function SourceScreen() {
           <>
             {/* A book shows its thoughts itself, above its background and notes. */}
             {isNote || isChat || isBook ? null : <NoteSection reaction={source.reaction} note={source.note} />}
-            <CardsSection of={{ kind: "source", id: source.id }} />
+            <CardsSection of={{ kind: "source", id: source.id }} backLabel={source.title ?? undefined} />
           </>
         )}
         {isNotice ? null : (

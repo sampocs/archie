@@ -49,7 +49,7 @@ describe("chats on the phone", () => {
     await store.applyPage(
       page(
         {
-          conversations: [conversation()],
+          conversations: [conversation({ about_kind: "card", about_card_id: "c1" })],
           messages: [message()],
           cards: [
             {
@@ -63,7 +63,12 @@ describe("chats on the phone", () => {
       ) as never,
     );
 
-    expect(chat(db)).toMatchObject({ title: "How does the Fed create money?", deletedAt: null });
+    expect(chat(db)).toMatchObject({
+      title: "How does the Fed create money?",
+      aboutKind: "card",
+      aboutCardId: "c1",
+      deletedAt: null,
+    });
     const [stored] = db.select().from(schema.messages).all();
     expect(stored).toMatchObject({ conversationId: "chat1", role: "assistant", webSearch: 0, status: "complete" });
     expect(JSON.parse(stored.segments!)).toEqual(message().segments);

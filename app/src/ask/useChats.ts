@@ -38,8 +38,10 @@ export function useChat(conversationId: string): {
   messages: MessageRow[];
   // False until the messages have been read from the phone's database.
   loaded: boolean;
+  // False until the chat's own row has been read (it may not exist yet: a new chat).
+  conversationLoaded: boolean;
 } {
-  const { data: conversations } = useLiveQuery(
+  const { data: conversations, updatedAt: conversationRead } = useLiveQuery(
     db.select().from(schema.conversations).where(eq(schema.conversations.id, conversationId)),
     [conversationId],
   );
@@ -51,5 +53,10 @@ export function useChat(conversationId: string): {
       .orderBy(asc(schema.messages.createdAt), asc(schema.messages.id)),
     [conversationId],
   );
-  return { conversation: conversations[0] ?? null, messages, loaded: messagesRead !== undefined };
+  return {
+    conversation: conversations[0] ?? null,
+    messages,
+    loaded: messagesRead !== undefined,
+    conversationLoaded: conversationRead !== undefined,
+  };
 }

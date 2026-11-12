@@ -18,8 +18,7 @@ export type CardsOf = { kind: "source"; id: string } | { kind: "take"; id: strin
 
 /**
  * "Cards from this": the source's or take's live cards in session order, each with when it is next due (and, for a
- * source's, its kind). Rows of cards that can't be reviewed yet ("After you finish") aren't pressable; every row swipes
- * to Remove.
+ * source's, its kind). Each row opens the card's page; every row swipes to Remove.
  */
 export function CardsSection({ of }: { of: CardsOf }) {
   const router = useRouter();
@@ -54,7 +53,6 @@ export function CardsSection({ of }: { of: CardsOf }) {
       }
     >
       {cards.map((card, index) => {
-        const reviewable = isReviewable(card, data, now);
         const due = cardDueLabel(card, data, now);
 
         return (
@@ -63,7 +61,6 @@ export function CardsSection({ of }: { of: CardsOf }) {
             card={card}
             // A take card's kind label ("Take") adds nothing on the take's own page.
             detail={of.kind === "take" ? due : `${KIND_LABELS[card.kind] ?? card.kind} · ${due}`}
-            reviewable={reviewable}
             index={index}
             testIDPrefix="card"
             onVersions={() => setVersionsOf(card.id)}

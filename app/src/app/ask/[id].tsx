@@ -7,36 +7,17 @@ import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { Pressable, View } from "react-native";
 
 import { aboutTitleOf } from "@/ask/aboutTitle";
-import { AnswerView } from "@/ask/AnswerView";
-import { CardSetProposal } from "@/ask/CardSetProposal";
-import {
-  cardSetChoice,
-  choiceLine,
-  MAKE_CARDS_MESSAGE,
-  seededTicks,
-  shownCardSetStatus,
-  storedChoice,
-  ticksOf,
-  viewOfCardSetWire,
-  type CardSetChoice,
-  type CardSetView,
-} from "@/ask/cardSets";
 import { backLabelOf } from "@/ask/chatChrome";
+import { ChatThread, useChatThread } from "@/ask/ChatThread";
 import { confirmDeleteChat, promptChatName } from "@/ask/chatPrompts";
 import { Composer } from "@/ask/Composer";
 import { ItemSheet } from "@/ask/ItemSheet";
-import { groupSections, liveView, STILL_ANSWERING, unansweredState } from "@/ask/sections";
-import { parseSegments, type AboutKind } from "@/ask/types";
+import type { AboutKind } from "@/ask/types";
 import { useAskAvailable } from "@/ask/useAskAvailable";
-import { useCardSetTicks, useChatItemId, useConversationCardSets } from "@/ask/useCardSets";
 import { useChat } from "@/ask/useChats";
-import { useChatSession } from "@/ask/useChatSession";
 import { deleteConversation, renameConversation } from "@/db/actions";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
-import { EditProposalCard } from "@/edits/EditProposalCard";
-import { viewOfWire } from "@/edits/types";
-import { useConversationProposals } from "@/edits/useProposals";
 import { requestSync } from "@/sync/useSync";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
@@ -44,9 +25,6 @@ import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
 import { MenuSheet } from "@/ui/MenuSheet";
 import { Toast } from "@/ui/Toast";
-
-// How often a chat waiting on an answer the server is still finishing asks for a sync.
-const ANSWER_POLL_MS = 5_000;
 
 type Params = { id: string; q?: string; web?: string; aboutKind?: AboutKind; aboutId?: string; aboutTitle?: string; fromNote?: string };
 
@@ -62,48 +40,8 @@ export default function ChatScreen() {
     () => (params.aboutKind && params.aboutId ? { kind: params.aboutKind, id: params.aboutId } : null),
     [params.aboutKind, params.aboutId],
   );
-  const cardSets = useConversationCardSets(params.id);
-  const { ticks, toggle } = useCardSetTicks();
-  // Ticks an earlier question stored back a set up after a remount; toggled ticks win over them.
-  const ticksFor = useCallback(
-    (view: Pick<CardSetView, "id" | "cards">) => ticksOf(ticks, view, seededTicks(messages, view)),
-    [ticks, messages],
-  );
-  // The next question carries the open set's ticks when some card is unticked. Only a stored set can be open then: a
-  // live answer blocks sending until its rows land. The latest proposed one is the open one.
-  const openStoredSet = useMemo(
-    () => [...cardSets.values()].flat().findLast((cardSet) => cardSet.status === "proposed") ?? null,
-    [cardSets],
-  );
-  const choice = useMemo(
-    () => cardSetChoice(openStoredSet, openStoredSet ? ticksFor(openStoredSet) : []),
-    [openStoredSet, ticksFor],
-  );
-  const { pending, send } = useChatSession({ conversationId: params.id, messages, about, cardSetChoice: choice });
-  // A question with no answer and no overlay (the app was relaunched, or the chat reopened): the server may still be
-  // finishing it. Poll for the answer while it is young, and re-read the clock so it turns failed after 3 minutes.
-  const [, setTick] = useState(0);
-  const unanswered = pending ? null : unansweredState(messages, Date.now());
-  useEffect(() => {
-    if (unanswered !== "waiting") return;
-    const poll = setInterval(() => {
-      requestSync();
-      setTick((tick) => tick + 1);
-    }, ANSWER_POLL_MS);
-    return () => clearInterval(poll);
-  }, [unanswered]);
-  const unansweredQuestion = unanswered ? messages.at(-1) : undefined;
-  const proposals = useConversationProposals(params.id);
-  // Targets with a proposal in the live answer: older still-proposed ones for them are superseded.
-  const liveTargets = new Set((pending?.live.proposals ?? []).map((wire) => `${wire.target_kind}:${wire.target_id}`));
-  // A set in the live answer replaces every still-proposed stored one, as the server does when it saves it.
-  const cardSetLive = (pending?.live.cardSets.length ?? 0) > 0;
-  // Once the chat has saved its Library item, a later Save updates that item.
-  const updating = useChatItemId(params.id) !== null;
-  // While a set waits on a decision, the composer invites changes to it.
-  const openCardSet =
-    (pending?.live.cardSets ?? []).some((wire) => wire.status === "proposed") ||
-    [...cardSets.values()].flat().some((cardSet) => shownCardSetStatus(cardSet, cardSetLive) === "proposed");
+  const thread = useChatThread({ conversationId: params.id, messages, about });
+  const { pending, send, unanswered, openCardSet } = thread;
   const [toast, setToast] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [itemOpen, setItemOpen] = useState(false);
@@ -129,7 +67,6 @@ export default function ChatScreen() {
     [conversation?.aboutSourceId],
   );
   const liveAboutSource = aboutSources[0]?.deletedAt === null ? aboutSources[0] : null;
-  const turns = useMemo(() => messages.filter((message) => message.id !== pending?.userMessageId), [messages, pending]);
 
   return (
     <View style={{ flex: 1 }}>
@@ -188,98 +125,7 @@ export default function ChatScreen() {
         }
       >
         <View testID="chat-screen" style={{ gap: theme.spacing.lg }}>
-          {turns.map((message, index) =>
-            message.role === "user" ? (
-              <UserBubble key={message.id} text={message.text} index={index} choice={storedChoice(message.segments)} />
-            ) : (
-              <AnswerView
-                key={message.id}
-                index={index}
-                sections={groupSections(parseSegments(message.segments))}
-                quietLabels={(proposals.get(message.id) ?? []).length > 0 || cardSets.has(message.id)}
-                failed={message.status === "failed"}
-                onRetry={() => retry(turns, index, send)}
-                onMakeCards={
-                  // An answer that already proposed cards has its own Save; offering Make cards there too is noise.
-                  message.status === "complete" && !cardSets.has(message.id)
-                    ? () => send(MAKE_CARDS_MESSAGE, false)
-                    : undefined
-                }
-              >
-                {(proposals.get(message.id) ?? []).map((proposal) => (
-                  <EditProposalCard
-                    key={proposal.id}
-                    proposal={proposal}
-                    ready
-                    online={online}
-                    supersededLive={liveTargets.has(`${proposal.targetKind}:${proposal.targetId}`)}
-                    onToast={setToast}
-                  />
-                ))}
-                {(cardSets.get(message.id) ?? []).map((cardSet) => (
-                  <CardSetProposal
-                    key={cardSet.id}
-                    cardSet={cardSet}
-                    ready
-                    online={online}
-                    replacedLive={cardSetLive}
-                    updating={updating}
-                    kept={ticksFor(cardSet)}
-                    onToggle={(index) => toggle(cardSet, index, seededTicks(messages, cardSet))}
-                    onToast={setToast}
-                  />
-                ))}
-              </AnswerView>
-            ),
-          )}
-          {unansweredQuestion ? (
-            <AnswerView
-              index={turns.length}
-              sections={[]}
-              thinking={unanswered === "waiting" ? STILL_ANSWERING : null}
-              sentAt={new Date(unansweredQuestion.createdAt).getTime()}
-              failed={unanswered === "failed"}
-              onRetry={() => send(unansweredQuestion.text, unansweredQuestion.webSearch === 1)}
-            />
-          ) : null}
-          {pending ? (
-            <>
-              <UserBubble text={pending.text} index={turns.length} choice={pending.cardSetChoice} />
-              <AnswerView
-                index={turns.length + 1}
-                {...liveView(pending.live)}
-                sentAt={pending.sentAt}
-                quietLabels={pending.live.proposals.length > 0 || pending.live.cardSets.length > 0}
-                failed={pending.live.failed}
-                onRetry={() => send(pending.text, pending.webSearch)}
-              >
-                {pending.live.proposals.map((wire) => (
-                  <EditProposalCard
-                    key={wire.id}
-                    proposal={viewOfWire(wire)}
-                    ready={pending.live.messageId !== null}
-                    online={online}
-                    onToast={setToast}
-                  />
-                ))}
-                {pending.live.cardSets.map((wire) => {
-                  const view = viewOfCardSetWire(wire);
-                  return (
-                    <CardSetProposal
-                      key={wire.id}
-                      cardSet={view}
-                      ready={pending.live.messageId !== null}
-                      online={online}
-                      updating={updating}
-                      kept={ticksFor(view)}
-                      onToggle={(index) => toggle(view, index, seededTicks(messages, view))}
-                      onToast={setToast}
-                    />
-                  );
-                })}
-              </AnswerView>
-            </>
-          ) : null}
+          <ChatThread thread={thread} online={online} onToast={setToast} />
         </View>
       </Screen>
       {liveAboutSource ? (
@@ -318,41 +164,6 @@ export default function ChatScreen() {
       />
       {/* Outside the scroll view, so it pins to the screen's bottom rather than the end of the chat. */}
       {toast ? <Toast message={toast} onHide={hideToast} /> : null}
-    </View>
-  );
-}
-
-/** Try again on a stored failed answer: send its question again, with the globe as it was. */
-function retry(
-  turns: { role: string; text: string; webSearch: number }[],
-  answerIndex: number,
-  send: (text: string, web: boolean) => void,
-): void {
-  const question = turns.slice(0, answerIndex).findLast((turn) => turn.role === "user");
-  if (question) send(question.text, question.webSearch === 1);
-}
-
-/** A question, with a muted "Kept 3 of 5 cards" under it when it carried the open card set's Keep ticks. */
-function UserBubble({ text, index, choice }: { text: string; index: number; choice: CardSetChoice | null }) {
-  const theme = useTheme();
-  return (
-    <View style={{ alignSelf: "flex-end", alignItems: "flex-end", maxWidth: "85%", gap: theme.spacing.xs }}>
-      <View
-        testID={`chat-user-${index}`}
-        style={{
-          backgroundColor: theme.colors.bubble,
-          borderRadius: theme.radii.card,
-          paddingHorizontal: theme.spacing.md,
-          paddingVertical: theme.spacing.sm,
-        }}
-      >
-        <Text>{text}</Text>
-      </View>
-      {choice ? (
-        <Text testID={`chat-user-${index}-kept`} variant="secondary" tone="ink3">
-          {choiceLine(choice)}
-        </Text>
-      ) : null}
     </View>
   );
 }

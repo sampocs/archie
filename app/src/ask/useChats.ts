@@ -36,6 +36,7 @@ export function useChats(): ChatListItem[] {
 export function useChat(conversationId: string): { conversation: ConversationRow | null; messages: MessageRow[] } {
   const { data: conversations } = useLiveQuery(
     db.select().from(schema.conversations).where(eq(schema.conversations.id, conversationId)),
+    [conversationId],
   );
   const { data: messages } = useLiveQuery(
     db
@@ -43,6 +44,7 @@ export function useChat(conversationId: string): { conversation: ConversationRow
       .from(schema.messages)
       .where(eq(schema.messages.conversationId, conversationId))
       .orderBy(asc(schema.messages.createdAt), asc(schema.messages.id)),
+    [conversationId],
   );
   return { conversation: conversations[0] ?? null, messages };
 }

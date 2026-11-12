@@ -277,6 +277,7 @@ export const conversations = sqliteTable("conversations", {
   aboutSourceId: text("about_source_id"),
   aboutTopicPrimerId: text("about_topic_primer_id"),
   aboutTakeId: text("about_take_id"),
+  aboutCardId: text("about_card_id"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
   deletedAt: text("deleted_at"),

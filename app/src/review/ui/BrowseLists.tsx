@@ -174,7 +174,6 @@ export function MissedList({ entries, data, now }: { entries: MissedCard[]; data
             key={entry.card.id}
             card={entry.card}
             detail={`${cardOriginLabel(entry.card, data)} · ${cardDueLabel(entry.card, data, now)}`}
-            reviewable
             index={index}
             testIDPrefix="review-missed"
             end={<CountTag label={missedTag(entry)} signal="missed" testID={`review-missed-tag-${index}`} />}
@@ -196,7 +195,6 @@ export function CardSearchResults({ cards, data, now }: { cards: CardRow[]; data
           key={card.id}
           card={card}
           detail={`${cardOriginLabel(card, data)} · ${cardDueLabel(card, data, now)}`}
-          reviewable
           index={index}
           testIDPrefix="review-search"
         />

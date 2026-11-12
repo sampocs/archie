@@ -129,6 +129,33 @@ def test_a_chat_about_an_item_falls_back_to_the_items_title(
     assert _llm_calls(engine) == []
 
 
+def test_a_card_chat_falls_back_to_the_cards_question_cut_to_fit(engine: sqlalchemy.Engine) -> None:
+    """A chat about a review card is named after the card's question, at most 60 characters."""
+    user_id = _add_user(engine, is_whitelisted=False)
+    conversation_id = _add_chat(engine, user_id=user_id, about_title=None, card_set=False)
+    question = "What do banks hold at the central bank that is not cash in anyone's pocket at all?"
+    with sqlalchemy.orm.Session(engine) as db:
+        card = models.Card(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            source_id=_add_source(db, user_id=user_id, title=ITEM_TITLE),
+            kind=models.CardKind.CONCEPT.value,
+            question=question,
+            answer="Reserves.",
+            change_seq=changes.next_change_seq(),
+        )
+        db.add(card)
+        db.flush()
+        conversation = db.get_one(models.Conversation, conversation_id)
+        conversation.about_kind = models.ConversationAboutKind.CARD.value
+        conversation.about_card_id = card.id
+        db.commit()
+
+    loop.run_one(engine, handlers=handlers.HANDLERS)
+
+    assert _conversation(engine, conversation_id).title == question[: models.CONVERSATION_TITLE_LENGTH].rstrip()
+
+
 def test_a_general_chat_keeps_its_first_question_when_naming_gives_up(engine: sqlalchemy.Engine) -> None:
     """No item to name it after: the title and its change position stay as they were."""
     user_id = _add_user(engine, is_whitelisted=False)

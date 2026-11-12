@@ -151,7 +151,10 @@ def _rename_if_unchanged(conversation: models.Conversation, *, expected_title: s
 
 
 def _about_title(db: sqlalchemy.orm.Session, *, conversation: models.Conversation) -> str | None:
-    """The title of the item the chat is about (a topic primer by its topic's name); None for a general chat."""
+    """What the chat is about, as a title: an item's (a topic primer's is its topic's name) or a card's question.
+
+    None for a general chat.
+    """
     if conversation.about_source_id is not None:
         source = db.get(models.Source, conversation.about_source_id)
         return (source.title or source.url) if source is not None else None
@@ -162,6 +165,9 @@ def _about_title(db: sqlalchemy.orm.Session, *, conversation: models.Conversatio
         primer = db.get(models.TopicPrimer, conversation.about_topic_primer_id)
         topic = db.get(models.Topic, primer.topic_id) if primer is not None else None
         return topic.name if topic is not None else None
+    if conversation.about_card_id is not None:
+        card = db.get(models.Card, conversation.about_card_id)
+        return card.question if card is not None else None
     return None
 
 

@@ -102,11 +102,11 @@ def resolve(engine: sqlalchemy.Engine, *, link: urls.PodcastLink, episode_guid: 
 
 def spotify_episode_from_page(page: str) -> SpotifyEpisode:
     """Read an episode page's ld+json; ValueError when it or the "Listen to this episode from" prefix is missing."""
-    found = _LD_JSON_PATTERN.search(page)
-    if found is None:
+    blocks = [json.loads(found.group(1)) for found in _LD_JSON_PATTERN.finditer(page)]
+    if not blocks:
         raise ValueError("Spotify page has no ld+json")
 
-    document = _episode_entry(json.loads(found.group(1)))
+    document = next((entry for entry in map(_episode_entry, blocks) if entry is not None), None)
     if document is None:
         raise ValueError("Spotify page ld+json has no episode object")
 
@@ -127,14 +127,15 @@ def spotify_episode_from_page(page: str) -> SpotifyEpisode:
 
 
 def _episode_entry(ld_json: Any) -> dict[str, Any] | None:
-    """The episode object: the ld+json itself, or (as Spotify now sends it) the PodcastEpisode entry of a list."""
-    if isinstance(ld_json, dict):
-        return ld_json
-    if not isinstance(ld_json, list):
-        return None
+    """The PodcastEpisode object of one ld+json block: the block itself, or (as Spotify now sends it) a list entry."""
+    entries = ld_json if isinstance(ld_json, list) else [ld_json]
+    return next((entry for entry in entries if isinstance(entry, dict) and _is_episode(entry)), None)
 
-    objects = [entry for entry in ld_json if isinstance(entry, dict)]
-    return next((entry for entry in objects if entry.get("@type") == _PODCAST_EPISODE_TYPE), None)
+
+def _is_episode(entry: dict[str, Any]) -> bool:
+    """Whether an ld+json object's `@type` (one name or a list of them) names a podcast episode."""
+    kinds = entry.get("@type")
+    return _PODCAST_EPISODE_TYPE in (kinds if isinstance(kinds, list) else [kinds])
 
 
 def best_match(

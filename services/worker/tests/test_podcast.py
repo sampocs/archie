@@ -215,6 +215,18 @@ def test_a_spotify_page_listing_its_ld_json_reads_the_episode_entry() -> None:
     )
 
 
+def test_the_episode_can_be_in_a_later_ld_json_tag_and_typed_as_a_list() -> None:
+    """A page whose first ld+json tag isn't the episode still gives it, also when `@type` lists several names."""
+    page = (
+        '<script type="application/ld+json">{"@type": "BreadcrumbList"}</script>'
+        '<script type="application/ld+json">[{"@type": ["PodcastEpisode", "CreativeWork"], "name": "Episode two",'
+        ' "description": "Listen to this episode from Example Show on Spotify.",'
+        ' "datePublished": "2026-11-04"}]</script>'
+    )
+
+    assert podcast.spotify_episode_from_page(page).title == "Episode two"
+
+
 @pytest.mark.parametrize(
     "page",
     [
@@ -224,6 +236,8 @@ def test_a_spotify_page_listing_its_ld_json_reads_the_episode_entry() -> None:
         '<script type="application/ld+json">{"description": "Listen to this episode from Show on Spotify.",'
         ' "datePublished": "2026-11-03"}</script>',
         '<script type="application/ld+json">[1]</script>',
+        '<script type="application/ld+json">[]</script>',
+        '<script type="application/ld+json">[{"@type": "BreadcrumbList"}]</script>',
     ],
 )
 def test_a_page_without_the_expected_data_is_rejected(page: str) -> None:

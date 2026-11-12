@@ -283,6 +283,8 @@ def _round(
         tool_choice=tool_choice,
         thinking=THINKING,
         output_config=OUTPUT_CONFIG,
+        # Each round and each later question re-sends everything before it, so cache the request up to its end.
+        cache_control={"type": "ephemeral"},
     ) as response_stream:
         started = False
         response: anthropic.types.Message | None = None

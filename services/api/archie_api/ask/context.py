@@ -283,7 +283,7 @@ def note_title(db: orm.Session, *, conversation: models.Conversation) -> str | N
 
 
 def _card_origin_boost(db: orm.Session, *, card_id: uuid.UUID) -> search.ItemRef | None:
-    """The source, take or topic primer a card came from; None for any other origin or a card since deleted or dropped."""
+    """The source, take or topic primer a card came from; None for any other origin or a dropped card."""
     card = db.get(models.Card, card_id)
     if card is None or card.deleted_at is not None:
         return None

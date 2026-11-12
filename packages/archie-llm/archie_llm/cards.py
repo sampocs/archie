@@ -20,8 +20,9 @@ and what can you lose?" is two cards, or pick one). Ask only what has a short an
 more than 15. The learner is graded only on this, so it is what someone who knows the material would say off the top \
 of their head. When two things are both essential, name both briefly ("Supply and demand"). A number card's answer is \
 the rough figure with its unit.
-- detail: 0-3 short bullet lines, each under 12 words. Shown after the learner answers, never graded. Each line must \
-help explain the answer (the why or how behind it, or a contrast that makes it click); a further fact about the \
+- detail: 0-3 short bullet lines, each under 12 words (up to 5 if the owner asks for more detail). Shown after the \
+learner answers, never graded. Each line must help explain the answer (the why or how behind it, or a contrast that \
+makes it click); a further fact about the \
 subject, however true, is not a reason for a line. No padding and no redundancy: never a line that restates the \
 answer, is implied by it or repeats another line; that is trivia from this one source (who said it, when, a passing \
 example or anecdote) rather than a lasting fact about the subject; or that is a side remark that doesn't help recall. \

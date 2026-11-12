@@ -1,4 +1,4 @@
-"""Push actions on saved Ask chats: only deleting one; chats themselves are written by the ask route."""
+"""Push actions on saved Ask chats: renaming and deleting one; chats themselves are written by the ask route."""
 
 from __future__ import annotations
 
@@ -18,10 +18,14 @@ class _DeleteConversationPayload(pydantic.BaseModel):
     id: uuid.UUID
 
 
+class _RenameConversationPayload(pydantic.BaseModel):
+    id: uuid.UUID
+    title: str
+
+
 def touch_conversation(conversation: models.Conversation) -> None:
     """Mark a changed chat so phones pull it again. Call only after `lock_user_writes` in the same transaction."""
-    conversation.updated_at = sqlalchemy.func.now()
-    conversation.change_seq = changes.next_change_seq()
+    changes.touch(conversation)
 
 
 def owned_conversation(db: orm.Session, *, user: models.User, conversation_id: uuid.UUID) -> models.Conversation | None:
@@ -43,4 +47,21 @@ def delete_conversation(db: orm.Session, *, user: models.User, payload: dict[str
 
     conversation.deleted_at = sqlalchemy.func.now()
     touch_conversation(conversation)
+    return None
+
+
+def rename_conversation(db: orm.Session, *, user: models.User, payload: dict[str, object]) -> str | None:
+    """Give a chat the owner's name: trimmed, cut to `CONVERSATION_TITLE_LENGTH`; a blank name is malformed.
+
+    Renaming is not activity, so `updated_at` (the chat's last question or answer) stays; only `change_seq` moves.
+    """
+    parsed = rows.parse(_RenameConversationPayload, payload)
+    if parsed is None or not parsed.title.strip():
+        return rows.MALFORMED
+    conversation = owned_conversation(db, user=user, conversation_id=parsed.id)
+    if conversation is None:
+        return NO_CONVERSATION
+
+    conversation.title = parsed.title.strip()[: models.CONVERSATION_TITLE_LENGTH]
+    changes.bump(conversation)
     return None

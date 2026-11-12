@@ -82,6 +82,9 @@ volume and variables are declared in `.railway/railway.ts` (Railway Infrastructu
   filing for their analyzed sources. Only other users who already have topics (existing users who chose topics before)
   need `railway ssh --service archie -- uv run --no-sync archie-refile-sources` once. It queues `file_topic` for every
   analyzed source of users with topics (a fraction of a cent each).
+- **Chat names.** After the deploy that names chats, run
+  `railway ssh --service archie -- uv run --no-sync archie-worker backfill-chat-names` once. It queues `name_chat`
+  for every live chat with a complete answer (one Haiku call each, a fraction of a cent).
 
 ## Rebuilding from scratch
 

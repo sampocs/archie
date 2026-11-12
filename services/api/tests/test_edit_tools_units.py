@@ -67,7 +67,6 @@ def test_history_adds_the_cited_items_and_the_edits_after_an_answer() -> None:
             notes=("[edit proposed: Drop the fees idea — summary s1 — the owner applied it]",),
         ),
     ]
-    assert context.history_messages(rows)[-1] == {
-        "role": "assistant",
-        "content": "Here's the edit.\n\n[edit proposed: Drop the fees idea — summary s1 — the owner applied it]",
-    }
+    history = context.history_messages(rows)
+    assert history.turns[-1] == {"role": "assistant", "content": "Here's the edit."}
+    assert history.trailing_notes == rows[-1].notes

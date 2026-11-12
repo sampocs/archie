@@ -22,6 +22,7 @@ import {
   type CardSetChoice,
   type CardSetView,
 } from "./cardSets";
+import { makeCardsAnswerId } from "./makeCards";
 import { groupSections, liveView, STILL_ANSWERING, unansweredState } from "./sections";
 import { parseSegments, type AboutKind, type MessageRow } from "./types";
 import { useCardSetTicks, useChatItemId, useConversationCardSets } from "./useCardSets";
@@ -44,6 +45,8 @@ export type ChatThreadState = {
   toggle: (view: Pick<CardSetView, "id" | "cards">, index: number, seeded: boolean[] | null) => void;
   proposals: ReturnType<typeof useConversationProposals>;
   updating: boolean;
+  aboutKind: string | null;
+  aboutKnown: boolean;
 };
 
 /**
@@ -54,6 +57,10 @@ export function useChatThread(input: {
   conversationId: string;
   messages: MessageRow[];
   about: { kind: AboutKind; id: string } | null;
+  // What the stored chat is about, for a chat opened after it was created (`about` is only for the first question).
+  aboutKind?: string | null;
+  // False until the stored chat's row has been read, so a card chat never flashes Make cards before its kind is known.
+  aboutKnown?: boolean;
 }): ChatThreadState {
   const { conversationId, messages, about } = input;
   const cardSets = useConversationCardSets(conversationId);
@@ -97,7 +104,22 @@ export function useChatThread(input: {
     (pending?.live.cardSets ?? []).some((wire) => wire.status === "proposed") ||
     [...cardSets.values()].flat().some((cardSet) => shownCardSetStatus(cardSet, cardSetLive) === "proposed");
 
-  return { pending, send, unanswered, openCardSet, messages, cardSets, ticksFor, toggle, proposals, updating };
+  const aboutKind = input.aboutKind ?? about?.kind ?? null;
+  const aboutKnown = input.aboutKnown ?? true;
+  return {
+    pending,
+    send,
+    unanswered,
+    openCardSet,
+    messages,
+    cardSets,
+    ticksFor,
+    toggle,
+    proposals,
+    updating,
+    aboutKind,
+    aboutKnown,
+  };
 }
 
 type ChatThreadProps = { thread: ChatThreadState; online: boolean; onToast: (message: string) => void };
@@ -107,8 +129,16 @@ type ChatThreadProps = { thread: ChatThreadState; online: boolean; onToast: (mes
  * waiting or failed answer, and the live question's overlay.
  */
 export function ChatThread({ thread, online, onToast }: ChatThreadProps) {
-  const { pending, send, unanswered, messages, cardSets, ticksFor, toggle, proposals, updating } = thread;
+  const { pending, send, unanswered, messages, cardSets, ticksFor, toggle, proposals, updating, aboutKind, aboutKnown } =
+    thread;
   const turns = useMemo(() => messages.filter((message) => message.id !== pending?.userMessageId), [messages, pending]);
+  const makeCardsOn = makeCardsAnswerId({
+    turns,
+    hasCardSet: (id) => cardSets.has(id),
+    aboutKind,
+    questionInFlight: pending !== null || unanswered !== null,
+  });
+  const offerMakeCards = aboutKnown ? makeCardsOn : null;
   const unansweredQuestion = unanswered ? messages.at(-1) : undefined;
   // Targets with a proposal in the live answer: older still-proposed ones for them are superseded.
   const liveTargets = new Set((pending?.live.proposals ?? []).map((wire) => `${wire.target_kind}:${wire.target_id}`));
@@ -128,12 +158,7 @@ export function ChatThread({ thread, online, onToast }: ChatThreadProps) {
             quietLabels={(proposals.get(message.id) ?? []).length > 0 || cardSets.has(message.id)}
             failed={message.status === "failed"}
             onRetry={() => retry(turns, index, send)}
-            onMakeCards={
-              // An answer that already proposed cards has its own Save; offering Make cards there too is noise.
-              message.status === "complete" && !cardSets.has(message.id)
-                ? () => send(MAKE_CARDS_MESSAGE, false)
-                : undefined
-            }
+            onMakeCards={message.id === offerMakeCards ? () => send(MAKE_CARDS_MESSAGE, false) : undefined}
           >
             {(proposals.get(message.id) ?? []).map((proposal) => (
               <EditProposalCard

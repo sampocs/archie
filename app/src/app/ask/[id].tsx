@@ -32,7 +32,7 @@ export default function ChatScreen() {
   const theme = useTheme();
   const router = useRouter();
   const params = useLocalSearchParams<Params>();
-  const { conversation, messages } = useChat(params.id);
+  const { conversation, messages, conversationLoaded } = useChat(params.id);
   const available = useAskAvailable();
   const network = Network.useNetworkState();
   const online = network.isConnected !== false && network.isInternetReachable !== false;
@@ -40,7 +40,13 @@ export default function ChatScreen() {
     () => (params.aboutKind && params.aboutId ? { kind: params.aboutKind, id: params.aboutId } : null),
     [params.aboutKind, params.aboutId],
   );
-  const thread = useChatThread({ conversationId: params.id, messages, about });
+  const thread = useChatThread({
+    conversationId: params.id,
+    messages,
+    about,
+    aboutKind: conversation?.aboutKind,
+    aboutKnown: conversationLoaded || about !== null,
+  });
   const { pending, send, unanswered, openCardSet } = thread;
   const [toast, setToast] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);

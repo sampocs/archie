@@ -24,8 +24,8 @@ export function requestSync(): void {
   activeTrigger?.();
 }
 
-// Whether this session's first sync run has finished, either way; until then an empty local database may only mean
-// the phone hasn't pulled yet.
+// Whether this session has finished a sync run that reached the server; until then an empty local database may only
+// mean the phone hasn't pulled yet.
 let firstRunDone = false;
 const firstRunListeners = new Set<() => void>();
 
@@ -57,15 +57,15 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
       followUpTimers = FOLLOW_UP_DELAYS_MS.map((delay) => setTimeout(fire, delay));
     };
     setFirstRunDone(false);
+    let ended = false;
     const trigger = createSyncScheduler(async () => {
       // A fresh store per run pins the run to the session it started in; see createDbSyncStore.
       const store = createDbSyncStore(db, getSessionEpoch());
-      try {
-        const outcome = await runSync(store, transport, scheduleFollowUps);
-        if (outcome === "unauthorized") onUnauthorizedRef.current();
-      } finally {
-        setFirstRunDone(true);
-      }
+      const outcome = await runSync(store, transport, scheduleFollowUps);
+      // Only a pull that went through settles it; offline, the phone keeps saying it's syncing until it can. A run
+      // from a session that has since ended says nothing about this one.
+      if (outcome === "synced" && !ended) setFirstRunDone(true);
+      if (outcome === "unauthorized") onUnauthorizedRef.current();
     });
     const fire = () => void trigger().catch(() => undefined);
 
@@ -83,6 +83,7 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
     }, POLL_INTERVAL_MS);
 
     return () => {
+      ended = true;
       if (activeTrigger === fire) activeTrigger = null;
       followUpTimers.forEach(clearTimeout);
       appStateSub.remove();
@@ -92,7 +93,7 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
   }, [hasSession]);
 }
 
-/** True while the phone has never pulled and this session's first sync hasn't finished: empty means "not loaded yet". */
+/** True until this session has synced: an empty library before then may only mean the phone hasn't pulled yet. */
 export function useFirstSyncPending(): boolean {
   const done = useSyncExternalStore(
     (listener) => {
@@ -101,10 +102,7 @@ export function useFirstSyncPending(): boolean {
     },
     () => firstRunDone,
   );
-  const { data: stateRows } = useLiveQuery(
-    db.select({ position: schema.syncState.position }).from(schema.syncState).where(eq(schema.syncState.id, 1)),
-  );
-  return !done && (stateRows[0]?.position ?? 0) === 0;
+  return !done;
 }
 
 export function useSyncStatus(): { waiting: number; offline: boolean } {

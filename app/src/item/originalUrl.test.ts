@@ -7,7 +7,7 @@ describe("originalUrl", () => {
   });
 
   it("is null for an item's placeholder address", () => {
-    for (const url of ["note:abc", "book:123", "chat:xyz", "newsletter:<id@example.com>"]) {
+    for (const url of ["bear:abc", "book:123", "chat:xyz", "newsletter:<id@example.com>"]) {
       expect(originalUrl(url)).toBeNull();
     }
   });

@@ -250,7 +250,7 @@ export default function SourceScreen() {
         )}
         {source.kind === "newsletter" ? (
           <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} />
-        ) : originalUrl(source.url) ? (
+        ) : !isNotice && originalUrl(source.url) ? (
           <OpenOriginal url={source.url} />
         ) : null}
         {isNotice ? null : (

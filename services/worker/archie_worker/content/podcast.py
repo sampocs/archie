@@ -45,6 +45,7 @@ _MAX_DAYS_APART = 3
 _GONE_STATUSES = frozenset({404, 410})
 
 _LD_JSON_PATTERN = re.compile(r'<script type="application/ld\+json">(.+?)</script>', re.DOTALL)
+_PODCAST_EPISODE_TYPE = "PodcastEpisode"
 _SHOW_NAME_PATTERN = re.compile(r"^Listen to this episode from (.+?) on Spotify\.")
 _NON_WORD_PATTERN = re.compile(r"[^a-z0-9 ]")
 
@@ -101,13 +102,13 @@ def resolve(engine: sqlalchemy.Engine, *, link: urls.PodcastLink, episode_guid: 
 
 def spotify_episode_from_page(page: str) -> SpotifyEpisode:
     """Read an episode page's ld+json; ValueError when it or the "Listen to this episode from" prefix is missing."""
-    found = _LD_JSON_PATTERN.search(page)
-    if found is None:
+    blocks = [json.loads(found.group(1)) for found in _LD_JSON_PATTERN.finditer(page)]
+    if not blocks:
         raise ValueError("Spotify page has no ld+json")
 
-    document = json.loads(found.group(1))
-    if not isinstance(document, dict):
-        raise ValueError("Spotify page ld+json is not an object")
+    document = next((entry for entry in map(_episode_entry, blocks) if entry is not None), None)
+    if document is None:
+        raise ValueError("Spotify page ld+json has no episode object")
 
     show = _SHOW_NAME_PATTERN.match(document.get("description", ""))
     if show is None:
@@ -123,6 +124,18 @@ def spotify_episode_from_page(page: str) -> SpotifyEpisode:
         show_name=html.unescape(show.group(1)),
         published=datetime.date.fromisoformat(date_published[:10]),
     )
+
+
+def _episode_entry(ld_json: Any) -> dict[str, Any] | None:
+    """The PodcastEpisode object of one ld+json block: the block itself, or (as Spotify now sends it) a list entry."""
+    entries = ld_json if isinstance(ld_json, list) else [ld_json]
+    return next((entry for entry in entries if isinstance(entry, dict) and _is_episode(entry)), None)
+
+
+def _is_episode(entry: dict[str, Any]) -> bool:
+    """Whether an ld+json object's `@type` (one name or a list of them) names a podcast episode."""
+    kinds = entry.get("@type")
+    return _PODCAST_EPISODE_TYPE in (kinds if isinstance(kinds, list) else [kinds])
 
 
 def best_match(

@@ -10,3 +10,11 @@ export function latestCardChat(conversations: ConversationRow[], cardId: string)
       null,
     );
 }
+
+/**
+ * Whether a card page's fallback chat id already names one of the card's chats. A live one would be the page's
+ * latest chat, so a match is a deleted chat: reusing its id would show its messages and send into a 404.
+ */
+export function isFallbackIdTaken(conversations: ConversationRow[], cardId: string, fallbackId: string): boolean {
+  return conversations.some((conversation) => conversation.aboutCardId === cardId && conversation.id === fallbackId);
+}

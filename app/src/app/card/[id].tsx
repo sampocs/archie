@@ -50,7 +50,7 @@ export default function CardScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const chat = useCardChat(id);
   if (!chat.loaded) return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
-  // A new chat id (the chat was deleted elsewhere) starts the page's chat state over.
+  // A new chat id (the chat was deleted elsewhere, so the page mints a fresh one) starts the page's chat state over.
   return <CardPage key={chat.conversationId} cardId={id} conversationId={chat.conversationId} />;
 }
 

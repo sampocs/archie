@@ -612,9 +612,9 @@ def _seed_plain_source(db: sqlalchemy.orm.Session, *, user_id: int) -> uuid.UUID
     return source.id
 
 
-def test_a_chat_about_a_card_is_tied_to_the_owners_live_card(live_stack: LiveStack) -> None:
-    """The chat stores about_kind "card" and the card id, and the phone's pull carries `about_card_id`; another
-    user's card and a dropped card are 404 before any model call."""
+def test_a_chat_about_another_users_or_a_dropped_card_is_refused(live_stack: LiveStack) -> None:
+    """Another user's card and a dropped card are 404 before any model call. (A chat about a live card is covered,
+    with its recorded answer, in test_ask_edit_e2e.py.)"""
     owner = live_stack.authed(live_stack.sign_in(apple_sub="owner", is_whitelisted=True))
     other = live_stack.authed(live_stack.sign_in(apple_sub="other", is_whitelisted=True))
     card_id = _seed_card(live_stack, user_id=_user_id(owner))
@@ -628,18 +628,6 @@ def test_a_chat_about_a_card_is_tied_to_the_owners_live_card(live_stack: LiveSta
             json={**body, "user_message_id": str(uuid.uuid4()), "about": {"kind": "card", "id": refused_card}},
         )
         assert (refused.status_code, refused.json()["detail"]) == (404, "about item not found")
-
-    conversation_id = str(uuid.uuid4())
-    about = {"kind": "card", "id": card_id}
-    owner.post(f"/ask/conversations/{conversation_id}/messages", json={**body, "about": about})
-
-    [conversation] = owner.get("/sync/pull", params={"since": 0}).json()["rows"]["conversations"]
-    assert (conversation["id"], conversation["about_kind"], conversation["about_card_id"]) == (
-        conversation_id,
-        "card",
-        card_id,
-    )
-    assert conversation["about_source_id"] is None
 
 
 def test_a_card_chats_about_text_names_the_card_its_text_and_origin_and_boosts_the_origin(

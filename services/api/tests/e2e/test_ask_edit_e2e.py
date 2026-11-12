@@ -376,3 +376,43 @@ def test_asking_to_fix_a_card_finds_it_and_proposes_a_card_edit(
     assert "quarter" in f"{edit['after']['answer']} {edit['after']['detail']}".lower()
     assert isinstance(edit["after"]["detail"], str)
     assert events[-1][0] == "done"
+
+
+def test_a_chat_about_a_card_proposes_an_edit_to_that_card_and_applying_it_rewrites_the_card(
+    live_stack: LiveStack, request: pytest.FixtureRequest
+) -> None:
+    """A first question on a card's page makes a card chat; its propose_card_edit targets that card and Apply
+    writes the next version."""
+    authed = live_stack.authed(live_stack.sign_in(is_whitelisted=True))
+    user_id = _user_id(authed)
+    _, card_id = _seed_source(live_stack, user_id=user_id)
+    conversation_id = str(uuid.uuid4())
+
+    with _replay(request, "ask_edit_card_page"):
+        events = _ask(
+            authed,
+            conversation_id,
+            "Reword this card's answer so it says a 1% fee can eat about a quarter of your savings over 40 years.",
+            about={"kind": "card", "id": str(card_id)},
+        )
+
+    [edit] = [data for name, data in events if name == "edit"]
+    assert (edit["target_kind"], edit["target_id"]) == ("card", str(card_id))
+    assert edit["after"]["answer"] != FEES_ANSWER
+
+    applied = authed.post(f"/ask/edits/{edit['id']}/apply")
+    assert (applied.json()["status"], applied.json()["applied_version"]) == ("applied", 2)
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        target = versions.resolve(db, user_id=user_id, kind=models.EditTarget.CARD, item_id=card_id)
+        assert target is not None
+        current = versions.current(db, target=target)
+    engine.dispose()
+    assert current.version == 2 and current.content["answer"] == edit["after"]["answer"] != FEES_ANSWER
+
+    [conversation] = _rows(authed)["conversations"]
+    assert (conversation["id"], conversation["about_kind"], conversation["about_card_id"]) == (
+        conversation_id,
+        "card",
+        str(card_id),
+    )

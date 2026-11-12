@@ -25,7 +25,14 @@ const config: ExpoConfig = {
     "expo-notifications",
     [
       "expo-splash-screen",
-      { image: "./assets/images/splash-icon.png", resizeMode: "contain", backgroundColor: "#F4F2EC" },
+      {
+        // The icon's serif A and bookmark on the theme's light and dark `bg`.
+        image: "./assets/images/splash-icon.png",
+        imageWidth: 120,
+        resizeMode: "contain",
+        backgroundColor: "#F4F2EC",
+        dark: { image: "./assets/images/splash-icon-dark.png", backgroundColor: "#111010" },
+      },
     ],
     // Before expo-share-extension on purpose: mods run last-listed first, and this one patches its target.
     "./plugins/withSharedKeychain.js",

@@ -12,8 +12,8 @@ The app should feel good enough that you'd rather consume everything inside it. 
 - **Name: Archie.** (This replaces "Carl" in the product scope.)
 - **Where the name appears:** the home-screen label, the notification title, the share-sheet target ("Add to Archie"), the wordmark, and conversation. **It never appears in UI copy.** The chat tab is labeled **Ask**, the bar reads "Ask about this episode," and Review shows "Answer," not "Archie's answer."
 - **Wordmark:** "Archie." in Geist Bold, tracking −0.06em, with a forest period (mint `#79B39E` in dark mode). Used on the launch screen and outside the app.
-- **App icon:** a side-view brain in thick white line art on brand forest `#3F7262`, with a scalloped outline, C-shaped curls and a cerebellum underneath, and no stem. The current art is a programmatic draft. It needs a proper vector pass (hand-drawn or careful Figma work) before shipping, keeping the same composition and stroke weight.
-- **Banked alternate icon:** the same line style in **top view**: a symmetric scalloped outline, a center line, and C-shaped curls in each hemisphere, on forest. It's kept in case we switch back. The draft is shown in the reference page's Brand section.
+- **App icon:** a serif capital A (Newsreader 600, as an outline) in ink `#1C1B18` on paper `#F4F2EC`, with a forest `#3F7262` bookmark hanging from the top right. Sources live in `app/assets/brand/` (`icon-serif-a.svg`, and the splash marks for light and dark); the PNGs in `app/assets/images/` are rendered from them. The splash screen shows the same A and bookmark on the light or dark `bg`.
+- **Banked alternates:** the **bookshelf** (`app/assets/brand/icon-bookshelf.svg`: five spines on a shelf in ink, forest and gold, one leaning, on paper) is the backup if the A is ever swapped out. The earlier **side-view brain** (white line art on forest, a programmatic draft that would need a proper vector pass) and its **top view** are kept in the reference page's Brand section.
 
 ## Visual system
 

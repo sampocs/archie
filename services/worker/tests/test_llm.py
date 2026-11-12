@@ -120,6 +120,12 @@ def test_cost_scales_input_and_output_separately() -> None:
     assert llm.cost_usd(model=llm.SONNET, input_tokens=0, output_tokens=500_000) == Decimal("5")
 
 
+def test_cost_prices_cache_writes_and_reads() -> None:
+    """A cache write costs a quarter more than input and a cache read costs Sonnet's own read price."""
+    assert llm.cost_usd(model=llm.SONNET, input_tokens=0, output_tokens=0, cache_write_tokens=1_000_000) == Decimal("2.5")
+    assert llm.cost_usd(model=llm.SONNET, input_tokens=0, output_tokens=0, cache_read_tokens=1_000_000) == Decimal("0.1")
+
+
 def test_unknown_model_has_no_price() -> None:
     """An unpriced model fails loudly rather than recording a zero cost."""
     with pytest.raises(KeyError):

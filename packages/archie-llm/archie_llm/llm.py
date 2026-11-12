@@ -94,15 +94,24 @@ THINKING_DISABLED: dict[str, str] = {"type": "disabled"}
 class _Price:
     input_per_million: Decimal
     output_per_million: Decimal
+    # Reading a prompt-cache hit; zero for a model nothing caches with.
+    cache_read_per_million: Decimal = Decimal(0)
 
 
 # USD per million tokens.
 _PRICES: dict[str, _Price] = {
-    HAIKU: _Price(input_per_million=Decimal("0.10"), output_per_million=Decimal("0.50")),
-    SONNET: _Price(input_per_million=Decimal("2"), output_per_million=Decimal("10")),
-    OPUS: _Price(input_per_million=Decimal("4"), output_per_million=Decimal("20")),
+    HAIKU: _Price(
+        input_per_million=Decimal("0.10"), output_per_million=Decimal("0.50"), cache_read_per_million=Decimal("0.01")
+    ),
+    SONNET: _Price(
+        input_per_million=Decimal("2"), output_per_million=Decimal("10"), cache_read_per_million=Decimal("0.10")
+    ),
+    OPUS: _Price(input_per_million=Decimal("4"), output_per_million=Decimal("20"), cache_read_per_million=Decimal("0.20")),
     EMBEDDING_MODEL: _Price(input_per_million=Decimal("0.02"), output_per_million=Decimal("0")),
 }
+
+# Writing the 5-minute prompt cache costs a quarter more than plain input.
+_CACHE_WRITE_MULTIPLIER = Decimal("1.25")
 
 # USD per web search Anthropic's server tool runs ($10 per 1,000).
 WEB_SEARCH_USD = Decimal("0.01")
@@ -142,10 +151,21 @@ class ModelOutputError(Exception):
     """Every model tried stopped on a refusal, the output cap or a paused turn, so there is no usable answer."""
 
 
-def cost_usd(*, model: str, input_tokens: int, output_tokens: int) -> Decimal:
-    """Dollar cost of one call; raises `KeyError` for a model without a known price."""
+def cost_usd(
+    *, model: str, input_tokens: int, output_tokens: int, cache_write_tokens: int = 0, cache_read_tokens: int = 0
+) -> Decimal:
+    """Dollar cost of one call; raises `KeyError` for a model without a known price.
+
+    `input_tokens` are the uncached ones, as the API reports them; cache writes and reads are priced on top.
+    """
     price = _PRICES[model]
-    return (price.input_per_million * input_tokens + price.output_per_million * output_tokens) / _TOKENS_PER_PRICE_UNIT
+    per_million = (
+        price.input_per_million * input_tokens
+        + price.output_per_million * output_tokens
+        + price.input_per_million * _CACHE_WRITE_MULTIPLIER * cache_write_tokens
+        + price.cache_read_per_million * cache_read_tokens
+    )
+    return per_million / _TOKENS_PER_PRICE_UNIT
 
 
 def audio_cost_usd(*, model: str, audio_seconds: Decimal) -> Decimal:
@@ -250,11 +270,18 @@ def record_call(
 ) -> None:
     """Record one answered call in its own session, so the spend is kept even if the step fails afterwards.
 
-    Web searches the call ran (Anthropic's server tool) are added at `WEB_SEARCH_USD` each.
+    Web searches the call ran (Anthropic's server tool) are added at `WEB_SEARCH_USD` each. `input_tokens` keeps the
+    uncached input only; prompt-cache writes and reads count toward `cost_usd`.
     """
     usage = response.usage
     searches = usage.server_tool_use.web_search_requests if usage.server_tool_use is not None else 0
-    token_cost = cost_usd(model=model, input_tokens=usage.input_tokens, output_tokens=usage.output_tokens)
+    token_cost = cost_usd(
+        model=model,
+        input_tokens=usage.input_tokens,
+        output_tokens=usage.output_tokens,
+        cache_write_tokens=usage.cache_creation_input_tokens or 0,
+        cache_read_tokens=usage.cache_read_input_tokens or 0,
+    )
     row = models.LlmCall(
         user_id=context.user_id,
         source_id=context.source_id,

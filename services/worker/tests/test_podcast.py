@@ -202,6 +202,19 @@ def test_the_spotify_page_gives_title_show_and_date() -> None:
     )
 
 
+def test_a_spotify_page_listing_its_ld_json_reads_the_episode_entry() -> None:
+    """Spotify now wraps the ld+json in a list; the PodcastEpisode entry in it gives the episode."""
+    page = (
+        '<script type="application/ld+json">[{"@type": "BreadcrumbList"}, {"@type": "PodcastEpisode",'
+        ' "name": "An invented episode", "description": "Listen to this episode from Example Show on Spotify. More.",'
+        ' "datePublished": "2026-11-03"}]</script>'
+    )
+
+    assert podcast.spotify_episode_from_page(page) == podcast.SpotifyEpisode(
+        title="An invented episode", show_name="Example Show", published=datetime.date(2026, 11, 3)
+    )
+
+
 @pytest.mark.parametrize(
     "page",
     [

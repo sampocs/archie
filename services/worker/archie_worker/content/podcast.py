@@ -45,6 +45,7 @@ _MAX_DAYS_APART = 3
 _GONE_STATUSES = frozenset({404, 410})
 
 _LD_JSON_PATTERN = re.compile(r'<script type="application/ld\+json">(.+?)</script>', re.DOTALL)
+_PODCAST_EPISODE_TYPE = "PodcastEpisode"
 _SHOW_NAME_PATTERN = re.compile(r"^Listen to this episode from (.+?) on Spotify\.")
 _NON_WORD_PATTERN = re.compile(r"[^a-z0-9 ]")
 
@@ -105,9 +106,9 @@ def spotify_episode_from_page(page: str) -> SpotifyEpisode:
     if found is None:
         raise ValueError("Spotify page has no ld+json")
 
-    document = json.loads(found.group(1))
-    if not isinstance(document, dict):
-        raise ValueError("Spotify page ld+json is not an object")
+    document = _episode_entry(json.loads(found.group(1)))
+    if document is None:
+        raise ValueError("Spotify page ld+json has no episode object")
 
     show = _SHOW_NAME_PATTERN.match(document.get("description", ""))
     if show is None:
@@ -123,6 +124,17 @@ def spotify_episode_from_page(page: str) -> SpotifyEpisode:
         show_name=html.unescape(show.group(1)),
         published=datetime.date.fromisoformat(date_published[:10]),
     )
+
+
+def _episode_entry(ld_json: Any) -> dict[str, Any] | None:
+    """The episode object: the ld+json itself, or (as Spotify now sends it) the PodcastEpisode entry of a list."""
+    if isinstance(ld_json, dict):
+        return ld_json
+    if not isinstance(ld_json, list):
+        return None
+
+    objects = [entry for entry in ld_json if isinstance(entry, dict)]
+    return next((entry for entry in objects if entry.get("@type") == _PODCAST_EPISODE_TYPE), None)
 
 
 def best_match(

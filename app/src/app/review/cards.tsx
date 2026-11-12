@@ -18,7 +18,7 @@ import { useNow } from "@/ui/useNow";
 
 /**
  * A topic's or item's reviewable cards (`?topic=`, `?source=` or `?take=`), in session order, with Practice all. Each
- * row practices that card alone; swipe to Remove.
+ * row opens the card's page; swipe to Remove.
  */
 export default function CardListScreen() {
   const theme = useTheme();
@@ -48,9 +48,9 @@ export default function CardListScreen() {
                 key={card.id}
                 card={card}
                 detail={`${originOf(card, target, data)}${cardDueLabel(card, data, now)}`}
-                reviewable
                 index={index}
                 testIDPrefix="card-list"
+                backLabel="Review"
               />
             ))}
           </GroupedList>

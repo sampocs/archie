@@ -1,0 +1,1 @@
+ALTER TABLE `conversations` ADD `about_card_id` text;

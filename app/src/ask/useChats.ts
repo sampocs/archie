@@ -33,16 +33,23 @@ export function useChats(): ChatListItem[] {
 }
 
 /** One chat and its messages, oldest first. */
-export function useChat(conversationId: string): { conversation: ConversationRow | null; messages: MessageRow[] } {
+export function useChat(conversationId: string): {
+  conversation: ConversationRow | null;
+  messages: MessageRow[];
+  // False until the messages have been read from the phone's database.
+  loaded: boolean;
+} {
   const { data: conversations } = useLiveQuery(
     db.select().from(schema.conversations).where(eq(schema.conversations.id, conversationId)),
+    [conversationId],
   );
-  const { data: messages } = useLiveQuery(
+  const { data: messages, updatedAt: messagesRead } = useLiveQuery(
     db
       .select()
       .from(schema.messages)
       .where(eq(schema.messages.conversationId, conversationId))
       .orderBy(asc(schema.messages.createdAt), asc(schema.messages.id)),
+    [conversationId],
   );
-  return { conversation: conversations[0] ?? null, messages };
+  return { conversation: conversations[0] ?? null, messages, loaded: messagesRead !== undefined };
 }

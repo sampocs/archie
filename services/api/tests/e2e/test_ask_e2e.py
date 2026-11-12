@@ -572,6 +572,96 @@ def _assert_hang_up_recorded(
         assert _llm_steps(live_stack) == ["ask"]
 
 
+def _seed_card(live_stack: LiveStack, *, user_id: int, dropped: bool = False) -> str:
+    """A concept card of the user's, optionally dropped (soft-deleted)."""
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        changes.lock_user_writes(db, user_id)
+        card = models.Card(
+            id=uuid.uuid4(),
+            user_id=user_id,
+            source_id=_seed_plain_source(db, user_id=user_id),
+            kind=models.CardKind.CONCEPT.value,
+            question="What do reserves sit in?",
+            answer="Accounts at the Fed.",
+            deleted_at=sqlalchemy.func.now() if dropped else None,
+            change_seq=changes.next_change_seq(),
+        )
+        db.add(card)
+        db.commit()
+        card_id = str(card.id)
+    engine.dispose()
+    return card_id
+
+
+def _seed_plain_source(db: sqlalchemy.orm.Session, *, user_id: int) -> uuid.UUID:
+    url = f"https://example.com/{uuid.uuid4()}"
+    source = models.Source(
+        id=uuid.uuid4(),
+        user_id=user_id,
+        url=url,
+        normalized_url=url,
+        title="How banks hold reserves",
+        kind=models.SourceKind.ARTICLE.value,
+        state=models.SourceState.CONSUMED.value,
+        intent=models.SourceIntent.FINISHED.value,
+        change_seq=changes.next_change_seq(),
+    )
+    db.add(source)
+    db.flush()
+    return source.id
+
+
+def test_a_chat_about_another_users_or_a_dropped_card_is_refused(live_stack: LiveStack) -> None:
+    """Another user's card and a dropped card are 404 before any model call. (A chat about a live card is covered,
+    with its recorded answer, in test_ask_edit_e2e.py.)"""
+    owner = live_stack.authed(live_stack.sign_in(apple_sub="owner", is_whitelisted=True))
+    other = live_stack.authed(live_stack.sign_in(apple_sub="other", is_whitelisted=True))
+    card_id = _seed_card(live_stack, user_id=_user_id(owner))
+    dropped_id = _seed_card(live_stack, user_id=_user_id(owner), dropped=True)
+    body = {"user_message_id": str(uuid.uuid4()), "text": "Why?", "web_search": False}
+
+    for refused_card in (card_id, dropped_id):
+        who = other if refused_card == card_id else owner
+        refused = who.post(
+            f"/ask/conversations/{uuid.uuid4()}/messages",
+            json={**body, "user_message_id": str(uuid.uuid4()), "about": {"kind": "card", "id": refused_card}},
+        )
+        assert (refused.status_code, refused.json()["detail"]) == (404, "about item not found")
+
+
+def test_a_card_chats_about_text_names_the_card_its_text_and_origin_and_boosts_the_origin(
+    live_stack: LiveStack,
+) -> None:
+    """The model is given the card id for read_item + propose_card_edit, so it needs no find_cards."""
+    owner = live_stack.authed(live_stack.sign_in(apple_sub="owner", is_whitelisted=True))
+    card_id = _seed_card(live_stack, user_id=_user_id(owner))
+    dropped_id = _seed_card(live_stack, user_id=_user_id(owner), dropped=True)
+    engine = session.engine_for(live_stack.database_url)
+
+    with sqlalchemy.orm.Session(engine) as db:
+        card = db.get_one(models.Card, uuid.UUID(card_id))
+        chat = models.Conversation(about_card_id=card.id)
+        text = context.about_text(db, conversation=chat)
+        boosted = context.boost(db, conversation=chat)
+        assert context.note_title(db, conversation=chat) is None
+        dropped_chat = models.Conversation(about_card_id=uuid.UUID(dropped_id))
+        dropped_text = context.about_text(db, conversation=dropped_chat)
+        dropped_boost = context.boost(db, conversation=dropped_chat)
+    engine.dispose()
+
+    assert dropped_text is not None
+    assert "removed" in dropped_text and "What do reserves sit in?" in dropped_text
+    assert "propose_card_edit" not in dropped_text and dropped_boost is None
+
+    assert text is not None
+    assert text.startswith(f"A review card (card id {card_id})")
+    expected_parts = ("What do reserves sit in?", "Accounts at the Fed.", "How banks hold reserves")
+    assert all(part in text for part in expected_parts) and "propose_card_edit" in text
+    assert card.source_id is not None
+    assert boosted == search.ItemRef(kind=models.SearchItemKind.SOURCE, id=card.source_id)
+
+
 def test_refusals_happen_before_any_model_call(live_stack: LiveStack) -> None:
     """Not whitelisted 403; someone else's or a deleted chat 404; a reused question id 409; a bad about item 404."""
     plain = live_stack.authed(live_stack.sign_in(apple_sub="plain"))

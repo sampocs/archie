@@ -125,7 +125,7 @@ export default function TakeScreen() {
         ) : null}
 
         <TakeBody testID="take-body" markdown={shownBody(current)} />
-        <CardsSection of={{ kind: "take", id: take.id }} />
+        <CardsSection of={{ kind: "take", id: take.id }} backLabel={take.title} />
 
         {take.versions.length > 1 ? (
           <EarlierVersions

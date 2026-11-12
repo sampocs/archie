@@ -6,7 +6,7 @@ import type { CardSetWire } from "./cardSets";
 /** Where an answer's text came from, read off its citations (never the model's own claim). */
 export type AnswerLabel = "library" | "web" | "background";
 export type OwnerKind = "source_text" | "source_summary" | "source_primer" | "topic_primer" | "take";
-export type AboutKind = "source" | "topic_primer" | "take";
+export type AboutKind = "source" | "topic_primer" | "take" | "card";
 
 // Wire shapes stay snake_case: they are stored as the server sent them, in `messages.segments`.
 export type LibraryCitation = {

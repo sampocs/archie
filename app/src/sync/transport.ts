@@ -490,6 +490,7 @@ export function createDbSyncStore(
             aboutSourceId: conversation.about_source_id,
             aboutTopicPrimerId: conversation.about_topic_primer_id,
             aboutTakeId: conversation.about_take_id,
+            aboutCardId: conversation.about_card_id ?? null,
             createdAt: conversation.created_at,
             updatedAt: conversation.updated_at,
             deletedAt: conversation.deleted_at,

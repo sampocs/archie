@@ -40,7 +40,7 @@ export default function ChatScreen() {
     () => (params.aboutKind && params.aboutId ? { kind: params.aboutKind, id: params.aboutId } : null),
     [params.aboutKind, params.aboutId],
   );
-  const thread = useChatThread({ conversationId: params.id, messages, about });
+  const thread = useChatThread({ conversationId: params.id, messages, about, aboutKind: conversation?.aboutKind });
   const { pending, send, unanswered, openCardSet } = thread;
   const [toast, setToast] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);

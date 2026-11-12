@@ -106,7 +106,9 @@ _PRICES: dict[str, _Price] = {
     SONNET: _Price(
         input_per_million=Decimal("2"), output_per_million=Decimal("10"), cache_read_per_million=Decimal("0.10")
     ),
-    OPUS: _Price(input_per_million=Decimal("4"), output_per_million=Decimal("20"), cache_read_per_million=Decimal("0.20")),
+    OPUS: _Price(
+        input_per_million=Decimal("4"), output_per_million=Decimal("20"), cache_read_per_million=Decimal("0.20")
+    ),
     EMBEDDING_MODEL: _Price(input_per_million=Decimal("0.02"), output_per_million=Decimal("0")),
 }
 

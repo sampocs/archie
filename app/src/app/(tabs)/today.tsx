@@ -16,7 +16,7 @@ import { weekStartFor } from "@/review/newsQuiz";
 import { ReviewStartCard } from "@/review/ui/ReviewStartCard";
 import { useDailyLimit } from "@/review/useDailyLimit";
 import { useReviewData } from "@/review/useReviewData";
-import { requestSync } from "@/sync/useSync";
+import { requestSync, useFirstSyncPending } from "@/sync/useSync";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
@@ -74,6 +74,7 @@ export default function TodayScreen() {
   const { tasks } = celebration;
   const reduceMotion = useReducedMotion();
   const motion = celebration.settled && !reduceMotion;
+  const firstSyncPending = useFirstSyncPending();
   const isEmpty =
     upNextItems.length === 0 && tasks.review === null && tasks.notes === null && tasks.quiz === null && tasks.brief === null;
 
@@ -259,7 +260,12 @@ export default function TodayScreen() {
         </Animated.View>
       ) : null}
 
-      {isEmpty ? (
+      {isEmpty && firstSyncPending ? (
+        <Text testID="today-syncing" tone="ink2">
+          Syncing your library…
+        </Text>
+      ) : null}
+      {isEmpty && !firstSyncPending ? (
         <Text testID="today-empty" tone="ink2">
           Nothing waiting. Add a link with ＋ in Library, or share one to Archie.
         </Text>

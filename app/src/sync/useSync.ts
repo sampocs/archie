@@ -1,7 +1,7 @@
 import { count, eq } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import * as Network from "expo-network";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import { AppState } from "react-native";
 
 import { getSessionEpoch } from "@/auth/sessionEpoch";
@@ -22,6 +22,17 @@ let activeTrigger: (() => void) | null = null;
 
 export function requestSync(): void {
   activeTrigger?.();
+}
+
+// Whether this session's first sync run has finished, either way; until then an empty local database may only mean
+// the phone hasn't pulled yet.
+let firstRunDone = false;
+const firstRunListeners = new Set<() => void>();
+
+function setFirstRunDone(done: boolean): void {
+  if (firstRunDone === done) return;
+  firstRunDone = done;
+  firstRunListeners.forEach((listener) => listener());
 }
 
 type UseSyncArgs = { sessionKey: string | null; onUnauthorized: () => void };
@@ -45,11 +56,16 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
       followUpTimers.forEach(clearTimeout);
       followUpTimers = FOLLOW_UP_DELAYS_MS.map((delay) => setTimeout(fire, delay));
     };
+    setFirstRunDone(false);
     const trigger = createSyncScheduler(async () => {
       // A fresh store per run pins the run to the session it started in; see createDbSyncStore.
       const store = createDbSyncStore(db, getSessionEpoch());
-      const outcome = await runSync(store, transport, scheduleFollowUps);
-      if (outcome === "unauthorized") onUnauthorizedRef.current();
+      try {
+        const outcome = await runSync(store, transport, scheduleFollowUps);
+        if (outcome === "unauthorized") onUnauthorizedRef.current();
+      } finally {
+        setFirstRunDone(true);
+      }
     });
     const fire = () => void trigger().catch(() => undefined);
 
@@ -74,6 +90,21 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
       clearInterval(interval);
     };
   }, [hasSession]);
+}
+
+/** True while the phone has never pulled and this session's first sync hasn't finished: empty means "not loaded yet". */
+export function useFirstSyncPending(): boolean {
+  const done = useSyncExternalStore(
+    (listener) => {
+      firstRunListeners.add(listener);
+      return () => firstRunListeners.delete(listener);
+    },
+    () => firstRunDone,
+  );
+  const { data: stateRows } = useLiveQuery(
+    db.select({ position: schema.syncState.position }).from(schema.syncState).where(eq(schema.syncState.id, 1)),
+  );
+  return !done && (stateRows[0]?.position ?? 0) === 0;
 }
 
 export function useSyncStatus(): { waiting: number; offline: boolean } {

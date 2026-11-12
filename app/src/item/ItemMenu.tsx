@@ -1,5 +1,6 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
+import { Linking } from "react-native";
 
 import { openChat } from "@/ask/openChat";
 import { deleteSource, goDeeper, queuePrimer, setCardsOff, setRead, setSourceTopic } from "@/db/actions";
@@ -12,6 +13,7 @@ import { SnoozeSheet } from "@/ui/SnoozeSheet";
 import { TopicChooserSheet } from "@/ui/TopicChooserSheet";
 
 import { makeCardsAction } from "./cardsMenu";
+import { originalUrl } from "./originalUrl";
 import { EpisodesSheet } from "./EpisodesSheet";
 import { queueEntries } from "./menuVisibility";
 
@@ -56,6 +58,9 @@ export function ItemMenu({
       label: "Ask about this",
       onPress: () => openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }),
     },
+    ...(originalUrl(source.url)
+      ? [{ testID: "menu-open-original", label: "Open original", onPress: () => void Linking.openURL(source.url) }]
+      : []),
     ...(!queue.snooze
       ? []
       : [{ testID: "menu-snooze", label: "Remind me later…", startsGroup: true, onPress: () => setPanel("snooze") }]),

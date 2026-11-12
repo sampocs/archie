@@ -26,6 +26,7 @@ import { ItemActions } from "@/item/ItemActions";
 import { ItemBadgeLine } from "@/item/ItemBadgeLine";
 import { ItemHeader, REACTION_LABELS } from "@/item/ItemHeader";
 import { ItemMenu } from "@/item/ItemMenu";
+import { originalUrl } from "@/item/originalUrl";
 import { SectionTitle, SummarySections } from "@/item/SummarySections";
 import { useLibraryData } from "@/library/useLibraryData";
 import { NoteSources } from "@/notes/NoteSources";
@@ -247,7 +248,11 @@ export default function SourceScreen() {
             {summaryContent ? <SummarySections summary={summaryContent} source={source} /> : null}
           </>
         )}
-        {source.kind === "newsletter" ? <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} /> : null}
+        {source.kind === "newsletter" ? (
+          <EmailLinks url={source.url} onOpenEmail={() => setEmailOpen(true)} />
+        ) : !isNotice && originalUrl(source.url) ? (
+          <OpenOriginal url={source.url} />
+        ) : null}
         {isNotice ? null : (
           <>
             {/* A book shows its thoughts itself, above its background and notes. */}
@@ -369,9 +374,6 @@ function SenderPrompt(props: { source: SourceRow; onBlocked: () => void }) {
   );
 }
 
-// A newsletter whose web version the parser found keeps its real url; the rest have a `newsletter:` placeholder.
-const NEWSLETTER_URL_PREFIX = "newsletter:";
-
 function EmailLinks({ url, onOpenEmail }: { url: string; onOpenEmail: () => void }) {
   const theme = useTheme();
 
@@ -380,12 +382,23 @@ function EmailLinks({ url, onOpenEmail }: { url: string; onOpenEmail: () => void
       <Pressable testID="item-full-email" onPress={onOpenEmail} hitSlop={8}>
         <Text variant="headline">Open the full email ›</Text>
       </Pressable>
-      {url.startsWith(NEWSLETTER_URL_PREFIX) ? null : (
-        <Pressable testID="item-open-original" onPress={() => void Linking.openURL(url)} hitSlop={8}>
-          <Text variant="headline">Open original ›</Text>
-        </Pressable>
-      )}
+      {/* A newsletter whose web version the parser found keeps its real url; the rest have a placeholder. */}
+      {originalUrl(url) ? <OpenOriginal url={url} /> : null}
     </View>
+  );
+}
+
+/** Opens the page the item came from in the browser. */
+function OpenOriginal({ url }: { url: string }) {
+  return (
+    <Pressable
+      testID="item-open-original"
+      onPress={() => void Linking.openURL(url)}
+      hitSlop={8}
+      style={{ alignSelf: "flex-start" }}
+    >
+      <Text variant="headline">Open original ›</Text>
+    </Pressable>
   );
 }
 

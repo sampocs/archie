@@ -636,6 +636,7 @@ def test_a_card_chats_about_text_names_the_card_its_text_and_origin_and_boosts_t
     """The model is given the card id for read_item + propose_card_edit, so it needs no find_cards."""
     owner = live_stack.authed(live_stack.sign_in(apple_sub="owner", is_whitelisted=True))
     card_id = _seed_card(live_stack, user_id=_user_id(owner))
+    dropped_id = _seed_card(live_stack, user_id=_user_id(owner), dropped=True)
     engine = session.engine_for(live_stack.database_url)
 
     with sqlalchemy.orm.Session(engine) as db:
@@ -644,7 +645,14 @@ def test_a_card_chats_about_text_names_the_card_its_text_and_origin_and_boosts_t
         text = context.about_text(db, conversation=chat)
         boosted = context.boost(db, conversation=chat)
         assert context.note_title(db, conversation=chat) is None
+        dropped_chat = models.Conversation(about_card_id=uuid.UUID(dropped_id))
+        dropped_text = context.about_text(db, conversation=dropped_chat)
+        dropped_boost = context.boost(db, conversation=dropped_chat)
     engine.dispose()
+
+    assert dropped_text is not None
+    assert "removed" in dropped_text and "What do reserves sit in?" in dropped_text
+    assert "propose_card_edit" not in dropped_text and dropped_boost is None
 
     assert text is not None
     assert text.startswith(f"A review card (card id {card_id})")

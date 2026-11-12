@@ -283,9 +283,9 @@ def note_title(db: orm.Session, *, conversation: models.Conversation) -> str | N
 
 
 def _card_origin_boost(db: orm.Session, *, card_id: uuid.UUID) -> search.ItemRef | None:
-    """The source, take or topic primer a card came from; None for any other origin or a card since deleted."""
+    """The source, take or topic primer a card came from; None for any other origin or a card since deleted or dropped."""
     card = db.get(models.Card, card_id)
-    if card is None:
+    if card is None or card.deleted_at is not None:
         return None
     if card.source_id is not None:
         return search.ItemRef(kind=models.SearchItemKind.SOURCE, id=card.source_id)
@@ -302,9 +302,11 @@ def _card_text(db: orm.Session, *, card_id: uuid.UUID) -> str | None:
     card = db.get(models.Card, card_id)
     if card is None:
         return None
+    if card.deleted_at is not None:
+        return f"A review card (card id {card.id}) that the owner has since removed. Its question was: {card.question}"
     lines = [f"A review card (card id {card.id})", f"Question: {card.question}", f"Answer: {card.answer}"]
     lines += [f"- {line}" for line in card.detail.splitlines() if line.strip()]
-    origin = card_origin_title(db, card=card)
+    origin = _card_origin_title(db, card=card)
     if origin is not None:
         lines.append(f"It came from: {origin}")
     lines.append(
@@ -314,7 +316,7 @@ def _card_text(db: orm.Session, *, card_id: uuid.UUID) -> str | None:
     return "\n".join(lines)
 
 
-def card_origin_title(db: orm.Session, *, card: models.Card) -> str | None:
+def _card_origin_title(db: orm.Session, *, card: models.Card) -> str | None:
     """The title of the source, take or topic a card came from; None when it has no such origin."""
     if card.source_id is not None:
         source = db.get_one(models.Source, card.source_id)

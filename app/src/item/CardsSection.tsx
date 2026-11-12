@@ -20,7 +20,7 @@ export type CardsOf = { kind: "source"; id: string } | { kind: "take"; id: strin
  * "Cards from this": the source's or take's live cards in session order, each with when it is next due (and, for a
  * source's, its kind). Each row opens the card's page; every row swipes to Remove.
  */
-export function CardsSection({ of }: { of: CardsOf }) {
+export function CardsSection({ of, backLabel }: { of: CardsOf; backLabel?: string }) {
   const router = useRouter();
   const data = useReviewData();
   const now = useNow();
@@ -63,6 +63,7 @@ export function CardsSection({ of }: { of: CardsOf }) {
             detail={of.kind === "take" ? due : `${KIND_LABELS[card.kind] ?? card.kind} · ${due}`}
             index={index}
             testIDPrefix="card"
+            backLabel={backLabel}
             onVersions={() => setVersionsOf(card.id)}
           />
         );

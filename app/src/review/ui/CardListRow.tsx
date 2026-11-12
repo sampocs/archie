@@ -21,10 +21,12 @@ type CardListRowProps = {
   // Offers a Versions swipe action on an edited card.
   onVersions?: () => void;
   end?: ReactNode;
+  // The card page's back label (where the row lives, e.g. "Review"); "Back" when absent.
+  backLabel?: string;
 };
 
 /** One card in a list: its question and detail line; tap opens the card's page, swipe to Remove (or see Versions). */
-export function CardListRow({ card, detail, index, testIDPrefix, onVersions, end }: CardListRowProps) {
+export function CardListRow({ card, detail, index, testIDPrefix, onVersions, end, backLabel }: CardListRowProps) {
   const theme = useTheme();
   const router = useRouter();
   const edited = card.version > 1;
@@ -58,7 +60,7 @@ export function CardListRow({ card, detail, index, testIDPrefix, onVersions, end
     >
       <Pressable
         testID={`${testIDPrefix}-row-${index}`}
-        onPress={() => router.push(`/card/${card.id}`)}
+        onPress={() => router.push({ pathname: "/card/[id]", params: { id: card.id, from: backLabel } })}
         style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md, paddingVertical: theme.spacing.md }}
       >
         <View style={{ flex: 1, gap: theme.spacing.xs }}>

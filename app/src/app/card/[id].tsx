@@ -47,14 +47,22 @@ const MAX_DETAIL_LINES = 5;
  */
 export default function CardScreen() {
   const theme = useTheme();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
   const chat = useCardChat(id);
   if (!chat.loaded) return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
   // A new chat id (the chat was deleted elsewhere, so the page mints a fresh one) starts the page's chat state over.
-  return <CardPage key={chat.conversationId} cardId={id} conversationId={chat.conversationId} />;
+  return <CardPage key={chat.conversationId} cardId={id} conversationId={chat.conversationId} backLabel={from ?? "Back"} />;
 }
 
-function CardPage({ cardId, conversationId }: { cardId: string; conversationId: string }) {
+function CardPage({
+  cardId,
+  conversationId,
+  backLabel,
+}: {
+  cardId: string;
+  conversationId: string;
+  backLabel: string;
+}) {
   const theme = useTheme();
   const router = useRouter();
   const now = useNow();
@@ -66,7 +74,7 @@ function CardPage({ cardId, conversationId }: { cardId: string; conversationId: 
   const card = cards[0]?.deletedAt === null ? cards[0] : null;
 
   // The chat about this card: the first question creates it, about the card.
-  const { messages } = useChat(conversationId);
+  const { messages, loaded: messagesLoaded } = useChat(conversationId);
   const about = useMemo(() => ({ kind: "card" as const, id: cardId }), [cardId]);
   const thread = useChatThread({ conversationId, messages, about });
   const available = useAskAvailable();
@@ -83,9 +91,14 @@ function CardPage({ cardId, conversationId }: { cardId: string; conversationId: 
   // An edit applied in the chat (a new version landing) opens the card back up to show its new wording.
   const hasChat = thread.messages.length > 0 || thread.pending !== null;
   const shownVersion = useRef<number | null>(null);
+  // Set when this page's own Versions restore raised the version, which keeps its "Restored version N" toast.
+  const restoredHere = useRef(false);
   useEffect(() => {
     if (!card) return;
-    if (hasChat && shownVersion.current !== null && card.version > shownVersion.current) {
+    const raised = shownVersion.current !== null && card.version > shownVersion.current;
+    if (raised && restoredHere.current) {
+      restoredHere.current = false;
+    } else if (raised && hasChat) {
       setExpanded(true);
       setToast("Card updated");
     }
@@ -111,14 +124,15 @@ function CardPage({ cardId, conversationId }: { cardId: string; conversationId: 
 
   if (cardsRead !== undefined && !card) {
     return (
-      <Screen title="Card" nav={{ title: "Card", backLabel: "Back" }} onBack={router.back}>
+      <Screen title="Card" nav={{ title: "Card", backLabel }} onBack={router.back}>
         <Text testID="card-page-gone" tone="ink2">
           This card was removed.
         </Text>
       </Screen>
     );
   }
-  if (!card) return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
+  // The card body waits for the chat's messages, so a card with a chat doesn't show expanded and then collapse.
+  if (!card || !messagesLoaded) return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
 
   const collapsed = hasChat && !expanded;
   const edited = card.version > 1;
@@ -127,7 +141,7 @@ function CardPage({ cardId, conversationId }: { cardId: string; conversationId: 
     <View style={{ flex: 1 }}>
       <Screen
         title="Card"
-        nav={{ title: "Card", backLabel: "Back" }}
+        nav={{ title: "Card", backLabel }}
         onBack={router.back}
         headerRight={
           <Pressable testID="card-more" accessibilityLabel="More" hitSlop={12} onPress={() => setMenuOpen(true)}>
@@ -183,7 +197,10 @@ function CardPage({ cardId, conversationId }: { cardId: string; conversationId: 
         target={edited ? { kind: "card", id: card.id } : null}
         visible={versionsOpen}
         onClose={() => setVersionsOpen(false)}
-        onRestored={(version) => setToast(`Restored version ${version}`)}
+        onRestored={(version) => {
+          restoredHere.current = true;
+          setToast(`Restored version ${version}`);
+        }}
       />
       {/* Outside the scroll view, so it pins to the screen's bottom rather than the end of the chat. */}
       {toast ? <Toast message={toast} onHide={hideToast} /> : null}

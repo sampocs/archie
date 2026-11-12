@@ -176,6 +176,7 @@ export function MissedList({ entries, data, now }: { entries: MissedCard[]; data
             detail={`${cardOriginLabel(entry.card, data)} · ${cardDueLabel(entry.card, data, now)}`}
             index={index}
             testIDPrefix="review-missed"
+            backLabel="Review"
             end={<CountTag label={missedTag(entry)} signal="missed" testID={`review-missed-tag-${index}`} />}
           />
         ))}
@@ -197,6 +198,7 @@ export function CardSearchResults({ cards, data, now }: { cards: CardRow[]; data
           detail={`${cardOriginLabel(card, data)} · ${cardDueLabel(card, data, now)}`}
           index={index}
           testIDPrefix="review-search"
+          backLabel="Review"
         />
       ))}
     </GroupedList>

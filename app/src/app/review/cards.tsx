@@ -50,6 +50,7 @@ export default function CardListScreen() {
                 detail={`${originOf(card, target, data)}${cardDueLabel(card, data, now)}`}
                 index={index}
                 testIDPrefix="card-list"
+                backLabel="Review"
               />
             ))}
           </GroupedList>

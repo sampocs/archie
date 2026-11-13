@@ -94,18 +94,25 @@ export function dayDoneChips(tasks: TodayTasks): string[] {
   return TASK_KINDS.map((kind) => chips[kind]).filter((chip) => chip !== null);
 }
 
-/** "Back tomorrow: 5 cards, 2 notes and a new brief." from what tomorrow already holds. */
-export function backTomorrow(inputs: TodayInputs, tasks: TodayTasks): string {
+/** What tomorrow already holds: cards and notes queued, and whether a brief is expected. */
+export type TomorrowCounts = { cards: number; notes: number; brief: boolean };
+
+export function tomorrowCounts(inputs: TodayInputs, tasks: TodayTasks): TomorrowCounts {
   // Cards the cap held back today lead tomorrow's set, which the cap limits too.
   const waiting = dailyPlan(inputs.reviewData, inputs.dailyLimit, inputs.now).waiting.length;
   const cards = Math.min(waiting + dueByTomorrow(inputs.reviewData, inputs.now), inputs.dailyLimit ?? Infinity);
   const notes = Math.min(refresherQueue(inputs.sources).length, DAILY_NOTES);
 
   // A brief comes most days for someone who read one today; there's no way to know tomorrow's for sure.
+  return { cards, notes, brief: tasks.brief?.status === DONE };
+}
+
+/** "Back tomorrow: 5 cards, 2 notes and a new brief." from what tomorrow already holds. */
+export function backTomorrow(tomorrow: TomorrowCounts): string {
   const parts = [
-    cards > 0 ? cardsWord(cards) : null,
-    notes > 0 ? notesWord(notes) : null,
-    tasks.brief?.status === DONE ? "a new brief" : null,
+    tomorrow.cards > 0 ? cardsWord(tomorrow.cards) : null,
+    tomorrow.notes > 0 ? notesWord(tomorrow.notes) : null,
+    tomorrow.brief ? "a new brief" : null,
   ].filter((part) => part !== null);
   return parts.length === 0 ? "Back tomorrow." : `Back tomorrow: ${joinNaturally(parts)}.`;
 }

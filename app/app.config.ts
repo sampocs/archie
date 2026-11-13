@@ -23,6 +23,7 @@ const config: ExpoConfig = {
     "expo-font",
     ["expo-audio", { microphonePermission: "Archie uses the microphone only while you record an answer to a review card." }],
     "expo-notifications",
+    "@bacons/apple-targets",
     [
       "expo-splash-screen",
       {

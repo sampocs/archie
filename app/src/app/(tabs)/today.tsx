@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from "react";
+import { useCallback, useEffect, type ReactNode } from "react";
 import * as Network from "expo-network";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
@@ -31,9 +31,12 @@ import { GroupedList } from "@/ui/GroupedList";
 import { QueuedPrimerRow } from "@/ui/QueuedPrimerRow";
 import { SourceRow } from "@/ui/SourceRow";
 import { haptic } from "@/ui/haptics";
+import { publishWidgetSnapshot } from "@/widget/publish";
+import { widgetSnapshot } from "@/widget/widgetSnapshot";
 import { useNow } from "@/ui/useNow";
 
 const UP_NEXT_COUNT = 3;
+const WIDGET_SETTLE_MS = 500;
 // A finished task's card eases into its done row while the cards below close up.
 const SLOT_LAYOUT_MS = 450;
 const CARD_OUT_MS = 200;
@@ -71,6 +74,16 @@ export default function TodayScreen() {
   const upNextItems = queued.slice(0, UP_NEXT_COUNT);
   const view = useTodayTasks(data.sources, reviewData, dailyLimit, now);
   const celebration = useTodayCelebration(view.tasks, localDate(now));
+
+  // The lock-screen widget can't read the database, so Today publishes what it shows; keyed on the JSON so a
+  // re-render with nothing changed doesn't reload the widget. The live queries start empty, so a snapshot is
+  // published only once it has held for a moment: the empty first render never reaches the lock screen.
+  const snapshotJson = JSON.stringify(widgetSnapshot(view.tasks, view.tomorrow, now));
+  useEffect(() => {
+    const timer = setTimeout(() => publishWidgetSnapshot(snapshotJson), WIDGET_SETTLE_MS);
+    return () => clearTimeout(timer);
+  }, [snapshotJson]);
+
   const { tasks } = celebration;
   const reduceMotion = useReducedMotion();
   const motion = celebration.settled && !reduceMotion;

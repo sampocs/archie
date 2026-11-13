@@ -10,6 +10,7 @@ import {
   doneTaskKinds,
   joinNaturally,
   todayTasks,
+  tomorrowCounts,
   type TodayInputs,
 } from "./todayTasks";
 
@@ -308,13 +309,13 @@ describe("backTomorrow", () => {
     const briefs = [brief({ status: "done", doneAt: dayAt(0, 8) })];
     const today = inputs({ cards, sources, briefs, reviews: [review({ cardId: "r1" })] });
 
-    expect(backTomorrow(today, todayTasks(today))).toBe("Back tomorrow: 2 cards, 2 notes and a new brief.");
+    expect(backTomorrow(tomorrowCounts(today, todayTasks(today)))).toBe("Back tomorrow: 2 cards, 2 notes and a new brief.");
   });
 
   it("names one note when only one is queued, and no brief when none was read today", () => {
     const today = inputs({ sources: [noteSource({ id: "q1" })] });
 
-    expect(backTomorrow(today, todayTasks(today))).toBe("Back tomorrow: 1 note.");
+    expect(backTomorrow(tomorrowCounts(today, todayTasks(today)))).toBe("Back tomorrow: 1 note.");
   });
 
   it("counts today's held-back cards with tomorrow's, up to the cap", () => {
@@ -325,15 +326,15 @@ describe("backTomorrow", () => {
     const reviews = reviewedIds.map((cardId) => review({ cardId }));
 
     const capped = inputs({ cards, reviews, dailyLimit: 10 });
-    expect(backTomorrow(capped, todayTasks(capped))).toBe("Back tomorrow: 10 cards.");
+    expect(backTomorrow(tomorrowCounts(capped, todayTasks(capped)))).toBe("Back tomorrow: 10 cards.");
     const few = inputs({ cards: cards.slice(4), reviews, dailyLimit: 10 });
-    expect(backTomorrow(few, todayTasks(few))).toBe("Back tomorrow: 8 cards.");
+    expect(backTomorrow(tomorrowCounts(few, todayTasks(few)))).toBe("Back tomorrow: 8 cards.");
   });
 
   it("says just that when tomorrow holds nothing known", () => {
     const today = inputs({ cards: [scheduled("far", 5)] });
 
-    expect(backTomorrow(today, todayTasks(today))).toBe("Back tomorrow.");
+    expect(backTomorrow(tomorrowCounts(today, todayTasks(today)))).toBe("Back tomorrow.");
   });
 });
 

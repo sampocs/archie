@@ -6,6 +6,7 @@ import { apiFetch } from "@/api/client";
 import { clearSharedCollections } from "@/collections/sharedCollections";
 import { db, seedSyncState } from "@/db/client";
 import * as schema from "@/db/schema";
+import { clearWidget } from "@/widget/publish";
 
 import { KEYCHAIN_KEY, LEGACY_OPTIONS, SHARED_OPTIONS } from "./keychain";
 import { bumpSessionEpoch } from "./sessionEpoch";
@@ -71,6 +72,9 @@ export async function setSessionKey(key: string): Promise<void> {
 // gone: a local-db failure must not leave the UI signedIn without a key.
 export async function clearSession(): Promise<void> {
   bumpSessionEpoch();
+  // First, before anything that can wait on the network or throw, so the last user's rings leave the lock screen.
+  // Fire-and-forget: the module swallows its own failures.
+  clearWidget();
   await revokeServerSession(state.sessionKey);
   try {
     await SecureStore.deleteItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS);

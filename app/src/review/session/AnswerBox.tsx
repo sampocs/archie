@@ -11,6 +11,9 @@ import { useTheme } from "@/theme/useTheme";
 const MAX_ANSWER_LENGTH = 4000;
 const ROUND_BUTTON = 36;
 const MIN_BOX_HEIGHT = 210;
+// About six lines: past this the answer scrolls inside the box, so a long transcript can't push the box and its
+// ↑ under the keyboard, where neither can be reached.
+const MAX_INPUT_HEIGHT = 160;
 
 type AnswerBoxProps = {
   value: string;
@@ -102,7 +105,7 @@ export function AnswerBox({ value, onChangeText, onSubmit, onDrop, showMic, micS
 
 const styles = StyleSheet.create({
   box: { minHeight: MIN_BOX_HEIGHT, justifyContent: "space-between" },
-  input: { flexGrow: 1, minHeight: 120, textAlignVertical: "top", padding: 0 },
+  input: { flexGrow: 1, minHeight: 120, maxHeight: MAX_INPUT_HEIGHT, textAlignVertical: "top", padding: 0 },
   toolbar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   tools: { flexDirection: "row", alignItems: "center" },
   round: {

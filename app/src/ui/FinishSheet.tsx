@@ -114,9 +114,6 @@ export function FinishSheet({ sourceId, primerWords, book, visible, onClose }: F
         multiline
       />
       <Button testID="finish-save" label="Save" onPress={save} />
-      <Text variant="secondary" tone="ink3">
-        Both are optional: Save alone marks it done.
-      </Text>
     </BottomSheet>
   );
 }

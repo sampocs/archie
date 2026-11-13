@@ -7,19 +7,23 @@ public class ArchieWidgetModule: Module {
   private let service = "com.sampocs.archie.widget"
   private let account = "today"
   private let accessGroup = "3W3H65F89G.com.sampocs.archie.shared"
+  // Calls can run concurrently; one at a time keeps a clear from interleaving with a write (update-then-add).
+  private let lock = NSLock()
 
   public func definition() -> ModuleDefinition {
     Name("ArchieWidget")
 
     AsyncFunction("setSnapshot") { (json: String) in
-      self.write(data: Data(json.utf8))
+      self.lock.withLock { self.write(data: Data(json.utf8)) }
       WidgetCenter.shared.reloadAllTimelines()
     }
 
     AsyncFunction("clear") { () in
-      let status = SecItemDelete(self.baseQuery() as CFDictionary)
-      if status != errSecSuccess && status != errSecItemNotFound {
-        NSLog("ArchieWidget: keychain delete failed (%d)", Int(status))
+      self.lock.withLock {
+        let status = SecItemDelete(self.baseQuery() as CFDictionary)
+        if status != errSecSuccess && status != errSecItemNotFound {
+          NSLog("ArchieWidget: keychain delete failed (%d)", Int(status))
+        }
       }
       WidgetCenter.shared.reloadAllTimelines()
     }

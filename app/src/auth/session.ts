@@ -72,14 +72,14 @@ export async function setSessionKey(key: string): Promise<void> {
 // gone: a local-db failure must not leave the UI signedIn without a key.
 export async function clearSession(): Promise<void> {
   bumpSessionEpoch();
+  // First, before anything that can wait on the network or throw, so the last user's rings leave the lock screen.
+  // Fire-and-forget: the module swallows its own failures.
+  clearWidget();
   await revokeServerSession(state.sessionKey);
   try {
     await SecureStore.deleteItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS);
     // A leftover legacy item would otherwise be migrated back into the shared group on the next launch.
     await SecureStore.deleteItemAsync(KEYCHAIN_KEY, LEGACY_OPTIONS);
-    // The lock-screen widget's rings go before the local wipe so a failure there can't leave the last user's
-    // progress on the lock screen. Fire-and-forget: the module swallows its own failures.
-    clearWidget();
     db.transaction((tx) => {
       tx.delete(schema.sources).run();
       tx.delete(schema.artifacts).run();

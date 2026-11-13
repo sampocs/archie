@@ -109,7 +109,7 @@ export default function TakeEditorScreen() {
           maxLength={MAX_TAKE_BODY_LENGTH}
           multiline
           scrollEnabled={false}
-          style={{ minHeight: 250, textAlignVertical: "top", paddingTop: 14, paddingBottom: 14 }}
+          style={{ minHeight: 250, textAlignVertical: "top" }}
         />
         {/* The whole row toggles, not just the small switch. */}
         <Pressable

@@ -48,7 +48,7 @@ export function Composer({ placeholder, disabled, disabledLabel, sendDisabled = 
         onChangeText={setText}
         placeholder={placeholder}
         multiline
-        style={{ flex: 1, maxHeight: 140, paddingTop: 14, paddingBottom: 14 }}
+        style={{ flex: 1, maxHeight: 140 }}
       />
       <Pressable
         testID="ask-web-toggle"

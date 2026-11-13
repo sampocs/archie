@@ -1,4 +1,4 @@
-import { useCallback, type ReactNode } from "react";
+import { useCallback, useEffect, type ReactNode } from "react";
 import * as Network from "expo-network";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
@@ -31,6 +31,8 @@ import { GroupedList } from "@/ui/GroupedList";
 import { QueuedPrimerRow } from "@/ui/QueuedPrimerRow";
 import { SourceRow } from "@/ui/SourceRow";
 import { haptic } from "@/ui/haptics";
+import { publishWidgetSnapshot } from "@/widget/publish";
+import { widgetSnapshot } from "@/widget/widgetSnapshot";
 import { useNow } from "@/ui/useNow";
 
 const UP_NEXT_COUNT = 3;
@@ -71,6 +73,14 @@ export default function TodayScreen() {
   const upNextItems = queued.slice(0, UP_NEXT_COUNT);
   const view = useTodayTasks(data.sources, reviewData, dailyLimit, now);
   const celebration = useTodayCelebration(view.tasks, localDate(now));
+
+  // The lock-screen widget can't read the database, so Today publishes what it shows; keyed on the JSON so a
+  // re-render with nothing changed doesn't reload the widget.
+  const snapshotJson = JSON.stringify(widgetSnapshot(view.tasks, view.tomorrow, now));
+  useEffect(() => {
+    publishWidgetSnapshot(JSON.parse(snapshotJson));
+  }, [snapshotJson]);
+
   const { tasks } = celebration;
   const reduceMotion = useReducedMotion();
   const motion = celebration.settled && !reduceMotion;

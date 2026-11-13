@@ -6,6 +6,7 @@ import { apiFetch } from "@/api/client";
 import { clearSharedCollections } from "@/collections/sharedCollections";
 import { db, seedSyncState } from "@/db/client";
 import * as schema from "@/db/schema";
+import { clearWidget } from "@/widget/publish";
 
 import { KEYCHAIN_KEY, LEGACY_OPTIONS, SHARED_OPTIONS } from "./keychain";
 import { bumpSessionEpoch } from "./sessionEpoch";
@@ -76,6 +77,9 @@ export async function clearSession(): Promise<void> {
     await SecureStore.deleteItemAsync(KEYCHAIN_KEY, SHARED_OPTIONS);
     // A leftover legacy item would otherwise be migrated back into the shared group on the next launch.
     await SecureStore.deleteItemAsync(KEYCHAIN_KEY, LEGACY_OPTIONS);
+    // The lock-screen widget's rings go before the local wipe so a failure there can't leave the last user's
+    // progress on the lock screen. Fire-and-forget: the module swallows its own failures.
+    clearWidget();
     db.transaction((tx) => {
       tx.delete(schema.sources).run();
       tx.delete(schema.artifacts).run();

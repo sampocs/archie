@@ -63,7 +63,7 @@ matters to them.
 Use only what the card already says, in its accepted answer and its "More" detail lines: you may pick, shorten, \
 reorder, or put the weight on what the learner's note names, but never add a fact, name, number or claim that isn't \
 in it. The new answer follows the card rules' answer rule below; the detail stays as it is. Return the new accepted \
-answer in `answer`.
+answer in `answer`. When the question says how many items to recall, the new answer keeps that many.
 
 {cards.CARD_RULES}"""
 

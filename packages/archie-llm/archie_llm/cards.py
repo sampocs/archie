@@ -15,7 +15,10 @@ DETAIL_SCHEMA: dict[str, Any] = {"type": "array", "items": {"type": "string"}}
 
 CARD_RULES = """Each card has a question, an answer and a detail:
 - question: ONE focused question with ONE thing to recall. Never join two asks with "and" ("What does X give you, \
-and what can you lose?" is two cards, or pick one). Ask only what has a short answer.
+and what can you lose?" is two cards, or pick one). Ask only what has a short answer. Ask for a list only when the \
+list itself is the idea, and never for more than four items; then say how many in the question ("What are the three \
+main benefits of X?") so the learner knows how many to recall, and keep that number matching the answer when either \
+changes.
 - answer: the one thing to recall, in as few words as carry it: a phrase, not a sentence. Aim for 2-8 words, never \
 more than 15. The learner is graded only on this, so it is what someone who knows the material would say off the top \
 of their head. When two things are both essential, name both briefly ("Supply and demand"). A number card's answer is \

@@ -272,11 +272,12 @@ export function finishSource(
 ): void {
   db.transaction((tx) => {
     const source = tx.select().from(schema.sources).where(eq(schema.sources.id, input.sourceId)).get();
-    // A finished newsletter is analyzed again so it gets cards. The phone can't see the server's jobs, so it only
-    // shows that for a ready one; for one still processing the server decides and the next pull shows it. A finished
-    // book always gets its refresher written.
+    // A finished newsletter is analyzed again so it gets cards, unless its cards are off. The phone can't see the
+    // server's jobs, so it only shows that for a ready one; for one still processing the server decides and the next
+    // pull shows it. A finished book always gets its refresher written.
     const reanalyze =
-      (source?.kind === "newsletter" && source.processing === "ready") || source?.kind === BOOK_KIND
+      (source?.kind === "newsletter" && source.processing === "ready" && source.cardsOff === 0) ||
+      source?.kind === BOOK_KIND
         ? { processing: "processing", processingError: null }
         : {};
     updateSource(tx, input.sourceId, {

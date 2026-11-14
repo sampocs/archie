@@ -266,6 +266,7 @@ export default function SourceScreen() {
               <FinishSheet
                 sourceId={source.id}
                 primerWords={primerWords}
+                cardsOff={source.cardsOff === 1}
                 book={isBook ? { title: source.title ?? kindLabel(BOOK_KIND) } : undefined}
                 visible={finishOpen}
                 onClose={() => setFinishOpen(false)}

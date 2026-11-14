@@ -96,7 +96,11 @@ def failing_jobs(db: orm.Session, *, user_id: int, now: datetime.datetime) -> li
     done_at = dict(
         db.execute(
             sqlalchemy.select(models.Job.kind, sqlalchemy.func.max(models.Job.created_at))
-            .where(models.Job.user_id == user_id, models.Job.status == models.JobStatus.DONE.value)
+            .where(
+                models.Job.user_id == user_id,
+                models.Job.status == models.JobStatus.DONE.value,
+                models.Job.created_at >= window_start,
+            )
             .group_by(models.Job.kind)
         ).all()
     )
@@ -146,7 +150,7 @@ def worker_stalled(db: orm.Session, *, user_id: int, now: datetime.datetime) -> 
             kind=ProblemKind.WORKER_STALLED,
             key=ProblemKind.WORKER_STALLED.value,
             title="Background work has stopped",
-            detail=f"{len(stalled)} {_plural(len(stalled), 'job')} waiting · oldest is {oldest_kind}",
+            detail=f"{len(stalled)} {_plural(len(stalled), 'job')} waiting · oldest is {oldest_kind.replace('_', ' ')}",
             since=oldest_at + STALLED_AFTER,
         )
     ]
@@ -344,7 +348,7 @@ def _cadence(gap: datetime.timedelta) -> str:
         return "every few days"
     if gap < _WEEKLY_GAP:
         return "weekly"
-    return f"every {round(gap.days / 7)} weeks"
+    return f"every {max(2, round(gap.days / 7))} weeks"
 
 
 def _plural(count: int, noun: str) -> str:

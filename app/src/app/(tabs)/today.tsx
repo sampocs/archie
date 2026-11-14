@@ -89,6 +89,11 @@ export default function TodayScreen() {
     return () => clearTimeout(timer);
   }, [snapshotJson]);
 
+  // The sheet closes with the last problem, so it doesn't pop open by itself when problems return.
+  useEffect(() => {
+    if (problems.length === 0) setProblemsOpen(false);
+  }, [problems.length]);
+
   const { tasks } = celebration;
   const reduceMotion = useReducedMotion();
   const motion = celebration.settled && !reduceMotion;

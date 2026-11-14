@@ -458,6 +458,8 @@ def test_problems_never_include_another_users_rows(live_stack: LiveStack) -> Non
         newsletter_kind=models.NewsletterKind.NEWS,
     )
     mine = live_stack.authed(live_stack.sign_in(apple_sub="my-user"))
+    _allow_sender(live_stack, user_id=_user_id(mine), address="daily@example.com", label="Example Daily")
+    _issues(live_stack, user_id=_user_id(mine), address="daily@example.com", days_ago=[3, 2, 1, 0.5])
 
     assert mine.get("/problems").json() == {"problems": []}
     assert {"failing_jobs:analyze", "worker_stalled"} <= set(_problems(other))

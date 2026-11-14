@@ -13,6 +13,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `ask.yaml` | Finish an article, ask about it on the Ask tab, see the Your library section, Make cards and wait for the proposed set, and find the chat in the list (real keys, a few cents; `make maestro-ask`) |
 | `chat_cards.yaml` + `run_chat_cards.sh` | Seed a chat holding a three-card proposal through `/test/card-sets`, open the cheat sheet, untick card 2, See all, Save 2, Open the Chat item, See original, then Review search opens a saved card's page (question, answer, detail), Practice starts and closes back to it, and the card's chat box shows (no model; `make maestro-chat-cards`) |
 | `review_browse.yaml` (after `chat_cards.yaml`, same runner) | Review tab: Items → the Chat item's card list → Practice all, miss both cards (self-graded), the caught-up card shows Review ahead, Missed lists both and Practice these 2 starts, Shuffle 10 starts, the browse mode is remembered and still chosen after a relaunch, and Back to Today shows the done row or day card (no model; `make maestro-chat-cards`) |
+| `problems.yaml` + `run_problems.sh` | Seed a failed summary job through `/test/failed-job`, see Today's "problems-banner", tap it, and the sheet lists "Summaries failing" (no model; `make maestro-problems`) |
 | `favorites.yaml` | Star an item from its page, find it under Library → Saved → Other, unstar it with a swipe; Saved shows its empty state |
 | `collections.yaml` | Save a link from the Library ＋ into a new collection, see it on the collection page and not in All, delete the collection from its tile |
 | `topics.yaml` | Topics: add, remove and restore a topic |
@@ -53,7 +54,8 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 11. `make maestro-edit` with the backend up (`make start-local`): runs `edit.yaml`, which waits for analyze and the primer, then a Sonnet 5.5 answer that proposes an edit; it taps Apply and Undo and opens Summary versions. Same `.env` needs as `maestro-ask`; spends a few cents.
 12. `make maestro-chat-cards` with the backend up (`make start-local`): runs `run_chat_cards.sh`, which seeds a chat holding a card-set proposal (`fixtures/chat_cards.json`) through `POST /test/card-sets` without a model, then `chat_cards.yaml` opens the chat, previews the cheat sheet, unticks a card, switches to See all, saves, opens the new Chat item and its original, and `review_browse.yaml` browses and practices those cards on the Review tab. Spends nothing on models (the save queues one embedding).
 13. `make maestro-books` with the backend up (`make start-local`): runs `books.yaml`, which looks a title up on Open Library for real and waits up to 4 minutes for the book primer. Needs the owner's keys in `.env`; spends a few cents (one book primer).
-14. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
+14. `make maestro-problems` with the backend up (`make start-local`): runs `run_problems.sh`, which seeds a failed summary job through `POST /test/failed-job`, then `problems.yaml` relaunches, waits for Today's problems banner, opens its sheet and sees "Summaries failing". Spends nothing.
+15. `make maestro-offline` with the backend **stopped**: the script starts and stops `make start-local` itself.
 
 These targets first empty the local dev database's synced data (`make reset-local-data`), and each flow starts with a clean app install (state and keychain cleared).
 

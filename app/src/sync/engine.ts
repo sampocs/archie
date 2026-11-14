@@ -291,7 +291,7 @@ export interface SyncStore {
   // touches a source.
   rejectAction(id: string, reason: string): Promise<void>;
   getPosition(): Promise<number>;
-  // Upserts rows and saves the position in one transaction.
+  // Upserts rows and saves the position, and the time the server last answered, in one transaction.
   applyPage(page: PullPage): Promise<void>;
   setLastPushFailed(failed: boolean): Promise<void>;
 }

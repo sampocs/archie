@@ -1,0 +1,1 @@
+ALTER TABLE `sync_state` ADD `last_server_contact_at` integer;

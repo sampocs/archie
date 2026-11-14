@@ -147,7 +147,11 @@ maestro-edit: reset-local-data
 maestro-chat-cards: reset-local-data
 	@maestro/run_chat_cards.sh
 
+# Problems banner: seeds a failed summary job through the dev route, then checks Today's banner and its sheet.
+maestro-problems: reset-local-data
+	@maestro/run_problems.sh
+
 maestro-offline: reset-local-data
 	@maestro/run_offline.sh
 
-.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-confirm maestro-notes maestro-allowlist maestro-brief maestro-review maestro-books maestro-takes-clean maestro-ask maestro-edit maestro-chat-cards maestro-offline
+.PHONY: install check check-types format lint tidy test db-up db-down test-db scaffold migrate-local reset-local-data start-api-local start-worker-local start-local maestro maestro-podcast maestro-newsletter maestro-confirm maestro-notes maestro-allowlist maestro-brief maestro-review maestro-books maestro-takes-clean maestro-ask maestro-edit maestro-chat-cards maestro-problems maestro-offline

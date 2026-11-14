@@ -1,0 +1,16 @@
+appId: com.sampocs.archie
+---
+# Run after run_problems.sh has seeded a failed summary job. Spends nothing.
+# Relaunch (keeping the login) so Today fetches the problems on start and after its first sync.
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "problems-banner"
+    timeout: 30000
+- tapOn:
+    id: "problems-banner"
+- extendedWaitUntil:
+    visible:
+      id: "problems-sheet"
+    timeout: 5000
+- assertVisible: "Summaries failing"

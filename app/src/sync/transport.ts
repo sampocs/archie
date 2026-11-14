@@ -559,8 +559,9 @@ export function createDbSyncStore(
             .run();
         }
 
+        // Every applied page is a successful pull, so it also stamps the last time the server answered.
         tx.update(schema.syncState)
-          .set({ position: page.position })
+          .set({ position: page.position, lastServerContactAt: Date.now() })
           .where(eq(schema.syncState.id, 1))
           .run();
       });

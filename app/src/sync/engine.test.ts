@@ -1136,6 +1136,18 @@ describe("database SyncStore: M4 migration and rejections", () => {
     expect(db.select().from(schema.syncState).get()?.position).toBe(0);
   });
 
+  it("records when the server last answered with each applied page, and not before the first", async () => {
+    const { db, store } = makeDbStore();
+    expect(db.select().from(schema.syncState).get()?.lastServerContactAt).toBeNull();
+    const before = Date.now();
+
+    await store.applyPage({ rows: { sources: [], artifacts: [], cards: [] }, position: 3, more: false });
+
+    const recorded = db.select().from(schema.syncState).get()?.lastServerContactAt;
+    expect(recorded).toBeGreaterThanOrEqual(before);
+    expect(recorded).toBeLessThanOrEqual(Date.now());
+  });
+
   it("stores a pulled card's and card version's detail, and reads an older server's missing one as empty", async () => {
     const { db, store } = makeDbStore();
     await store.applyPage({

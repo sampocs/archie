@@ -151,6 +151,9 @@ export const syncState = sqliteTable("sync_state", {
   id: integer("id").primaryKey(),
   position: integer("position").notNull(),
   lastPushFailed: integer("last_push_failed").notNull(),
+  // Epoch ms of the last successful pull; null until the first one. The problems banner reads it to tell a server that
+  // has gone unreachable.
+  lastServerContactAt: integer("last_server_contact_at"),
 });
 
 // The rolling newsletter brief (M5): the open one and recently finished ones, as the server sends them.

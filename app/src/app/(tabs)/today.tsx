@@ -1,4 +1,4 @@
-import { useCallback, useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import * as Network from "expo-network";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
@@ -8,6 +8,9 @@ import { storyCountLabel } from "@/brief/brief";
 import { BriefPreviewCard } from "@/brief/BriefPreviewCard";
 import { db } from "@/db/client";
 import { requestNewsQuiz, skipNote } from "@/db/actions";
+import { ProblemsBanner } from "@/problems/ProblemsBanner";
+import { ProblemsSheet } from "@/problems/ProblemsSheet";
+import { useProblems } from "@/problems/useProblems";
 import { RefresherCard } from "@/notes/RefresherCard";
 import { upNext } from "@/library/visibility";
 import { useLibraryData } from "@/library/useLibraryData";
@@ -54,6 +57,8 @@ export default function TodayScreen() {
   const data = useLibraryData();
   const reviewData = useReviewData();
   const dailyLimit = useDailyLimit();
+  const problems = useProblems();
+  const [problemsOpen, setProblemsOpen] = useState(false);
   // On a Sunday, ask the server for the week's news quiz once per run; it is only asked for when online.
   useFocusEffect(
     useCallback(() => {
@@ -241,6 +246,9 @@ export default function TodayScreen() {
 
   return (
     <Screen title="Today" headerRight={dateLabel}>
+      {problems.length > 0 ? <ProblemsBanner count={problems.length} onPress={() => setProblemsOpen(true)} /> : null}
+      <ProblemsSheet problems={problems} now={now} visible={problemsOpen && problems.length > 0} onClose={() => setProblemsOpen(false)} />
+
       {taskSlots.length > 0 ? <View style={{ gap: theme.spacing.lg }}>{taskSlots}</View> : null}
 
       {upNextItems.length > 0 ? (

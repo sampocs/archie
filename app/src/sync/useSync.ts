@@ -35,6 +35,15 @@ function setFirstRunDone(done: boolean): void {
   firstRunListeners.forEach((listener) => listener());
 }
 
+// How many sync runs have reached the server this app run; screens that show server-side state refetch when it moves.
+let completedRuns = 0;
+const completedRunListeners = new Set<() => void>();
+
+function markRunCompleted(): void {
+  completedRuns += 1;
+  completedRunListeners.forEach((listener) => listener());
+}
+
 type UseSyncArgs = { sessionKey: string | null; onUnauthorized: () => void };
 
 export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
@@ -64,7 +73,10 @@ export function useSync({ sessionKey, onUnauthorized }: UseSyncArgs): void {
       const outcome = await runSync(store, transport, scheduleFollowUps);
       // Only a pull that went through settles it; offline, the phone keeps saying it's syncing until it can. A run
       // from a session that has since ended says nothing about this one.
-      if (outcome === "synced" && !ended) setFirstRunDone(true);
+      if (outcome === "synced" && !ended) {
+        setFirstRunDone(true);
+        markRunCompleted();
+      }
       if (outcome === "unauthorized") onUnauthorizedRef.current();
     });
     const fire = () => void trigger().catch(() => undefined);
@@ -103,6 +115,17 @@ export function useFirstSyncPending(): boolean {
     () => firstRunDone,
   );
   return !done;
+}
+
+/** A count that rises after each sync run that reached the server, for effects that refetch once a sync completes. */
+export function useCompletedSyncRuns(): number {
+  return useSyncExternalStore(
+    (listener) => {
+      completedRunListeners.add(listener);
+      return () => completedRunListeners.delete(listener);
+    },
+    () => completedRuns,
+  );
 }
 
 export function useSyncStatus(): { waiting: number; offline: boolean } {

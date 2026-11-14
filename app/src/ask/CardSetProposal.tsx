@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 
@@ -6,6 +6,7 @@ import { UnauthorizedError } from "@/api/client";
 import { clearSession, useSession } from "@/auth/session";
 import { isConflict, isNotFound } from "@/edits/api";
 import { NETWORK_FAILED } from "@/edits/proposalState";
+import { setPendingRefreshToast } from "@/notes/pendingToast";
 import { requestSync } from "@/sync/useSync";
 import { DetailBullets } from "@/review/ui/DetailBullets";
 import { Card } from "@/theme/components/Card";
@@ -66,7 +67,8 @@ export function CardSetProposal({
 }: CardSetProposalProps) {
   const theme = useTheme();
   const router = useRouter();
-  const { fromNote } = useLocalSearchParams<{ fromNote?: string }>();
+  const navigation = useNavigation();
+  const { fromNote, aboutTitle } = useLocalSearchParams<{ fromNote?: string; aboutTitle?: string }>();
   const { sessionKey } = useSession();
   // The stored row wins once the phone has it: it carries what Save or Discard did.
   const cardSet = useCardSetRow(streamed.id) ?? streamed;
@@ -79,13 +81,13 @@ export function CardSetProposal({
 
   if (block.kind === "collapsed") return <Collapsed testID={`card-set-${id}`} left={block.left} right={block.right} />;
 
-  function act(send: (sessionKey: string) => Promise<unknown>, done: string | null): void {
+  function act(send: (sessionKey: string) => Promise<unknown>, done: (() => void) | null): void {
     if (!sessionKey || busy) return;
     setBusy(true);
     send(sessionKey)
       .then(() => {
         haptic("success");
-        if (done) onToast(done);
+        done?.();
       })
       .catch((error) => {
         if (error instanceof UnauthorizedError) {
@@ -103,6 +105,16 @@ export function CardSetProposal({
   }
 
   const keptCount = keptIndices(kept).length;
+
+  // A chat opened by a note's Done exists to make that note's cards, so saving them closes the chat and the note
+  // together and the app-wide toast follows to the screen below. If the owner left the chat while it saved, nothing
+  // is closed under them, but the toast still shows wherever they are.
+  function afterSave(count: number): void {
+    if (!fromNote || hasCheatSheet(cardSet)) return onToast(savedToast(cardSet));
+    setPendingRefreshToast({ sourceId: fromNote, title: aboutTitle ?? "your note", cardCount: count });
+    if (navigation.isFocused()) router.dismiss(2);
+  }
+
   const sheet = (
     <CheatSheetSheet
       title={cardSet.title}
@@ -197,7 +209,12 @@ export function CardSetProposal({
             <Pressable
               testID="card-set-save"
               disabled={!ready || busy || keptCount === 0}
-              onPress={() => act((key) => saveCardSet({ proposalId: id, kept: keptIndices(kept), sessionKey: key }), savedToast(cardSet))}
+              onPress={() =>
+                act(
+                  (key) => saveCardSet({ proposalId: id, kept: keptIndices(kept), sessionKey: key }),
+                  () => afterSave(keptCount),
+                )
+              }
               style={{
                 backgroundColor: theme.colors.chrome,
                 borderRadius: theme.radii.chip,

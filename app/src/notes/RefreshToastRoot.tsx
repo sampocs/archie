@@ -18,9 +18,9 @@ export function RefreshToastRoot() {
       .where(and(eq(schema.cards.sourceId, pending?.sourceId ?? ""), isNull(schema.cards.deletedAt))),
     [pending?.sourceId],
   );
-  const cardCount = data[0]?.count ?? 0;
+  const cardCount = pending?.cardCount ?? data[0]?.count ?? 0;
 
-  // The cards are made by the server after Done syncs, so nothing shows until they land.
+  // Unless they were saved in a chat, the cards are made by the server after Done syncs, so nothing shows until they land.
   if (!pending || cardCount === 0) return null;
 
   return <Toast message={cardsAddedMessage(cardCount, pending.title)} onHide={clearPendingRefreshToast} />;

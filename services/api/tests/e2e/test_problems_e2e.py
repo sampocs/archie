@@ -118,7 +118,9 @@ def _insert_newsletter(
     return source_id
 
 
-def _insert_brief(live_stack: LiveStack, *, user_id: int, source_ids: list[uuid.UUID]) -> None:
+def _insert_brief(
+    live_stack: LiveStack, *, user_id: int, source_ids: list[uuid.UUID], since: datetime.datetime | None = None
+) -> None:
     engine = session.engine_for(live_stack.database_url)
     with sqlalchemy.orm.Session(engine) as db:
         changes.lock_user_writes(db, user_id)
@@ -128,6 +130,7 @@ def _insert_brief(live_stack: LiveStack, *, user_id: int, source_ids: list[uuid.
                 user_id=user_id,
                 status=models.BriefStatus.OPEN.value,
                 source_ids=source_ids,
+                since=since,
                 change_seq=changes.next_change_seq(),
             )
         )
@@ -301,6 +304,25 @@ def test_a_sender_within_three_times_its_usual_gap_or_three_days_is_not_quiet(li
     assert authed.get("/problems").json() == {"problems": []}
 
 
+def test_deleting_a_senders_latest_issues_does_not_make_it_quiet(live_stack: LiveStack) -> None:
+    """A deleted issue was still received, so the sender's silence is measured from it."""
+    authed = live_stack.authed(live_stack.sign_in())
+    user_id = _user_id(authed)
+    _allow_sender(live_stack, user_id=user_id, address="daily@example.com", label="Example Daily")
+    _issues(live_stack, user_id=user_id, address="daily@example.com", days_ago=[6.5, 5.5, 4.5, 3.5, 2.5, 1.5, 0.5])
+    engine = session.engine_for(live_stack.database_url)
+    with sqlalchemy.orm.Session(engine) as db:
+        db.execute(
+            sqlalchemy.update(models.Source)
+            .where(models.Source.user_id == user_id, models.Source.created_at >= _ago(days=3))
+            .values(deleted_at=datetime.datetime.now(tz=datetime.UTC))
+        )
+        db.commit()
+    engine.dispose()
+
+    assert authed.get("/problems").json() == {"problems": []}
+
+
 def test_no_email_replaces_quiet_senders_and_clears_when_a_newsletter_arrives(live_stack: LiveStack) -> None:
     """Two days without any mail is one problem that stands in for the quiet-sender rows."""
     authed = live_stack.authed(live_stack.sign_in())
@@ -366,6 +388,29 @@ def test_no_brief_appears_for_an_old_uncovered_news_newsletter_and_clears_when_a
     _insert_brief(live_stack, user_id=user_id, source_ids=[waiting])
 
     assert authed.get("/problems").json() == {"problems": []}
+
+
+def test_no_brief_ignores_newsletters_the_open_brief_defers_on_purpose(live_stack: LiveStack) -> None:
+    """News older than the open brief's `since` waits until the brief is Done; newer uncovered news is flagged."""
+    authed = live_stack.authed(live_stack.sign_in())
+    user_id = _user_id(authed)
+    news = models.NewsletterKind.NEWS
+    _insert_newsletter(
+        live_stack, user_id=user_id, address="a@example.com", created_at=_ago(hours=9), newsletter_kind=news
+    )
+    briefed_at = _ago(hours=6)
+    briefed = _insert_newsletter(
+        live_stack, user_id=user_id, address="a@example.com", created_at=briefed_at, newsletter_kind=news
+    )
+    _insert_brief(live_stack, user_id=user_id, source_ids=[briefed], since=briefed_at)
+
+    assert authed.get("/problems").json() == {"problems": []}
+
+    _insert_newsletter(
+        live_stack, user_id=user_id, address="a@example.com", created_at=_ago(hours=4), newsletter_kind=news
+    )
+
+    assert _problems(authed)["no_brief"]["detail"] == "1 news newsletter not in the brief yet"
 
 
 def test_no_brief_waits_for_a_queued_update_and_defers_to_failing_jobs(live_stack: LiveStack) -> None:

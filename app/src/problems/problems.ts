@@ -49,18 +49,21 @@ export function bannerText(count: number): string {
 /**
  * The server's problems plus the phone's own: nothing at all when offline (an unreachable server is expected there),
  * and an unreachable-server problem when online and the last sync that reached it is over a day old. A phone that
- * has never reached the server has no last contact to measure from, so it adds nothing.
+ * has never reached the server has no last contact to measure from, so it adds nothing. The stored contact time
+ * comes from a previous app run, so nothing is added until a sync has been attempted this run (`syncAttempted`);
+ * otherwise the problem would flash on launch until the first sync stamps a fresh time.
  */
 export function mergeProblems(input: {
   serverProblems: Problem[];
   lastServerContactAt: number | null;
   online: boolean;
+  syncAttempted: boolean;
   now: Date;
 }): Problem[] {
   if (!input.online) return [];
 
   const last = input.lastServerContactAt;
-  if (last === null || input.now.getTime() - last <= UNREACHABLE_AFTER_MS) return input.serverProblems;
+  if (!input.syncAttempted || last === null || input.now.getTime() - last <= UNREACHABLE_AFTER_MS) return input.serverProblems;
 
   const since = new Date(last).toISOString();
   const unreachable: Problem = {

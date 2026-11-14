@@ -8,7 +8,7 @@ import { apiFetch } from "@/api/client";
 import { useSession } from "@/auth/session";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
-import { useCompletedSyncRuns } from "@/sync/useSync";
+import { useCompletedSyncRuns, useFinishedSyncRuns } from "@/sync/useSync";
 import { useNow } from "@/ui/useNow";
 
 import { mergeProblems, parseProblems, type Problem } from "./problems";
@@ -24,6 +24,7 @@ export function useProblems(): Problem[] {
   const online = network.isConnected !== false && network.isInternetReachable !== false;
   const now = useNow();
   const completedRuns = useCompletedSyncRuns();
+  const finishedRuns = useFinishedSyncRuns();
   const [focusCount, setFocusCount] = useState(0);
   const [serverProblems, setServerProblems] = useState<Problem[]>([]);
   const { data: stateRows } = useLiveQuery(
@@ -52,6 +53,7 @@ export function useProblems(): Problem[] {
     serverProblems,
     lastServerContactAt: stateRows[0]?.contactAt ?? null,
     online,
+    syncAttempted: finishedRuns > 0,
     now,
   });
 }

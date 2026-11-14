@@ -214,9 +214,13 @@ def no_email(db: orm.Session, *, user_id: int, now: datetime.datetime) -> list[P
 def no_brief(db: orm.Session, *, user_id: int, now: datetime.datetime) -> list[Problem]:
     """A single problem when news newsletters have waited past the threshold with no brief covering them.
 
-    Not a problem while an `update_brief` job is queued or running: the brief is on its way.
+    Not a problem while an `update_brief` job is queued or running: the brief is on its way. Newsletters older than
+    the open brief's `since` are not counted either: the worker defers the oldest ones when its budget is spent, and
+    they wait until the brief is Done.
     """
     cutoff = now - NO_BRIEF_AFTER
+    open_brief = briefs.open_brief(db, user_id=user_id)
+    deferred_before = open_brief.since if open_brief is not None else None
     briefed: set[uuid.UUID] = set()
     for source_ids in db.scalars(sqlalchemy.select(models.Brief.source_ids).where(models.Brief.user_id == user_id)):
         briefed.update(source_ids)
@@ -224,7 +228,9 @@ def no_brief(db: orm.Session, *, user_id: int, now: datetime.datetime) -> list[P
     uncovered = [
         newsletter
         for newsletter in _newsletters_awaiting_brief(db, user_id=user_id)
-        if newsletter.created_at < cutoff and newsletter.id not in briefed
+        if newsletter.created_at < cutoff
+        and newsletter.id not in briefed
+        and (deferred_before is None or newsletter.created_at >= deferred_before)
     ]
     if not uncovered:
         return []
@@ -293,14 +299,16 @@ def _newsletters_awaiting_brief(db: orm.Session, *, user_id: int) -> list[models
 def _recent_issues_by_sender(
     db: orm.Session, *, user_id: int, now: datetime.datetime
 ) -> dict[uuid.UUID, _SenderIssues]:
-    """The arrival times (oldest first) of recent newsletters from each allowed sender, matched as ingest matches."""
+    """The arrival times (oldest first) of recent newsletters from each allowed sender, matched as ingest matches.
+
+    Deleted newsletters count: the owner deleting an issue does not mean it never arrived.
+    """
     by_identifier = senders.allowed_senders_by_identifier(db, user_id=user_id)
     newsletters = db.scalars(
         sqlalchemy.select(models.Source)
         .where(
             models.Source.user_id == user_id,
             models.Source.kind == models.SourceKind.NEWSLETTER.value,
-            models.Source.deleted_at.is_(None),
             models.Source.confirm_url.is_(None),
             models.Source.sender_pending.is_(False),
             models.Source.created_at >= now - QUIET_LOOKBACK,

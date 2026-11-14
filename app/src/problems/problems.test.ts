@@ -57,23 +57,23 @@ describe("mergeProblems", () => {
   const stale = NOW.getTime() - 3 * 24 * 3_600_000;
 
   it("shows nothing offline, even with server problems and a stale contact", () => {
-    expect(mergeProblems({ serverProblems: [serverProblem], lastServerContactAt: stale, online: false, now: NOW })).toEqual([]);
+    expect(mergeProblems({ serverProblems: [serverProblem], lastServerContactAt: stale, online: false, syncAttempted: true, now: NOW })).toEqual([]);
   });
 
   it("passes the server's problems through when contact is recent", () => {
     const recent = NOW.getTime() - UNREACHABLE_AFTER_MS;
 
-    expect(mergeProblems({ serverProblems: [serverProblem], lastServerContactAt: recent, online: true, now: NOW })).toEqual([
+    expect(mergeProblems({ serverProblems: [serverProblem], lastServerContactAt: recent, online: true, syncAttempted: true, now: NOW })).toEqual([
       serverProblem,
     ]);
   });
 
   it("adds nothing when the phone has never reached the server", () => {
-    expect(mergeProblems({ serverProblems: [], lastServerContactAt: null, online: true, now: NOW })).toEqual([]);
+    expect(mergeProblems({ serverProblems: [], lastServerContactAt: null, online: true, syncAttempted: true, now: NOW })).toEqual([]);
   });
 
   it("adds the unreachable problem after the server's when contact is over a day old", () => {
-    const merged = mergeProblems({ serverProblems: [serverProblem], lastServerContactAt: stale, online: true, now: NOW });
+    const merged = mergeProblems({ serverProblems: [serverProblem], lastServerContactAt: stale, online: true, syncAttempted: true, now: NOW });
 
     expect(merged).toHaveLength(2);
     expect(merged[0]).toEqual(serverProblem);
@@ -84,9 +84,13 @@ describe("mergeProblems", () => {
     });
   });
 
+  it("adds nothing before a sync has been attempted, even with a stale contact", () => {
+    expect(mergeProblems({ serverProblems: [], lastServerContactAt: stale, online: true, syncAttempted: false, now: NOW })).toEqual([]);
+  });
+
   it("flags unreachable just past 24 hours", () => {
     const justOver = NOW.getTime() - UNREACHABLE_AFTER_MS - 1;
 
-    expect(mergeProblems({ serverProblems: [], lastServerContactAt: justOver, online: true, now: NOW })).toHaveLength(1);
+    expect(mergeProblems({ serverProblems: [], lastServerContactAt: justOver, online: true, syncAttempted: true, now: NOW })).toHaveLength(1);
   });
 });

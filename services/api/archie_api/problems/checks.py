@@ -215,16 +215,30 @@ def no_email(db: orm.Session, *, user_id: int, now: datetime.datetime) -> list[P
     ]
 
 
+def _oldest_briefed_news(db: orm.Session, *, user_id: int) -> datetime.datetime | None:
+    """When the oldest news in the open brief arrived; anything not filed as an essay counts as news, as the worker
+    treats it. None without an open brief or when it holds no news."""
+    open_brief = briefs.open_brief(db, user_id=user_id)
+    if open_brief is None or not open_brief.source_ids:
+        return None
+    return db.scalar(
+        sqlalchemy.select(sqlalchemy.func.min(models.Source.created_at)).where(
+            models.Source.id.in_(open_brief.source_ids),
+            models.Source.newsletter_kind.is_distinct_from(models.NewsletterKind.ESSAY.value),
+        )
+    )
+
+
 def no_brief(db: orm.Session, *, user_id: int, now: datetime.datetime) -> list[Problem]:
     """A single problem when news newsletters have waited past the threshold with no brief covering them.
 
-    Not a problem while an `update_brief` job is queued or running: the brief is on its way. Newsletters older than
-    the open brief's `since` are not counted either: the worker defers the oldest ones when its budget is spent, and
-    they wait until the brief is Done.
+    Not a problem while an `update_brief` job is queued or running: the brief is on its way. News older than the
+    oldest news the open brief covers isn't counted either: the worker defers the oldest news when its budget is spent,
+    and it waits until the brief is Done. The brief's own `since` can't mark that line, since it also counts essays,
+    which are never deferred.
     """
     cutoff = now - NO_BRIEF_AFTER
-    open_brief = briefs.open_brief(db, user_id=user_id)
-    deferred_before = open_brief.since if open_brief is not None else None
+    deferred_before = _oldest_briefed_news(db, user_id=user_id)
     briefed: set[uuid.UUID] = set()
     for source_ids in db.scalars(sqlalchemy.select(models.Brief.source_ids).where(models.Brief.user_id == user_id)):
         briefed.update(source_ids)

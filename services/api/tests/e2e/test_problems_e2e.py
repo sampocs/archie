@@ -391,10 +391,13 @@ def test_no_brief_appears_for_an_old_uncovered_news_newsletter_and_clears_when_a
 
 
 def test_no_brief_ignores_newsletters_the_open_brief_defers_on_purpose(live_stack: LiveStack) -> None:
-    """News older than the open brief's `since` waits until the brief is Done; newer uncovered news is flagged."""
+    """News older than the open brief's oldest news waits until the brief is Done; newer uncovered news is flagged.
+    The brief's `since` is its oldest item, here an essay, which must not move that line."""
     authed = live_stack.authed(live_stack.sign_in())
     user_id = _user_id(authed)
     news = models.NewsletterKind.NEWS
+    essay_at = _ago(hours=12)
+    essay = _insert_newsletter(live_stack, user_id=user_id, address="b@example.com", created_at=essay_at)
     _insert_newsletter(
         live_stack, user_id=user_id, address="a@example.com", created_at=_ago(hours=9), newsletter_kind=news
     )
@@ -402,7 +405,7 @@ def test_no_brief_ignores_newsletters_the_open_brief_defers_on_purpose(live_stac
     briefed = _insert_newsletter(
         live_stack, user_id=user_id, address="a@example.com", created_at=briefed_at, newsletter_kind=news
     )
-    _insert_brief(live_stack, user_id=user_id, source_ids=[briefed], since=briefed_at)
+    _insert_brief(live_stack, user_id=user_id, source_ids=[essay, briefed], since=essay_at)
 
     assert authed.get("/problems").json() == {"problems": []}
 

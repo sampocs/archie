@@ -17,8 +17,13 @@ import { canSaveToCollection, resolveCollectionPick } from "@/capture/collection
 import { CaptureOptions } from "@/capture/CaptureOptions";
 import { CollectionChips } from "@/capture/CollectionChips";
 import { CaptureChoice, CollectionPick, EMPTY_CHOICE } from "@/capture/types";
-import { readLastCollectionId, readSharedCollections, writeLastCollectionId } from "@/collections/sharedCollections";
-import type { SharedCollection } from "@/collections/sharedCollectionsFormat";
+import {
+  readLastCollectionId,
+  readSharedCollections,
+  writeLastCollectionId,
+  writeSharedCollections,
+} from "@/collections/sharedCollections";
+import { withSharedCollection, type SharedCollection } from "@/collections/sharedCollectionsFormat";
 import { Button } from "@/theme/components/Button";
 import { Text } from "@/theme/components/Text";
 import { FontScalingContext } from "@/theme/fontScaling";
@@ -112,7 +117,17 @@ export function ShareSheet(props: InitialProps) {
       if (choice.intent === "collection") {
         const { actions, collectionId } = buildCollectionShareActions({ url, pick: shownPick });
         const collectionOutcome = await submitShare(actions, sessionKey);
-        if (collectionOutcome === "saved") void writeLastCollectionId(collectionId).catch(() => undefined);
+        if (collectionOutcome === "saved") {
+          void writeLastCollectionId(collectionId).catch(() => undefined);
+          // Only the app mirrors the list, so a collection made here is added by hand or the next share won't offer it.
+          // Re-read first: the app may have rewritten the list while the sheet was open.
+          if (shownPick.kind === "new") {
+            const added = { id: collectionId, name: shownPick.name.trim() };
+            void readSharedCollections()
+              .then((latest) => writeSharedCollections(withSharedCollection(latest, added)))
+              .catch(() => undefined);
+          }
+        }
         setPhase(collectionOutcome === "saved" ? { name: "saved" } : { name: "unreachable" });
         return;
       }

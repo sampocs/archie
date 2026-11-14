@@ -153,6 +153,9 @@ def _queue_entry_reason(source: models.Source, *, primer_entry: bool) -> str | N
 
 
 def _needs_reanalysis(db: orm.Session, *, source: models.Source) -> bool:
+    # The finish-time analysis only makes cards, so a newsletter with cards off skips it.
+    if source.cards_off:
+        return False
     has_text = pipeline.current_artifact(db, source_id=source.id, kind=models.ArtifactKind.TEXT) is not None
     return has_text and not rows.has_pending_job(db, source=source, kind=models.JobKind.ANALYZE)
 

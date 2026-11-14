@@ -264,8 +264,6 @@ export default function SourceScreen() {
           <>
             {isNote ? null : (
               <FinishSheet
-                // Keyed on cards-off, so the sheet's cards row follows a change made from the menu.
-                key={`finish-${source.cardsOff}`}
                 sourceId={source.id}
                 primerWords={primerWords}
                 cardsOff={source.cardsOff === 1}

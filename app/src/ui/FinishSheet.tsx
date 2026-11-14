@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, View } from "react-native";
 
 import type { Reaction } from "@/capture/types";
@@ -45,6 +45,13 @@ export function FinishSheet({ sourceId, primerWords, cardsOff, book, visible, on
   const [note, setNote] = useState("");
   const [queuePrimer, setQueuePrimer] = useState(true);
   const [makeCards, setMakeCards] = useState(!cardsOff);
+
+  // Start the cards row from the source's current setting each time the sheet opens, since the menu or a pull can
+  // change it while the sheet is closed.
+  useEffect(() => {
+    if (visible) setMakeCards(!cardsOff);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
 
   function save(): void {
     const withPrimer = reaction === "lost" && queuePrimer;

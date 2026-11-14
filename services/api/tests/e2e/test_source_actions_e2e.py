@@ -55,6 +55,7 @@ def _insert_source(
     with_card: bool = False,
     with_primer: bool = False,
     with_text: bool = False,
+    cards_off: bool = False,
     pending_jobs: tuple[models.JobKind, ...] = (),
 ) -> str:
     """A source the API can't create itself (a ready inbox newsletter), optionally with a live card, a primer, its
@@ -71,6 +72,7 @@ def _insert_source(
             state=state.value,
             intent="queue",
             processing=processing.value,
+            cards_off=cards_off,
             change_seq=changes.next_change_seq(),
         )
         db.add(source)
@@ -206,8 +208,8 @@ def test_finish_with_queue_primer_puts_the_primer_at_the_top_of_the_queue(
 def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_primer(
     live_stack: LiveStack, authed: httpx.Client
 ) -> None:
-    """A finished newsletter is re-analyzed (so it gets cards) unless an analysis is already pending or it has no
-    text; queueing its missing primer also writes one."""
+    """A finished newsletter is re-analyzed (so it gets cards) unless an analysis is already pending, it has no text
+    or its cards are off; queueing its missing primer also writes one."""
     user_id = _user_id(authed)
 
     def newsletter(processing: models.ProcessingStatus, **extra: Any) -> str:
@@ -230,6 +232,7 @@ def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_
         models.ProcessingStatus.PROCESSING, with_text=True, pending_jobs=(models.JobKind.ANALYZE,)
     )
     without_text = newsletter(models.ProcessingStatus.FAILED)
+    cards_off = newsletter(models.ProcessingStatus.READY, with_text=True, cards_off=True)
 
     _push(
         authed,
@@ -238,6 +241,7 @@ def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_
         _action("finish_source", {"id": writing_primer}),
         _action("finish_source", {"id": still_analyzing}),
         _action("finish_source", {"id": without_text}),
+        _action("finish_source", {"id": cards_off}),
     )
 
     plain_row, primed_row = _source(authed, plain), _source(authed, with_primer)
@@ -253,6 +257,8 @@ def test_finishing_a_queued_newsletter_analyzes_it_again_and_writes_a_requested_
     # Its pending analysis makes the cards (it checks the consumed state when it runs), so finishing adds no job.
     assert _jobs(live_stack, still_analyzing) == ["analyze"]
     assert _jobs(live_stack, without_text) == []
+    assert _jobs(live_stack, cards_off) == []
+    assert _source(authed, cards_off)["processing"] == "ready"
     assert {_source(authed, item)["state"] for item in (still_analyzing, without_text)} == {"consumed"}
 
 

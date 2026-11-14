@@ -1,4 +1,4 @@
-import { encodeSharedCollections, parseSharedCollections } from "./sharedCollectionsFormat";
+import { encodeSharedCollections, parseSharedCollections, withSharedCollection } from "./sharedCollectionsFormat";
 
 describe("shared collections format", () => {
   it("round-trips the list, keeping only id and name", () => {
@@ -21,5 +21,15 @@ describe("shared collections format", () => {
       { id: "a", name: "Bears hype" },
       { id: "c", name: "Funny" },
     ]);
+  });
+
+  it("adds a collection made in the share sheet last, once", () => {
+    const list = [{ id: "a", name: "Bears hype" }];
+    const added = { id: "b", name: "Funny" };
+
+    const once = withSharedCollection(list, added);
+
+    expect(once).toEqual([...list, added]);
+    expect(withSharedCollection(once, added)).toEqual(once);
   });
 });

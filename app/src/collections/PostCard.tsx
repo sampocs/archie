@@ -10,10 +10,14 @@ import { formatDuration, isVideo, postByline, postSiteName, savedDate, type Coll
 
 type PostCardProps = { item: CollectionItemRow; onLongPress: () => void };
 
-/** One saved post: its picture (or a neutral tile with the site), where it's from, when it was saved, its caption and note. */
+/**
+ * One saved post: its picture, where it's from, when it was saved, its caption and note. A text-only post has no picture
+ * row; a video without a thumbnail keeps a neutral tile with the site so its play mark has somewhere to sit.
+ */
 export function PostCard({ item, onLongPress }: PostCardProps) {
   const theme = useTheme();
   const isLight = theme.scheme === "light";
+  const hasMedia = Boolean(item.imageUrl) || isVideo(item);
 
   return (
     <Pressable
@@ -33,25 +37,27 @@ export function PostCard({ item, onLongPress }: PostCardProps) {
         isLight && styles.shadow,
       ]}
     >
-      <View style={[styles.media, { backgroundColor: theme.colors.press }]}>
-        {item.imageUrl ? (
-          <Image source={{ uri: item.imageUrl }} contentFit="cover" style={StyleSheet.absoluteFill} />
-        ) : (
-          <Text variant="headline" tone="ink3">
-            {postSiteName(item.url)}
-          </Text>
-        )}
-        {isVideo(item) ? (
-          <View style={styles.play}>
-            <Text style={styles.playGlyph}>▶</Text>
-          </View>
-        ) : null}
-        {item.durationSeconds !== null ? (
-          <View style={styles.duration}>
-            <Text style={styles.durationText}>{formatDuration(item.durationSeconds)}</Text>
-          </View>
-        ) : null}
-      </View>
+      {hasMedia ? (
+        <View style={[styles.media, { backgroundColor: theme.colors.press }]}>
+          {item.imageUrl ? (
+            <Image source={{ uri: item.imageUrl }} contentFit="cover" style={StyleSheet.absoluteFill} />
+          ) : (
+            <Text variant="headline" tone="ink3">
+              {postSiteName(item.url)}
+            </Text>
+          )}
+          {isVideo(item) ? (
+            <View style={styles.play}>
+              <Text style={styles.playGlyph}>▶</Text>
+            </View>
+          ) : null}
+          {item.durationSeconds !== null ? (
+            <View style={styles.duration}>
+              <Text style={styles.durationText}>{formatDuration(item.durationSeconds)}</Text>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       <View style={styles.body}>
         <View style={styles.metaRow}>
           <Text variant="secondary" tone="ink3" numberOfLines={1} style={styles.byline}>

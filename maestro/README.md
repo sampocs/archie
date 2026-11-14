@@ -16,7 +16,7 @@ UI flows that drive the debug app on the iOS simulator against the local backend
 | `favorites.yaml` | Star an item from its page, find it under Library → Saved → Other, unstar it with a swipe; Saved shows its empty state |
 | `collections.yaml` | Save a link from the Library ＋ into a new collection, see it on the collection page and not in All, delete the collection from its tile |
 | `topics.yaml` | Topics: add, remove and restore a topic |
-| `finish_item.yaml` | Finish an item: it leaves the queue and lands in the finished state |
+| `finish_item.yaml` | Finish an item with "Make review cards" unticked: it leaves the queue, lands in the finished state, and its menu no longer offers "No cards for this" |
 | `topic_picker.yaml` | Signs in as `picker-user` (no topics chosen yet), the topic picker appears, pick topics and continue |
 | `today_primer.yaml` | finish an article with "Parts lost me", its queued primer appears in Up next, open it, Mark as done (real keys, a few cents) |
 | `takes.yaml` | Write a take from the Library ＋, open it from Takes, edit it into version 2, see Earlier versions and version 1, delete it |

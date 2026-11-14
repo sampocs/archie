@@ -98,6 +98,7 @@ function LibraryListBody({ data, query, filter, onFilterChange }: LibraryListPro
     },
   };
   const searching = query.trim() !== "";
+  const finishing = sheet?.kind === "finish" ? data.sources.find((source) => source.id === sheet.id) : undefined;
 
   return (
     <View style={{ gap: theme.spacing.section }}>
@@ -124,7 +125,8 @@ function LibraryListBody({ data, query, filter, onFilterChange }: LibraryListPro
         <FinishSheet
           key={sheet.id}
           sourceId={sheet.id}
-          primerWords={data.sources.find((source) => source.id === sheet.id)?.primerWords ?? null}
+          primerWords={finishing?.primerWords ?? null}
+          cardsOff={finishing?.cardsOff === 1}
           visible={sheetOpen}
           onClose={() => setSheetOpen(false)}
         />

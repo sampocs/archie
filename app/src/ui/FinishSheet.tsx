@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Pressable, View } from "react-native";
 
 import type { Reaction } from "@/capture/types";
-import { finishSource } from "@/db/actions";
+import { finishSource, setCardsOff } from "@/db/actions";
 import { db } from "@/db/client";
 import { readingMinutes } from "@/library/primer";
 import { requestSync } from "@/sync/useSync";
@@ -15,11 +15,13 @@ import { useTheme } from "@/theme/useTheme";
 import { BottomSheet } from "./BottomSheet";
 import { haptic } from "./haptics";
 
-// `primerWords` gives the queued primer's reading time; null while the primer is still being written. `book` turns the
-// sheet into a book's "Finished it": thoughts only.
+// `primerWords` gives the queued primer's reading time; null while the primer is still being written. `cardsOff` is the
+// source's "No cards for this", which the cards row starts from. `book` turns the sheet into a book's "Finished it":
+// thoughts only.
 type FinishSheetProps = {
   sourceId: string;
   primerWords: number | null;
+  cardsOff: boolean;
   book?: { title: string };
   visible: boolean;
   onClose: () => void;
@@ -33,17 +35,21 @@ const VERDICTS: { reaction: Reaction; label: string; signal: Signal }[] = [
 
 /**
  * "How'd it go?": both the verdict and the note are optional, so Save alone marks the source done. "Parts lost me"
- * adds a "Queue the primer" row, ticked by default, so Save also queues the primer unless it's unticked. A book's
+ * adds a "Queue the primer" row, ticked by default, so Save also queues the primer unless it's unticked. "Make review
+ * cards" starts ticked unless the source's cards are off; Save applies a change to it like "No cards for this". A book's
  * variant ("Finished <title>") asks only what stuck, which steers its refresher and cards; Done finishes it.
  */
-export function FinishSheet({ sourceId, primerWords, book, visible, onClose }: FinishSheetProps) {
+export function FinishSheet({ sourceId, primerWords, cardsOff, book, visible, onClose }: FinishSheetProps) {
   const theme = useTheme();
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const [note, setNote] = useState("");
   const [queuePrimer, setQueuePrimer] = useState(true);
+  const [makeCards, setMakeCards] = useState(!cardsOff);
 
   function save(): void {
     const withPrimer = reaction === "lost" && queuePrimer;
+    // Cards go off before the finish, so a finished newsletter isn't analyzed into cards that are then retired.
+    if (!book && makeCards === cardsOff) setCardsOff(db, sourceId, !makeCards);
     finishSource(db, { sourceId, reaction, note: note.trim() || null, queuePrimer: withPrimer });
     haptic("success");
     requestSync();
@@ -96,15 +102,21 @@ export function FinishSheet({ sourceId, primerWords, book, visible, onClose }: F
         ))}
       </View>
       {reaction === "lost" ? (
-        <QueuePrimerRow
+        <CheckRow
+          testID="finish-queue-primer"
+          title="Queue the primer"
+          detail={`${primerLength(primerWords)} so you can come back to it`}
           checked={queuePrimer}
-          primerWords={primerWords}
-          onToggle={() => {
-            haptic("selection");
-            setQueuePrimer((current) => !current);
-          }}
+          onToggle={() => setQueuePrimer((current) => !current)}
         />
       ) : null}
+      <CheckRow
+        testID="finish-make-cards"
+        title="Make review cards"
+        detail="Untick for things you don't need to remember"
+        checked={makeCards}
+        onToggle={() => setMakeCards((current) => !current)}
+      />
       {/* The mic waits for voice input (a follow-up); typing works now. */}
       <TextField
         testID="finish-note"
@@ -118,17 +130,23 @@ export function FinishSheet({ sourceId, primerWords, book, visible, onClose }: F
   );
 }
 
-function QueuePrimerRow(props: { checked: boolean; primerWords: number | null; onToggle: () => void }) {
+function primerLength(primerWords: number | null): string {
+  return primerWords === null ? "◆" : `◆ ${readingMinutes(primerWords)} min ·`;
+}
+
+function CheckRow(props: { testID: string; title: string; detail: string; checked: boolean; onToggle: () => void }) {
   const theme = useTheme();
-  const length = props.primerWords === null ? "◆" : `◆ ${readingMinutes(props.primerWords)} min ·`;
   const box = 22;
 
   return (
     <Pressable
-      testID="finish-queue-primer"
+      testID={props.testID}
       accessibilityRole="checkbox"
       accessibilityState={{ checked: props.checked }}
-      onPress={props.onToggle}
+      onPress={() => {
+        haptic("selection");
+        props.onToggle();
+      }}
       style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md }}
     >
       <View
@@ -146,9 +164,9 @@ function QueuePrimerRow(props: { checked: boolean; primerWords: number | null; o
         {props.checked ? <Text tone="onChrome">✓</Text> : null}
       </View>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text variant="headline">Queue the primer</Text>
+        <Text variant="headline">{props.title}</Text>
         <Text variant="secondary" tone="ink3">
-          {`${length} so you can come back to it`}
+          {props.detail}
         </Text>
       </View>
     </Pressable>

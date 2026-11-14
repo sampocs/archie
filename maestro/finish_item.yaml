@@ -36,6 +36,8 @@ appId: com.sampocs.archie
 - tapOn:
     id: "finish-mostly"
 - tapOn:
+    id: "finish-make-cards"
+- tapOn:
     id: "finish-save"
 - assertNotVisible:
     id: "item-finish"
@@ -45,3 +47,11 @@ appId: com.sampocs.archie
 - tapOn:
     id: "filter-done"
 - assertVisible: ".*example\\.net.*"
+# Its cards are off now, so the menu no longer offers "No cards for this".
+- tapOn: ".*example\\.net.*"
+- tapOn:
+    id: "item-more"
+- assertVisible:
+    id: "menu-change-topic"
+- assertNotVisible:
+    id: "menu-cards-off"

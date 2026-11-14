@@ -66,6 +66,28 @@ def create_test_session(
     return TestSessionView(session_key=session_key)
 
 
+# What the failed job's error says: invented, so Maestro can look for it and it can't be mistaken for a real failure.
+SEEDED_JOB_ERROR = "Seeded failure for the problems banner\nsecond line that is never shown"
+
+
+@router.post("/failed-job", status_code=fastapi.status.HTTP_204_NO_CONTENT)
+def seed_failed_job(
+    db: Annotated[orm.Session, fastapi.Depends(deps.get_db)],
+    user: Annotated[models.User, fastapi.Depends(deps.current_user)],
+) -> None:
+    """Give the signed-in user a failed `analyze` job, so the problems banner has something to show."""
+    db.add(
+        models.Job(
+            kind=models.JobKind.ANALYZE.value,
+            payload={},
+            user_id=user.id,
+            status=models.JobStatus.FAILED.value,
+            last_error=SEEDED_JOB_ERROR,
+        )
+    )
+    db.commit()
+
+
 class SeedWriteUpRequest(pydantic.BaseModel):
     """A ready-made write-up for a note, so Maestro needs no model."""
 

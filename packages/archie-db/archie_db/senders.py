@@ -139,6 +139,30 @@ def status_for(
     return None
 
 
+def allowed_senders_by_identifier(
+    db: sqlalchemy.orm.Session, *, user_id: int
+) -> dict[SenderIdentifier, models.NewsletterSender]:
+    """Every identifier of the user's allowed senders, mapped to its sender (the oldest, if two share one).
+
+    Lets a caller attribute many emails to their senders with `identifiers_for`, using the same any-identifier rule
+    as `status_for` but without a query per email.
+    """
+    rows = db.execute(
+        sqlalchemy.select(models.NewsletterSenderIdentifier, models.NewsletterSender)
+        .join(models.NewsletterSender, models.NewsletterSender.id == models.NewsletterSenderIdentifier.sender_id)
+        .where(
+            models.NewsletterSender.user_id == user_id,
+            models.NewsletterSender.status == models.SenderStatus.ALLOWED.value,
+        )
+        .order_by(models.NewsletterSender.created_at, models.NewsletterSender.id)
+    )
+    by_identifier: dict[SenderIdentifier, models.NewsletterSender] = {}
+    for identifier_row, sender in rows:
+        identifier = SenderIdentifier(kind=models.IdentifierKind(identifier_row.kind), value=identifier_row.value)
+        by_identifier.setdefault(identifier, sender)
+    return by_identifier
+
+
 def record(
     db: sqlalchemy.orm.Session,
     *,

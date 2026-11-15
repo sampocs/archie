@@ -1,4 +1,3 @@
-import { Ionicons } from "@expo/vector-icons";
 import { eq } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import * as Network from "expo-network";
@@ -33,7 +32,7 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
 import { Kicker } from "@/ui/Kicker";
-import { MenuSheet } from "@/ui/MenuSheet";
+import { MoreMenu, type MenuItem } from "@/ui/NativeMenu";
 import { Toast } from "@/ui/Toast";
 import { useNow } from "@/ui/useNow";
 
@@ -82,7 +81,6 @@ function CardPage({
   const online = network.isConnected !== false && network.isInternetReachable !== false;
 
   const [expanded, setExpanded] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   // Stable, so a re-render (a pull landing) doesn't restart the toast's timer.
@@ -136,6 +134,12 @@ function CardPage({
 
   const collapsed = hasChat && !expanded;
   const edited = card.version > 1;
+  const menuItems: MenuItem[] = [
+    ...(edited
+      ? [{ testID: "card-menu-versions", label: "Versions", icon: "clock.arrow.circlepath", onPress: () => setVersionsOpen(true) }]
+      : []),
+    { testID: "card-menu-remove", startsGroup: edited, label: "Remove", icon: "trash", destructive: true, onPress: remove },
+  ];
 
   return (
     <View style={{ flex: 1 }}>
@@ -145,9 +149,7 @@ function CardPage({
         nav={{ title: "Card", backLabel }}
         onBack={router.back}
         headerRight={
-          <Pressable testID="card-more" accessibilityLabel="More" hitSlop={12} onPress={() => setMenuOpen(true)}>
-            <Ionicons name="ellipsis-horizontal" size={24} color={theme.colors.ink} />
-          </Pressable>
+          <MoreMenu testID="card-more" items={menuItems} />
         }
         footer={
           available === false ? (
@@ -186,14 +188,6 @@ function CardPage({
           <ChatThread thread={{ ...thread, send }} online={online} onToast={setToast} />
         </View>
       </Screen>
-      <MenuSheet
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        items={[
-          ...(edited ? [{ testID: "card-menu-versions", label: "Versions", onPress: () => setVersionsOpen(true) }] : []),
-          { testID: "card-menu-remove", startsGroup: edited, label: "Remove", destructive: true, onPress: remove },
-        ]}
-      />
       <VersionsSheet
         target={edited ? { kind: "card", id: card.id } : null}
         visible={versionsOpen}

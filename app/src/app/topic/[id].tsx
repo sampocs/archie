@@ -17,6 +17,7 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { asDomain } from "@/topics/domains";
 import { TopicMenu } from "@/topics/TopicMenu";
+import { MoreMenu } from "@/ui/NativeMenu";
 import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
 import { Toast } from "@/ui/Toast";
@@ -36,7 +37,6 @@ export default function TopicScreen() {
   const theme = useTheme();
   const data = useLibraryData();
   const now = useNow();
-  const [menuOpen, setMenuOpen] = useState(false);
   const [primerOpen, setPrimerOpen] = useState(false);
   const primerVersions = useTargetVersions("topic_primer", id).entries.length;
   const [versionsOpen, setVersionsOpen] = useState(false);
@@ -70,11 +70,15 @@ export default function TopicScreen() {
     !primer && topic.primerRequestedAt !== null && now.getTime() - new Date(topic.primerRequestedAt).getTime() < PRIMER_WAIT_MS;
 
   const menuButton = isLiveTopic(topic) ? (
-    <Pressable testID="topic-more" accessibilityLabel="Topic actions" hitSlop={12} onPress={() => setMenuOpen(true)}>
-      <Text variant="largeTitle" tone="ink2">
-        •••
-      </Text>
-    </Pressable>
+    <TopicMenu
+      topic={topic}
+      topics={data.topics}
+      followMerge
+      askPrimer={primer ? { id: primer.id, title: topic.name } : undefined}
+      onPrimerVersions={primerVersions > 1 ? () => setVersionsOpen(true) : undefined}
+    >
+      {(items) => <MoreMenu testID="topic-more" items={items} accessibilityLabel="Topic actions" />}
+    </TopicMenu>
   ) : undefined;
 
   return (
@@ -154,15 +158,6 @@ export default function TopicScreen() {
         </GroupedList>
       ) : null}
 
-      <TopicMenu
-        topic={topic}
-        topics={data.topics}
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        followMerge
-        askPrimer={primer ? { id: primer.id, title: topic.name } : undefined}
-        onPrimerVersions={primerVersions > 1 ? () => setVersionsOpen(true) : undefined}
-      />
       <VersionsSheet
         target={{ kind: "topic_primer", id }}
         visible={versionsOpen}

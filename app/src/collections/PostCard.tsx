@@ -8,13 +8,14 @@ import { haptic } from "@/ui/haptics";
 
 import { formatDuration, isVideo, postByline, postSiteName, savedDate, type CollectionItemRow } from "./collections";
 
-type PostCardProps = { item: CollectionItemRow; onLongPress: () => void };
+type PostCardProps = { item: CollectionItemRow };
 
 /**
  * One saved post: its picture, where it's from, when it was saved, its caption and note. A text-only post has no picture
- * row; a video without a thumbnail keeps a neutral tile with the site so its play mark has somewhere to sit.
+ * row; a video without a thumbnail keeps a neutral tile with the site so its play mark has somewhere to sit. Its
+ * long-press menu comes from the `LongPressMenu` wrapped around it.
  */
-export function PostCard({ item, onLongPress }: PostCardProps) {
+export function PostCard({ item }: PostCardProps) {
   const theme = useTheme();
   const isLight = theme.scheme === "light";
   const hasMedia = Boolean(item.imageUrl) || isVideo(item);
@@ -26,10 +27,6 @@ export function PostCard({ item, onLongPress }: PostCardProps) {
         haptic("light");
         // Opens in X, YouTube or Safari: nothing plays inside Archie.
         void Linking.openURL(item.url);
-      }}
-      onLongPress={() => {
-        haptic("selection");
-        onLongPress();
       }}
       style={[
         styles.card,

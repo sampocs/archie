@@ -37,7 +37,6 @@ export default function TakeScreen() {
   const now = useNow();
   const { takes, loaded } = useTakesState();
   const take = takes.find((candidate) => candidate.id === id);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [rawOpen, setRawOpen] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
 
@@ -71,9 +70,7 @@ export default function TakeScreen() {
           >
             <Text variant="headline">Edit</Text>
           </Pressable>
-          <Pressable testID="take-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
-            <Text variant="largeTitle">•••</Text>
-          </Pressable>
+          <TakeMenus take={take} />
         </View>
       }
     >
@@ -140,7 +137,6 @@ export default function TakeScreen() {
         ) : null}
       </View>
       <RawTextSheet visible={rawOpen} rawBody={current.rawBody} onClose={() => setRawOpen(false)} />
-      <TakeMenus take={take} visible={menuOpen} onClose={() => setMenuOpen(false)} />
     </Screen>
   );
 }

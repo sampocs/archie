@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { randomUUID } from "expo-crypto";
 import * as Network from "expo-network";
 import { useRouter } from "expo-router";
@@ -17,7 +16,7 @@ import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { GroupedList } from "@/ui/GroupedList";
 import { haptic } from "@/ui/haptics";
-import { MenuSheet } from "@/ui/MenuSheet";
+import { LongPressMenu, type MenuItem } from "@/ui/NativeMenu";
 import { useNow } from "@/ui/useNow";
 
 export default function AskScreen() {
@@ -27,7 +26,6 @@ export default function AskScreen() {
   const network = Network.useNetworkState();
   const online = network.isConnected !== false && network.isInternetReachable !== false;
   const now = useNow();
-  const [menuFor, setMenuFor] = useState<{ id: string; title: string } | null>(null);
 
   if (available === false) {
     return (
@@ -78,51 +76,45 @@ export default function AskScreen() {
                   },
                 ]}
               >
-                <ChatRow
-                  conversation={conversation}
-                  lastAnswer={lastAnswer}
-                  now={now}
-                  onLongPress={() => setMenuFor({ id: conversation.id, title: conversation.title })}
-                />
+                <LongPressMenu items={chatMenuItems(conversation)}>
+                  <ChatRow conversation={conversation} lastAnswer={lastAnswer} now={now} />
+                </LongPressMenu>
               </SwipeRow>
             ))}
           </GroupedList>
         </View>
       )}
-      <MenuSheet
-        visible={menuFor !== null}
-        onClose={() => setMenuFor(null)}
-        items={
-          menuFor === null
-            ? []
-            : [
-                {
-                  label: "Rename",
-                  testID: "ask-menu-rename",
-                  onPress: () =>
-                    promptChatName({
-                      currentTitle: menuFor.title,
-                      onSubmit: (title) => {
-                        renameConversation(db, menuFor.id, title);
-                        requestSync();
-                      },
-                    }),
-                },
-                {
-                  label: "Delete",
-                  testID: "ask-menu-delete",
-                  destructive: true,
-                  startsGroup: true,
-                  onPress: () =>
-                    confirmDeleteChat(() => {
-                      deleteConversation(db, menuFor.id);
-                      haptic("success");
-                      requestSync();
-                    }),
-                },
-              ]
-        }
-      />
     </Screen>
   );
+}
+
+/** An Ask row's long-press menu: Rename, then Delete (after its confirmation) in red. */
+function chatMenuItems(conversation: { id: string; title: string }): MenuItem[] {
+  return [
+    {
+      label: "Rename",
+      testID: "ask-menu-rename",
+      icon: "pencil",
+      onPress: () =>
+        promptChatName({
+          currentTitle: conversation.title,
+          onSubmit: (title) => {
+            renameConversation(db, conversation.id, title);
+            requestSync();
+          },
+        }),
+    },
+    {
+      label: "Delete",
+      testID: "ask-menu-delete",
+      icon: "trash",
+      destructive: true,
+      onPress: () =>
+        confirmDeleteChat(() => {
+          deleteConversation(db, conversation.id);
+          haptic("success");
+          requestSync();
+        }),
+    },
+  ];
 }

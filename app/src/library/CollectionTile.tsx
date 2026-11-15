@@ -8,10 +8,10 @@ import { useTheme } from "@/theme/useTheme";
 const MOSAIC_HEIGHT = 92;
 const MOSAIC_GAP = 2;
 
-type CollectionTileProps = { collection: CollectionWithItems; onPress: () => void; onLongPress: () => void };
+type CollectionTileProps = { collection: CollectionWithItems; onPress: () => void };
 
 /** One collection in Saved: a 2x2 mosaic of its newest thumbnails over its name and post count. */
-export function CollectionTile({ collection, onPress, onLongPress }: CollectionTileProps) {
+export function CollectionTile({ collection, onPress }: CollectionTileProps) {
   const theme = useTheme();
   const images = mosaicImages(collection);
 
@@ -19,7 +19,6 @@ export function CollectionTile({ collection, onPress, onLongPress }: CollectionT
     <Pressable
       testID={`collection-tile-${collection.id}`}
       onPress={onPress}
-      onLongPress={onLongPress}
       style={[
         {
           backgroundColor: theme.colors.surface,

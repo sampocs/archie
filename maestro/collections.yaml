@@ -1,7 +1,9 @@
 appId: com.sampocs.archie
 ---
 # Make a collection from the add sheet while saving a link into it, see the post on the collection page and not in
-# Library → All, then delete the collection from its tile's long-press menu.
+# Library → All, move the post into a new collection from its long-press menu, delete the emptied collection from the
+# page's "…" menu, then delete the new one from its tile's long-press menu. The menus are native, so their items are
+# tapped by label.
 - runFlow: login.yaml
 - tapOn:
     id: "library-add"
@@ -66,10 +68,38 @@ appId: com.sampocs.archie
     text: ".*collections-flow.*"
 - tapOn:
     id: "library-mode-saved"
-- longPressOn: "Maestro scrapbook"
 - tapOn:
-    id: "collection-menu-delete"
+    id: "collection-tile-.*"
+- extendedWaitUntil:
+    visible:
+      id: "collection-page"
+    timeout: 5000
+# Move to → New collection… asks for a name, makes the collection and moves the post into it.
+- longPressOn:
+    id: "collection-post-.*"
+- tapOn: "Move to"
+- tapOn: "New collection…"
+- extendedWaitUntil:
+    visible: "Create"
+    timeout: 5000
+- inputText: "Maestro shelf"
+- tapOn: "Create"
+- extendedWaitUntil:
+    visible:
+      id: "collection-empty"
+    timeout: 5000
+# Deleting the collection from its "…" menu goes back to Saved.
+- tapOn:
+    id: "collection-more"
+- tapOn: "Delete collection"
 - tapOn: "Delete"
 - extendedWaitUntil:
     notVisible: "Maestro scrapbook"
+    timeout: 5000
+- assertVisible: "Maestro shelf"
+- longPressOn: "Maestro shelf"
+- tapOn: "Delete collection"
+- tapOn: "Delete"
+- extendedWaitUntil:
+    notVisible: "Maestro shelf"
     timeout: 5000

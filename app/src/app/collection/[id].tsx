@@ -1,13 +1,12 @@
-import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
+import { useEffect } from "react";
+import { View } from "react-native";
 
 import { deleteCollection, renameCollection } from "@/db/actions";
 import { db } from "@/db/client";
-import { savedCountLabel, type CollectionItemRow } from "@/collections/collections";
+import { savedCountLabel } from "@/collections/collections";
 import { PostCard } from "@/collections/PostCard";
-import { PostMenus } from "@/collections/PostMenus";
+import { postMenuItems } from "@/collections/PostMenus";
 import { confirmDeleteCollection, promptCollectionName } from "@/collections/prompts";
 import { useCollectionsState } from "@/collections/useCollectionsData";
 import { requestSync } from "@/sync/useSync";
@@ -15,15 +14,13 @@ import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
-import { MenuSheet, type MenuItem } from "@/ui/MenuSheet";
+import { LongPressMenu, MoreMenu, type MenuItem } from "@/ui/NativeMenu";
 
 export default function CollectionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const theme = useTheme();
   const { collections, loaded } = useCollectionsState();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [postInMenu, setPostInMenu] = useState<CollectionItemRow | null>(null);
 
   const collection = collections.find((candidate) => candidate.id === id);
 
@@ -38,6 +35,7 @@ export default function CollectionScreen() {
     {
       testID: "collection-menu-rename",
       label: "Rename",
+      icon: "pencil",
       onPress: () =>
         promptCollectionName({
           title: "Rename collection",
@@ -52,8 +50,8 @@ export default function CollectionScreen() {
     {
       testID: "collection-menu-delete",
       label: "Delete collection",
+      icon: "trash",
       destructive: true,
-      startsGroup: true,
       onPress: () =>
         confirmDeleteCollection({
           name: collection.name,
@@ -71,11 +69,7 @@ export default function CollectionScreen() {
     <Screen
       title=""
       onBack={router.back}
-      headerRight={
-        <Pressable testID="collection-more" accessibilityLabel="More" hitSlop={12} onPress={() => setMenuOpen(true)}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={theme.colors.ink} />
-        </Pressable>
-      }
+      headerRight={<MoreMenu testID="collection-more" items={menuItems} />}
     >
       <View testID="collection-page" style={{ gap: theme.spacing.md }}>
         <View style={{ gap: 4 }}>
@@ -91,13 +85,13 @@ export default function CollectionScreen() {
             </Text>
           ) : (
             collection.items.map((item) => (
-              <PostCard key={item.id} item={item} onLongPress={() => setPostInMenu(item)} />
+              <LongPressMenu key={item.id} items={postMenuItems(item, collections)}>
+                <PostCard item={item} />
+              </LongPressMenu>
             ))
           )}
         </View>
       </View>
-      <MenuSheet visible={menuOpen} onClose={() => setMenuOpen(false)} items={menuItems} />
-      <PostMenus item={postInMenu} collections={collections} onClose={() => setPostInMenu(null)} />
     </Screen>
   );
 }

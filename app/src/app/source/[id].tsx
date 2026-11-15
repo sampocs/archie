@@ -81,7 +81,6 @@ export default function SourceScreen() {
     [sources[0]?.topicId],
   );
   const [finishOpen, setFinishOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [emailOpen, setEmailOpen] = useState(false);
   const [originalOpen, setOriginalOpen] = useState(false);
   const [queuedToast, setQueuedToast] = useState(false);
@@ -178,9 +177,14 @@ export default function SourceScreen() {
                   color={starred ? theme.signals.favorite : theme.colors.ink}
                 />
               </Pressable>
-              <Pressable testID="item-more" onPress={() => setMenuOpen(true)} hitSlop={12}>
-                <Text variant="largeTitle">•••</Text>
-              </Pressable>
+              <ItemMenu
+                source={source}
+                cardCount={cards.length}
+                primerWords={primerWords}
+                summaryVersions={summaryVersions}
+                primerVersions={primerVersions}
+                onOpenVersions={setVersionsOf}
+              />
             </View>
           )
         }
@@ -272,16 +276,6 @@ export default function SourceScreen() {
                 onClose={() => setFinishOpen(false)}
               />
             )}
-            <ItemMenu
-              source={source}
-              cardCount={cards.length}
-              primerWords={primerWords}
-              summaryVersions={summaryVersions}
-              primerVersions={primerVersions}
-              onOpenVersions={setVersionsOf}
-              visible={menuOpen}
-              onClose={() => setMenuOpen(false)}
-            />
             <VersionsSheet
               target={versionsOf ? { kind: versionsOf, id: source.id } : null}
               visible={versionsOf !== null}

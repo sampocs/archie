@@ -9,6 +9,7 @@ import { AddTopicSheet } from "@/topics/AddTopicSheet";
 import { slugify } from "@/topics/topicName";
 import { TopicMenu } from "@/topics/TopicMenu";
 import { haptic } from "@/ui/haptics";
+import { LongPressMenu } from "@/ui/NativeMenu";
 
 import { domainCards, type DomainCard, type DomainChip } from "./domainStats";
 import type { LibraryData, TopicRow } from "./join";
@@ -21,30 +22,21 @@ const UNREAD_DOT = 10;
 export function DomainsView({ data }: DomainsViewProps) {
   const theme = useTheme();
   const [adding, setAdding] = useState(false);
-  const [menuTopic, setMenuTopic] = useState<TopicRow | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <View testID="domains-view" style={{ gap: theme.spacing.md }}>
       {domainCards(data).map((card) => (
-        <DomainCardView key={card.domain} card={card} onChipMenu={(topic) => {
-            setMenuTopic(topic);
-            setMenuOpen(true);
-          }} />
+        <DomainCardView key={card.domain} card={card} topics={data.topics} />
       ))}
       <Pressable testID="add-topic" onPress={() => setAdding(true)} style={{ paddingVertical: theme.spacing.md }}>
         <Text tone="ink2">＋ Add a topic you want to understand</Text>
       </Pressable>
       <AddTopicSheet topics={data.topics} visible={adding} onClose={() => setAdding(false)} />
-      {/* The topic stays set after the menu closes so the Rename and Merge sheets it opens keep their topic. */}
-      {menuTopic ? (
-        <TopicMenu topic={menuTopic} topics={data.topics} visible={menuOpen} onClose={() => setMenuOpen(false)} />
-      ) : null}
     </View>
   );
 }
 
-function DomainCardView({ card, onChipMenu }: { card: DomainCard; onChipMenu: (topic: TopicRow) => void }) {
+function DomainCardView({ card, topics }: { card: DomainCard; topics: TopicRow[] }) {
   const theme = useTheme();
   const color = theme.domains[card.domain];
   const percent = (part: number): `${number}%` => `${card.count === 0 ? 0 : (part / card.count) * 100}%`;
@@ -65,14 +57,20 @@ function DomainCardView({ card, onChipMenu }: { card: DomainCard; onChipMenu: (t
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>
         {card.chips.map((chip) => (
-          <TopicChip key={chip.topic.id} chip={chip} onMenu={() => onChipMenu(chip.topic)} />
+          <TopicMenu key={chip.topic.id} topic={chip.topic} topics={topics}>
+            {(items) => (
+              <LongPressMenu items={items} fitContent>
+                <TopicChip chip={chip} />
+              </LongPressMenu>
+            )}
+          </TopicMenu>
         ))}
       </View>
     </Card>
   );
 }
 
-function TopicChip({ chip, onMenu }: { chip: DomainChip; onMenu: () => void }) {
+function TopicChip({ chip }: { chip: DomainChip }) {
   const theme = useTheme();
   const router = useRouter();
 
@@ -82,10 +80,6 @@ function TopicChip({ chip, onMenu }: { chip: DomainChip; onMenu: () => void }) {
       onPress={() => {
         haptic("light");
         router.push({ pathname: "/topic/[id]", params: { id: chip.topic.id } });
-      }}
-      onLongPress={() => {
-        haptic("selection");
-        onMenu();
       }}
       style={{
         paddingHorizontal: theme.spacing.md,

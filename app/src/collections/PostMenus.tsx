@@ -1,71 +1,80 @@
-import { useState } from "react";
+import { Linking } from "react-native";
 
-import { editCollectionItemNote, moveCollectionItem, removeCollectionItem } from "@/db/actions";
+import {
+  createCollection,
+  editCollectionItemNote,
+  moveCollectionItem,
+  removeCollectionItem,
+} from "@/db/actions";
 import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
 import { haptic } from "@/ui/haptics";
-import { MenuSheet, type MenuItem } from "@/ui/MenuSheet";
+import type { MenuItem } from "@/ui/NativeMenu";
 
 import type { CollectionItemRow, CollectionWithItems } from "./collections";
-import { promptNote } from "./prompts";
+import { promptCollectionName, promptNote } from "./prompts";
 
-type PostMenusProps = { item: CollectionItemRow | null; collections: CollectionWithItems[]; onClose: () => void };
+/** A post's long-press menu: Edit note, Move to (other collections, then a new one), Open original, Remove. */
+export function postMenuItems(item: CollectionItemRow, collections: CollectionWithItems[]): MenuItem[] {
+  const moveTo = (collectionId: string) => {
+    moveCollectionItem(db, item.id, collectionId);
+    haptic("success");
+    requestSync();
+  };
 
-/** The long-press menu for a post, and the "Move to…" list it opens. */
-export function PostMenus({ item, collections, onClose }: PostMenusProps) {
-  // The move list opens from the first sheet's action, which MenuSheet runs after dismissal: never two modals at once.
-  const [moving, setMoving] = useState<CollectionItemRow | null>(null);
-  const targets = item ? collections.filter((collection) => collection.id !== item.collectionId) : [];
-
-  const items: MenuItem[] = item
-    ? [
+  return [
+    {
+      testID: "post-menu-note",
+      label: "Edit note",
+      icon: "square.and.pencil",
+      onPress: () =>
+        promptNote({
+          initialNote: item.note ?? "",
+          onSubmit: (note) => {
+            editCollectionItemNote(db, item.id, note);
+            requestSync();
+          },
+        }),
+    },
+    {
+      testID: "post-menu-move",
+      label: "Move to",
+      icon: "folder",
+      submenu: [
+        ...collections
+          .filter((collection) => collection.id !== item.collectionId)
+          .map((target) => ({ testID: `post-move-${target.id}`, label: target.name, onPress: () => moveTo(target.id) })),
         {
-          testID: "post-menu-note",
-          label: "Edit note",
+          testID: "post-move-new",
+          label: "New collection…",
+          icon: "folder.badge.plus",
+          startsGroup: true,
           onPress: () =>
-            promptNote({
-              initialNote: item.note ?? "",
-              onSubmit: (note) => {
-                editCollectionItemNote(db, item.id, note);
-                requestSync();
-              },
+            promptCollectionName({
+              title: "New collection",
+              submitLabel: "Create",
+              onSubmit: (name) => moveTo(createCollection(db, name)),
             }),
         },
-        ...(targets.length > 0
-          ? [{ testID: "post-menu-move", label: "Move to…", onPress: () => setMoving(item) }]
-          : []),
-        {
-          testID: "post-menu-remove",
-          label: "Remove",
-          destructive: true,
-          startsGroup: true,
-          onPress: () => {
-            removeCollectionItem(db, item.id);
-            haptic("success");
-            requestSync();
-          },
-        },
-      ]
-    : [];
-
-  const moveItems: MenuItem[] = moving
-    ? collections
-        .filter((collection) => collection.id !== moving.collectionId)
-        .map((target) => ({
-          testID: `post-move-${target.id}`,
-          label: target.name,
-          onPress: () => {
-            moveCollectionItem(db, moving.id, target.id);
-            haptic("success");
-            requestSync();
-          },
-        }))
-    : [];
-
-  return (
-    <>
-      <MenuSheet visible={item !== null} onClose={onClose} items={items} />
-      <MenuSheet visible={moving !== null} onClose={() => setMoving(null)} items={moveItems} />
-    </>
-  );
+      ],
+    },
+    {
+      testID: "post-menu-open",
+      label: "Open original",
+      icon: "safari",
+      // Opens in X, YouTube or Safari, as a tap on the post does.
+      onPress: () => void Linking.openURL(item.url),
+    },
+    {
+      testID: "post-menu-remove",
+      label: "Remove",
+      icon: "trash",
+      destructive: true,
+      onPress: () => {
+        removeCollectionItem(db, item.id);
+        haptic("success");
+        requestSync();
+      },
+    },
+  ];
 }

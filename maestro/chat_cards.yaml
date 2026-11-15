@@ -22,6 +22,17 @@ appId: com.sampocs.archie
 - extendedWaitUntil:
     visible: ".*Token talk.*"
     timeout: 10000
+# Swiping the row left reveals a red Delete; swiping back closes it without deleting.
+- swipe:
+    from:
+      id: "ask-row-.*"
+    direction: LEFT
+- assertVisible:
+    id: "swipe-delete-chat-.*"
+- swipe:
+    from:
+      id: "ask-row-.*"
+    direction: RIGHT
 - tapOn:
     id: "ask-row-.*"
 # Inside the chat, ••• → Rename works the same way (native menu items are tapped by label).

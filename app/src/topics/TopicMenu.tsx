@@ -34,6 +34,20 @@ export function TopicMenu({ topic, topics, children, onRemoved, followMerge, ask
   const router = useRouter();
   const [renaming, setRenaming] = useState(false);
   const [merging, setMerging] = useState(false);
+  // The Library renders one TopicMenu per chip, so each sheet (a Modal, plus a live query for the chooser) mounts only
+  // once it's used; it stays mounted afterwards so the close animation plays.
+  const [renameMounted, setRenameMounted] = useState(false);
+  const [mergeMounted, setMergeMounted] = useState(false);
+
+  function openRename(): void {
+    setRenameMounted(true);
+    setRenaming(true);
+  }
+
+  function openMerge(): void {
+    setMergeMounted(true);
+    setMerging(true);
+  }
 
   function merge(target: TopicRow): void {
     mergeTopic(db, topic.id, target.id);
@@ -63,22 +77,26 @@ export function TopicMenu({ topic, topics, children, onRemoved, followMerge, ask
     ...(onPrimerVersions
       ? [{ label: "Primer versions", testID: "topic-menu-primer-versions", icon: "clock.arrow.circlepath", onPress: onPrimerVersions }]
       : []),
-    { label: "Rename", testID: "topic-menu-rename", icon: "pencil", onPress: () => setRenaming(true) },
-    { label: "Merge into…", testID: "topic-menu-merge", icon: "arrow.triangle.merge", onPress: () => setMerging(true) },
+    { label: "Rename", testID: "topic-menu-rename", icon: "pencil", onPress: openRename },
+    { label: "Merge into…", testID: "topic-menu-merge", icon: "arrow.triangle.merge", onPress: openMerge },
     { label: "Remove", testID: "topic-menu-remove", icon: "trash", destructive: true, onPress: remove },
   ];
 
   return (
     <>
       {children(items)}
-      <RenameTopicSheet topic={topic} topics={topics} visible={renaming} onClose={() => setRenaming(false)} />
-      <TopicChooserSheet
-        visible={merging}
-        onClose={() => setMerging(false)}
-        title={`Merge ${topic.name} into…`}
-        excludeTopicId={topic.id}
-        onChoose={merge}
-      />
+      {renameMounted ? (
+        <RenameTopicSheet topic={topic} topics={topics} visible={renaming} onClose={() => setRenaming(false)} />
+      ) : null}
+      {mergeMounted ? (
+        <TopicChooserSheet
+          visible={merging}
+          onClose={() => setMerging(false)}
+          title={`Merge ${topic.name} into…`}
+          excludeTopicId={topic.id}
+          onChoose={merge}
+        />
+      ) : null}
     </>
   );
 }

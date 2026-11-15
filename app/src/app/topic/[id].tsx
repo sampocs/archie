@@ -77,7 +77,7 @@ export default function TopicScreen() {
       askPrimer={primer ? { id: primer.id, title: topic.name } : undefined}
       onPrimerVersions={primerVersions > 1 ? () => setVersionsOpen(true) : undefined}
     >
-      {(items) => <MoreMenu testID="topic-more" items={items} />}
+      {(items) => <MoreMenu testID="topic-more" items={items} accessibilityLabel="Topic actions" />}
     </TopicMenu>
   ) : undefined;
 

@@ -10,10 +10,10 @@ export type { MenuItem } from "./menuSections";
 
 const MORE_GLYPH_SIZE = 22;
 
-type MoreMenuProps = { testID: string; items: MenuItem[] };
+type MoreMenuProps = { testID: string; items: MenuItem[]; accessibilityLabel?: string };
 
 /** The "…" button: tapping it pulls the menu down from the button itself. */
-export function MoreMenu({ testID, items }: MoreMenuProps) {
+export function MoreMenu({ testID, items, accessibilityLabel: label = "More" }: MoreMenuProps) {
   const theme = useTheme();
 
   return (
@@ -24,7 +24,7 @@ export function MoreMenu({ testID, items }: MoreMenuProps) {
             systemName="ellipsis"
             size={MORE_GLYPH_SIZE}
             color={theme.colors.ink}
-            modifiers={[accessibilityLabel("More")]}
+            modifiers={[accessibilityLabel(label)]}
           />
         }
       >
@@ -71,6 +71,7 @@ function MenuEntries({ items }: { items: MenuItem[] }) {
   ));
 }
 
+// Maestro can't see testIDs on native menu items (flows tap them by label); they're passed for keys and other tooling.
 function MenuEntry({ item }: { item: MenuItem }) {
   const systemImage = item.icon as ButtonProps["systemImage"];
   if (item.submenu) {

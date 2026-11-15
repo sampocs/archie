@@ -19,8 +19,7 @@ appId: com.sampocs.archie
     id: "topic-chip-monetary-plumbing"
 - longPressOn:
     id: "topic-chip-monetary-plumbing"
-- tapOn:
-    id: "topic-menu-remove"
+- tapOn: "Remove"
 - assertNotVisible:
     id: "topic-chip-monetary-plumbing"
 - tapOn:

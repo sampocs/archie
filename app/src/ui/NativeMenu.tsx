@@ -1,4 +1,4 @@
-import { Button, ContextMenu, Host, Image, Menu, RNHostView, Section, Text, type ButtonProps } from "@expo/ui/swift-ui";
+import { Button, ContextMenu, Host, Image, Label, Menu, RNHostView, Section, Text, type ButtonProps } from "@expo/ui/swift-ui";
 import { accessibilityLabel } from "@expo/ui/swift-ui/modifiers";
 import type { ReactElement } from "react";
 
@@ -34,24 +34,26 @@ export function MoreMenu({ testID, items }: MoreMenuProps) {
   );
 }
 
-type LongPressMenuProps = { items: MenuItem[]; children: ReactElement };
+type LongPressMenuProps = { items: MenuItem[]; children: ReactElement; fitContent?: boolean };
 
 /**
  * Long-pressing the children lifts them and shows the menu beside them; a plain tap still reaches them. The children
- * take their width from the parent and their height from their own content.
+ * take their width from the parent and their height from their own content; `fitContent` takes the width from the
+ * content too, for a chip that sits in a wrapping row.
  */
-export function LongPressMenu({ items, children }: LongPressMenuProps) {
+export function LongPressMenu({ items, children, fitContent = false }: LongPressMenuProps) {
   const theme = useTheme();
   if (items.length === 0) return children;
 
+  const matchContents = fitContent ? true : { vertical: true };
   return (
-    <Host matchContents={{ vertical: true }} colorScheme={theme.scheme}>
+    <Host matchContents={matchContents} colorScheme={theme.scheme}>
       <ContextMenu>
         <ContextMenu.Items>
           <MenuEntries items={items} />
         </ContextMenu.Items>
         <ContextMenu.Trigger>
-          <RNHostView matchContents={{ vertical: true }}>{children}</RNHostView>
+          <RNHostView matchContents={matchContents}>{children}</RNHostView>
         </ContextMenu.Trigger>
       </ContextMenu>
     </Host>
@@ -79,15 +81,16 @@ function MenuEntry({ item }: { item: MenuItem }) {
     );
   }
 
+  const onPress = item.onPress;
   const role = item.destructive ? "destructive" : "default";
   if (!item.subtitle) {
-    return <Button testID={item.testID} label={item.label} systemImage={systemImage} role={role} onPress={item.onPress} />;
+    return <Button testID={item.testID} label={item.label} systemImage={systemImage} role={role} onPress={onPress} />;
   }
 
-  // A menu button whose label holds two texts shows the second as a smaller line under the first (without an icon).
+  // A menu button whose label holds two texts shows the second as a smaller line under the first.
   return (
-    <Button testID={item.testID} role={role} onPress={item.onPress}>
-      <Text>{item.label}</Text>
+    <Button testID={item.testID} role={role} onPress={onPress}>
+      {systemImage ? <Label title={item.label} systemImage={systemImage} /> : <Text>{item.label}</Text>}
       <Text>{item.subtitle}</Text>
     </Button>
   );

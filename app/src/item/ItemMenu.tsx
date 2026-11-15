@@ -8,7 +8,7 @@ import { db } from "@/db/client";
 import type * as schema from "@/db/schema";
 import { requestSync } from "@/sync/useSync";
 import { haptic } from "@/ui/haptics";
-import { MenuSheet, type MenuItem } from "@/ui/MenuSheet";
+import { MoreMenu, type MenuItem } from "@/ui/NativeMenu";
 import { SnoozeSheet } from "@/ui/SnoozeSheet";
 import { TopicChooserSheet } from "@/ui/TopicChooserSheet";
 
@@ -25,14 +25,13 @@ type ItemMenuProps = {
   summaryVersions: number;
   primerVersions: number;
   onOpenVersions: (kind: "summary" | "primer") => void;
-  visible: boolean;
-  onClose: () => void;
 };
 type Panel = "topic" | "snooze" | "episodes" | null;
 
 /**
- * The ••• menu, grouped by how often each is used: [Ask about this] [Remind me later…, Mark as read/unread]
- * [Queue the primer, Make review cards, No cards for this, Change topic, Summary versions, Primer versions, Wrong episode?] [Delete]; and the sheets its entries open.
+ * The ••• button and its native menu, grouped by how often each is used: [Ask about this] [Remind me later…, Mark as
+ * read/unread] [Queue the primer, Make review cards, No cards for this, Change topic, Summary versions, Primer
+ * versions, Wrong episode?] [Delete]; and the sheets its picker entries open once the menu has closed.
  */
 export function ItemMenu({
   source,
@@ -41,8 +40,6 @@ export function ItemMenu({
   summaryVersions,
   primerVersions,
   onOpenVersions,
-  visible,
-  onClose,
 }: ItemMenuProps) {
   const router = useRouter();
   const [panel, setPanel] = useState<Panel>(null);
@@ -56,19 +53,21 @@ export function ItemMenu({
     {
       testID: "menu-ask",
       label: "Ask about this",
+      icon: "bubble.left.and.text.bubble.right",
       onPress: () => openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }),
     },
     ...(originalUrl(source.url)
-      ? [{ testID: "menu-open-original", label: "Open original", onPress: () => void Linking.openURL(source.url) }]
+      ? [{ testID: "menu-open-original", label: "Open original", icon: "safari", onPress: () => void Linking.openURL(source.url) }]
       : []),
     ...(!queue.snooze
       ? []
-      : [{ testID: "menu-snooze", label: "Remind me later…", startsGroup: true, onPress: () => setPanel("snooze") }]),
+      : [{ testID: "menu-snooze", label: "Remind me later…", icon: "clock", startsGroup: true, onPress: () => setPanel("snooze") }]),
     ...(source.kind === "newsletter" && inInbox
       ? [
           {
             testID: "menu-read",
             label: isRead ? "Mark as unread" : "Mark as read",
+            icon: isRead ? "envelope.badge" : "envelope.open",
             onPress: () => {
               setRead(db, source.id, !isRead);
               requestSync();
@@ -82,6 +81,7 @@ export function ItemMenu({
           {
             testID: "menu-queue-primer",
             label: primerQueued ? "Primer is queued" : "Queue the primer",
+            icon: "text.badge.plus",
             subtitle: primerQueued ? undefined : "Adds it to your queue as its own item",
             startsGroup: true,
             onPress: () => {
@@ -96,6 +96,7 @@ export function ItemMenu({
           {
             testID: "menu-review-cards",
             label: "Make review cards",
+            icon: "rectangle.stack.badge.plus",
             subtitle: makeCards.subtitle,
             onPress: () => {
               if (makeCards.kind === "go_deeper") goDeeper(db, source.id);
@@ -111,6 +112,7 @@ export function ItemMenu({
           {
             testID: "menu-cards-off",
             label: "No cards for this",
+            icon: "rectangle.stack.badge.minus",
             subtitle: "Removes its cards and makes no more",
             onPress: () => {
               setCardsOff(db, source.id, true);
@@ -120,19 +122,20 @@ export function ItemMenu({
           },
         ]
       : []),
-    { testID: "menu-change-topic", label: "Change topic", onPress: () => setPanel("topic") },
+    { testID: "menu-change-topic", label: "Change topic", icon: "tag", onPress: () => setPanel("topic") },
     ...(summaryVersions > 1
-      ? [{ testID: "menu-summary-versions", label: "Summary versions", onPress: () => onOpenVersions("summary") }]
+      ? [{ testID: "menu-summary-versions", label: "Summary versions", icon: "clock.arrow.circlepath", onPress: () => onOpenVersions("summary") }]
       : []),
     ...(primerVersions > 1
-      ? [{ testID: "menu-primer-versions", label: "Primer versions", onPress: () => onOpenVersions("primer") }]
+      ? [{ testID: "menu-primer-versions", label: "Primer versions", icon: "clock.arrow.circlepath", onPress: () => onOpenVersions("primer") }]
       : []),
     ...(source.kind === "podcast"
-      ? [{ testID: "menu-episode", label: "Wrong episode?", onPress: () => setPanel("episodes") }]
+      ? [{ testID: "menu-episode", label: "Wrong episode?", icon: "waveform", onPress: () => setPanel("episodes") }]
       : []),
     {
       testID: "menu-delete",
       label: "Delete",
+      icon: "trash",
       destructive: true,
       startsGroup: true,
       onPress: () => {
@@ -146,7 +149,7 @@ export function ItemMenu({
 
   return (
     <>
-      <MenuSheet visible={visible} onClose={onClose} items={items} />
+      <MoreMenu testID="item-more" items={items} />
       <TopicChooserSheet
         visible={panel === "topic"}
         onClose={() => setPanel(null)}

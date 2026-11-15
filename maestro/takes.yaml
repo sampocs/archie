@@ -1,7 +1,7 @@
 appId: com.sampocs.archie
 ---
 # Write a take from the add sheet, open it from Library → Takes, edit it into version 2, see Earlier versions and
-# version 1, then delete the take.
+# version 1, change its kind, then delete the take.
 - runFlow: login.yaml
 - tapOn:
     id: "library-add"
@@ -81,10 +81,17 @@ appId: com.sampocs.archie
     id: "version-restore"
 - tapOn:
     id: "screen-back"
+# Change kind is a submenu of the kinds, opened in place.
 - tapOn:
     id: "take-more"
+- tapOn: "Change kind"
+- tapOn: "Talking point"
+- assertVisible:
+    id: "take-kicker"
+    text: "(?i).*talking point.*"
 - tapOn:
-    id: "take-menu-delete"
+    id: "take-more"
+- tapOn: "Delete take"
 - tapOn: "Delete"
 - extendedWaitUntil:
     notVisible: ".*Maestro takes flow.*"

@@ -51,7 +51,5 @@ appId: com.sampocs.archie
 - tapOn: ".*example\\.net.*"
 - tapOn:
     id: "item-more"
-- assertVisible:
-    id: "menu-change-topic"
-- assertNotVisible:
-    id: "menu-cards-off"
+- assertVisible: "Change topic"
+- assertNotVisible: "No cards for this"

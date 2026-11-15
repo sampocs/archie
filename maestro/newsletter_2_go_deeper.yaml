@@ -27,8 +27,7 @@ appId: com.sampocs.archie
     id: "item-finish"
 - tapOn:
     id: "item-more"
-- tapOn:
-    id: "menu-review-cards"
+- tapOn: "Make review cards"
 # The cards land below the summary, so scroll down to them while the worker writes them.
 - scrollUntilVisible:
     element:

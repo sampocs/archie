@@ -1,6 +1,6 @@
 import { menuSections, type MenuItem } from "./menuSections";
 
-const item = (testID: string, overrides: Partial<MenuItem> = {}): MenuItem => ({
+const item = (testID: string, overrides: { destructive?: boolean; startsGroup?: boolean } = {}): MenuItem => ({
   testID,
   label: testID,
   onPress: () => {},

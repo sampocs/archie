@@ -4,14 +4,12 @@
  */
 export type MenuItem = {
   label: string;
-  onPress: () => void;
   destructive?: boolean;
   testID: string;
   subtitle?: string;
   startsGroup?: boolean;
   icon?: string;
-  submenu?: MenuItem[];
-};
+} & ({ onPress: () => void; submenu?: undefined } | { submenu: MenuItem[]; onPress?: undefined });
 
 /** Splits items into menu sections at each `startsGroup`; destructive items always end up together, in a last section. */
 export function menuSections(items: MenuItem[]): MenuItem[][] {

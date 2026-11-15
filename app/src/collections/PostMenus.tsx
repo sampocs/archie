@@ -40,7 +40,6 @@ export function postMenuItems(item: CollectionItemRow, collections: CollectionWi
       testID: "post-menu-move",
       label: "Move to",
       icon: "folder",
-      onPress: () => {},
       submenu: [
         ...collections
           .filter((collection) => collection.id !== item.collectionId)

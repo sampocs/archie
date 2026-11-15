@@ -1,7 +1,6 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Network from "expo-network";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Ionicons } from "@expo/vector-icons";
 import { eq } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
 import { Pressable, View } from "react-native";
@@ -23,7 +22,7 @@ import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
-import { MenuSheet } from "@/ui/MenuSheet";
+import { MoreMenu } from "@/ui/NativeMenu";
 import { Toast } from "@/ui/Toast";
 
 type Params = { id: string; q?: string; web?: string; aboutKind?: AboutKind; aboutId?: string; aboutTitle?: string; fromNote?: string };
@@ -49,7 +48,6 @@ export default function ChatScreen() {
   });
   const { pending, send, unanswered, openCardSet } = thread;
   const [toast, setToast] = useState<string | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [itemOpen, setItemOpen] = useState(false);
   // Stable, so a re-render (a pull landing) doesn't restart the toast's timer.
   const hideToast = useCallback(() => setToast(null), []);
@@ -82,9 +80,38 @@ export default function ChatScreen() {
         onBack={router.back}
         headerRight={
           conversation && conversation.deletedAt === null ? (
-            <Pressable testID="chat-more" accessibilityLabel="More" hitSlop={12} onPress={() => setMenuOpen(true)}>
-              <Ionicons name="ellipsis-horizontal" size={24} color={theme.colors.ink} />
-            </Pressable>
+            <MoreMenu
+              testID="chat-more"
+              items={[
+                {
+                  testID: "chat-menu-rename",
+                  label: "Rename",
+                  icon: "pencil",
+                  onPress: () =>
+                    promptChatName({
+                      currentTitle: conversation.title,
+                      onSubmit: (title) => {
+                        renameConversation(db, params.id, title);
+                        requestSync();
+                      },
+                    }),
+                },
+                {
+                  testID: "chat-menu-delete",
+                  startsGroup: true,
+                  label: "Delete chat",
+                  icon: "trash",
+                  destructive: true,
+                  onPress: () =>
+                    confirmDeleteChat(() => {
+                      deleteConversation(db, params.id);
+                      haptic("success");
+                      requestSync();
+                      router.back();
+                    }),
+                },
+              ]}
+            />
           ) : null
         }
         footer={
@@ -137,37 +164,6 @@ export default function ChatScreen() {
       {liveAboutSource ? (
         <ItemSheet sourceId={liveAboutSource.id} visible={itemOpen} onClose={() => setItemOpen(false)} />
       ) : null}
-      <MenuSheet
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        items={[
-          {
-            testID: "chat-menu-rename",
-            label: "Rename",
-            onPress: () =>
-              promptChatName({
-                currentTitle: conversation?.title ?? "",
-                onSubmit: (title) => {
-                  renameConversation(db, params.id, title);
-                  requestSync();
-                },
-              }),
-          },
-          {
-            testID: "chat-menu-delete",
-            startsGroup: true,
-            label: "Delete chat",
-            destructive: true,
-            onPress: () =>
-              confirmDeleteChat(() => {
-                deleteConversation(db, params.id);
-                haptic("success");
-                requestSync();
-                router.back();
-              }),
-          },
-        ]}
-      />
       {/* Outside the scroll view, so it pins to the screen's bottom rather than the end of the chat. */}
       {toast ? <Toast message={toast} onHide={hideToast} /> : null}
     </View>

@@ -5,6 +5,8 @@ appId: com.sampocs.archie
 - launchApp
 - tapOn:
     id: "tab-ask"
+- tapOn:
+    id: "ask-history"
 # The seeded chat arrives with the next sync, which can take a few seconds.
 - extendedWaitUntil:
     visible:
@@ -33,6 +35,19 @@ appId: com.sampocs.archie
     from:
       id: "ask-row-.*"
     direction: RIGHT
+# Search filters on the title: part of it keeps the row, nonsense shows the no-match line, clearing brings it back.
+- tapOn:
+    id: "history-search"
+- inputText: "token"
+- assertVisible:
+    id: "ask-row-.*"
+- eraseText: 20
+- inputText: "zzqx"
+- assertVisible:
+    id: "history-no-match"
+- assertNotVisible:
+    id: "ask-row-.*"
+- eraseText: 20
 - tapOn:
     id: "ask-row-.*"
 # Inside the chat, ••• → Rename works the same way (native menu items are tapped by label).
@@ -124,7 +139,9 @@ appId: com.sampocs.archie
 - assertVisible:
     id: "chat-item-continue"
 # A saved card opens as its own page from Review search: question, answer and detail, Practice, and the chat box.
-# Back out of the item and the chat to the tab bar first.
+# Back out of the item, the chat and History to the tab bar first.
+- tapOn:
+    id: "screen-back"
 - tapOn:
     id: "screen-back"
 - tapOn:

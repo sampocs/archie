@@ -42,6 +42,8 @@ appId: com.sampocs.archie
     id: "screen-back"
 - tapOn:
     id: "tab-ask"
+- tapOn:
+    id: "ask-history"
 - extendedWaitUntil:
     visible:
       id: "ask-row-.*"

@@ -77,6 +77,7 @@ export default function ChatScreen() {
   return (
     <View style={{ flex: 1 }}>
       <Screen
+        composer
         title="Ask"
         nav={{ title: conversation?.title ?? "", backLabel: backLabelOf(params.fromNote, aboutTitle) }}
         onBack={router.back}

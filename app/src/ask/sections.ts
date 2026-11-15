@@ -1,7 +1,15 @@
 import type { EditProposalWire } from "@/edits/types";
 
 import type { CardSetChoice, CardSetWire } from "./cardSets";
-import { ANSWER_LABEL_TEXT, formatClock, type AnswerLabel, type AnswerSegment, type AskEvent, type Citation } from "./types";
+import {
+  ANSWER_LABEL_TEXT,
+  formatClock,
+  parseSegments,
+  type AnswerLabel,
+  type AnswerSegment,
+  type AskEvent,
+  type Citation,
+} from "./types";
 
 /** A labelled run of an answer: consecutive blocks with the same label shown as one section. */
 export type Section = { label: AnswerLabel; text: string; citations: Citation[] };
@@ -226,6 +234,41 @@ export function rowPreview(segments: AnswerSegment[]): string {
   if (!first) return "";
   const line = first.text.split("\n")[0];
   return first.label === "background" ? line : `${ANSWER_LABEL_TEXT[first.label]}: ${line}`;
+}
+
+/** A History group: chats from today, the 6 days before it, or anything older. */
+export type HistoryGroup<T> = { key: "today" | "week" | "earlier"; label: string; items: T[] };
+
+type HistoryChat = { conversation: { title: string; updatedAt: string }; lastAnswer: { segments: string | null } | null };
+
+const WEEK_DAYS_BEFORE_TODAY = 6;
+
+/**
+ * Chats split into Today, This week and Earlier by calendar day (local midnight, so DST can't shift a boundary),
+ * keeping their order; empty groups are left out.
+ */
+export function historyGroups<T extends HistoryChat>(items: T[], now: Date): HistoryGroup<T>[] {
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - WEEK_DAYS_BEFORE_TODAY).getTime();
+  const groups: HistoryGroup<T>[] = [
+    { key: "today", label: "Today", items: [] },
+    { key: "week", label: "This week", items: [] },
+    { key: "earlier", label: "Earlier", items: [] },
+  ];
+  for (const item of items) {
+    const at = new Date(item.conversation.updatedAt).getTime();
+    const index = at >= startOfToday ? 0 : at >= startOfWeek ? 1 : 2;
+    groups[index].items.push(item);
+  }
+  return groups.filter((group) => group.items.length > 0);
+}
+
+/** History search: the query (ignoring case) in the chat's title or its row preview; a blank query matches all. */
+export function matchesChatQuery(item: HistoryChat, query: string): boolean {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return true;
+  const preview = rowPreview(parseSegments(item.lastAnswer?.segments ?? null));
+  return item.conversation.title.toLowerCase().includes(needle) || preview.toLowerCase().includes(needle);
 }
 
 function uniqueCitations(citations: Citation[]): Citation[] {

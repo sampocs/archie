@@ -100,6 +100,7 @@ function AppStack() {
           <Stack.Screen name="collection/[id]" />
           <Stack.Screen name="take/[id]" />
           <Stack.Screen name="take/version" />
+          <Stack.Screen name="ask/history" />
           <Stack.Screen name="ask/[id]" />
           <Stack.Screen name="card/[id]" />
           <Stack.Screen name="brief" />

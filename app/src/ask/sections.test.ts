@@ -6,7 +6,9 @@ import {
   endOfStream,
   groupSections,
   handedOver,
+  historyGroups,
   liveView,
+  matchesChatQuery,
   relativeTime,
   rowPreview,
   thinkingLabel,
@@ -304,5 +306,52 @@ describe("unansweredState", () => {
   it("is null once the question has an answer, and for an empty chat", () => {
     expect(unansweredState([{ role: "user", createdAt: ago(1000) }, answer], now)).toBeNull();
     expect(unansweredState([], now)).toBeNull();
+  });
+});
+
+describe("historyGroups", () => {
+  // Sun Nov 15 2026, 9:30am local.
+  const now = new Date(2026, 10, 15, 9, 30);
+  const chat = (id: string, at: Date) => ({
+    conversation: { id, title: id, updatedAt: at.toISOString() },
+    lastAnswer: null,
+  });
+  const keys = (items: ReturnType<typeof chat>[]) =>
+    historyGroups(items, now).map((group) => [group.key, group.items.map((item) => item.conversation.id)]);
+
+  it("puts midnight today in Today and a minute before it in This week", () => {
+    expect(keys([chat("midnight", new Date(2026, 10, 15, 0, 0)), chat("lateLastNight", new Date(2026, 10, 14, 23, 59))])).toEqual([
+      ["today", ["midnight"]],
+      ["week", ["lateLastNight"]],
+    ]);
+  });
+
+  it("keeps 6 days back in This week and moves 7 days back to Earlier", () => {
+    expect(keys([chat("six", new Date(2026, 10, 9, 0, 0)), chat("seven", new Date(2026, 10, 8, 23, 59))])).toEqual([
+      ["week", ["six"]],
+      ["earlier", ["seven"]],
+    ]);
+  });
+
+  it("keeps the given order within a group and leaves empty groups out", () => {
+    expect(keys([chat("newer", new Date(2026, 10, 15, 9, 0)), chat("older", new Date(2026, 10, 15, 8, 0))])).toEqual([
+      ["today", ["newer", "older"]],
+    ]);
+    expect(keys([])).toEqual([]);
+  });
+});
+
+describe("matchesChatQuery", () => {
+  const item = {
+    conversation: { title: "JWT vs session tokens", updatedAt: "2026-11-15T00:00:00Z" },
+    lastAnswer: { segments: JSON.stringify([{ label: "background", text: "A refresh token renews access.", citations: [] }]) },
+  };
+
+  it("matches the title or the preview, ignoring case; a blank query matches", () => {
+    expect(matchesChatQuery(item, "jwt")).toBe(true);
+    expect(matchesChatQuery(item, "REFRESH")).toBe(true);
+    expect(matchesChatQuery(item, "  ")).toBe(true);
+    expect(matchesChatQuery(item, "zzqx")).toBe(false);
+    expect(matchesChatQuery({ ...item, lastAnswer: null }, "refresh")).toBe(false);
   });
 });

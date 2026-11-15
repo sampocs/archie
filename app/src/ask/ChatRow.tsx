@@ -9,7 +9,7 @@ import { parseSegments, type ConversationRow, type MessageRow } from "./types";
 
 type ChatRowProps = { conversation: ConversationRow; lastAnswer: MessageRow | null; now: Date };
 
-/** A saved chat: its title, the last answer's first line, and when it last moved. */
+/** A History row: the title and when the chat last moved, with the last answer's opening below it. */
 export function ChatRow({ conversation, lastAnswer, now }: ChatRowProps) {
   const theme = useTheme();
   const router = useRouter();
@@ -19,27 +19,22 @@ export function ChatRow({ conversation, lastAnswer, now }: ChatRowProps) {
     <Pressable
       testID={`ask-row-${conversation.id}`}
       onPress={() => router.push({ pathname: "/ask/[id]", params: { id: conversation.id } })}
-      style={{
-        flexDirection: "row",
-        gap: theme.spacing.md,
-        paddingVertical: theme.spacing.md,
-        paddingHorizontal: theme.spacing.lg,
-        backgroundColor: theme.colors.surface,
-      }}
+      // No card around the rows, but the page color stays opaque so a swipe slides the row over its actions.
+      style={{ gap: theme.spacing.xs, paddingVertical: theme.spacing.md, backgroundColor: theme.colors.bg }}
     >
-      <View style={{ flex: 1, gap: theme.spacing.xs }}>
-        <Text variant="headline" numberOfLines={1}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: theme.spacing.md }}>
+        <Text variant="headline" numberOfLines={1} style={{ flex: 1 }}>
           {conversation.title}
         </Text>
-        {preview ? (
-          <Text variant="secondary" tone="ink2" numberOfLines={1}>
-            {preview}
-          </Text>
-        ) : null}
+        <Text variant="secondary" tone="ink3">
+          {relativeTime(conversation.updatedAt, now)}
+        </Text>
       </View>
-      <Text variant="secondary" tone="ink3">
-        {relativeTime(conversation.updatedAt, now)}
-      </Text>
+      {preview ? (
+        <Text variant="secondary" tone="ink2" numberOfLines={2}>
+          {preview}
+        </Text>
+      ) : null}
     </Pressable>
   );
 }

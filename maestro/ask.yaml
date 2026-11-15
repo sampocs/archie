@@ -1,5 +1,5 @@
 # Ask: finish an article, ask about it on the Ask tab, see a YOUR LIBRARY section, Make cards, and find the chat in
-# the list. Needs the owner's keys in .env (analyze, embeddings and two Sonnet 5.5 answers: a few cents); local
+# History. Needs the owner's keys in .env (analyze, embeddings and two Sonnet 5.5 answers: a few cents); local
 # backend only; run it through `make maestro-ask`.
 appId: com.sampocs.archie
 ---
@@ -72,8 +72,13 @@ appId: com.sampocs.archie
     direction: DOWN
     timeout: 120000
 - assertVisible: ".*Cheat sheet · .*"
+# Back from the chat is the blank Ask tab; the chat is listed in History.
 - tapOn:
     id: "screen-back"
+- assertVisible:
+    id: "ask-composer-input"
+- tapOn:
+    id: "ask-history"
 - extendedWaitUntil:
     visible:
       id: "ask-row-.*"

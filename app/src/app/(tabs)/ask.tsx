@@ -1,31 +1,30 @@
+import { Ionicons } from "@expo/vector-icons";
 import { randomUUID } from "expo-crypto";
 import * as Network from "expo-network";
 import { useRouter } from "expo-router";
-import { View } from "react-native";
+import { useContext } from "react";
+import { Keyboard, KeyboardAvoidingView, Pressable, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ChatRow } from "@/ask/ChatRow";
-import { confirmDeleteChat, promptChatName } from "@/ask/chatPrompts";
 import { Composer } from "@/ask/Composer";
 import { useAskAvailable } from "@/ask/useAskAvailable";
-import { useChats } from "@/ask/useChats";
-import { deleteConversation, renameConversation } from "@/db/actions";
-import { db } from "@/db/client";
-import { SwipeRow } from "@/library/SwipeRow";
-import { requestSync } from "@/sync/useSync";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
-import { GroupedList } from "@/ui/GroupedList";
-import { haptic } from "@/ui/haptics";
-import { LongPressMenu, type MenuItem } from "@/ui/NativeMenu";
-import { useNow } from "@/ui/useNow";
+import { TabBarInsetContext } from "@/theme/tabBarInset";
+import { useTheme } from "@/theme/useTheme";
 
+const HISTORY_ICON_SIZE = 16;
+const HISTORY_PILL_HEIGHT = 34;
+
+/** The Ask tab only starts chats: History in the corner, then one big question box. */
 export default function AskScreen() {
+  const theme = useTheme();
   const router = useRouter();
-  const chats = useChats();
+  const insets = useSafeAreaInsets();
+  const tabBarInset = useContext(TabBarInsetContext);
   const available = useAskAvailable();
   const network = Network.useNetworkState();
   const online = network.isConnected !== false && network.isInternetReachable !== false;
-  const now = useNow();
 
   if (available === false) {
     return (
@@ -37,84 +36,55 @@ export default function AskScreen() {
     );
   }
 
+  // The keyboard's height already includes the floating tab bar's, so the offset takes it back off: with the keyboard
+  // up the box sits just above it, and with it down the page clears the tab bar.
   return (
-    <Screen
-      composer
-      title="Ask"
-      footer={
-        <Composer
-          placeholder="Ask about anything"
-          disabled={!online}
-          disabledLabel="Ask needs a connection"
-          onSend={(text, web) =>
-            router.push({ pathname: "/ask/[id]", params: { id: randomUUID(), q: text, web: web ? "1" : "0" } })
-          }
-        />
-      }
+    <KeyboardAvoidingView
+      behavior="padding"
+      keyboardVerticalOffset={-tabBarInset}
+      style={{ flex: 1, backgroundColor: theme.colors.bg, paddingTop: insets.top }}
     >
-      {chats.length === 0 ? (
-        <Text testID="ask-empty" tone="ink2">
-          Ask a question about anything you've saved.
-        </Text>
-      ) : (
-        <View testID="ask-list">
-          <GroupedList>
-            {chats.map(({ conversation, lastAnswer }) => (
-              <SwipeRow
-                key={conversation.id}
-                actions={[
-                  {
-                    key: "delete",
-                    label: "Delete",
-                    tone: "missed",
-                    testID: `swipe-delete-chat-${conversation.id}`,
-                    onPress: () => {
-                      deleteConversation(db, conversation.id);
-                      haptic("success");
-                      requestSync();
-                    },
-                  },
-                ]}
-              >
-                <LongPressMenu items={chatMenuItems(conversation)}>
-                  <ChatRow conversation={conversation} lastAnswer={lastAnswer} now={now} />
-                </LongPressMenu>
-              </SwipeRow>
-            ))}
-          </GroupedList>
+      <Pressable
+        accessible={false}
+        onPress={Keyboard.dismiss}
+        style={{ flex: 1, paddingHorizontal: theme.spacing.gutterText, paddingBottom: tabBarInset }}
+      >
+        <View style={{ flexDirection: "row", paddingVertical: 12 }}>
+          <Pressable
+            testID="ask-history"
+            accessibilityRole="button"
+            onPress={() => router.push("/ask/history")}
+            hitSlop={8}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: theme.spacing.sm,
+              height: HISTORY_PILL_HEIGHT,
+              paddingHorizontal: theme.spacing.md,
+              borderRadius: HISTORY_PILL_HEIGHT / 2,
+              backgroundColor: theme.colors.press,
+            }}
+          >
+            <Ionicons name="time-outline" size={HISTORY_ICON_SIZE} color={theme.colors.ink} />
+            <Text variant="secondary">History</Text>
+          </Pressable>
         </View>
-      )}
-    </Screen>
+        {/* Spacers above and below (1 : 2) hold the question about a third of the way down, and lift it with the keyboard. */}
+        <View style={{ flex: 1 }} />
+        <View style={{ gap: theme.spacing.lg }}>
+          <Text variant="articleTitle">What do you want to understand?</Text>
+          <Composer
+            variant="hero"
+            placeholder="Ask about anything"
+            disabled={!online}
+            disabledLabel="Ask needs a connection"
+            onSend={(text, web) =>
+              router.push({ pathname: "/ask/[id]", params: { id: randomUUID(), q: text, web: web ? "1" : "0" } })
+            }
+          />
+        </View>
+        <View style={{ flex: 2 }} />
+      </Pressable>
+    </KeyboardAvoidingView>
   );
-}
-
-/** An Ask row's long-press menu: Rename, then Delete (after its confirmation) in red. */
-function chatMenuItems(conversation: { id: string; title: string }): MenuItem[] {
-  return [
-    {
-      label: "Rename",
-      testID: "ask-menu-rename",
-      icon: "pencil",
-      onPress: () =>
-        promptChatName({
-          currentTitle: conversation.title,
-          onSubmit: (title) => {
-            renameConversation(db, conversation.id, title);
-            requestSync();
-          },
-        }),
-    },
-    {
-      label: "Delete",
-      testID: "ask-menu-delete",
-      icon: "trash",
-      destructive: true,
-      onPress: () =>
-        confirmDeleteChat(() => {
-          deleteConversation(db, conversation.id);
-          haptic("success");
-          requestSync();
-        }),
-    },
-  ];
 }

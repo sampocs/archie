@@ -39,6 +39,7 @@ export default function AskScreen() {
 
   return (
     <Screen
+      composer
       title="Ask"
       footer={
         <Composer

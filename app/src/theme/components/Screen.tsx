@@ -25,6 +25,9 @@ type ScreenProps = {
   nav?: { title: string; backLabel: string };
   // Pinned below the scrolling content, e.g. a long form's submit button.
   footer?: ReactNode;
+  // The footer is a composer (Ask): a drag scrolls what's above it, the message being replied to, instead of closing
+  // the keyboard; a tap on the page still closes it.
+  composer?: boolean;
   // Pinned between the header and the scrolling content, e.g. a reading-progress bar.
   subheader?: ReactNode;
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void;
@@ -42,6 +45,7 @@ export function Screen({
   onBack,
   nav,
   footer,
+  composer,
   subheader,
   onScroll,
   sheet,
@@ -108,7 +112,7 @@ export function Screen({
         scrollIndicatorInsets={{ bottom: bottomInset }}
         keyboardShouldPersistTaps="handled"
         // Dragging the page puts the keyboard away, so controls under it (like the take editor's switch) are reachable.
-        keyboardDismissMode="on-drag"
+        keyboardDismissMode={composer ? "none" : "on-drag"}
         // Scrolls a focused field (search, adding a topic) above the keyboard.
         automaticallyAdjustKeyboardInsets
       >

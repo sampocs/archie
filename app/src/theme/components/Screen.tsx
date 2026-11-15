@@ -108,7 +108,9 @@ export function Screen({
         scrollIndicatorInsets={{ bottom: bottomInset }}
         keyboardShouldPersistTaps="handled"
         // Dragging the page puts the keyboard away, so controls under it (like the take editor's switch) are reachable.
-        keyboardDismissMode="on-drag"
+        // Not with a pinned footer: there the field (Ask's composer) rides the keyboard, so a drag should scroll what's
+        // above it (the answer being replied to) instead of closing the keyboard; a tap on the page still closes it.
+        keyboardDismissMode={footer ? "none" : "on-drag"}
         // Scrolls a focused field (search, adding a topic) above the keyboard.
         automaticallyAdjustKeyboardInsets
       >

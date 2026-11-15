@@ -140,6 +140,7 @@ function CardPage({
   return (
     <View style={{ flex: 1 }}>
       <Screen
+        composer
         title="Card"
         nav={{ title: "Card", backLabel }}
         onBack={router.back}

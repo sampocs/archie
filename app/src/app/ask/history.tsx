@@ -32,7 +32,14 @@ export default function HistoryScreen() {
 
   return (
     <Screen title="History" nav={{ title: "History", backLabel: "Ask" }} onBack={router.back}>
-      <TextField testID="history-search" placeholder="Search chats" value={query} onChangeText={setQuery} />
+      <TextField
+        testID="history-search"
+        placeholder="Search chats"
+        value={query}
+        onChangeText={setQuery}
+        autoCorrect={false}
+        clearButtonMode="while-editing"
+      />
       {chats.length === 0 ? (
         <Text testID="history-empty" tone="ink2">
           No chats yet.

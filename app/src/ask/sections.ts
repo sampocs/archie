@@ -263,12 +263,15 @@ export function historyGroups<T extends HistoryChat>(items: T[], now: Date): His
   return groups.filter((group) => group.items.length > 0);
 }
 
-/** History search: the query (ignoring case) in the chat's title or its row preview; a blank query matches all. */
+/**
+ * History search: the query (ignoring case) in the chat's title or the last answer's first section text; a blank query
+ * matches all. The source label is left out so "library" or "web" doesn't match every chat.
+ */
 export function matchesChatQuery(item: HistoryChat, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
-  const preview = rowPreview(parseSegments(item.lastAnswer?.segments ?? null));
-  return item.conversation.title.toLowerCase().includes(needle) || preview.toLowerCase().includes(needle);
+  const [first] = groupSections(parseSegments(item.lastAnswer?.segments ?? null));
+  return item.conversation.title.toLowerCase().includes(needle) || (first?.text.toLowerCase().includes(needle) ?? false);
 }
 
 function uniqueCitations(citations: Citation[]): Citation[] {

@@ -19,9 +19,9 @@ type ComposerProps = {
 };
 
 const ICON_SIZE = 30;
-// About four lines of body text before the hero box grows, and where it stops growing and scrolls.
+// About four lines of body text before the hero box grows, and where it stops growing and scrolls (short enough to leave the heading and buttons above the keyboard on a 4.7" iPhone).
 const HERO_MIN_HEIGHT = 96;
-const HERO_MAX_HEIGHT = 220;
+const HERO_MAX_HEIGHT = 160;
 
 /** The question box: a field, the globe that forces a web search, and send. Offline it says why it is gone. */
 export function Composer({

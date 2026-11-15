@@ -354,4 +354,13 @@ describe("matchesChatQuery", () => {
     expect(matchesChatQuery(item, "zzqx")).toBe(false);
     expect(matchesChatQuery({ ...item, lastAnswer: null }, "refresh")).toBe(false);
   });
+
+  it("ignores the source label, so \"library\" does not match every chat", () => {
+    const labeled = {
+      ...item,
+      lastAnswer: { segments: JSON.stringify([{ label: "library", text: "Reserves sit at the Fed.", citations: [] }]) },
+    };
+    expect(matchesChatQuery(labeled, "library")).toBe(false);
+    expect(matchesChatQuery(labeled, "reserves")).toBe(true);
+  });
 });

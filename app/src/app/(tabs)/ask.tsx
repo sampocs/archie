@@ -53,7 +53,10 @@ export default function AskScreen() {
           <Pressable
             testID="ask-history"
             accessibilityRole="button"
-            onPress={() => router.push("/ask/history")}
+            onPress={() => {
+              Keyboard.dismiss();
+              router.push("/ask/history");
+            }}
             hitSlop={8}
             style={{
               flexDirection: "row",

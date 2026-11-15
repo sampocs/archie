@@ -1,11 +1,7 @@
 import { useRouter } from "expo-router";
-import { useState } from "react";
 import { Pressable, View } from "react-native";
 
-import {
-  confirmDeleteCollection,
-  promptCollectionName,
-} from "@/collections/prompts";
+import { confirmDeleteCollection, promptCollectionName } from "@/collections/prompts";
 import type { CollectionWithItems } from "@/collections/collections";
 import { useCollectionsData } from "@/collections/useCollectionsData";
 import { db } from "@/db/client";
@@ -14,7 +10,7 @@ import { requestSync } from "@/sync/useSync";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
-import { MenuSheet } from "@/ui/MenuSheet";
+import { LongPressMenu, type MenuItem } from "@/ui/NativeMenu";
 
 import { CollectionTile } from "./CollectionTile";
 
@@ -25,7 +21,6 @@ export function CollectionsSection() {
   const theme = useTheme();
   const router = useRouter();
   const collections = useCollectionsData();
-  const [menuFor, setMenuFor] = useState<CollectionWithItems | null>(null);
 
   const startNewCollection = () =>
     promptCollectionName({
@@ -47,17 +42,15 @@ export function CollectionsSection() {
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>
         {collections.map((collection) => (
           <View key={collection.id} style={{ width: "48.5%" }}>
-            <CollectionTile
-              collection={collection}
-              onPress={() => {
-                haptic("light");
-                router.push({ pathname: "/collection/[id]", params: { id: collection.id } });
-              }}
-              onLongPress={() => {
-                haptic("selection");
-                setMenuFor(collection);
-              }}
-            />
+            <LongPressMenu items={collectionMenuItems(collection)}>
+              <CollectionTile
+                collection={collection}
+                onPress={() => {
+                  haptic("light");
+                  router.push({ pathname: "/collection/[id]", params: { id: collection.id } });
+                }}
+              />
+            </LongPressMenu>
           </View>
         ))}
 
@@ -79,47 +72,43 @@ export function CollectionsSection() {
           </Text>
         </Pressable>
       </View>
-
-      <MenuSheet
-        visible={menuFor !== null}
-        onClose={() => setMenuFor(null)}
-        items={
-          menuFor === null
-            ? []
-            : [
-                {
-                  label: "Rename",
-                  testID: "collection-menu-rename",
-                  onPress: () =>
-                    promptCollectionName({
-                      title: "Rename collection",
-                      submitLabel: "Save",
-                      initialName: menuFor.name,
-                      onSubmit: (name) => {
-                        renameCollection(db, menuFor.id, name);
-                        requestSync();
-                      },
-                    }),
-                },
-                {
-                  label: "Delete collection",
-                  testID: "collection-menu-delete",
-                  destructive: true,
-                  startsGroup: true,
-                  onPress: () =>
-                    confirmDeleteCollection({
-                      name: menuFor.name,
-                      count: menuFor.items.length,
-                      onConfirm: () => {
-                        deleteCollection(db, menuFor.id);
-                        haptic("success");
-                        requestSync();
-                      },
-                    }),
-                },
-              ]
-        }
-      />
     </View>
   );
+}
+
+/** A tile's long-press menu: Rename, then Delete collection, which asks first. */
+function collectionMenuItems(collection: CollectionWithItems): MenuItem[] {
+  return [
+    {
+      label: "Rename",
+      testID: "collection-menu-rename",
+      icon: "pencil",
+      onPress: () =>
+        promptCollectionName({
+          title: "Rename collection",
+          submitLabel: "Save",
+          initialName: collection.name,
+          onSubmit: (name) => {
+            renameCollection(db, collection.id, name);
+            requestSync();
+          },
+        }),
+    },
+    {
+      label: "Delete collection",
+      testID: "collection-menu-delete",
+      icon: "trash",
+      destructive: true,
+      onPress: () =>
+        confirmDeleteCollection({
+          name: collection.name,
+          count: collection.items.length,
+          onConfirm: () => {
+            deleteCollection(db, collection.id);
+            haptic("success");
+            requestSync();
+          },
+        }),
+    },
+  ];
 }

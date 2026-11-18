@@ -14,11 +14,22 @@ import {
 /** A labelled run of an answer: consecutive blocks with the same label shown as one section. */
 export type Section = { label: AnswerLabel; text: string; citations: Citation[] };
 
-type LiveBlock = { text: string; label: AnswerLabel | null; citations: Citation[] };
+// `dropped`: an announcement before one of the server's own tool calls, which it streams but doesn't save.
+// `droppedIfBackground`: that round's text whose label hadn't arrived yet (the server holds back a heading-like line,
+// "Here are some cards:", and labels it after the tool call); it is dropped if the label says it cited nothing.
+type LiveBlock = {
+  text: string;
+  label: AnswerLabel | null;
+  citations: Citation[];
+  dropped?: boolean;
+  droppedIfBackground?: boolean;
+};
 
 /** An answer as it streams in: blocks so far, the tool running now, and how it ended. */
 export type LiveAnswer = {
   blocks: LiveBlock[];
+  // The first block since the server's last own tool call: blocks from here on are this round's.
+  roundStart: number;
   searching: "library" | "web" | null;
   messageId: string | null;
   failed: boolean;
@@ -45,6 +56,7 @@ export type PendingQuestion = {
 
 export const EMPTY_LIVE: LiveAnswer = {
   blocks: [],
+  roundStart: 0,
   searching: null,
   messageId: null,
   failed: false,
@@ -102,19 +114,21 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
     case "block": {
       const blocks = [...live.blocks];
       const block = blocks[event.block] ?? { text: "", label: null, citations: [] };
-      blocks[event.block] = { ...block, label: event.label, citations: event.citations };
+      const dropped = block.dropped || (block.droppedIfBackground === true && event.label === "background");
+      blocks[event.block] = { ...block, label: event.label, citations: event.citations, dropped };
       return { ...live, blocks };
     }
     case "searching":
-      return { ...live, ...IDLE, searching: event.kind };
+      // Anthropic runs a web search inside the round; only a library search is the server's own tool call.
+      return { ...(event.kind === "library" ? endRound(live) : live), ...IDLE, searching: event.kind };
     case "done":
       return { ...live, messageId: event.message_id, ...IDLE };
     case "error":
       return { ...live, failed: true, ...IDLE };
     case "editing":
-      return { ...live, ...IDLE, editing: true };
+      return { ...endRound(live), ...IDLE, editing: true };
     case "drafting_cards":
-      return { ...live, ...IDLE, draftingCards: true };
+      return { ...endRound(live), ...IDLE, draftingCards: true };
     case "edit": {
       const { type: _type, ...wire } = event;
       // A repeated event (a retried read of the stream) replaces the proposal rather than adding it twice. A newer
@@ -137,6 +151,20 @@ export function applyEvent(live: LiveAnswer, event: AskEvent): LiveAnswer {
       return { ...live, draftingCards: false, cardSets: [...earlier, wire] };
     }
   }
+}
+
+/**
+ * The server's own tool call ends a round, and the server drops that round's uncited paragraphs (they announce the
+ * call, they aren't the answer). Dropping them here too keeps the live answer as the stored one will read, instead of
+ * showing them above a proposal until the stored answer replaces it.
+ */
+function endRound(live: LiveAnswer): LiveAnswer {
+  const blocks = live.blocks.map((block, index) => {
+    if (index < live.roundStart) return block;
+    if (block.label === "background") return { ...block, dropped: true };
+    return block.label === null ? { ...block, droppedIfBackground: true } : block;
+  });
+  return { ...live, blocks, roundStart: blocks.length };
 }
 
 /**
@@ -182,11 +210,13 @@ export function handedOver(
  * the thinking row's label (null hides the row).
  */
 export function liveView(live: LiveAnswer): { sections: Section[]; streamingText: string; thinking: string | null } {
-  const finished = live.blocks.filter((block): block is LiveBlock & { label: AnswerLabel } => block.label !== null);
+  // A held heading from before a tool call stays hidden while its label is pending: it is almost always dropped.
+  const shown = live.blocks.filter((block) => !block.dropped && !(block.droppedIfBackground && block.label === null));
+  const finished = shown.filter((block): block is LiveBlock & { label: AnswerLabel } => block.label !== null);
   const sections = groupSections(
     finished.map((block) => ({ label: block.label, text: block.text, citations: block.citations })),
   );
-  const streamingText = live.blocks
+  const streamingText = shown
     .filter((block) => block.label === null)
     .map((block) => block.text)
     .join("");

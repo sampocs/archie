@@ -49,7 +49,8 @@ export default function AskScreen() {
         onPress={Keyboard.dismiss}
         style={{ flex: 1, paddingHorizontal: theme.spacing.gutterText, paddingBottom: tabBarInset }}
       >
-        <View style={{ flexDirection: "row", paddingVertical: 12 }}>
+        {/* On the right, where a right thumb reaches it. */}
+        <View style={{ flexDirection: "row", justifyContent: "flex-end", paddingVertical: 12 }}>
           <Pressable
             testID="ask-history"
             accessibilityRole="button"

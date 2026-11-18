@@ -1,4 +1,4 @@
-import { ReactNode, useContext } from "react";
+import { ReactNode, useContext, useEffect, useState } from "react";
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -55,18 +55,16 @@ export function Screen({
   const tabBarInset = useContext(TabBarInsetContext);
   // A page sheet has no tab bar, but its last control must still clear the home indicator.
   const bottomInset = sheet ? insets.bottom : tabBarInset;
-  // A footer on a tab screen (Ask's composer) sits above the floating tab bar; with the keyboard up, the offset takes
-  // the bar's height back off so the footer rides the keyboard as closely as anywhere else.
-  const footerInset = Math.max(bottomInset, insets.bottom);
+  const keyboardShown = useKeyboardShown(footer !== undefined);
+  // A footer clears the tab bar (on a tab screen) or the home indicator; with the keyboard up it sits just above the
+  // keyboard instead, since the keyboard already covers both.
+  const footerInset = keyboardShown ? 0 : Math.max(bottomInset, insets.bottom);
 
   // A pinned footer rides above the keyboard; otherwise a typed-in field would hide the screen's submit button.
-  // The KAV is enabled only for footer screens; for a footer on a tab screen, keyboardVerticalOffset removes the tab
-  // bar's height, which the keyboard's height already includes.
   return (
     <KeyboardAvoidingView
       behavior="padding"
       enabled={footer !== undefined}
-      keyboardVerticalOffset={insets.bottom - footerInset}
       style={[styles.root, { backgroundColor: theme.colors.bg, paddingTop: sheet ? theme.spacing.md : insets.top }]}
     >
       {nav ? (
@@ -133,6 +131,21 @@ export function Screen({
       ) : null}
     </KeyboardAvoidingView>
   );
+}
+
+/** Whether the keyboard is up (or on its way up), tracked only when `enabled`. */
+function useKeyboardShown(enabled: boolean): boolean {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (!enabled) return;
+    const show = Keyboard.addListener("keyboardWillShow", () => setShown(true));
+    const hide = Keyboard.addListener("keyboardWillHide", () => setShown(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, [enabled]);
+  return enabled && shown;
 }
 
 const styles = StyleSheet.create({

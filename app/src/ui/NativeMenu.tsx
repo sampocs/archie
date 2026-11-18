@@ -1,5 +1,5 @@
 import { Button, ContextMenu, Host, Image, Label, Menu, RNHostView, Section, Text, type ButtonProps } from "@expo/ui/swift-ui";
-import { accessibilityLabel } from "@expo/ui/swift-ui/modifiers";
+import { accessibilityLabel, contentShape, frame, shapes } from "@expo/ui/swift-ui/modifiers";
 import type { ReactElement } from "react";
 
 import { useTheme } from "@/theme/useTheme";
@@ -9,6 +9,14 @@ import { menuSections, type MenuItem } from "./menuSections";
 export type { MenuItem } from "./menuSections";
 
 const MORE_GLYPH_SIZE = 22;
+// The glyph is only a few points tall, so the button gets Apple's 44pt touch height and some width to its left. Negative
+// margins give the extra back to the layout, so headers keep the height and spacing they had with the bare glyph.
+const MORE_HIT = { width: 40, height: 44 };
+const MORE_LAYOUT = { width: 26, height: 22 };
+const MORE_OVERHANG = {
+  marginVertical: -(MORE_HIT.height - MORE_LAYOUT.height) / 2,
+  marginLeft: -(MORE_HIT.width - MORE_LAYOUT.width),
+};
 
 type MoreMenuProps = { testID: string; items: MenuItem[]; accessibilityLabel?: string };
 
@@ -17,14 +25,18 @@ export function MoreMenu({ testID, items, accessibilityLabel: label = "More" }: 
   const theme = useTheme();
 
   return (
-    <Host matchContents colorScheme={theme.scheme} testID={testID}>
+    <Host matchContents colorScheme={theme.scheme} testID={testID} style={MORE_OVERHANG}>
       <Menu
         label={
           <Image
             systemName="ellipsis"
             size={MORE_GLYPH_SIZE}
             color={theme.colors.ink}
-            modifiers={[accessibilityLabel(label)]}
+            modifiers={[
+              frame({ ...MORE_HIT, alignment: "trailing" }),
+              contentShape(shapes.rectangle()),
+              accessibilityLabel(label),
+            ]}
           />
         }
       >

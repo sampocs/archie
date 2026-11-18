@@ -1,4 +1,4 @@
-import type { AnswerSegment, LibraryCitation, WebCitation } from "./types";
+import type { AnswerSegment, AskEvent, LibraryCitation, WebCitation } from "./types";
 import {
   applyEvent,
   chipText,
@@ -106,6 +106,54 @@ describe("applyEvent and liveView", () => {
     const searched = applyEvent(drafting, { type: "searching", kind: "library", query: "x" });
     expect(searched.editing).toBe(false);
     expect(searched.searching).toBe("library");
+  });
+});
+
+describe("an announcement before a tool call", () => {
+  // The server drops an uncited paragraph written before its own tool call (it isn't saved); showing it would put two
+  // paragraphs above the proposal that merge, then lose one when the stored answer replaces the live one.
+  it("leaves the live answer when the tool starts, so it reads as the stored answer will", () => {
+    const events: AskEvent[] = [
+      { type: "delta", block: 0, text: "I'll draft cards on staking." },
+      { type: "block", block: 0, label: "background", citations: [] },
+      { type: "drafting_cards" },
+      { type: "delta", block: 1, text: "Here are five cards." },
+      { type: "block", block: 1, label: "background", citations: [] },
+    ];
+    const live = events.reduce(applyEvent, EMPTY_LIVE);
+    expect(liveView(live).sections).toEqual([{ label: "background", text: "Here are five cards.", citations: [] }]);
+  });
+
+  it("leaves too when it is a heading the server labels only after the tool starts", () => {
+    const events: AskEvent[] = [
+      { type: "delta", block: 0, text: "Here are some cards on staking:" },
+      { type: "drafting_cards" },
+      { type: "block", block: 0, label: "background", citations: [] },
+      { type: "delta", block: 1, text: "Tick the ones to keep." },
+      { type: "block", block: 1, label: "background", citations: [] },
+    ];
+    expect(liveView(events.slice(0, 2).reduce(applyEvent, EMPTY_LIVE)).streamingText).toBe("");
+    const live = events.reduce(applyEvent, EMPTY_LIVE);
+    expect(liveView(live).sections).toEqual([{ label: "background", text: "Tick the ones to keep.", citations: [] }]);
+    expect(liveView(live).streamingText).toBe("");
+  });
+
+  it("stays for a web search, which the server keeps", () => {
+    const events: AskEvent[] = [
+      { type: "delta", block: 0, text: "Checking the news." },
+      { type: "block", block: 0, label: "background", citations: [] },
+      { type: "searching", kind: "web", query: "fed" },
+    ];
+    expect(liveView(events.reduce(applyEvent, EMPTY_LIVE)).sections).toHaveLength(1);
+  });
+
+  it("keeps a cited paragraph before a library search", () => {
+    const events: AskEvent[] = [
+      { type: "delta", block: 0, text: "It buys bonds." },
+      { type: "block", block: 0, label: "library", citations: [library()] },
+      { type: "searching", kind: "library", query: "bonds" },
+    ];
+    expect(liveView(events.reduce(applyEvent, EMPTY_LIVE)).sections).toHaveLength(1);
   });
 });
 

@@ -46,21 +46,32 @@ const MAX_DETAIL_LINES = 5;
  */
 export default function CardScreen() {
   const theme = useTheme();
-  const { id, from } = useLocalSearchParams<{ id: string; from?: string }>();
+  // `returnOnEdit`: opened from a review session's Edit card, so an edit saved in the chat goes straight back to it.
+  const { id, from, returnOnEdit } = useLocalSearchParams<{ id: string; from?: string; returnOnEdit?: string }>();
   const chat = useCardChat(id);
   if (!chat.loaded) return <View style={{ flex: 1, backgroundColor: theme.colors.bg }} />;
   // A new chat id (the chat was deleted elsewhere, so the page mints a fresh one) starts the page's chat state over.
-  return <CardPage key={chat.conversationId} cardId={id} conversationId={chat.conversationId} backLabel={from ?? "Back"} />;
+  return (
+    <CardPage
+      key={chat.conversationId}
+      cardId={id}
+      conversationId={chat.conversationId}
+      backLabel={from ?? "Back"}
+      returnOnEdit={returnOnEdit === "1"}
+    />
+  );
 }
 
 function CardPage({
   cardId,
   conversationId,
   backLabel,
+  returnOnEdit,
 }: {
   cardId: string;
   conversationId: string;
   backLabel: string;
+  returnOnEdit: boolean;
 }) {
   const theme = useTheme();
   const router = useRouter();
@@ -91,23 +102,30 @@ function CardPage({
   const shownVersion = useRef<number | null>(null);
   // Set when this page's own Versions restore raised the version, which keeps its "Restored version N" toast.
   const restoredHere = useRef(false);
+  // Opened from a review: only an edit asked for on this visit sends it back, once (a sync can raise the version too).
+  const askedHere = useRef(false);
+  const returned = useRef(false);
   useEffect(() => {
     if (!card) return;
     const raised = shownVersion.current !== null && card.version > shownVersion.current;
     if (raised && restoredHere.current) {
       restoredHere.current = false;
+    } else if (raised && returnOnEdit && askedHere.current) {
+      if (!returned.current) router.back();
+      returned.current = true;
     } else if (raised && hasChat) {
       setExpanded(true);
       setToast("Card updated");
     }
     shownVersion.current = card.version;
-  }, [card, hasChat]);
+  }, [card, hasChat, returnOnEdit, router]);
 
   // Sending folds the card back to its question, so the exchange has the room.
   const threadSend = thread.send;
   const send = useCallback(
     (text: string, web: boolean) => {
       setExpanded(false);
+      askedHere.current = true;
       threadSend(text, web);
     },
     [threadSend],

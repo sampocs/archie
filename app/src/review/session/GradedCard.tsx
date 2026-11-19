@@ -21,12 +21,9 @@ type GradedCardProps = {
   // "I actually knew it" shows under Partly and Missed until it is used.
   canKnewIt: boolean;
   onKnewIt: () => void;
-  // Rewriting the answer needs the server.
-  online: boolean;
-  onCare: () => void;
 };
 
-/** The answer box turned into the graded card (mock 01), with the two follow-ups under it. */
+/** The answer box turned into the graded card (mock 01), with "I actually knew it" under it while it applies. */
 export function GradedCard(props: GradedCardProps) {
   const theme = useTheme();
   const color = theme.signals[GRADE_SIGNALS[props.grade]];
@@ -56,18 +53,11 @@ export function GradedCard(props: GradedCardProps) {
         ) : null}
         <AcceptedAnswer answer={props.acceptedAnswer} detail={props.acceptedDetail} />
       </ResultCard>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>
-        {props.canKnewIt ? (
-          <Chip testID="review-knew-it" label="I actually knew it" onPress={props.onKnewIt} />
-        ) : null}
-        <Chip testID="review-care" label="What I care about…" onPress={props.onCare} disabled={!props.online}>
-          {props.online ? null : (
-            <Text testID="review-care-offline" variant="secondary" tone="ink3">
-              Needs a connection
-            </Text>
-          )}
-        </Chip>
-      </View>
+      {props.canKnewIt ? (
+        <View style={{ flexDirection: "row" }}>
+          <ResultChip testID="review-knew-it" label="I actually knew it" onPress={props.onKnewIt} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -163,7 +153,8 @@ export function AcceptedAnswer({ answer, detail }: { answer: string; detail: str
 
 type ChipProps = { testID: string; label: string; onPress: () => void; disabled?: boolean; children?: ReactNode };
 
-function Chip({ testID, label, onPress, disabled = false, children }: ChipProps) {
+/** A small outlined follow-up under a result ("I actually knew it", "Edit card"). */
+export function ResultChip({ testID, label, onPress, disabled = false, children }: ChipProps) {
   const theme = useTheme();
   return (
     <Pressable

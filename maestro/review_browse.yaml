@@ -77,3 +77,22 @@ appId: com.sampocs.archie
 - tapOn:
     id: "tab-review"
 - assertVisible: "Practice these 2"
+# After a grade: Edit card opens the card's page (back returns to the graded card), Drop card removes it and moves on.
+- tapOn:
+    id: "review-shuffle"
+- tapOn:
+    id: "review-submit"
+- tapOn:
+    id: "self-grade-missed"
+- assertNotVisible: "What I care about…"
+- tapOn:
+    id: "review-edit"
+- assertVisible:
+    id: "card-page"
+- tapOn:
+    id: "screen-back"
+- assertVisible:
+    id: "review-next"
+- tapOn:
+    id: "review-drop-graded"
+- assertVisible: "2 of 2"

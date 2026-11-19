@@ -15,9 +15,8 @@ import type { ReviewData } from "@/review/eligibility";
 import { scheduleReminders } from "@/review/reminderScheduler";
 import { buildSession } from "@/review/session";
 import { AnswerBox } from "@/review/session/AnswerBox";
-import { CareSheet } from "@/review/session/CareSheet";
 import { DoneView } from "@/review/session/DoneView";
-import { GradedCard, GradingCard } from "@/review/session/GradedCard";
+import { GradedCard, GradingCard, ResultChip } from "@/review/session/GradedCard";
 import { QuestionCard } from "@/review/session/QuestionCard";
 import { SelfGradeCard } from "@/review/session/SelfGradeCard";
 import { appendTranscript, isOffline, micVisible, nextLiveIndex, sessionModeOf } from "@/review/sessionFlow";
@@ -85,6 +84,7 @@ export default function ReviewSessionScreen() {
   // A row deleted mid-review still renders from the session's copy, so a graded card doesn't vanish under the user.
   const live = currentId ? liveById.get(currentId) : undefined;
   const card = live && live.deletedAt === null ? live : current?.card;
+  const cardGone = live !== undefined && live.deletedAt !== null;
 
   // Reminders are replanned once per session, when it ends with something reviewed (Done, or ✕ after a review).
   const remindersPlanned = useRef(false);
@@ -121,7 +121,8 @@ export default function ReviewSessionScreen() {
 
   // ✕ keeps whatever was graded: every grade was written when it was made.
   function close(): void {
-    if (gradedCount(tally) > 0) planReminders();
+    // A card graded and then dropped still wrote its review, so it counts here though the tally shows it dropped.
+    if (gradedCount(tally) > 0 || entries.some((entry) => entry.outcome !== "dropped")) planReminders();
     router.back();
   }
 
@@ -185,6 +186,7 @@ export default function ReviewSessionScreen() {
             onGraded={onGraded}
             onNext={next}
             onDrop={() => drop(card.id)}
+            canDrop={!cardGone}
             onToast={setToast}
           />
         ) : null}
@@ -203,14 +205,16 @@ type CardStepProps = {
   onGraded: (cardId: string, grade: ReviewGrade) => void;
   onNext: () => void;
   onDrop: () => void;
+  // False once the card was removed elsewhere (its page, a sync) while it's on screen.
+  canDrop: boolean;
   onToast: (message: string) => void;
 };
 
 // One card, from question to Next; remounted per card (its `key`), so the answer, grade and recorder start fresh.
-function CardStep({ card, wasDue, data, sessionKey, online, onGraded, onNext, onDrop, onToast }: CardStepProps) {
+function CardStep({ card, wasDue, data, sessionKey, online, onGraded, onNext, onDrop, canDrop, onToast }: CardStepProps) {
   const theme = useTheme();
+  const router = useRouter();
   const [answer, setAnswer] = useState("");
-  const [careOpen, setCareOpen] = useState(false);
   const { phase, submit, selfGrade, knewIt } = useGrader({ card, wasDue, sessionKey, onGraded });
   const recorder = useRecorder({
     cardId: card.id,
@@ -244,8 +248,6 @@ function CardStep({ card, wasDue, data, sessionKey, online, onGraded, onNext, on
           acceptedDetail={card.detail}
           canKnewIt={phase.replaced !== null}
           onKnewIt={knewIt}
-          online={online}
-          onCare={() => setCareOpen(true)}
         />
       ) : null}
       {phase.kind === "selfGrade" ? (
@@ -258,8 +260,27 @@ function CardStep({ card, wasDue, data, sessionKey, online, onGraded, onNext, on
           onGrade={selfGrade}
         />
       ) : null}
+      {showNext ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: theme.spacing.sm }}>
+          {/* The card's own page, with its chat; saving an edit there comes straight back to this card. */}
+          <ResultChip
+            testID="review-edit"
+            label="Edit card"
+            disabled={!online}
+            onPress={() =>
+              router.push({ pathname: "/card/[id]", params: { id: card.id, from: "Review", returnOnEdit: "1" } })
+            }
+          >
+            {online ? null : (
+              <Text variant="secondary" tone="ink3">
+                Needs a connection
+              </Text>
+            )}
+          </ResultChip>
+          {canDrop ? <ResultChip testID="review-drop-graded" label="Drop card" onPress={onDrop} /> : null}
+        </View>
+      ) : null}
       {showNext ? <Button testID="review-next" label="Next →" onPress={onNext} /> : null}
-      <CareSheet cardId={card.id} sessionKey={sessionKey} visible={careOpen} onClose={() => setCareOpen(false)} />
     </View>
   );
 }

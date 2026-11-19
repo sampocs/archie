@@ -789,11 +789,6 @@ export function requestNewsQuiz(db: AppDb, weekStart: string): void {
   db.transaction((tx) => enqueue(tx, "request_news_quiz", { week_start: weekStart }));
 }
 
-/** The answer "What I care about…" rewrote; the server already saved it, so nothing is queued. */
-export function setCardAnswer(db: AppDb, cardId: string, answer: string): void {
-  db.update(schema.cards).set({ answer }).where(eq(schema.cards.id, cardId)).run();
-}
-
 export { MAX_TAKE_BODY_LENGTH, MAX_TAKE_TITLE_LENGTH };
 
 // Stored as the server stores it (whitespace collapsed), cut by code point so a typed title is never rejected.

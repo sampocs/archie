@@ -86,7 +86,7 @@ The ＋ in the Library header opens the add sheet: the same Finished / Queue flo
 - **A short answer plus detail.** Each card has a short graded answer and 0-3 detail lines, shown after answering and never graded; the grader grades only the answer.
 - **I can always override** a grade ("actually I knew that").
 - *Partly* and *missed* show a short explanation of what was missing.
-- **Tell Carl**: after any grade, I can say what I actually care about (e.g. "I mainly want to remember which agency is Soviet and which is British; the secret police part matters less"). That **rewrites the card's accepted answer** and informs future card generation.
+- **After a grade**: **Edit card** opens the card's page and its chat. Saving an edit there returns straight to the session, showing the new wording. **Drop card** removes the card and moves on. (The earlier "What I care about…" rewrite was removed from the session on 2026-11-19.)
 - Swiping a card away as "don't care" removes it and teaches Carl what not to generate.
 - **Spaced repetition** (FSRS) schedules cards from my answers and runs on the phone. Fast, correct answers mean I see the card less often.
 - **Extra practice only brings cards sooner.** Reviewing ahead or practising a topic never pushes a card's due date later.

@@ -1,7 +1,7 @@
 appId: com.sampocs.archie
 ---
 # Free to run: the dev test user isn't whitelisted, so both sources fail at analyze but keep their titles.
-# Two queued links, newest on top; dragging the top row's handle down swaps them; a swipe snoozes the new top row.
+# Two queued links, newest on top; neither a drag nor a hold on its own moves the top row; a swipe snoozes it.
 - runFlow: login.yaml
 - tapOn:
     id: "library-add"
@@ -46,15 +46,21 @@ appId: com.sampocs.archie
     text: ".*example\\.org.*"
     above:
       text: ".*example\\.com.*"
+# Maestro can't hold and then drag, so the reorder itself is checked by hand. A drag without the hold doesn't lift
+# the row, and a hold released in place doesn't open it.
 - swipe:
     from:
-      id: "queue-handle-0"
+      id: "queue-row-0"
     direction: DOWN
     duration: 1500
+- longPressOn:
+    id: "queue-row-0"
 - assertVisible:
-    text: ".*example\\.com.*"
+    id: "filter-queued"
+- assertVisible:
+    text: ".*example\\.org.*"
     above:
-      text: ".*example\\.org.*"
+      text: ".*example\\.com.*"
 - swipe:
     from:
       id: "queue-row-0"

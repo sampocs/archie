@@ -38,7 +38,7 @@ import { publishWidgetSnapshot } from "@/widget/publish";
 import { widgetSnapshot } from "@/widget/widgetSnapshot";
 import { useNow } from "@/ui/useNow";
 
-const UP_NEXT_COUNT = 3;
+const UP_NEXT_COUNT = 5;
 const WIDGET_SETTLE_MS = 500;
 // A finished task's card eases into its done row while the cards below close up.
 const SLOT_LAYOUT_MS = 450;

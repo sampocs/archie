@@ -7,7 +7,6 @@ import { scheduleOnRN } from "react-native-worklets";
 import { setQueuePosition } from "@/db/actions";
 import { db } from "@/db/client";
 import { requestSync } from "@/sync/useSync";
-import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { haptic } from "@/ui/haptics";
 
@@ -16,8 +15,7 @@ import type { QueueEntry } from "./visibility";
 
 type ReorderableQueueProps = {
   entries: QueueEntry[];
-  // `handle` is the row's drag handle; the row places it as its trailing view.
-  renderRow: (entry: QueueEntry, index: number, handle: ReactNode) => ReactNode;
+  renderRow: (entry: QueueEntry, index: number) => ReactNode;
 };
 
 // The expected row height; each row reports its real one once laid out.
@@ -25,6 +23,8 @@ export const QUEUE_ROW_HEIGHT = 76;
 const NOT_DRAGGING = -1;
 const SHIFT_MS = 150;
 const LIFT_SCALE = 1.02;
+// Holding a row this long lifts it; moving first scrolls or swipes instead.
+const LIFT_AFTER_MS = 300;
 const RELEASE_FALLBACK_MS = 600;
 
 type DragState = {
@@ -35,8 +35,8 @@ type DragState = {
 };
 
 /**
- * The queue in order (sources and queued primers), reordered by dragging a row's ≡ handle; rows in between slide
- * aside while dragging.
+ * The queue in order (sources and queued primers), reordered by pressing and holding a row, then dragging it; rows in
+ * between slide aside while dragging.
  */
 export function ReorderableQueue({ entries, renderRow }: ReorderableQueueProps) {
   const theme = useTheme();
@@ -101,7 +101,7 @@ export function ReorderableQueue({ entries, renderRow }: ReorderableQueueProps) 
           onLayout={(height) => onLayoutRow(entry.key, height)}
           divider={index > 0 ? theme.colors.line : null}
         >
-          {(handle) => renderRow(entry, index, handle)}
+          {renderRow(entry, index)}
         </QueueRow>
       ))}
     </View>
@@ -114,7 +114,7 @@ type QueueRowProps = {
   onMove: (from: number, to: number) => void;
   onLayout: (height: number) => void;
   divider: string | null;
-  children: (handle: ReactNode) => ReactNode;
+  children: ReactNode;
 };
 
 function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRowProps) {
@@ -124,14 +124,13 @@ function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRow
 
   const panConfig = useMemo(
     () => ({
-      activeOffsetY: [-6, 6] as [number, number],
-      failOffsetX: [-20, 20] as [number, number],
+      activateAfterLongPress: LIFT_AFTER_MS,
       onActivate: () => {
         "worklet";
         drag.from.value = index;
         drag.to.value = index;
         drag.translationY.value = 0;
-        scheduleOnRN(haptic, "selection");
+        scheduleOnRN(haptic, "light");
       },
       onUpdate: (event: { translationY: number }) => {
         "worklet";
@@ -140,6 +139,8 @@ function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRow
       },
       onDeactivate: () => {
         "worklet";
+        // A deactivation can arrive again after this row has already let go; only the row being dragged may move.
+        if (drag.from.value !== index) return;
         const to = drag.to.value;
         if (to !== index) {
           scheduleOnRN(onMove, index, to);
@@ -183,57 +184,43 @@ function QueueRow({ index, drag, onMove, onLayout, divider, children }: QueueRow
   // The hairline is hidden on the lifted row, whose card edge replaces it.
   const dividerStyle = useAnimatedStyle(() => ({ opacity: drag.from.value === index ? 0 : 1 }));
 
-  const handle = (
-    <GestureDetector gesture={pan}>
-      <View
-        testID={`queue-handle-${index}`}
-        accessible
-        accessibilityLabel="Reorder"
-        hitSlop={12}
-        style={{ paddingLeft: theme.spacing.sm, paddingRight: theme.spacing.md }}
-      >
-        <Text tone="ink3" style={{ fontSize: 18 }}>
-          ≡
-        </Text>
-      </View>
-    </GestureDetector>
-  );
-
   return (
-    <Animated.View
-      testID={`queue-row-${index}`}
-      onLayout={(event) => onLayout(event.nativeEvent.layout.height)}
-      style={[
-        {
-          // The row bleeds out to the surrounding card's edges (undoing its padding), so a lifted row is the full
-          // card width; the padding puts the content back where it sat.
-          marginHorizontal: -theme.spacing.lg,
-          paddingHorizontal: theme.spacing.lg,
-          borderRadius: theme.radii.card,
-          shadowColor: theme.colors.ink,
-          shadowRadius: 10,
-          shadowOffset: { width: 0, height: 4 },
-        },
-        animatedStyle,
-      ]}
-    >
-      {divider ? (
-        <Animated.View
-          pointerEvents="none"
-          style={[
-            {
-              position: "absolute",
-              top: 0,
-              left: theme.spacing.lg,
-              right: theme.spacing.lg,
-              height: StyleSheet.hairlineWidth,
-              backgroundColor: divider,
-            },
-            dividerStyle,
-          ]}
-        />
-      ) : null}
-      {children(handle)}
-    </Animated.View>
+    <GestureDetector gesture={pan}>
+      <Animated.View
+        testID={`queue-row-${index}`}
+        onLayout={(event) => onLayout(event.nativeEvent.layout.height)}
+        style={[
+          {
+            // The row bleeds out to the surrounding card's edges (undoing its padding), so a lifted row is the full
+            // card width; the padding puts the content back where it sat.
+            marginHorizontal: -theme.spacing.lg,
+            paddingHorizontal: theme.spacing.lg,
+            borderRadius: theme.radii.card,
+            shadowColor: theme.colors.ink,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
+          },
+          animatedStyle,
+        ]}
+      >
+        {divider ? (
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              {
+                position: "absolute",
+                top: 0,
+                left: theme.spacing.lg,
+                right: theme.spacing.lg,
+                height: StyleSheet.hairlineWidth,
+                backgroundColor: divider,
+              },
+              dividerStyle,
+            ]}
+          />
+        ) : null}
+        {children}
+      </Animated.View>
+    </GestureDetector>
   );
 }

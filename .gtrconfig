@@ -1,7 +1,11 @@
-# git gtr worktree setup: every new worktree gets the local secrets and a synced uv environment.
+# git gtr worktree setup: every new worktree lives under ~/.worktrees/archie, gets the local secrets
+# and a synced uv environment.
+[worktrees]
+	dir = ~/.worktrees/archie
+
 [copy]
 	include = .env
 	include = .env.*
 
-[hook]
+[hooks]
 	postCreate = uv sync

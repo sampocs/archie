@@ -26,6 +26,7 @@ import {
   setCardsOff,
   refreshNote,
   markNoteCardsWaiting,
+  refreshNoteForLater,
   clearNoteCardsWaiting,
   setFavorite,
   setQueuePosition,
@@ -895,6 +896,21 @@ describe("refreshNote", () => {
     expect(sourceById(db, "s1")).toMatchObject({ state: "consumed" });
     const [entry] = outboxEntries(db);
     expect(entry.payload).toMatchObject({ id: "s1", make_cards: false });
+  });
+});
+
+describe("refreshNoteForLater", () => {
+  it("refreshes the note and marks it waiting, with only a refresh_note entry that makes no cards", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "note", state: "queued" });
+
+    refreshNoteForLater(db, "s1", false);
+
+    expect(sourceById(db, "s1")).toMatchObject({ state: "consumed" });
+    expect(db.select().from(schema.waitingNoteCards).all().map((row) => row.sourceId)).toEqual(["s1"]);
+    const entries = outboxEntries(db);
+    expect(entries.map((entry) => entry.type)).toEqual(["refresh_note"]);
+    expect(entries[0].payload).toMatchObject({ id: "s1", make_cards: false });
   });
 });
 

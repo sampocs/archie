@@ -663,19 +663,29 @@ export function setFavorite(db: AppDb, sourceId: string, favorited: boolean): vo
  * `makeCards` false means the owner makes its cards in an Ask chat rather than the server writing them.
  */
 export function refreshNote(db: AppDb, sourceId: string, counted: boolean, makeCards: boolean): void {
+  db.transaction((tx) => refreshNoteIn(tx, sourceId, counted, makeCards));
+}
+
+/** Refreshes a note and records it as waiting for its cards in one transaction (Make cards later). */
+export function refreshNoteForLater(db: AppDb, sourceId: string, counted: boolean): void {
   db.transaction((tx) => {
-    const at = new Date().toISOString();
-    updateSource(tx, sourceId, { refreshedAt: at, refreshedFromQueue: counted ? 1 : 0, state: "consumed" });
-    // make_cards false: the owner makes the cards in an Ask chat, so the server queues none.
-    enqueue(tx, "refresh_note", { id: sourceId, counted, at, make_cards: makeCards });
+    refreshNoteIn(tx, sourceId, counted, false);
+    markNoteCardsWaiting(tx, sourceId);
   });
+}
+
+function refreshNoteIn(tx: Parameters<Parameters<AppDb["transaction"]>[0]>[0], sourceId: string, counted: boolean, makeCards: boolean): void {
+  const at = new Date().toISOString();
+  updateSource(tx, sourceId, { refreshedAt: at, refreshedFromQueue: counted ? 1 : 0, state: "consumed" });
+  // make_cards false: the owner makes the cards in an Ask chat, so the server queues none.
+  enqueue(tx, "refresh_note", { id: sourceId, counted, at, make_cards: makeCards });
 }
 
 /**
  * Records a note as waiting for its cards (Make cards later, tapped offline); Today's banner offers to finish it in a
  * chat. Local to this phone: no outbox entry. A second call keeps the first time.
  */
-export function markNoteCardsWaiting(db: AppDb, sourceId: string): void {
+export function markNoteCardsWaiting(db: Pick<AppDb, "insert">, sourceId: string): void {
   db.insert(schema.waitingNoteCards)
     .values({ sourceId, waitingAt: new Date().toISOString() })
     .onConflictDoNothing()

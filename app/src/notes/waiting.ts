@@ -29,3 +29,9 @@ export function waitingBanner(rows: WaitingRow[], sources: WaitingSource[]): Wai
   const note = sources.find((source) => source.id === live[0].sourceId)!;
   return { sourceId: note.id, title: note.title ?? note.url, count: live.length };
 }
+
+/** The source ids of waiting rows that no longer count (missing, deleted, cards off, not a note). */
+export function droppedWaiting(rows: WaitingRow[], sources: WaitingSource[]): string[] {
+  const kept = new Set(liveWaiting(rows, sources).map((row) => row.sourceId));
+  return rows.map((row) => row.sourceId).filter((sourceId) => !kept.has(sourceId));
+}

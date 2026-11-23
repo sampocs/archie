@@ -5,7 +5,7 @@ import { useEffect, useMemo } from "react";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 
-import { liveWaiting, waitingBanner, type WaitingBanner } from "./waiting";
+import { droppedWaiting, waitingBanner, type WaitingBanner } from "./waiting";
 
 /**
  * The banner, read live from the waiting table and the notes. Rows that no longer count (deleted note, cards turned
@@ -30,8 +30,7 @@ export function useWaitingBanner(): WaitingBanner | null {
 
   useEffect(() => {
     if (!loaded) return;
-    const kept = new Set(liveWaiting(rows, sources).map((row) => row.sourceId));
-    const dropped = rows.map((row) => row.sourceId).filter((sourceId) => !kept.has(sourceId));
+    const dropped = droppedWaiting(rows, sources);
     if (dropped.length === 0) return;
     db.delete(schema.waitingNoteCards).where(inArray(schema.waitingNoteCards.sourceId, dropped)).run();
   }, [loaded, rows, sources]);

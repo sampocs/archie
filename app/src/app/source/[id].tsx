@@ -8,7 +8,7 @@ import { MAKE_CARDS_MESSAGE } from "@/ask/cardSets";
 import { openChat } from "@/ask/openChat";
 import { useAskAvailable } from "@/ask/useAskAvailable";
 import { db } from "@/db/client";
-import { markNoteCardsWaiting, readLater, refreshNote, returnToInbox, setFavorite } from "@/db/actions";
+import { readLater, refreshNote, refreshNoteForLater, returnToInbox, setFavorite } from "@/db/actions";
 import * as schema from "@/db/schema";
 import { useTargetVersions } from "@/edits/useTargetVersions";
 import { VersionsSheet } from "@/edits/VersionsSheet";
@@ -140,7 +140,8 @@ export default function SourceScreen() {
 
     // Only the worker path asks the server for cards: in a chat the owner shapes them with Ask, which asks for them at
     // once, and a later one waits on Today's banner until the owner opens that chat.
-    refreshNote(db, source.id, counted, path === "worker");
+    if (path === "later") refreshNoteForLater(db, source.id, counted);
+    else refreshNote(db, source.id, counted, path === "worker");
     haptic("success");
     requestSync();
     if (path === "chat") {
@@ -148,7 +149,6 @@ export default function SourceScreen() {
       return;
     }
 
-    if (path === "later") markNoteCardsWaiting(db, source.id);
     // The worker path's toast says when the cards land; the others have nothing to wait for.
     const message = path === "later" ? CARDS_LATER_MESSAGE : path === null ? NOTE_DONE_MESSAGE : undefined;
     setPendingRefreshToast({ sourceId: source.id, title, message });

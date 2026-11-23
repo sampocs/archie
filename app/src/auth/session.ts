@@ -98,6 +98,8 @@ export async function clearSession(): Promise<void> {
       tx.delete(schema.cardSetProposals).run();
       // The review log goes with the account; review settings stay with the device.
       tx.delete(schema.reviews).run();
+      // The waiting-for-cards list is local-only, but it names this account's notes.
+      tx.delete(schema.waitingNoteCards).run();
       tx.delete(schema.outbox).run();
       tx.delete(schema.syncState).run();
       seedSyncState();

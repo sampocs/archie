@@ -1,4 +1,4 @@
-import { waitingBanner, type WaitingRow, type WaitingSource } from "./waiting";
+import { droppedWaiting, waitingBanner, type WaitingRow, type WaitingSource } from "./waiting";
 
 const note = (overrides: Partial<WaitingSource>): WaitingSource => ({
   id: "n1",
@@ -57,5 +57,19 @@ describe("waitingBanner", () => {
     expect(waitingBanner([waiting("n1", "2026-11-20T10:00:00Z")], [note({ title: null })])).toMatchObject({
       title: "https://example.com/n1",
     });
+  });
+});
+
+describe("droppedWaiting", () => {
+  it("returns missing, deleted, cards-off and non-note rows, not live ones", () => {
+    const sources = [
+      note({ id: "live" }),
+      note({ id: "deleted", deletedAt: "2026-11-21T00:00:00Z" }),
+      note({ id: "off", cardsOff: 1 }),
+      note({ id: "article", kind: "article" }),
+    ];
+    const rows = ["live", "deleted", "off", "article", "gone"].map((id) => waiting(id, "2026-11-20T10:00:00Z"));
+
+    expect(droppedWaiting(rows, sources)).toEqual(["deleted", "off", "article", "gone"]);
   });
 });

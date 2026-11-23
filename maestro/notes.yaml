@@ -146,7 +146,9 @@ appId: com.sampocs.archie
     visible:
       id: "chat-screen"
     timeout: 15000
-- assertVisible: "Make cards"
+- assertVisible:
+    id: "chat-user-0"
+    text: "Make cards"
 # Tapping the banner took the note off the waiting list at once, so it doesn't come back.
 - launchApp
 - tapOn:
@@ -157,7 +159,10 @@ appId: com.sampocs.archie
     timeout: 15000
 - assertNotVisible:
     id: "today-cards-waiting"
-# Plain Done on the second note makes no cards and says so.
+# Plain Done on the second note makes no cards and says so. Check the pick first, so a wrong one fails clearly.
+- assertVisible:
+    id: "today-refresher-detail"
+    text: "(?i)2 of 2 today"
 - tapOn:
     id: "today-refresher-note"
 - tapOn:

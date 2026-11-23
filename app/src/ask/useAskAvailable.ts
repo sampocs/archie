@@ -1,36 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 import { apiFetch } from "@/api/client";
 import { useSession } from "@/auth/session";
+import { useOnline } from "@/ui/useOnline";
 
-// One `/me` per session key: whether the owner's keys pay for this account's Ask doesn't change while signed in.
-let cached: { key: string; whitelisted: boolean } | null = null;
+import { getAskAvailable, loadAskAvailable, subscribeAskAvailable } from "./askAvailableStore";
 
-/** true / false once `/me` answered; null while unknown (offline at launch), which the screens treat as available. */
+/**
+ * true / false once `/me` answered; null while unknown (offline at launch), which the screens treat as available.
+ * Every instance reads the shared store, and an unknown answer is fetched again when the phone comes back online, so a
+ * screen that stays mounted (Today) picks up the answer without a relaunch.
+ */
 export function useAskAvailable(): boolean | null {
   const { sessionKey } = useSession();
-  const [available, setAvailable] = useState<boolean | null>(
-    cached && cached.key === sessionKey ? cached.whitelisted : null,
-  );
+  const online = useOnline();
+  const available = useSyncExternalStore(subscribeAskAvailable, () => getAskAvailable(sessionKey));
 
   useEffect(() => {
-    if (!sessionKey) return;
-    if (cached?.key === sessionKey) {
-      setAvailable(cached.whitelisted);
-      return;
-    }
-    let live = true;
-    apiFetch("/me", { sessionKey })
-      .then((me) => {
-        const whitelisted = (me as { is_whitelisted?: boolean }).is_whitelisted === true;
-        cached = { key: sessionKey, whitelisted };
-        if (live) setAvailable(whitelisted);
-      })
-      .catch(() => undefined);
-    return () => {
-      live = false;
-    };
-  }, [sessionKey]);
+    if (!sessionKey || !online || available !== null) return;
+    void loadAskAvailable(sessionKey, async () => {
+      const me = (await apiFetch("/me", { sessionKey })) as { is_whitelisted?: boolean };
+      return me.is_whitelisted === true;
+    });
+  }, [sessionKey, online, available]);
 
   return available;
 }

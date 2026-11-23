@@ -68,10 +68,11 @@ page footer and the Today banner use the hook in this change; other screens keep
 - Unit: the banner model (`waitingBanner(rows, sources)` → `null` | `{ sourceId, title, count }`): ordering, the
   filter (deleted, cards off, non-note), one vs many; the footer model (`noteDoneFooter(askAvailable, online)` →
   labels, offline note, and which path Make cards takes), replacing `noteDone`.
-- Maestro, `notes.yaml` (spends nothing on models): assert both buttons; set offline via the dev link; assert
+- Maestro, `notes.yaml` (spends a few cents: one Ask turn from the banner tap): assert both buttons; set offline via the dev link; assert
   "Make cards later" and the offline note; tap it; assert the toast; set online; open Today; assert the banner text;
   tap it; assert the chat about the note opened (the first message "Make cards" is visible). The chat's model answer is
-  not awaited (the test user isn't whitelisted, so it fails cheaply). Tapping plain Done on the second note asserts
+  not awaited, but the turn does run: the flow logs in whitelisted (the banner and online Make cards need Ask
+  available), so the tap spends a few cents of the owner's keys. Tapping plain Done on the second note asserts
   "Note done".
 
 ## Build plan

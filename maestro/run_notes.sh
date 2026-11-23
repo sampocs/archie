@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The notes flow: log in, import two invented Bear notes, seed their write-ups and a chat about the first without a model, then open the note page and the seeded chat.
-# Run from the repo root with the backend and worker up (`make start-local`). Spends nothing on models.
+# Run from the repo root with the backend and worker up (`make start-local`). Spends a few cents: the banner tap in notes.yaml runs one real Ask turn (needs the owner's keys in `.env`).
 # scripts/import_bear.py is not used here: the flow posts the fixture to the endpoint directly.
 set -euo pipefail
 

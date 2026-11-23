@@ -108,7 +108,7 @@ maestro-newsletter: reset-local-data
 maestro-confirm: reset-local-data
 	@maestro/run_confirm_email.sh
 
-# Notes: the refresher, the note page and Done; saving a seeded chat's cards spends nothing on models.
+# Notes: the refresher, the note page and Done; seeding and saving a chat's cards use no model, but the Today banner tap runs one real Ask turn (a few cents).
 maestro-notes: reset-local-data
 	@maestro/run_notes.sh
 

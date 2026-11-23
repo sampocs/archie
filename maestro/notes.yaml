@@ -1,7 +1,7 @@
 appId: com.sampocs.archie
 ---
-# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Spends nothing on models: the chat
-# with its card set is seeded by the script.
+# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Spends a few cents: the Today banner tap
+# sends "Make cards" in a chat, one real Ask turn (the user is whitelisted). The chat with its card set is seeded by the script.
 # Relaunch (keeping the login) so the app syncs on start and pulls what the runner just seeded.
 - launchApp
 - tapOn:

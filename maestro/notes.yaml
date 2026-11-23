@@ -146,9 +146,10 @@ appId: com.sampocs.archie
     visible:
       id: "chat-screen"
     timeout: 15000
+# The bubble's id doesn't carry its text on iOS, so its presence and the text are asserted apart.
 - assertVisible:
     id: "chat-user-0"
-    text: "Make cards"
+- assertVisible: "Make cards"
 # Tapping the banner took the note off the waiting list at once, so it doesn't come back.
 - launchApp
 - tapOn:

@@ -8,7 +8,7 @@ import { Toast } from "@/ui/Toast";
 import { clearPendingRefreshToast, usePendingRefreshToast } from "./pendingToast";
 import { cardsAddedMessage } from "./refresher";
 
-/** Announces "N review cards added from …" once a refreshed note's cards arrive, on whatever screen the user is on. */
+/** Announces a note's Done: a fixed message at once, else "N review cards added from …" once a refreshed note's cards arrive, on whatever screen the user is on. */
 export function RefreshToastRoot() {
   const pending = usePendingRefreshToast();
   const { data } = useLiveQuery(
@@ -20,8 +20,11 @@ export function RefreshToastRoot() {
   );
   const cardCount = pending?.cardCount ?? data[0]?.count ?? 0;
 
+  if (!pending) return null;
+  if (pending.message) return <Toast message={pending.message} onHide={clearPendingRefreshToast} />;
+
   // Unless they were saved in a chat, the cards are made by the server after Done syncs, so nothing shows until they land.
-  if (!pending || cardCount === 0) return null;
+  if (cardCount === 0) return null;
 
   return <Toast message={cardsAddedMessage(cardCount, pending.title)} onHide={clearPendingRefreshToast} />;
 }

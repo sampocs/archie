@@ -4,7 +4,8 @@ import {
   cardsAddedMessage,
   DAILY_NOTES,
   isRefreshable,
-  noteDone,
+  noteDoneFooter,
+  OFFLINE_NOTE,
   noteMeta,
   refresherQueue,
   todayRefresher,
@@ -212,16 +213,32 @@ describe("cardsAddedMessage", () => {
   });
 });
 
-describe("noteDone", () => {
+describe("noteDoneFooter", () => {
   it("makes the cards in a chat when Ask is available and the phone is online", () => {
-    expect(noteDone(true, true)).toEqual({ inChat: true, label: "Done, make cards" });
+    expect(noteDoneFooter(true, true)).toEqual({ makeCardsLabel: "Make cards", offlineNote: null, makeCards: "chat" });
   });
 
-  it.each([
-    ["offline", true, false],
-    ["Ask isn't available to this account", false, true],
-    ["Ask's availability is still unknown", null, true],
-  ])("leaves the cards to Archie when %s", (_name, available, online) => {
-    expect(noteDone(available, online)).toEqual({ inChat: false, label: "Done, add review cards" });
+  it("makes the cards later, with the offline note, when the phone is offline", () => {
+    expect(noteDoneFooter(true, false)).toEqual({
+      makeCardsLabel: "Make cards later",
+      offlineNote: "Offline · cards will wait on Today until you're back",
+      makeCards: "later",
+    });
+  });
+
+  it("makes the cards later, without the offline note, when Ask is unknown but the phone is online", () => {
+    expect(noteDoneFooter(null, true)).toEqual({
+      makeCardsLabel: "Make cards later",
+      offlineNote: null,
+      makeCards: "later",
+    });
+  });
+
+  it("makes the cards later, with the offline note, when offline and Ask is unknown", () => {
+    expect(noteDoneFooter(null, false)).toMatchObject({ makeCards: "later", offlineNote: OFFLINE_NOTE });
+  });
+
+  it.each([true, false])("leaves the cards to Archie when Ask isn't available (online %s)", (online) => {
+    expect(noteDoneFooter(false, online)).toEqual({ makeCardsLabel: "Make cards", offlineNote: null, makeCards: "worker" });
   });
 });

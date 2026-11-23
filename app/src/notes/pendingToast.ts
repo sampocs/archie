@@ -2,9 +2,10 @@ import { useSyncExternalStore } from "react";
 
 /**
  * The note whose Done was just tapped; the toast root waits for its cards to land, then clears it. `cardCount` is set
- * when the owner saved the cards in a chat, so the toast shows at once with the cards they kept.
+ * when the owner saved the cards in a chat, so the toast shows at once with the cards they kept. `message` is set for
+ * a Done that makes no cards now ("Note done", "Cards saved for later"): the toast shows at once with that text.
  */
-export type PendingRefreshToast = { sourceId: string; title: string; cardCount?: number };
+export type PendingRefreshToast = { sourceId: string; title: string; cardCount?: number; message?: string };
 
 let pending: PendingRefreshToast | null = null;
 const listeners = new Set<() => void>();

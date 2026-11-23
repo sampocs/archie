@@ -1,7 +1,7 @@
 appId: com.sampocs.archie
 ---
-# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Spends nothing on models: the chat
-# with its card set is seeded by the script.
+# Run after run_notes.sh has imported the two fixture notes and seeded their write-ups. Spends a few cents: the Today banner tap
+# sends "Make cards" in a chat, one real Ask turn (the user is whitelisted). The chat with its card set is seeded by the script.
 # Relaunch (keeping the login) so the app syncs on start and pulls what the runner just seeded.
 - launchApp
 - tapOn:
@@ -33,10 +33,15 @@ appId: com.sampocs.archie
     end: "50%, 90%"
 - assertNotVisible:
     id: "original-note-sheet"
-# Done on a note is asserted, not tapped: it would open a chat that asks a model for the cards.
+# Both footer buttons show. Make cards is asserted, not tapped, while online: it would open a chat that asks a model.
 - assertVisible:
     id: "note-done"
-    text: "Done, make cards"
+    text: "Done"
+- assertVisible:
+    id: "note-make-cards"
+    text: "Make cards"
+- assertNotVisible:
+    id: "note-offline"
 # The seeded chat about the note shows its card set without a cheat sheet; Save puts the cards on the note.
 - tapOn:
     id: "screen-back"
@@ -81,3 +86,88 @@ appId: com.sampocs.archie
       id: "item-title"
       text: "Liquid Staking"
     timeout: 15000
+# Reopen the note from Today, so going back after Make cards lands on Today, where the toast shows.
+- launchApp
+- tapOn:
+    id: "tab-today"
+- extendedWaitUntil:
+    visible:
+      id: "today-refresher-note"
+    timeout: 15000
+- tapOn:
+    id: "today-refresher-note"
+- extendedWaitUntil:
+    visible:
+      id: "note-make-cards"
+    timeout: 10000
+# Offline (the dev link forces it; the simulator never is), Make cards waits: its label changes and a note says why.
+- openLink: archie://dev/offline?on=1
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      id: "note-offline"
+      text: "Offline · cards will wait on Today until you're back"
+    timeout: 10000
+- assertVisible:
+    id: "note-make-cards"
+    text: "Make cards later"
+- tapOn:
+    id: "note-make-cards"
+- extendedWaitUntil:
+    visible: "Cards saved for later"
+    timeout: 10000
+# Back online (the override also resets on a relaunch), Today's banner offers to finish the waiting note.
+- openLink: archie://dev/offline?on=0
+- extendedWaitUntil:
+    visible: "Open"
+    timeout: 5000
+    optional: true
+- tapOn:
+    text: "Open"
+    optional: true
+- launchApp
+- tapOn:
+    id: "tab-today"
+- extendedWaitUntil:
+    visible:
+      id: "today-cards-waiting"
+      text: "Cards waiting for Liquid Staking.*"
+    timeout: 15000
+- tapOn:
+    id: "today-cards-waiting"
+# The chat about the note opened, with Make cards as its first message. Its model answer isn't awaited.
+- extendedWaitUntil:
+    visible:
+      id: "chat-screen"
+    timeout: 15000
+# The bubble's id doesn't carry its text on iOS, so its presence and the text are asserted apart.
+- assertVisible:
+    id: "chat-user-0"
+- assertVisible: "Make cards"
+# Tapping the banner took the note off the waiting list at once, so it doesn't come back.
+- launchApp
+- tapOn:
+    id: "tab-today"
+- extendedWaitUntil:
+    visible:
+      id: "today-refresher"
+    timeout: 15000
+- assertNotVisible:
+    id: "today-cards-waiting"
+# Plain Done on the second note makes no cards and says so. Check the pick first, so a wrong one fails clearly.
+- assertVisible:
+    id: "today-refresher-detail"
+    text: "(?i)2 of 2 today"
+- tapOn:
+    id: "today-refresher-note"
+- tapOn:
+    id: "note-done"
+- extendedWaitUntil:
+    visible: "Note done"
+    timeout: 10000

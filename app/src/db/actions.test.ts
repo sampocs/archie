@@ -25,6 +25,9 @@ import {
   reviewCard,
   setCardsOff,
   refreshNote,
+  markNoteCardsWaiting,
+  refreshNoteForLater,
+  clearNoteCardsWaiting,
   setFavorite,
   setQueuePosition,
   setSenderStatus,
@@ -896,6 +899,21 @@ describe("refreshNote", () => {
   });
 });
 
+describe("refreshNoteForLater", () => {
+  it("refreshes the note and marks it waiting, with only a refresh_note entry that makes no cards", () => {
+    const db = makeTestDb();
+    seedSource(db, { kind: "note", state: "queued" });
+
+    refreshNoteForLater(db, "s1", false);
+
+    expect(sourceById(db, "s1")).toMatchObject({ state: "consumed" });
+    expect(db.select().from(schema.waitingNoteCards).all().map((row) => row.sourceId)).toEqual(["s1"]);
+    const entries = outboxEntries(db);
+    expect(entries.map((entry) => entry.type)).toEqual(["refresh_note"]);
+    expect(entries[0].payload).toMatchObject({ id: "s1", make_cards: false });
+  });
+});
+
 describe("skipNote", () => {
   it("stamps the skip time and queues skip_note, leaving the state alone", () => {
     const db = makeTestDb();
@@ -984,5 +1002,31 @@ describe("setSenderStatus", () => {
     expect(statusOf(db, "n1")).toBe("allowed");
     expect(statusOf(db, "n2")).toBe("blocked");
     expect(outboxEntries(db)).toEqual([{ type: "set_sender_status", payload: { sender_id: "n1", status: "allowed" } }]);
+  });
+});
+
+describe("note cards waiting", () => {
+  const waitingRows = (db: AppDb) => db.select().from(schema.waitingNoteCards).all();
+
+  it("records a note as waiting, once, without an outbox entry", () => {
+    const db = makeTestDb();
+
+    markNoteCardsWaiting(db, "s1");
+    const [first] = waitingRows(db);
+    markNoteCardsWaiting(db, "s1");
+
+    expect(waitingRows(db)).toEqual([first]);
+    expect(new Date(first.waitingAt).toISOString()).toBe(first.waitingAt);
+    expect(outboxEntries(db)).toEqual([]);
+  });
+
+  it("clears only the named note", () => {
+    const db = makeTestDb();
+    markNoteCardsWaiting(db, "s1");
+    markNoteCardsWaiting(db, "s2");
+
+    clearNoteCardsWaiting(db, "s1");
+
+    expect(waitingRows(db).map((row) => row.sourceId)).toEqual(["s2"]);
   });
 });

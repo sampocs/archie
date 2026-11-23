@@ -16,7 +16,7 @@ the owner can shape a note's cards instead of taking whatever `note_cards` write
   the note. Saving again from the same chat follows the chat-cards rule: identical kept cards keep their progress, new
   ones are added, unkept cards that were never reviewed are retired, reviewed cards are never retired.
 - Offline, or for a user who can't use Ask: Done behaves as before (marks refreshed and queues `note_cards`), with the
-  label "Done, add review cards".
+  label "Done, add review cards". (Superseded: offline cards now wait for a chat; see `2026-11-21-offline-make-cards-design.md`.)
 - Discarding (×) leaves the note with no new cards; the owner can come back via ••• → Ask about this and say "make
   cards".
 

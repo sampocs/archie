@@ -349,3 +349,10 @@ export const cardSetProposals = sqliteTable("card_set_proposals", {
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });
+
+// Notes whose owner tapped "Make cards later" while offline; Today's banner offers to finish them in a chat. Local to
+// this phone: never synced, never touched by a pull.
+export const waitingNoteCards = sqliteTable("waiting_note_cards", {
+  sourceId: text("source_id").primaryKey(),
+  waitingAt: text("waiting_at").notNull(),
+});

@@ -86,6 +86,20 @@ appId: com.sampocs.archie
       id: "item-title"
       text: "Liquid Staking"
     timeout: 15000
+# Reopen the note from Today, so going back after Make cards lands on Today, where the toast shows.
+- launchApp
+- tapOn:
+    id: "tab-today"
+- extendedWaitUntil:
+    visible:
+      id: "today-refresher-note"
+    timeout: 15000
+- tapOn:
+    id: "today-refresher-note"
+- extendedWaitUntil:
+    visible:
+      id: "note-make-cards"
+    timeout: 10000
 # Offline (the dev link forces it; the simulator never is), Make cards waits: its label changes and a note says why.
 - openLink: archie://dev/offline?on=1
 - extendedWaitUntil:
@@ -106,9 +120,7 @@ appId: com.sampocs.archie
 - tapOn:
     id: "note-make-cards"
 - extendedWaitUntil:
-    visible:
-      id: "toast"
-      text: "Cards saved for later"
+    visible: "Cards saved for later"
     timeout: 10000
 # Back online (the override also resets on a relaunch), Today's banner offers to finish the waiting note.
 - openLink: archie://dev/offline?on=0
@@ -151,7 +163,5 @@ appId: com.sampocs.archie
 - tapOn:
     id: "note-done"
 - extendedWaitUntil:
-    visible:
-      id: "toast"
-      text: "Note done"
+    visible: "Note done"
     timeout: 10000

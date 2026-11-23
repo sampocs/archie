@@ -671,6 +671,22 @@ export function refreshNote(db: AppDb, sourceId: string, counted: boolean, makeC
   });
 }
 
+/**
+ * Records a note as waiting for its cards (Make cards later, tapped offline); Today's banner offers to finish it in a
+ * chat. Local to this phone: no outbox entry. A second call keeps the first time.
+ */
+export function markNoteCardsWaiting(db: AppDb, sourceId: string): void {
+  db.insert(schema.waitingNoteCards)
+    .values({ sourceId, waitingAt: new Date().toISOString() })
+    .onConflictDoNothing()
+    .run();
+}
+
+/** Takes a note off the waiting list (its chat was opened). Local only, like marking it. */
+export function clearNoteCardsWaiting(db: AppDb, sourceId: string): void {
+  db.delete(schema.waitingNoteCards).where(eq(schema.waitingNoteCards.sourceId, sourceId)).run();
+}
+
 /** Dismisses a note's refresh prompt without refreshing it. */
 export function skipNote(db: AppDb, sourceId: string): void {
   db.transaction((tx) => {

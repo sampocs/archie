@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { useLiveQuery } from "drizzle-orm/expo-sqlite";
-import * as Network from "expo-network";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Linking, Pressable, View } from "react-native";
 
@@ -9,7 +8,7 @@ import { MAKE_CARDS_MESSAGE } from "@/ask/cardSets";
 import { openChat } from "@/ask/openChat";
 import { useAskAvailable } from "@/ask/useAskAvailable";
 import { db } from "@/db/client";
-import { readLater, refreshNote, returnToInbox, setFavorite } from "@/db/actions";
+import { markNoteCardsWaiting, readLater, refreshNote, returnToInbox, setFavorite } from "@/db/actions";
 import * as schema from "@/db/schema";
 import { useTargetVersions } from "@/edits/useTargetVersions";
 import { VersionsSheet } from "@/edits/VersionsSheet";
@@ -32,7 +31,14 @@ import { useLibraryData } from "@/library/useLibraryData";
 import { NoteSources } from "@/notes/NoteSources";
 import { OriginalNoteSheet } from "@/notes/OriginalNoteSheet";
 import { setPendingRefreshToast } from "@/notes/pendingToast";
-import { noteDone, todayRefresher } from "@/notes/refresher";
+import {
+  CARDS_LATER_MESSAGE,
+  noteDoneFooter,
+  NOTE_DONE_MESSAGE,
+  todayRefresher,
+  type MakeCardsPath,
+  type NoteDoneFooter,
+} from "@/notes/refresher";
 import { Markdown } from "@/ui/Markdown";
 import { asDomain } from "@/topics/domains";
 import { requestSync } from "@/sync/useSync";
@@ -43,6 +49,7 @@ import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
 import { FinishSheet } from "@/ui/FinishSheet";
 import { haptic } from "@/ui/haptics";
+import { useOnline } from "@/ui/useOnline";
 import { primerMarkdown, wordCount } from "@/library/primer";
 import { BOOK_KIND, CHAT_KIND, kindLabel } from "@/ui/sourceLabels";
 import { parseSummary } from "@/ui/summaryContent";
@@ -57,8 +64,7 @@ export default function SourceScreen() {
   const theme = useTheme();
   const libraryData = useLibraryData();
   const askAvailable = useAskAvailable();
-  const network = Network.useNetworkState();
-  const online = network.isConnected !== false && network.isInternetReachable !== false;
+  const online = useOnline();
   const { data: sources } = useLiveQuery(db.select().from(schema.sources).where(eq(schema.sources.id, id)), [id]);
   const { data: artifacts } = useLiveQuery(
     db
@@ -117,29 +123,35 @@ export default function SourceScreen() {
   const summaryContent = summary ? parseSummary(summary.content) : null;
   const primerWords = primer ? wordCount(primerMarkdown(primer.content)) : null;
 
-  // Done shows while the note waits for its refresh: cards on, not refreshed, write-up written.
+  // Done and Make cards show while the note waits for its refresh: cards on, not refreshed, write-up written.
   const canRefresh = isNote && source.cardsOff === 0 && source.refreshedAt === null && summaryContent !== null;
-  const done = noteDone(askAvailable, online);
+  const footerModel = noteDoneFooter(askAvailable, online);
 
-  function refresh(): void {
-    // Done acts once per visit: a double tap must not refresh twice (the second could reset the queue count).
+  // `path` is where Make cards goes; plain Done passes null (no cards).
+  function finishNote(path: MakeCardsPath | null): void {
+    // One tap per visit: a double tap (on either button) must not refresh twice (the second could reset the queue count).
     if (refreshStarted.current) return;
     refreshStarted.current = true;
     setRefreshing(true);
 
     const today = todayRefresher(libraryData.sources, new Date());
     const counted = today?.kind === "pick" && today.note.id === source.id;
+    const title = source.title ?? "your note";
 
-    refreshNote(db, source.id, counted, !done.inChat);
+    // Only the worker path asks the server for cards: in a chat the owner shapes them with Ask, which asks for them at
+    // once, and a later one waits on Today's banner until the owner opens that chat.
+    refreshNote(db, source.id, counted, path === "worker");
     haptic("success");
     requestSync();
-    // In a chat the owner shapes the cards with Ask, which asks for them at once; otherwise the worker writes them and
-    // a toast says when they land.
-    if (done.inChat) {
+    if (path === "chat") {
       openChat(router, { kind: "source", id: source.id, title: source.title ?? source.url }, MAKE_CARDS_MESSAGE, true);
       return;
     }
-    setPendingRefreshToast({ sourceId: source.id, title: source.title ?? "your note" });
+
+    if (path === "later") markNoteCardsWaiting(db, source.id);
+    // The worker path's toast says when the cards land; the others have nothing to wait for.
+    const message = path === "later" ? CARDS_LATER_MESSAGE : path === null ? NOTE_DONE_MESSAGE : undefined;
+    setPendingRefreshToast({ sourceId: source.id, title, message });
     router.back();
   }
 
@@ -156,7 +168,14 @@ export default function SourceScreen() {
         title=""
         onBack={router.back}
         footer={
-          canRefresh ? <Button testID="note-done" label={done.label} disabled={refreshing} onPress={refresh} /> : undefined
+          canRefresh ? (
+            <NoteFooter
+              model={footerModel}
+              disabled={refreshing}
+              onDone={() => finishNote(null)}
+              onMakeCards={() => finishNote(footerModel.makeCards)}
+            />
+          ) : undefined
         }
         headerRight={
           isNotice ? undefined : (
@@ -310,6 +329,35 @@ export default function SourceScreen() {
           onHide={hideToast}
         />
       ) : null}
+    </View>
+  );
+}
+
+/** A note's footer: Done and Make cards side by side, with the offline note above them when cards will wait. */
+function NoteFooter(props: { model: NoteDoneFooter; disabled: boolean; onDone: () => void; onMakeCards: () => void }) {
+  const theme = useTheme();
+
+  return (
+    <View style={{ gap: theme.spacing.sm }}>
+      {props.model.offlineNote ? (
+        <Text testID="note-offline" variant="secondary" tone="ink2" style={{ textAlign: "center" }}>
+          {props.model.offlineNote}
+        </Text>
+      ) : null}
+      <View style={{ flexDirection: "row", gap: theme.spacing.md }}>
+        <View style={{ flex: 1 }}>
+          <Button testID="note-done" variant="secondary" label="Done" numberOfLines={1} disabled={props.disabled} onPress={props.onDone} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            testID="note-make-cards"
+            label={props.model.makeCardsLabel}
+            numberOfLines={1}
+            disabled={props.disabled}
+            onPress={props.onMakeCards}
+          />
+        </View>
+      </View>
     </View>
   );
 }

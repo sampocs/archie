@@ -25,6 +25,8 @@ import {
   reviewCard,
   setCardsOff,
   refreshNote,
+  markNoteCardsWaiting,
+  clearNoteCardsWaiting,
   setFavorite,
   setQueuePosition,
   setSenderStatus,
@@ -984,5 +986,31 @@ describe("setSenderStatus", () => {
     expect(statusOf(db, "n1")).toBe("allowed");
     expect(statusOf(db, "n2")).toBe("blocked");
     expect(outboxEntries(db)).toEqual([{ type: "set_sender_status", payload: { sender_id: "n1", status: "allowed" } }]);
+  });
+});
+
+describe("note cards waiting", () => {
+  const waitingRows = (db: AppDb) => db.select().from(schema.waitingNoteCards).all();
+
+  it("records a note as waiting, once, without an outbox entry", () => {
+    const db = makeTestDb();
+
+    markNoteCardsWaiting(db, "s1");
+    const [first] = waitingRows(db);
+    markNoteCardsWaiting(db, "s1");
+
+    expect(waitingRows(db)).toEqual([first]);
+    expect(new Date(first.waitingAt).toISOString()).toBe(first.waitingAt);
+    expect(outboxEntries(db)).toEqual([]);
+  });
+
+  it("clears only the named note", () => {
+    const db = makeTestDb();
+    markNoteCardsWaiting(db, "s1");
+    markNoteCardsWaiting(db, "s2");
+
+    clearNoteCardsWaiting(db, "s1");
+
+    expect(waitingRows(db).map((row) => row.sourceId)).toEqual(["s2"]);
   });
 });

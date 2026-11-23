@@ -90,17 +90,26 @@ export function noteMeta(source: LibrarySource, queue: LibrarySource[], now: Dat
   return "Notes";
 }
 
-/** What a note's Done does: make its cards in an Ask chat, or have Archie write them in the background. */
-export type NoteDone = { inChat: boolean; label: string };
+/** Where a note's Make cards goes: an Ask chat, the waiting list on Today, or the worker writing them. */
+export type MakeCardsPath = "chat" | "later" | "worker";
+
+/** The note page footer: Make cards' label, the offline note above the buttons, and the path Make cards takes. */
+export type NoteDoneFooter = { makeCardsLabel: string; offlineNote: string | null; makeCards: MakeCardsPath };
+
+export const OFFLINE_NOTE = "Offline · cards will wait on Today until you're back";
+export const NOTE_DONE_MESSAGE = "Note done";
+export const CARDS_LATER_MESSAGE = "Cards saved for later";
 
 /**
- * Done opens a chat that makes the cards only when Ask is known to be available (not merely unknown, since a chat that
- * can't answer would leave the refreshed note with no cards) and the phone is online; otherwise the worker writes them.
+ * Make cards opens a chat only when Ask is known to be available and the phone is online. Where Ask is known to be
+ * unavailable the worker writes the cards (the only path that still does). Anything else (offline, or Ask not yet
+ * known, since a chat that can't answer would leave the refreshed note with no cards) waits on Today for a chat.
  */
-export function noteDone(askAvailable: boolean | null, online: boolean): NoteDone {
-  return askAvailable === true && online
-    ? { inChat: true, label: "Done, make cards" }
-    : { inChat: false, label: "Done, add review cards" };
+export function noteDoneFooter(askAvailable: boolean | null, online: boolean): NoteDoneFooter {
+  if (askAvailable === false) return { makeCardsLabel: "Make cards", offlineNote: null, makeCards: "worker" };
+  if (askAvailable === true && online) return { makeCardsLabel: "Make cards", offlineNote: null, makeCards: "chat" };
+
+  return { makeCardsLabel: "Make cards later", offlineNote: online ? null : OFFLINE_NOTE, makeCards: "later" };
 }
 
 /** "5 review cards added from Liquid Staking". */

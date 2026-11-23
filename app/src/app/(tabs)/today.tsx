@@ -6,12 +6,17 @@ import Animated, { FadeIn, FadeOut, FadeOutUp, LinearTransition, useReducedMotio
 
 import { storyCountLabel } from "@/brief/brief";
 import { BriefPreviewCard } from "@/brief/BriefPreviewCard";
+import { MAKE_CARDS_MESSAGE } from "@/ask/cardSets";
+import { openChat } from "@/ask/openChat";
+import { useAskAvailable } from "@/ask/useAskAvailable";
 import { db } from "@/db/client";
-import { requestNewsQuiz, skipNote } from "@/db/actions";
+import { clearNoteCardsWaiting, requestNewsQuiz, skipNote } from "@/db/actions";
 import { ProblemsBanner } from "@/problems/ProblemsBanner";
 import { ProblemsSheet } from "@/problems/ProblemsSheet";
 import { useProblems } from "@/problems/useProblems";
 import { RefresherCard } from "@/notes/RefresherCard";
+import { useWaitingBanner } from "@/notes/useWaitingBanner";
+import type { WaitingBanner } from "@/notes/waiting";
 import { upNext } from "@/library/visibility";
 import { useLibraryData } from "@/library/useLibraryData";
 import { cardsWord } from "@/review/labels";
@@ -20,6 +25,7 @@ import { ReviewStartCard } from "@/review/ui/ReviewStartCard";
 import { useDailyLimit } from "@/review/useDailyLimit";
 import { useReviewData } from "@/review/useReviewData";
 import { requestSync, useFirstSyncPending } from "@/sync/useSync";
+import { Card } from "@/theme/components/Card";
 import { Screen } from "@/theme/components/Screen";
 import { Text } from "@/theme/components/Text";
 import { useTheme } from "@/theme/useTheme";
@@ -34,6 +40,7 @@ import { GroupedList } from "@/ui/GroupedList";
 import { QueuedPrimerRow } from "@/ui/QueuedPrimerRow";
 import { SourceRow } from "@/ui/SourceRow";
 import { haptic } from "@/ui/haptics";
+import { useOnline } from "@/ui/useOnline";
 import { publishWidgetSnapshot } from "@/widget/publish";
 import { widgetSnapshot } from "@/widget/widgetSnapshot";
 import { useNow } from "@/ui/useNow";
@@ -58,6 +65,9 @@ export default function TodayScreen() {
   const reviewData = useReviewData();
   const dailyLimit = useDailyLimit();
   const problems = useProblems();
+  const waiting = useWaitingBanner();
+  const online = useOnline();
+  const askAvailable = useAskAvailable();
   const [problemsOpen, setProblemsOpen] = useState(false);
   // On a Sunday, ask the server for the week's news quiz once per run; it is only asked for when online.
   useFocusEffect(
@@ -252,6 +262,17 @@ export default function TodayScreen() {
   return (
     <Screen title="Today" headerRight={dateLabel}>
       {problems.length > 0 ? <ProblemsBanner count={problems.length} onPress={() => setProblemsOpen(true)} /> : null}
+      {/* Offline there's no chat to open, and an account where Ask is unavailable (or not yet known) can't finish them. */}
+      {waiting && online && askAvailable === true ? (
+        <CardsWaitingBanner
+          banner={waiting}
+          onPress={() => {
+            // Cleared at once, so a chat the owner abandons doesn't bring the banner back for that note.
+            clearNoteCardsWaiting(db, waiting.sourceId);
+            openChat(router, { kind: "source", id: waiting.sourceId, title: waiting.title }, MAKE_CARDS_MESSAGE, true);
+          }}
+        />
+      ) : null}
       <ProblemsSheet problems={problems} now={now} visible={problemsOpen && problems.length > 0} onClose={() => setProblemsOpen(false)} />
 
       {taskSlots.length > 0 ? <View style={{ gap: theme.spacing.lg }}>{taskSlots}</View> : null}
@@ -297,5 +318,22 @@ export default function TodayScreen() {
         </Text>
       ) : null}
     </Screen>
+  );
+}
+
+/** A slim banner at the top of Today for notes whose cards were saved for later; tapping it opens the oldest one's chat. */
+function CardsWaitingBanner({ banner, onPress }: { banner: WaitingBanner; onPress: () => void }) {
+  const theme = useTheme();
+  const subject = banner.count === 1 ? banner.title : `${banner.count} notes`;
+
+  return (
+    <Pressable testID="today-cards-waiting" accessibilityRole="button" onPress={onPress}>
+      <Card style={{ flexDirection: "row", alignItems: "center", gap: theme.spacing.md, paddingVertical: theme.spacing.md }}>
+        <Text style={{ flex: 1 }} numberOfLines={1}>
+          Cards waiting for <Text variant="headline">{subject}</Text>
+        </Text>
+        <Text variant="headline">Finish ›</Text>
+      </Card>
+    </Pressable>
   );
 }

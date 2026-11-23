@@ -30,7 +30,7 @@ The core problem is **integration, not consumption**. Carl turns what I already 
    - **Finished**: optional "how'd it go?" (Easy / Mostly followed / Parts lost me) plus an optional typed or voice note on what was confusing.
    - **Queue it**: optional "Queue the primer too" (e.g. a spoiler-free primer for a book).
    - **Books** are added by title (the ＋ sheet) or by sharing a Goodreads book link, as **Reading** or **Finished**; see `2026-11-10-books-design.md`. A book is one item for its whole life and has no transcript: Archie looks the book up and writes from what the model knows.
-2. **Notes import**: years of existing notes become library items and go through the same processing.
+2. **Notes import**: years of existing notes become library items and go through the same processing. A note in the Today refresher ends with **Done** (no cards) or **Make cards** (an Ask chat shapes them); offline, the cards wait on Today's banner until I'm back. See `2026-11-21-offline-make-cards-design.md`.
 3. **Newsletter ingest** (for Pulse): newsletters arrive automatically, e.g. through a forwarding address.
 
 ## Processing each source

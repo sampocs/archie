@@ -9,9 +9,11 @@ type ButtonProps = Omit<PressableProps, "children" | "style"> & {
   variant?: "primary" | "secondary";
   // Overrides the label's tone, e.g. a signal color for a done state.
   labelColor?: string;
+  // Truncates the label to this many lines (side-by-side buttons keep to one).
+  numberOfLines?: number;
 };
 
-export function Button({ label, variant = "primary", labelColor, disabled, ...rest }: ButtonProps) {
+export function Button({ label, variant = "primary", labelColor, numberOfLines, disabled, ...rest }: ButtonProps) {
   const theme = useTheme();
   const isPrimary = variant === "primary";
 
@@ -34,6 +36,7 @@ export function Button({ label, variant = "primary", labelColor, disabled, ...re
       <Text
         variant="headline"
         tone={isPrimary ? "onChrome" : "ink"}
+        numberOfLines={numberOfLines}
         style={labelColor ? { color: labelColor } : undefined}
       >
         {label}
